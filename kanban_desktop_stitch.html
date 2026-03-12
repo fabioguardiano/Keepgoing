@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+
+<html class="light" lang="pt-br"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MarmoFlow - Kanban de Produção</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ec5b13",
+                        "background-light": "#f8f6f6",
+                        "background-dark": "#221610",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Public Sans', sans-serif; }
+        .kanban-column { min-width: 320px; width: 320px; }
+        .custom-scrollbar::-webkit-scrollbar { height: 8px; width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100">
+<div class="flex h-screen overflow-hidden">
+<!-- Sidebar -->
+<aside class="w-64 bg-slate-900 dark:bg-black text-slate-300 flex flex-col shrink-0">
+<div class="p-6 flex items-center gap-3">
+<div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white">
+<span class="material-symbols-outlined">diamond</span>
+</div>
+<div>
+<h1 class="text-white font-bold text-lg leading-none">MarmoFlow</h1>
+<span class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Marble Factory</span>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-primary text-white shadow-lg shadow-primary/20" href="#">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1">view_kanban</span>
+<span class="text-sm font-medium">Production</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">inventory_2</span>
+<span class="text-sm font-medium">Resources</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">bar_chart</span>
+<span class="text-sm font-medium">Reports</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">group</span>
+<span class="text-sm font-medium">Team</span>
+</a>
+<div class="pt-4 mt-4 border-t border-slate-800">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+</div>
+</nav>
+<div class="p-4">
+<button class="w-full bg-primary/10 hover:bg-primary/20 text-primary font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all">
+<span class="material-symbols-outlined text-xl">add_circle</span>
+<span>Novo Pedido</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+<!-- Topbar -->
+<header class="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8 shrink-0">
+<div class="flex items-center gap-4 flex-1 max-w-xl">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-xl focus:ring-2 focus:ring-primary/50 text-sm" placeholder="Pesquisar projetos, clientes ou materiais..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="relative text-slate-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-2xl">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-primary rounded-full border-2 border-white dark:border-slate-900"></span>
+</button>
+<div class="h-8 w-px bg-slate-200 dark:bg-slate-700"></div>
+<div class="flex items-center gap-3">
+<div class="text-right hidden sm:block">
+<p class="text-sm font-bold leading-none">Gerente Produção</p>
+<p class="text-xs text-slate-500">Unidade Matriz</p>
+</div>
+<div class="w-10 h-10 rounded-full bg-slate-200 border-2 border-primary/20 overflow-hidden">
+<img alt="Avatar" data-alt="Portrait of a production manager smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLiP0Im1cWyOt8jR5g9idaBnhV1k_UpXtF5AO81zXt_uXem9RLtfArVutCgiYe4yN4Ucjr2hGm58XK5Jm_5AWIK6MSdbs1yrQMpnZuxOYu2brYr_86TqeY6zw6sLy20vgNBc7D-yGWE66ab9CVRy4XhAj_dR3i9t3A3aKOjuWtTkQZAeSA2m1WkVlD1-5BwQYlf_NCIpL382Y7HcrtafdjcjUoQyJLgcIzXpRMmwZkHBmzugmoPzz6CugJjUziNuducgqE_prk4TU"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Kanban Board -->
+<div class="flex-1 overflow-x-auto custom-scrollbar bg-slate-50 dark:bg-background-dark p-6">
+<div class="flex gap-6 h-full items-start">
+<!-- Column: Serviço Lançado -->
+<div class="kanban-column flex flex-col h-full shrink-0">
+<div class="flex items-center justify-between mb-4 px-1">
+<div class="flex items-center gap-2">
+<h3 class="font-bold text-slate-700 dark:text-slate-300 text-sm uppercase tracking-wider">Serviço Lançado</h3>
+<span class="bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold px-2 py-0.5 rounded-full">12</span>
+</div>
+<button class="text-slate-400 hover:text-primary"><span class="material-symbols-outlined">more_horiz</span></button>
+</div>
+<div class="flex-1 flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-2">
+<!-- Premium Card -->
+<div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-3 group cursor-grab active:cursor-grabbing hover:border-primary/50 transition-all">
+<div class="flex justify-between items-start mb-2">
+<span class="bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Alta</span>
+<span class="material-symbols-outlined text-slate-300 group-hover:text-slate-400 transition-colors">drag_indicator</span>
+</div>
+<div class="w-full h-32 rounded-lg mb-3 bg-slate-100 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Black absolute granite kitchen countertop installed" src="https://lh3.googleusercontent.com/aida-public/AB6AXuALjKRmv-2wq8UkrpjR89huCe68j5LE29TJe5OhtUFoI0S25raVGxPMK7gRGjOQm6m0i_Hlo85jZBVVZ-O4jiO7ABk3Na5yhPJwxzuc5g1K6pKC7uxAjujLW_solWCEK1iPAz_l8U4H9P4NS9Z0fZ4Sa51MOfpvMA60g1CGXd1wrTTDASrgDbBQO4pxbCULOiljxNcM6IoL_pmUQjPU12_dj8LZJXw__fg3ozPhnBILqP3DWbRinhkR-jPuMwcymk25KWW4IYfe9AY"/>
+</div>
+<h4 class="font-bold text-sm mb-1 line-clamp-1">Cozinha Granito Preto Absoluto</h4>
+<p class="text-xs text-slate-500 mb-3">Construtora Silva</p>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-1.5 text-slate-500">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span class="text-[11px] font-medium">2h 15m</span>
+</div>
+<div class="relative">
+<div class="w-7 h-7 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 overflow-hidden relative">
+<img data-alt="Production worker avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtQ3xLer7LfOYyuanynzpY5lU2sRr38MxwGp69jag0iDUNW1hngihGfeXY-osYoXFPOovBaXrHWzhzRBrwXTCsLo6HdSv_AO1dxNKLIT-WjwCXDsjgOMn2xzrbXVKDWCKpEnoP29cq6U6RtQvllFPajedxUfIa84OI9XYQNOdmosBhJ40FYVlRtpY-JGu5lcAWQHtzi_iRiRZ_vJKallrJj1rysk8vJc_xr7wBs3Sh_ibuuyMdzXMoZZUBK_dtMxP-Zj_m2JM1daU"/>
+</div>
+<span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse"></span>
+</div>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-3 group cursor-grab hover:border-primary/50 transition-all">
+<div class="flex justify-between items-start mb-2">
+<span class="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Baixa</span>
+<span class="material-symbols-outlined text-slate-300">drag_indicator</span>
+</div>
+<div class="w-full h-32 rounded-lg mb-3 bg-slate-100 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="White marble bathroom vanity details" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAY3bMs2ll_oGx_u51E4u8BlhoBR4muJqqjwYRYs_8422r-10dq029lMAcookSxO_ZHjthZ-N9LR5Hajg5Hqo-3PdKM90sJPw9PqlAWodw6BR3-tjEik5frd665P4uFWOPSh6LTkJKa-2xlQWvTd-XqNY4RekEqZ_VXMPxz8WZggfsDkQYTdcAyDc2kGxipsB1jPZp_bfKccPO6NKnzaNr0UN2AZl_QlYnaLxvKyn9ZCvcvpE9R_wH-0xpw21o7NYzCNrcsy9BgmhE"/>
+</div>
+<h4 class="font-bold text-sm mb-1">Lavabo Mármore Branco Parnon</h4>
+<p class="text-xs text-slate-500 mb-3">Residencial Garden</p>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-1.5 text-slate-500">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span class="text-[11px] font-medium">45m</span>
+</div>
+<div class="w-7 h-7 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 overflow-hidden">
+<img data-alt="Female worker avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQ-XyAsAjkKl7PF0GnnolaFLkRL2s9H1CL_pvLEZFPKRqDzNOy9SgixzmC-dQEbnDm8l46jsAsC7xQABoQ6keQoBrBhs8k9bk-oeDj25hf3RZ21anTSAc5oXyBd_J0iJ23t-uJWFbDy1djt-Wo-FbJw6mlmWkrAD9qgHtyutWzDSyGx8ECQCXIE4qtBn4WNU6HTZnT6Yy_IE48lwUECPkrojpao6Uehh0xujbMPIrK0wf3fVNa4mXXooE3sgpjVVfUVraC_ZYFhwE"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Column: Corte -->
+<div class="kanban-column flex flex-col h-full shrink-0">
+<div class="flex items-center justify-between mb-4 px-1">
+<div class="flex items-center gap-2">
+<h3 class="font-bold text-slate-700 dark:text-slate-300 text-sm uppercase tracking-wider">Corte</h3>
+<span class="bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold px-2 py-0.5 rounded-full">8</span>
+</div>
+</div>
+<div class="flex-1 flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-2">
+<div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-3 group cursor-grab hover:border-primary/50 transition-all">
+<div class="flex justify-between items-start mb-2">
+<span class="bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Média</span>
+<span class="material-symbols-outlined text-slate-300">drag_indicator</span>
+</div>
+<div class="w-full h-32 rounded-lg mb-3 bg-slate-100 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Large quartz slab being cut in factory" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEibbkUxbFghx3hWeJeA1XyXbyST0aEKBh3o-j-7L5GGEiJXhQbXx7apuef9F0o7cx5wqPyqM_VspnW29fucT0yFDa0scj6QP8oVpJeNQ50ni-fquGSWbEsg4INy37znJDet3Be8f7tDHAtCnv4T6tlm-K9kZxfTdqmErX1QjXt0cBgh8o2w7DNz1vf8JNCO6gLCd3XtUk_vIQWQewM8521tMIJHJZwh0Gu-3Kx6Ija5wd2ogFBg7GHBTlOgYmhMnWLVFKbyHpBMU"/>
+</div>
+<h4 class="font-bold text-sm mb-1">Ilha Quartzito Mont Blanc</h4>
+<p class="text-xs text-slate-500 mb-3">Ana Paula</p>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-1.5 text-slate-500">
+<span class="material-symbols-outlined text-sm text-primary">play_circle</span>
+<span class="text-[11px] font-bold text-primary">Em progresso...</span>
+</div>
+<div class="w-7 h-7 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 overflow-hidden">
+<img data-alt="Stone cutter worker avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6U9H498HycQFoIv6S3k_crFyD9YL3mbfVv2McWZnWO_MdeRgAbpkvPfGFdu0Scf-x3vrqQK38Om0TgFX5jKAB96v5vGBD6Mql2Qw2o122FY12382XzRFzX0c6P7-fmu2_lB5DglMjV46_MyQ2Oa-ajx3DCQCk3pJVS_KCFmWNwszaA0fVZZo8S09Pw2-bf94fIVLS6L3pkdV0M5BqqzZdfQE9B8ftpxSq_rL1nla3TTNWprY-Hc6oPrbJ17UNj7ZIoWj0e-RSxqg"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Column: Acabamento -->
+<div class="kanban-column flex flex-col h-full shrink-0">
+<div class="flex items-center justify-between mb-4 px-1">
+<div class="flex items-center gap-2">
+<h3 class="font-bold text-slate-700 dark:text-slate-300 text-sm uppercase tracking-wider">Acabamento</h3>
+<span class="bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold px-2 py-0.5 rounded-full">5</span>
+</div>
+</div>
+<div class="flex-1 flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-2">
+<div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-3 group cursor-grab hover:border-primary/50 transition-all opacity-80">
+<div class="flex justify-between items-start mb-2">
+<span class="bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Alta</span>
+<span class="material-symbols-outlined text-slate-300">drag_indicator</span>
+</div>
+<h4 class="font-bold text-sm mb-1">Escada Travertino Romano</h4>
+<p class="text-xs text-slate-500 mb-3">Hotel Blue Ocean</p>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-1.5 text-slate-500">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span class="text-[11px] font-medium">8h 20m restantes</span>
+</div>
+<div class="flex -space-x-2">
+<div class="w-7 h-7 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 overflow-hidden">
+<img data-alt="Finisher worker 1" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBvAjoJEYbJ3eLbDp2b0ZRzPBHlpXQerXSoT2Fp7dF0K1lTDFoeJQn5xVhvd3KswN59-na1DsNRGzuud5BP4lYd7D-BT0-Rlas6q4SkDfNeZCSvdQKkBXCP8oxunOWD4Ap2u8JuoG8qvPNFpLn9n62DLErBcX1b-WEHIqswzcQ4XUR5B1zp9QtwEf3EQTg-TB6lsCPlSjkEBDDrTWflj_huujpTPA8rq1QY2YHLEg0cefNFsQn82G_A9UXmGl-qAqyC7YnJNvRmdg"/>
+</div>
+<div class="w-7 h-7 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 overflow-hidden">
+<img data-alt="Finisher worker 2" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTC-tfIq1nWyycMS3Z45t3sm7qh527uiUQ0QvgvACpZRA48rxQnJNTCuXeMQg0fAJA92qx8HoaqDGoftX8X4ncRauXC2nprvIFL3K9bE0CqbnwGU57O4RTEoOTuxc56NrvFMXtbxrGhopcmuivrtKvI6y8Ct8zso64lLVyWEfrG4-ns2y3Czrl3UwVCMyZvqZ6nZLioBsw97myo23W9Tja8b58wgpFz6iOSIoZwgAULTu9I3GRZoaND6kKpc34VFa1-YSMULpz4dY"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Column: Serviço Finalizado -->
+<div class="kanban-column flex flex-col h-full shrink-0">
+<div class="flex items-center justify-between mb-4 px-1">
+<div class="flex items-center gap-2">
+<h3 class="font-bold text-slate-700 dark:text-slate-300 text-sm uppercase tracking-wider">Serviço Finalizado</h3>
+<span class="bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold px-2 py-0.5 rounded-full">10</span>
+</div>
+</div>
+<div class="flex-1 flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-2">
+<div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-3 group border-l-4 border-l-green-500 transition-all">
+<div class="flex justify-between items-start mb-2">
+<span class="bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Concluído</span>
+<span class="material-symbols-outlined text-green-500">check_circle</span>
+</div>
+<h4 class="font-bold text-sm mb-1">Mesa Centro Calacatta</h4>
+<p class="text-xs text-slate-500 mb-3">Arq. Fernanda</p>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-1.5 text-slate-400">
+<span class="material-symbols-outlined text-sm">event_available</span>
+<span class="text-[11px] font-medium">Hoje, 09:30</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Column: A Retirar -->
+<div class="kanban-column flex flex-col h-full shrink-0">
+<div class="flex items-center justify-between mb-4 px-1">
+<div class="flex items-center gap-2">
+<h3 class="font-bold text-slate-700 dark:text-slate-300 text-sm uppercase tracking-wider">A Retirar</h3>
+<span class="bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold px-2 py-0.5 rounded-full">4</span>
+</div>
+</div>
+<div class="flex-1 flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-2"></div>
+</div>
+<!-- Column: A Entregar -->
+<div class="kanban-column flex flex-col h-full shrink-0">
+<div class="flex items-center justify-between mb-4 px-1">
+<div class="flex items-center gap-2">
+<h3 class="font-bold text-slate-700 dark:text-slate-300 text-sm uppercase tracking-wider">A Entregar</h3>
+<span class="bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold px-2 py-0.5 rounded-full">6</span>
+</div>
+</div>
+<div class="flex-1 flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-2"></div>
+</div>
+<!-- Column: Entregue -->
+<div class="kanban-column flex flex-col h-full shrink-0">
+<div class="flex items-center justify-between mb-4 px-1">
+<div class="flex items-center gap-2">
+<h3 class="font-bold text-slate-700 dark:text-slate-300 text-sm uppercase tracking-wider">Entregue</h3>
+<span class="bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold px-2 py-0.5 rounded-full">22</span>
+</div>
+</div>
+<div class="flex-1 flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-2"></div>
+</div>
+<!-- Add Column Placeholder -->
+<div class="kanban-column flex flex-col h-full shrink-0 group">
+<button class="w-full py-4 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl flex items-center justify-center gap-2 text-slate-400 group-hover:border-primary group-hover:text-primary transition-all">
+<span class="material-symbols-outlined">add</span>
+<span class="text-sm font-bold">Nova Coluna</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

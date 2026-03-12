@@ -1,0 +1,7 @@
+{
+  "name": "Prodon - Gestão de Produção",
+  "description": "Um sistema multi-tenant de gestão de produção para marmorarias com painel Kanban estilo Pipedrive, controle de fases e integração de ordens de serviço visuais.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

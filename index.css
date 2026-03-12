@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary-color: #ec5b13;
+  --sidebar-bg: #0f172a;
+  --sidebar-text: #cbd5e1;
+}
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900 font-sans;
+  }
+}
+
+.kanban-column {
+  min-width: 300px;
+  max-width: 300px;
+}
+
+/* Custom scrollbar for Kanban */
+.kanban-container::-webkit-scrollbar {
+  height: 8px;
+}
+.kanban-container::-webkit-scrollbar-track {
+  background: #e5e7eb;
+}
+.kanban-container::-webkit-scrollbar-thumb {
+  background: #9ca3af;
+  border-radius: 4px;
+}
+
+/* Printing styles */
+@media print {
+  @page {
+    size: A4;
+    margin: 5mm 15mm 0mm 15mm;
+  }
+
+  body {
+    background: white;
+  }
+
+  /* Hide the entire React App mounted at #root */
+  #root {
+    display: none !important;
+  }
+
+  /* But make sure any .print-only attached directly to body (via Portal) shows normally */
+  body > .print-only {
+    display: block !important;
+    position: relative !important;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+/* Hidden by default in web, visible in print */
+.print-only {
+  display: none;
+}
+
+@media print {
+  .print-only {
+    display: block !important;
+  }
+}
