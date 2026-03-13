@@ -76,65 +76,74 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
   // Automatic geocoding for existing addresses without coordinates
   useEffect(() => {
     if (isOpen && activeTab === 'endereco' && formData.address.street && (!formData.address.lat || !formData.address.lng)) {
-      geocodeAddress(formData.address.street, formData.address.number, formData.address.city, formData.address.state, 'address');
+      geocodeAddress(formData.address.street, formData.address.number, formData.address.city, formData.address.state, formData.address.zipCode, 'address');
     }
     if (isOpen && activeTab === 'entrega' && formData.deliveryAddress?.street && (!formData.deliveryAddress.lat || !formData.deliveryAddress.lng)) {
-      geocodeAddress(formData.deliveryAddress.street, formData.deliveryAddress.number, formData.deliveryAddress.city, formData.deliveryAddress.state, 'deliveryAddress');
+      geocodeAddress(formData.deliveryAddress.street, formData.deliveryAddress.number, formData.deliveryAddress.city, formData.deliveryAddress.state, formData.deliveryAddress.zipCode, 'deliveryAddress');
     }
-  }, [activeTab, isOpen, formData.address.street, formData.deliveryAddress?.street]);
+  }, [activeTab, isOpen, formData.address.street, formData.deliveryAddress?.street, formData.address.zipCode, formData.deliveryAddress?.zipCode]);
 
-  const geocodeAddress = async (street: string, number: string, city: string, state: string, fieldType: 'address' | 'deliveryAddress') => {
-    if (!city || !street) return;
+  const geocodeAddress = async (street: string, number: string, city: string, state: string, zipCode: string, fieldType: 'address' | 'deliveryAddress') => {
+    if (!city && !zipCode) return;
     
     setIsGeocoding(true);
-    console.log(`Buscando coordenadas para: ${street}, ${number}, ${city}, ${state}`);
+    const cleanZip = zipCode.replace(/\D/g, '');
+    console.log(`Buscando coordenadas para: ${street}, ${number}, ${city}, ${cleanZip}`);
     
     try {
-      // Improved query for better precision
-      const addressQuery = `${street}${number ? `, ${number}` : ''}, ${city}, ${state}, Brasil`;
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressQuery)}&limit=1`, {
-        headers: {
-          'Accept-Language': 'pt-BR,pt;q=0.9',
-          'User-Agent': 'KeepGoing-ERP/1.0'
-        }
+      const fetchWithHeaders = (query: string) => fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`, {
+        headers: { 'Accept-Language': 'pt-BR,pt;q=0.9', 'User-Agent': 'KeepGoing-ERP/1.0' }
       });
-      const data = await response.json();
-      
-      let finalData = data && data[0] ? data[0] : null;
 
-      // Fallback 1: search without number if precise search fails
-      if (!finalData && number) {
+      let finalData = null;
+
+      // STEP 1: Full Address Search
+      if (street && city) {
+        const query = `${street}${number ? `, ${number}` : ''}, ${city}, ${state}, Brasil`;
+        const res = await fetchWithHeaders(query);
+        const data = await res.json();
+        if (data && data[0]) finalData = data[0];
+      }
+
+      // STEP 2: Fallback to ZIP Code (Highly reliable for neighborhood level)
+      if (!finalData && cleanZip.length === 8) {
+        console.log('Tentando fallback por CEP...');
+        const res = await fetchWithHeaders(`${cleanZip}, Brasil`);
+        const data = await res.json();
+        if (data && data[0]) finalData = data[0];
+      }
+
+      // STEP 3: Fallback without number
+      if (!finalData && street && city) {
         console.log('Tentando fallback sem número...');
-        const fallbackQuery = `${street}, ${city}, ${state}, Brasil`;
-        const fallbackResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fallbackQuery)}&limit=1`, {
-          headers: {
-            'Accept-Language': 'pt-BR,pt;q=0.9',
-            'User-Agent': 'KeepGoing-ERP/1.0'
-          }
-        });
-        const fallbackData = await fallbackResponse.json();
-        if (fallbackData && fallbackData[0]) {
-          finalData = fallbackData[0];
+        const res = await fetchWithHeaders(`${street}, ${city}, ${state}, Brasil`);
+        const data = await res.json();
+        if (data && data[0]) finalData = data[0];
+      }
+
+      // STEP 4: Aggressive Cleaning (R., Rua, Av. etc)
+      if (!finalData && street && city) {
+        const cleanStreet = street
+          .replace(/^(R\.|RUA|AV\.|AVENIDA|PRACA|PRAÇA|TRAVESSA|TRAV\.|RODOVIA|ROD\.)\s+/i, '')
+          .trim();
+        
+        if (cleanStreet !== street) {
+          console.log(`Tentando fallback com rua limpa: ${cleanStreet}`);
+          const res = await fetchWithHeaders(`${cleanStreet}, ${city}, ${state}, Brasil`);
+          const data = await res.json();
+          if (data && data[0]) finalData = data[0];
         }
       }
 
-      // Fallback 2: search only for street part if it looks truncated (less than 5 chars or ending in space/incomplete)
-      if (!finalData && street.length > 5) {
-        console.log('Tentando fallback parcial da rua...');
-        const streetParts = street.split(' ');
-        if (streetParts.length > 1) {
-          const partialStreet = streetParts.slice(0, -1).join(' ');
-          const partialQuery = `${partialStreet}, ${city}, ${state}, Brasil`;
-          const partialRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(partialQuery)}&limit=1`, {
-            headers: {
-              'Accept-Language': 'pt-BR,pt;q=0.9',
-              'User-Agent': 'KeepGoing-ERP/1.0'
-            }
-          });
-          const partialData = await partialRes.json();
-          if (partialData && partialData[0]) {
-            finalData = partialData[0];
-          }
+      // STEP 5: Partial Street Search
+      if (!finalData && street && city && street.length > 8) {
+        const parts = street.split(' ');
+        if (parts.length > 2) {
+          const partial = parts.slice(0, -1).join(' ');
+          console.log(`Tentando fallback parcial: ${partial}`);
+          const res = await fetchWithHeaders(`${partial}, ${city}, ${state}, Brasil`);
+          const data = await res.json();
+          if (data && data[0]) finalData = data[0];
         }
       }
 
@@ -143,19 +152,16 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
         const lng = parseFloat(finalData.lon);
         console.log('Localização encontrada:', lat, lng);
         
-        if (fieldType === 'address') {
-          setFormData(prev => ({
-            ...prev,
-            address: { ...prev.address, lat, lng }
-          }));
-        } else {
-          setFormData(prev => ({
-            ...prev,
-            deliveryAddress: { ...(prev.deliveryAddress || {}), lat, lng } as any
-          }));
-        }
+        setFormData(prev => ({
+          ...prev,
+          [fieldType === 'address' ? 'address' : 'deliveryAddress']: {
+            ...(fieldType === 'address' ? prev.address : (prev.deliveryAddress || {})),
+            lat,
+            lng
+          }
+        }));
       } else {
-        console.warn('Nenhuma localização encontrada para o endereço informado.');
+        console.warn('Nenhuma localização encontrada.');
       }
     } catch (error) {
       console.error('Erro na geocodificação:', error);
@@ -173,9 +179,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
       const response = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`);
       const data = await response.json();
       
-      if (data.erro) {
-        throw new Error('CEP não encontrado');
-      }
+      if (data.erro) throw new Error('CEP não encontrado');
 
       setFormData(prev => {
         const newAddressData = {
@@ -183,26 +187,20 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
           neighborhood: data.bairro,
           city: data.localidade,
           state: data.uf,
-          zipCode: cleanCEP, // Ensure zipCode is also updated
-          number: (fieldType === 'address' ? prev.address.number : (prev.deliveryAddress?.number || '')), // Keep existing number
-          complement: (fieldType === 'address' ? prev.address.complement : (prev.deliveryAddress?.complement || '')), // Keep existing complement
+          zipCode: cleanCEP,
+          number: (fieldType === 'address' ? prev.address.number : (prev.deliveryAddress?.number || '')),
+          complement: (fieldType === 'address' ? prev.address.complement : (prev.deliveryAddress?.complement || '')),
           lat: (fieldType === 'address' ? prev.address.lat : (prev.deliveryAddress?.lat || undefined)),
           lng: (fieldType === 'address' ? prev.address.lng : (prev.deliveryAddress?.lng || undefined)),
         };
 
         // Proactive geocoding immediately after CEP lookup
-        geocodeAddress(newAddressData.street, newAddressData.number, newAddressData.city, newAddressData.state, fieldType);
+        geocodeAddress(newAddressData.street, newAddressData.number, newAddressData.city, newAddressData.state, cleanCEP, fieldType);
         
         if (fieldType === 'address') {
-          return {
-            ...prev,
-            address: { ...prev.address, ...newAddressData }
-          };
+          return { ...prev, address: { ...prev.address, ...newAddressData } };
         } else {
-          return {
-            ...prev,
-            deliveryAddress: { ...(prev.deliveryAddress || {}), ...newAddressData } as any
-          };
+          return { ...prev, deliveryAddress: { ...(prev.deliveryAddress || {}), ...newAddressData } as any };
         }
       });
     } catch (error) {
@@ -425,7 +423,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                         className={inputClass}
                         value={formData.address.street}
                         onChange={e => setFormData({...formData, address: {...formData.address, street: e.target.value}})}
-                        onBlur={() => geocodeAddress(formData.address.street, formData.address.number, formData.address.city, formData.address.state, 'address')}
+                        onBlur={() => geocodeAddress(formData.address.street, formData.address.number, formData.address.city, formData.address.state, formData.address.zipCode, 'address')}
                       />
                     </div>
                     <div>
@@ -434,7 +432,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                         className={inputClass}
                         value={formData.address.number}
                         onChange={e => setFormData({...formData, address: {...formData.address, number: e.target.value}})}
-                        onBlur={() => geocodeAddress(formData.address.street, formData.address.number, formData.address.city, formData.address.state, 'address')}
+                        onBlur={() => geocodeAddress(formData.address.street, formData.address.number, formData.address.city, formData.address.state, formData.address.zipCode, 'address')}
                       />
                     </div>
                     <div className="md:col-span-2">
@@ -480,7 +478,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                     </div>
                     <button
                       type="button"
-                      onClick={() => geocodeAddress(formData.address.street, formData.address.number, formData.address.city, formData.address.state, 'address')}
+                      onClick={() => geocodeAddress(formData.address.street, formData.address.number, formData.address.city, formData.address.state, formData.address.zipCode, 'address')}
                       className="px-4 py-2 bg-white border border-[#ec5b13] text-[#ec5b13] rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-orange-50 transition-all flex items-center justify-center gap-2"
                     >
                       <Globe size={14} /> Forçar Sincronização
@@ -573,7 +571,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                     onChange={e => setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), number: e.target.value} as any})}
                     onBlur={() => {
                       if (formData.deliveryAddress) {
-                        geocodeAddress(formData.deliveryAddress.street, formData.deliveryAddress.number, formData.deliveryAddress.city, formData.deliveryAddress.state, 'deliveryAddress');
+                        geocodeAddress(formData.deliveryAddress.street, formData.deliveryAddress.number, formData.deliveryAddress.city, formData.deliveryAddress.state, formData.deliveryAddress.zipCode, 'deliveryAddress');
                       }
                     }}
                     disabled={!formData.deliveryAddress}
@@ -587,7 +585,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                     onChange={e => setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), street: e.target.value} as any})}
                     onBlur={() => {
                       if (formData.deliveryAddress) {
-                        geocodeAddress(formData.deliveryAddress.street, formData.deliveryAddress.number, formData.deliveryAddress.city, formData.deliveryAddress.state, 'deliveryAddress');
+                        geocodeAddress(formData.deliveryAddress.street, formData.deliveryAddress.number, formData.deliveryAddress.city, formData.deliveryAddress.state, formData.deliveryAddress.zipCode, 'deliveryAddress');
                       }
                     }}
                     disabled={!formData.deliveryAddress}
@@ -642,7 +640,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                   {formData.deliveryAddress && (
                     <button
                       type="button"
-                      onClick={() => geocodeAddress(formData.deliveryAddress!.street, formData.deliveryAddress!.number, formData.deliveryAddress!.city, formData.deliveryAddress!.state, 'deliveryAddress')}
+                      onClick={() => geocodeAddress(formData.deliveryAddress!.street, formData.deliveryAddress!.number, formData.deliveryAddress!.city, formData.deliveryAddress!.state, formData.deliveryAddress!.zipCode, 'deliveryAddress')}
                       className="w-full px-4 py-3 bg-white border border-[#ec5b13] text-[#ec5b13] rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-orange-50 transition-all flex items-center justify-center gap-2"
                     >
                       <Globe size={14} /> Sincronizar Mapa de Entrega
