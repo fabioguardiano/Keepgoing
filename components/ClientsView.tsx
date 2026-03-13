@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Users, Plus, Search, Mail, Phone, MapPin, Trash2, Edit2, ShieldCheck, CreditCard, Globe, ExternalLink, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import { Client } from '../types';
 import { NewClientModal } from './NewClientModal';
@@ -18,6 +18,8 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [sortField, setSortField] = useState<SortField>('code');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 25;
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -28,24 +30,37 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
     }
   };
 
-  const filteredAndSortedClients = clients
-    .filter(c => 
-      String(c.code).includes(searchTerm) ||
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.document.includes(searchTerm) ||
-      c.phone.includes(searchTerm) ||
-      c.cellphone.includes(searchTerm) ||
-      c.address.city.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => {
-      let comparison = 0;
-      if (sortField === 'name') comparison = a.name.localeCompare(b.name);
-      if (sortField === 'code') comparison = (a.code || 0) - (b.code || 0);
-      if (sortField === 'createdAt') comparison = a.createdAt.localeCompare(b.createdAt);
-      if (sortField === 'city') comparison = a.address.city.localeCompare(b.address.city);
-      
-      return sortDirection === 'asc' ? comparison : -comparison;
-    });
+  const filteredAndSortedClients = useMemo(() => {
+    return clients
+      .filter(c => 
+        String(c.code).includes(searchTerm) ||
+        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.document.includes(searchTerm) ||
+        c.phone.includes(searchTerm) ||
+        c.cellphone.includes(searchTerm) ||
+        c.address.city.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      .sort((a, b) => {
+        let comparison = 0;
+        if (sortField === 'name') comparison = a.name.localeCompare(b.name);
+        if (sortField === 'code') comparison = (a.code || 0) - (b.code || 0);
+        if (sortField === 'createdAt') comparison = (a.createdAt || '').localeCompare(b.createdAt || '');
+        if (sortField === 'city') comparison = a.address.city.localeCompare(b.address.city);
+        
+        return sortDirection === 'asc' ? comparison : -comparison;
+      });
+  }, [clients, searchTerm, sortField, sortDirection]);
+
+  // Reset to first page when searching
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const totalPages = Math.ceil(filteredAndSortedClients.length / itemsPerPage);
+  const paginatedClients = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredAndSortedClients.slice(start, start + itemsPerPage);
+  }, [filteredAndSortedClients, currentPage, itemsPerPage]);
 
   const handleEdit = (client: Client) => {
     setEditingClient(client);
@@ -130,7 +145,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {filteredAndSortedClients.map(client => (
+              {paginatedClients.map(client => (
                 <tr key={client.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-6 py-6">
                     <span className="text-sm font-black text-primary bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20 shadow-sm">
@@ -208,6 +223,54 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination UI */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-4">
+            <div className="text-sm text-slate-500 font-medium whitespace-nowrap">
+              Mostrando <span className="font-bold text-slate-700">{((currentPage - 1) * itemsPerPage) + 1}</span> a <span className="font-bold text-slate-700">{Math.min(currentPage * itemsPerPage, filteredAndSortedClients.length)}</span> de <span className="font-bold text-slate-700">{filteredAndSortedClients.length}</span> clientes
+            </div>
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+                type="button"
+              >
+                Anterior
+              </button>
+              <div className="flex items-center gap-1">
+                {[...Array(totalPages)].map((_, i) => {
+                  const page = i + 1;
+                  if (page === 1 || page === totalPages || (page >= currentPage - 2 && page <= currentPage + 2)) {
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-10 h-10 rounded-xl text-sm font-bold transition-all shrink-0 ${currentPage === page ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary/30 hover:text-primary'}`}
+                        type="button"
+                      >
+                        {page}
+                      </button>
+                    );
+                  }
+                  if (page === currentPage - 3 || page === currentPage + 3) {
+                    return <span key={page} className="px-1 text-slate-400" aria-hidden="true">...</span>;
+                  }
+                  return null;
+                })}
+              </div>
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+                type="button"
+              >
+                Próximo
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <NewClientModal 
