@@ -254,8 +254,13 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
               <User size={24} />
             </div>
             <div>
-              <h3 className="text-xl font-black text-slate-800 tracking-tight">
+              <h3 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
                 {editingClient ? 'Editar Cliente' : 'Novo Cadastro de Cliente'}
+                {editingClient?.code && (
+                  <span className="text-[#ec5b13] bg-orange-50 px-2 py-0.5 rounded-lg text-sm">
+                    #{editingClient.code}
+                  </span>
+                )}
               </h3>
               <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-0.5">Módulo CRM Premium</p>
             </div>
