@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Truck, Plus, Search, Mail, Phone, MapPin, Trash2, Edit2, ShieldCheck, ExternalLink, ArrowUpDown, ChevronUp, ChevronDown, Globe, User } from 'lucide-react';
 import { Supplier } from '../types';
 import { NewSupplierModal } from './NewSupplierModal';
@@ -18,6 +18,8 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [sortField, setSortField] = useState<SortField>('tradingName');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 25;
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -28,23 +30,36 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
     }
   };
 
-  const filteredAndSortedSuppliers = suppliers
-    .filter(s => 
-      s.tradingName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.legalName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.document.includes(searchTerm) ||
-      s.contactName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.address.city.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => {
-      let comparison = 0;
-      if (sortField === 'tradingName') comparison = a.tradingName.localeCompare(b.tradingName);
-      if (sortField === 'legalName') comparison = a.legalName.localeCompare(b.legalName);
-      if (sortField === 'city') comparison = a.address.city.localeCompare(b.address.city);
-      if (sortField === 'createdAt') comparison = a.createdAt.localeCompare(b.createdAt);
-      
-      return sortDirection === 'asc' ? comparison : -comparison;
-    });
+  const filteredAndSortedSuppliers = useMemo(() => {
+    return suppliers
+      .filter(s => 
+        s.tradingName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.legalName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.document.includes(searchTerm) ||
+        s.contactName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.address.city.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      .sort((a, b) => {
+        let comparison = 0;
+        if (sortField === 'tradingName') comparison = a.tradingName.localeCompare(b.tradingName);
+        if (sortField === 'legalName') comparison = a.legalName.localeCompare(b.legalName);
+        if (sortField === 'city') comparison = a.address.city.localeCompare(b.address.city);
+        if (sortField === 'createdAt') comparison = (a.createdAt || '').localeCompare(b.createdAt || '');
+        
+        return sortDirection === 'asc' ? comparison : -comparison;
+      });
+  }, [suppliers, searchTerm, sortField, sortDirection]);
+
+  // Reset to first page when searching
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const totalPages = Math.ceil(filteredAndSortedSuppliers.length / itemsPerPage);
+  const paginatedSuppliers = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredAndSortedSuppliers.slice(start, start + itemsPerPage);
+  }, [filteredAndSortedSuppliers, currentPage, itemsPerPage]);
 
   const handleEdit = (supplier: Supplier) => {
     setEditingSupplier(supplier);
@@ -129,7 +144,7 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {filteredAndSortedSuppliers.map(supplier => (
+              {paginatedSuppliers.map(supplier => (
                 <tr key={supplier.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-6 py-6">
                     <div className="flex items-center gap-4">
@@ -201,6 +216,54 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination UI */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-4">
+            <div className="text-sm text-slate-500 font-medium whitespace-nowrap">
+              Mostrando <span className="font-bold text-slate-700">{((currentPage - 1) * itemsPerPage) + 1}</span> a <span className="font-bold text-slate-700">{Math.min(currentPage * itemsPerPage, filteredAndSortedSuppliers.length)}</span> de <span className="font-bold text-slate-700">{filteredAndSortedSuppliers.length}</span> fornecedores
+            </div>
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+                type="button"
+              >
+                Anterior
+              </button>
+              <div className="flex items-center gap-1">
+                {[...Array(totalPages)].map((_, i) => {
+                  const page = i + 1;
+                  if (page === 1 || page === totalPages || (page >= currentPage - 2 && page <= currentPage + 2)) {
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-10 h-10 rounded-xl text-sm font-bold transition-all shrink-0 ${currentPage === page ? 'bg-[#ec5b13] text-white shadow-lg shadow-[#ec5b13]/20' : 'bg-white border border-slate-200 text-slate-600 hover:border-[#ec5b13]/30 hover:text-[#ec5b13]'}`}
+                        type="button"
+                      >
+                        {page}
+                      </button>
+                    );
+                  }
+                  if (page === currentPage - 3 || page === currentPage + 3) {
+                    return <span key={page} className="px-1 text-slate-400" aria-hidden="true">...</span>;
+                  }
+                  return null;
+                })}
+              </div>
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+                type="button"
+              >
+                Próximo
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <NewSupplierModal 
