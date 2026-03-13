@@ -37,7 +37,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const [activeTab, setActiveTab] = useState<'fluxo' | 'vendas' | 'empresa'>('fluxo');
     const [newPhaseName, setNewPhaseName] = useState('');
     const [editingPhase, setEditingPhase] = useState<string | null>(null);
+    const [editingLostReasonIdx, setEditingLostReasonIdx] = useState<number | null>(null);
     const [tempName, setTempName] = useState('');
+    const [tempReasonName, setTempReasonName] = useState('');
 
     const handleUpdateCompany = (field: keyof CompanyInfo, value: string) => {
         onUpdateCompany({ ...companyInfo, [field]: value });
@@ -346,16 +348,55 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         {(companyInfo.lostReasonOptions || []).map((reason, idx) => (
                                             <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl group hover:bg-white hover:border-orange-100 transition-all">
-                                                <span className="text-sm font-bold text-slate-600">{reason}</span>
-                                                <button 
-                                                    onClick={() => {
-                                                        const current = companyInfo.lostReasonOptions || [];
-                                                        onUpdateCompany({ ...companyInfo, lostReasonOptions: current.filter((_, i) => i !== idx) });
-                                                    }}
-                                                    className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
+                                                {editingLostReasonIdx === idx ? (
+                                                    <input
+                                                        autoFocus
+                                                        value={tempReasonName}
+                                                        onChange={(e) => setTempReasonName(e.target.value)}
+                                                        onBlur={() => {
+                                                            if (tempReasonName.trim()) {
+                                                                const current = [...(companyInfo.lostReasonOptions || [])];
+                                                                current[idx] = tempReasonName.trim();
+                                                                onUpdateCompany({ ...companyInfo, lostReasonOptions: current });
+                                                            }
+                                                            setEditingLostReasonIdx(null);
+                                                        }}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') {
+                                                                if (tempReasonName.trim()) {
+                                                                    const current = [...(companyInfo.lostReasonOptions || [])];
+                                                                    current[idx] = tempReasonName.trim();
+                                                                    onUpdateCompany({ ...companyInfo, lostReasonOptions: current });
+                                                                }
+                                                                setEditingLostReasonIdx(null);
+                                                            }
+                                                        }}
+                                                        className="flex-1 bg-white border border-[#ec5b13] rounded-lg px-2 py-1 text-sm font-bold focus:outline-none"
+                                                    />
+                                                ) : (
+                                                    <span className="text-sm font-bold text-slate-600">{reason}</span>
+                                                )}
+                                                
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                                    <button 
+                                                        onClick={() => {
+                                                            setEditingLostReasonIdx(idx);
+                                                            setTempReasonName(reason);
+                                                        }}
+                                                        className="p-1.5 text-slate-300 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
+                                                    >
+                                                        <Edit2 size={14} />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => {
+                                                            const current = companyInfo.lostReasonOptions || [];
+                                                            onUpdateCompany({ ...companyInfo, lostReasonOptions: current.filter((_, i) => i !== idx) });
+                                                        }}
+                                                        className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
