@@ -482,25 +482,32 @@ const App: React.FC = () => {
         const end = Math.min(start + batchSize, data.length);
         const batch = data.slice(start, end);
         
-        const clientsToInsert = batch.map(row => ({
-          name: row.nome || row.name || 'Sem Nome',
-          type: row.tipo || row.type || 'Pessoa Física',
-          document: row.documento || row.document || '',
-          email: row.email || '',
-          phone: row.telefone || row.phone || row.celular || '',
-          cellphone: row.celular || row.phone || '',
-          address: {
-            street: row.rua || row.street || '',
-            number: row.numero || row.number || '',
-            complement: row.complemento || row.complement || '',
-            neighborhood: row.bairro || row.neighborhood || '',
-            city: row.cidade || row.city || '',
-            state: row.estado || row.state || '',
-            zipCode: row.cep || row.zipCode || ''
-          },
-          client_code: row.codigo || row.code || undefined,
-          created_at: new Date().toISOString()
-        }));
+        const clientsToInsert = batch.map(row => {
+          const rawCode = row.codigo || row.code;
+          const parsedCode = (rawCode !== undefined && rawCode !== null && rawCode !== '') 
+            ? Number(rawCode) 
+            : undefined;
+
+          return {
+            name: String(row.nome || row.name || 'Sem Nome'),
+            type: row.tipo || row.type || 'Pessoa Física',
+            document: String(row.documento || row.document || ''),
+            email: String(row.email || ''),
+            phone: String(row.telefone || row.phone || row.celular || ''),
+            cellphone: String(row.celular || row.phone || ''),
+            address: {
+              street: String(row.rua || row.street || ''),
+              number: String(row.numero || row.number || ''),
+              complement: String(row.complemento || row.complement || ''),
+              neighborhood: String(row.bairro || row.neighborhood || ''),
+              city: String(row.cidade || row.city || ''),
+              state: String(row.estado || row.state || ''),
+              zipCode: String(row.cep || row.zipCode || '')
+            },
+            client_code: isNaN(Number(parsedCode)) ? undefined : parsedCode,
+            created_at: new Date().toISOString()
+          };
+        });
 
         const { data: insertedData, error } = await supabase
           .from('clients')
@@ -515,9 +522,17 @@ const App: React.FC = () => {
       }
       
       logActivity('update', `Importou ${data.length} clientes via planilha`, 'bulk_import', 'BATCH');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro na importação em lote:', err);
-      alert('Ocorreu um erro durante a importação. Verifique o console para mais detalhes.');
+      let errorMsg = 'Ocorreu um erro durante a importação.';
+      
+      if (err.message?.includes('column "client_code" does not exist') || err.message?.includes('column c.client_code does not exist')) {
+        errorMsg = 'ERRO: A coluna "client_code" não foi encontrada no seu banco de dados Supabase.\n\nPor favor, execute o comando SQL que te enviei no painel do Supabase para criar essa coluna.';
+      } else if (err.message) {
+        errorMsg += `\n\nDetalhes: ${err.message}`;
+      }
+      
+      alert(errorMsg);
     }
   };
 
