@@ -366,8 +366,8 @@ export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onCl
           {activeTab === 'endereco' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="md:col-span-1 min-w-[140px]">
+                <div className="flex flex-col gap-4">
+                  <div className="w-full md:w-1/3">
                     <label className={labelClass}>CEP {isLoadingCEP && <span className="text-[#ec5b13] animate-pulse lowercase font-normal">(Busca...)</span>}</label>
                     <input 
                       required
@@ -387,7 +387,8 @@ export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onCl
                       }}
                     />
                   </div>
-                  <div className="md:col-span-2">
+
+                  <div>
                     <label className={labelClass}>Logradouro</label>
                     <input 
                       required
@@ -397,24 +398,28 @@ export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onCl
                       onBlur={() => geocodeAddress(formData.address.street, formData.address.number || '', formData.address.city, formData.address.state, formData.address.zipCode)}
                     />
                   </div>
-                  <div>
-                    <label className={labelClass}>Número</label>
-                    <input 
-                      className={inputClass}
-                      value={formData.address.number || ''}
-                      onChange={e => setFormData({...formData, address: {...formData.address, number: e.target.value}})}
-                      onBlur={() => geocodeAddress(formData.address.street, formData.address.number || '', formData.address.city, formData.address.state, formData.address.zipCode)}
-                    />
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="col-span-1">
+                      <label className={labelClass}>Número</label>
+                      <input 
+                        className={inputClass}
+                        value={formData.address.number || ''}
+                        onChange={e => setFormData({...formData, address: {...formData.address, number: e.target.value}})}
+                        onBlur={() => geocodeAddress(formData.address.street, formData.address.number || '', formData.address.city, formData.address.state, formData.address.zipCode)}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className={labelClass}>Complemento</label>
+                      <input 
+                        className={inputClass}
+                        placeholder="Ex: Sala 201..."
+                        value={formData.address.complement || ''}
+                        onChange={e => setFormData({...formData, address: {...formData.address, complement: e.target.value}})}
+                      />
+                    </div>
                   </div>
-                  <div className="md:col-span-2">
-                    <label className={labelClass}>Complemento</label>
-                    <input 
-                      className={inputClass}
-                      placeholder="Ex: Sala 201..."
-                      value={formData.address.complement || ''}
-                      onChange={e => setFormData({...formData, address: {...formData.address, complement: e.target.value}})}
-                    />
-                  </div>
+
                   <div>
                     <label className={labelClass}>Bairro</label>
                     <input 
@@ -424,24 +429,27 @@ export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onCl
                       onChange={e => setFormData({...formData, address: {...formData.address, neighborhood: e.target.value}})}
                     />
                   </div>
-                  <div className="md:col-span-2">
-                    <label className={labelClass}>Cidade</label>
-                    <input 
-                      required
-                      className={inputClass}
-                      value={formData.address.city}
-                      onChange={e => setFormData({...formData, address: {...formData.address, city: e.target.value}})}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>UF</label>
-                    <input 
-                      required
-                      maxLength={2}
-                      className={inputClass}
-                      value={formData.address.state}
-                      onChange={e => setFormData({...formData, address: {...formData.address, state: e.target.value.toUpperCase()}})}
-                    />
+
+                  <div className="grid grid-cols-5 gap-4">
+                    <div className="col-span-4">
+                      <label className={labelClass}>Cidade</label>
+                      <input 
+                        required
+                        className={inputClass}
+                        value={formData.address.city}
+                        onChange={e => setFormData({...formData, address: {...formData.address, city: e.target.value}})}
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <label className={labelClass}>UF</label>
+                      <input 
+                        required
+                        maxLength={2}
+                        className={inputClass}
+                        value={formData.address.state}
+                        onChange={e => setFormData({...formData, address: {...formData.address, state: e.target.value.toUpperCase()}})}
+                      />
+                    </div>
                   </div>
                 </div>
 
