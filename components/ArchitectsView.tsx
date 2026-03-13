@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Briefcase, Plus, Search, Mail, Phone, MapPin, Trash2, Edit2, ShieldCheck, ExternalLink, ArrowUpDown, ChevronUp, ChevronDown, Globe, User } from 'lucide-react';
 import { Architect } from '../types';
 import { NewArchitectModal } from './NewArchitectModal';
@@ -9,7 +9,7 @@ interface ArchitectsViewProps {
   onDeleteArchitect: (id: string) => void;
 }
 
-type SortField = 'legalName' | 'tradingName' | 'city' | 'createdAt';
+type SortField = 'legalName' | 'tradingName' | 'city' | 'createdAt' | 'code';
 type SortDirection = 'asc' | 'desc';
 
 export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSaveArchitect, onDeleteArchitect }) => {
@@ -18,6 +18,8 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
   const [editingArchitect, setEditingArchitect] = useState<Architect | null>(null);
   const [sortField, setSortField] = useState<SortField>('tradingName');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 25;
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -28,23 +30,37 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
     }
   };
 
-  const filteredAndSortedArchitects = architects
-    .filter(a => 
-      a.tradingName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.legalName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.document.includes(searchTerm) ||
-      a.contactName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.address.city.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => {
-      let comparison = 0;
-      if (sortField === 'tradingName') comparison = a.tradingName.localeCompare(b.tradingName);
-      if (sortField === 'legalName') comparison = a.legalName.localeCompare(b.legalName);
-      if (sortField === 'city') comparison = a.address.city.localeCompare(b.address.city);
-      if (sortField === 'createdAt') comparison = a.createdAt.localeCompare(b.createdAt);
-      
-      return sortDirection === 'asc' ? comparison : -comparison;
-    });
+  const filteredAndSortedArchitects = useMemo(() => {
+    return architects
+      .filter(a => 
+        a.tradingName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        a.legalName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        a.document.includes(searchTerm) ||
+        a.contactName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        a.address.city.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      .sort((a, b) => {
+        let comparison = 0;
+        if (sortField === 'tradingName') comparison = a.tradingName.localeCompare(b.tradingName);
+        if (sortField === 'legalName') comparison = a.legalName.localeCompare(b.legalName);
+        if (sortField === 'city') comparison = a.address.city.localeCompare(b.address.city);
+        if (sortField === 'createdAt') comparison = (a.createdAt || '').localeCompare(b.createdAt || '');
+        if (sortField === 'code') comparison = (a.code || 0) - (b.code || 0);
+        
+        return sortDirection === 'asc' ? comparison : -comparison;
+      });
+  }, [architects, searchTerm, sortField, sortDirection]);
+
+  // Reset to first page when searching
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const totalPages = Math.ceil(filteredAndSortedArchitects.length / itemsPerPage);
+  const paginatedArchitects = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredAndSortedArchitects.slice(start, start + itemsPerPage);
+  }, [filteredAndSortedArchitects, currentPage, itemsPerPage]);
 
   const handleEdit = (architect: Architect) => {
     setEditingArchitect(architect);
@@ -100,6 +116,11 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
+                <th onClick={() => handleSort('code')} className="px-6 py-4 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    Cód <SortIcon field="code" />
+                  </div>
+                </th>
                 <th onClick={() => handleSort('tradingName')} className="px-6 py-4 cursor-pointer group hover:bg-slate-100/50 transition-colors">
                   <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
                     Escritório / Fantasia <SortIcon field="tradingName" />
@@ -129,8 +150,13 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {filteredAndSortedArchitects.map(architect => (
+              {paginatedArchitects.map(architect => (
                 <tr key={architect.id} className="hover:bg-slate-50/50 transition-colors group">
+                  <td className="px-6 py-4">
+                    <span className="text-sm font-black text-[#ec5b13] bg-[#ec5b13]/10 px-3 py-1.5 rounded-xl border border-[#ec5b13]/20 shadow-sm">
+                      #{String(architect.code || 0).padStart(3, '0')}
+                    </span>
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${architect.type === 'Pessoa Jurídica' ? 'bg-indigo-50 text-indigo-600' : 'bg-orange-50 text-[#ec5b13]'}`}>
@@ -138,7 +164,6 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
                       </div>
                       <div>
                         <div className="font-bold text-slate-700 leading-tight">{architect.tradingName}</div>
-                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">#{architect.id.slice(-4).toUpperCase()}</div>
                       </div>
                     </div>
                   </td>
@@ -187,7 +212,7 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
               ))}
               {filteredAndSortedArchitects.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
+                  <td colSpan={7} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center opacity-30">
                       <Search size={48} className="mb-2" />
                       <p className="font-bold text-slate-400">Nenhum arquiteto encontrado para sua busca</p>
@@ -198,6 +223,54 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination UI */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-4">
+            <div className="text-sm text-slate-500 font-medium whitespace-nowrap">
+              Mostrando <span className="font-bold text-slate-700">{((currentPage - 1) * itemsPerPage) + 1}</span> a <span className="font-bold text-slate-700">{Math.min(currentPage * itemsPerPage, filteredAndSortedArchitects.length)}</span> de <span className="font-bold text-slate-700">{filteredAndSortedArchitects.length}</span> arquitetos
+            </div>
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+                type="button"
+              >
+                Anterior
+              </button>
+              <div className="flex items-center gap-1">
+                {[...Array(totalPages)].map((_, i) => {
+                  const page = i + 1;
+                  if (page === 1 || page === totalPages || (page >= currentPage - 2 && page <= currentPage + 2)) {
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-10 h-10 rounded-xl text-sm font-bold transition-all shrink-0 ${currentPage === page ? 'bg-[#ec5b13] text-white shadow-lg shadow-[#ec5b13]/20' : 'bg-white border border-slate-200 text-slate-600 hover:border-[#ec5b13]/30 hover:text-[#ec5b13]'}`}
+                        type="button"
+                      >
+                        {page}
+                      </button>
+                    );
+                  }
+                  if (page === currentPage - 3 || page === currentPage + 3) {
+                    return <span key={page} className="px-1 text-slate-400" aria-hidden="true">...</span>;
+                  }
+                  return null;
+                })}
+              </div>
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+                type="button"
+              >
+                Próximo
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <NewArchitectModal 

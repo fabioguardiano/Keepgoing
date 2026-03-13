@@ -9,7 +9,7 @@ interface SuppliersViewProps {
   onDeleteSupplier: (id: string) => void;
 }
 
-type SortField = 'legalName' | 'tradingName' | 'city' | 'createdAt';
+type SortField = 'legalName' | 'tradingName' | 'city' | 'createdAt' | 'code';
 type SortDirection = 'asc' | 'desc';
 
 export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveSupplier, onDeleteSupplier }) => {
@@ -45,6 +45,7 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
         if (sortField === 'legalName') comparison = a.legalName.localeCompare(b.legalName);
         if (sortField === 'city') comparison = a.address.city.localeCompare(b.address.city);
         if (sortField === 'createdAt') comparison = (a.createdAt || '').localeCompare(b.createdAt || '');
+        if (sortField === 'code') comparison = (a.code || 0) - (b.code || 0);
         
         return sortDirection === 'asc' ? comparison : -comparison;
       });
@@ -115,6 +116,11 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
+                <th onClick={() => handleSort('code')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                  <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">
+                    Cód <SortIcon field="code" />
+                  </div>
+                </th>
                 <th onClick={() => handleSort('tradingName')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
                   <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">
                     Fornecedor / Fantasia <SortIcon field="tradingName" />
@@ -147,13 +153,17 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
               {paginatedSuppliers.map(supplier => (
                 <tr key={supplier.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-6 py-6">
+                    <span className="text-sm font-black text-[#ec5b13] bg-[#ec5b13]/10 px-3 py-1.5 rounded-xl border border-[#ec5b13]/20 shadow-sm">
+                      #{String(supplier.code || 0).padStart(3, '0')}
+                    </span>
+                  </td>
+                  <td className="px-6 py-6">
                     <div className="flex items-center gap-4">
                       <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border ${supplier.type === 'Pessoa Jurídica' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-orange-50 text-[#ec5b13] border-orange-100'}`}>
                         <Truck size={20} />
                       </div>
                       <div>
                         <div className="text-base font-black text-slate-800 leading-tight">{supplier.tradingName}</div>
-                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">#{supplier.id.slice(-4).toUpperCase()}</div>
                       </div>
                     </div>
                   </td>
@@ -205,7 +215,7 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
               ))}
               {filteredAndSortedSuppliers.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
+                  <td colSpan={7} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center opacity-30">
                       <Search size={48} className="mb-2" />
                       <p className="font-bold text-slate-400">Nenhum fornecedor encontrado para sua busca</p>

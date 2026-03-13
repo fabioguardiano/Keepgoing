@@ -183,6 +183,7 @@ export interface Supplier {
   cellphone?: string;
   website?: string;
   observations?: string;
+  code?: number;
   createdAt: string;
   address: {
     street: string;
@@ -210,6 +211,7 @@ export interface Architect {
   cellphone?: string;
   createdAt: string;
   observations?: string;
+  code?: number;
   address: {
     street: string;
     number?: string;

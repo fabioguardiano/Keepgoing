@@ -731,14 +731,91 @@ const App: React.FC = () => {
     }
   };
   
-  const [architects, setArchitects] = useState<Architect[]>(() => {
+  const [architects, setArchitects] = useState<Architect[]>([]);
+  const [loadingArchitects, setLoadingArchitects] = useState(true);
+
+  // Fetch initial data from Supabase for Architects
+  useEffect(() => {
+    const fetchArchitects = async () => {
+      setLoadingArchitects(true);
+      try {
+        const { data, error } = await supabase
+          .from('architects')
+          .select('*')
+          .order('trading_name');
+        
+        if (error) throw error;
+        if (data) {
+          const mapped = data.map(a => ({
+            ...a,
+            legalName: a.legal_name,
+            tradingName: a.trading_name,
+            contactName: a.contact_name,
+            rgInsc: a.rg_insc,
+            cellphone: a.cellphone,
+            observations: a.observations,
+            code: a.architect_code,
+            createdAt: a.created_at
+          }));
+          setArchitects(mapped as Architect[]);
+        }
+      } catch (err) {
+        console.error('Erro ao carregar arquitetos do Supabase:', err);
+        const saved = localStorage.getItem('marmo_architects');
+        if (saved) setArchitects(JSON.parse(saved));
+      } finally {
+        setLoadingArchitects(false);
+      }
+    };
+
+    fetchArchitects();
+  }, []);
+
+  const handleSaveArchitect = async (a: Architect) => {
     try {
-      const saved = localStorage.getItem('marmo_architects');
-      return saved ? (JSON.parse(saved) || []) : [];
-    } catch {
-      return [];
+      const { data, error } = await supabase
+        .from('architects')
+        .upsert({
+          id: a.id.length > 20 ? a.id : undefined,
+          type: a.type,
+          document: a.document,
+          legal_name: a.legalName,
+          trading_name: a.tradingName,
+          contact_name: a.contactName,
+          email: a.email,
+          phone: a.phone,
+          cellphone: a.cellphone,
+          address: a.address,
+          observations: a.observations,
+          rg_insc: a.rgInsc,
+          architect_code: a.code
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      const saved = { 
+        ...data, 
+        legalName: data.legal_name, 
+        tradingName: data.trading_name, 
+        contactName: data.contact_name,
+        rgInsc: data.rg_insc,
+        cellphone: data.cellphone,
+        observations: data.observations,
+        code: data.architect_code,
+        createdAt: data.created_at
+      } as Architect;
+      
+      setArchitects(prev => {
+        const exists = prev.find(x => x.id === a.id || x.id === saved.id);
+        if (exists) return prev.map(x => (x.id === a.id || x.id === saved.id) ? saved : x);
+        return [saved, ...prev];
+      });
+    } catch (err) {
+      console.error('Erro ao salvar arquiteto:', err);
+      alert('Erro ao salvar arquiteto no banco de dados.');
     }
-  });
+  };
 
   const [sales, setSales] = useState<SalesOrder[]>([]);
   const [loadingSales, setLoadingSales] = useState(true);
@@ -937,6 +1014,7 @@ const App: React.FC = () => {
             rgInsc: s.rg_insc,
             cellphone: s.cellphone,
             observations: s.observations,
+            code: s.supplier_code,
             createdAt: s.created_at
           }));
           setSuppliers(mapped as Supplier[]);
@@ -970,7 +1048,8 @@ const App: React.FC = () => {
           address: s.address,
           rg_insc: s.rgInsc,
           cellphone: s.cellphone,
-          observations: s.observations
+          observations: s.observations,
+          supplier_code: s.code
         })
         .select()
         .single();
@@ -984,6 +1063,7 @@ const App: React.FC = () => {
         rgInsc: data.rg_insc,
         cellphone: data.cellphone,
         observations: data.observations,
+        code: data.supplier_code,
         createdAt: data.created_at
       } as Supplier;
       
@@ -1579,7 +1659,16 @@ const App: React.FC = () => {
           />
         );
       case 'Arquitetos':
-        return <ArchitectsView architects={architects} onSaveArchitect={(a) => setArchitects(prev => prev.find(item => item.id === a.id) ? prev.map(item => item.id === a.id ? a : item) : [a, ...prev])} onDeleteArchitect={(id) => setArchitects(prev => prev.filter(item => item.id !== id))} />;
+        return (
+          <ArchitectsView 
+            architects={architects} 
+            onSaveArchitect={handleSaveArchitect} 
+            onDeleteArchitect={async (id) => {
+              const { error } = await supabase.from('architects').delete().eq('id', id);
+              if (!error) setArchitects(prev => prev.filter(x => x.id !== id));
+            }} 
+          />
+        );
       case 'Canais de Vendas':
         return <SalesChannelsView channels={salesChannels} onSaveChannel={(c) => setSalesChannels(prev => prev.find(x => x.id === c.id) ? prev.map(x => x.id === c.id ? c : x) : [...prev, c])} onDeleteChannel={(id) => setSalesChannels(prev => prev.filter(x => x.id !== id))} />;
       case 'Marcas':
