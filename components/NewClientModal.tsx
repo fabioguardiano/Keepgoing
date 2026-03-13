@@ -87,6 +87,8 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
     if (!city || !street) return;
     
     setIsGeocoding(true);
+    console.log(`Buscando coordenadas para: ${street}, ${number}, ${city}, ${state}`);
+    
     try {
       // Improved query for better precision
       const addressQuery = `${street}${number ? `, ${number}` : ''}, ${city}, ${state}, Brasil`;
@@ -100,8 +102,9 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
       
       let finalData = data && data[0] ? data[0] : null;
 
-      // Fallback: search without number if precise search fails
+      // Fallback 1: search without number if precise search fails
       if (!finalData && number) {
+        console.log('Tentando fallback sem número...');
         const fallbackQuery = `${street}, ${city}, ${state}, Brasil`;
         const fallbackResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fallbackQuery)}&limit=1`, {
           headers: {
@@ -115,9 +118,30 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
         }
       }
 
+      // Fallback 2: search only for street part if it looks truncated (less than 5 chars or ending in space/incomplete)
+      if (!finalData && street.length > 5) {
+        console.log('Tentando fallback parcial da rua...');
+        const streetParts = street.split(' ');
+        if (streetParts.length > 1) {
+          const partialStreet = streetParts.slice(0, -1).join(' ');
+          const partialQuery = `${partialStreet}, ${city}, ${state}, Brasil`;
+          const partialRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(partialQuery)}&limit=1`, {
+            headers: {
+              'Accept-Language': 'pt-BR,pt;q=0.9',
+              'User-Agent': 'KeepGoing-ERP/1.0'
+            }
+          });
+          const partialData = await partialRes.json();
+          if (partialData && partialData[0]) {
+            finalData = partialData[0];
+          }
+        }
+      }
+
       if (finalData) {
         const lat = parseFloat(finalData.lat);
         const lng = parseFloat(finalData.lon);
+        console.log('Localização encontrada:', lat, lng);
         
         if (fieldType === 'address') {
           setFormData(prev => ({
@@ -130,6 +154,8 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
             deliveryAddress: { ...(prev.deliveryAddress || {}), lat, lng } as any
           }));
         }
+      } else {
+        console.warn('Nenhuma localização encontrada para o endereço informado.');
       }
     } catch (error) {
       console.error('Erro na geocodificação:', error);
@@ -447,10 +473,20 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 italic text-[11px] text-slate-500">
-                    <MapPin size={16} className="text-[#ec5b13] shrink-0" />
-                    <p>O mapa abaixo sincroniza automaticamente com o endereço digitado para facilitar a logística de entrega.</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 italic text-[11px] text-slate-500 flex-1">
+                      <MapPin size={16} className="text-[#ec5b13] shrink-0" />
+                      <p>O mapa ao lado sincroniza automaticamente com o endereço digitado.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => geocodeAddress(formData.address.street, formData.address.number, formData.address.city, formData.address.state, 'address')}
+                      className="px-4 py-2 bg-white border border-[#ec5b13] text-[#ec5b13] rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-orange-50 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Globe size={14} /> Forçar Sincronização
+                    </button>
                   </div>
+
                 </div>
 
                 <div className="h-[400px] rounded-[24px] overflow-hidden border border-slate-200 shadow-inner relative group bg-slate-100">
@@ -597,11 +633,21 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                   <label className={labelClass}>Ponto de Referência</label>
                   <textarea 
                     rows={3}
-                    className={`${inputClass} resize-none`}
+                    className={`${inputClass} resize-none mb-4`}
                     value={formData.deliveryAddress?.referencePoint || ''}
                     onChange={e => setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), referencePoint: e.target.value} as any})}
                     disabled={!formData.deliveryAddress}
                   />
+                  
+                  {formData.deliveryAddress && (
+                    <button
+                      type="button"
+                      onClick={() => geocodeAddress(formData.deliveryAddress!.street, formData.deliveryAddress!.number, formData.deliveryAddress!.city, formData.deliveryAddress!.state, 'deliveryAddress')}
+                      className="w-full px-4 py-3 bg-white border border-[#ec5b13] text-[#ec5b13] rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-orange-50 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Globe size={14} /> Sincronizar Mapa de Entrega
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
