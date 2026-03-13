@@ -73,19 +73,51 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
     }
   }, [editingClient, isOpen]);
 
+  // Automatic geocoding for existing addresses without coordinates
+  useEffect(() => {
+    if (isOpen && activeTab === 'endereco' && formData.address.street && (!formData.address.lat || !formData.address.lng)) {
+      geocodeAddress(formData.address.street, formData.address.number, formData.address.city, formData.address.state, 'address');
+    }
+    if (isOpen && activeTab === 'entrega' && formData.deliveryAddress?.street && (!formData.deliveryAddress.lat || !formData.deliveryAddress.lng)) {
+      geocodeAddress(formData.deliveryAddress.street, formData.deliveryAddress.number, formData.deliveryAddress.city, formData.deliveryAddress.state, 'deliveryAddress');
+    }
+  }, [activeTab, isOpen, formData.address.street, formData.deliveryAddress?.street]);
+
   const geocodeAddress = async (street: string, number: string, city: string, state: string, fieldType: 'address' | 'deliveryAddress') => {
     if (!city || !street) return;
     
     setIsGeocoding(true);
     try {
       // Improved query for better precision
-      const addressQuery = `${street}, ${number}, ${city}, ${state}, Brasil`;
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressQuery)}&limit=1`);
+      const addressQuery = `${street}${number ? `, ${number}` : ''}, ${city}, ${state}, Brasil`;
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressQuery)}&limit=1`, {
+        headers: {
+          'Accept-Language': 'pt-BR,pt;q=0.9',
+          'User-Agent': 'KeepGoing-ERP/1.0'
+        }
+      });
       const data = await response.json();
       
-      if (data && data[0]) {
-        const lat = parseFloat(data[0].lat);
-        const lng = parseFloat(data[0].lon);
+      let finalData = data && data[0] ? data[0] : null;
+
+      // Fallback: search without number if precise search fails
+      if (!finalData && number) {
+        const fallbackQuery = `${street}, ${city}, ${state}, Brasil`;
+        const fallbackResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fallbackQuery)}&limit=1`, {
+          headers: {
+            'Accept-Language': 'pt-BR,pt;q=0.9',
+            'User-Agent': 'KeepGoing-ERP/1.0'
+          }
+        });
+        const fallbackData = await fallbackResponse.json();
+        if (fallbackData && fallbackData[0]) {
+          finalData = fallbackData[0];
+        }
+      }
+
+      if (finalData) {
+        const lat = parseFloat(finalData.lat);
+        const lng = parseFloat(finalData.lon);
         
         if (fieldType === 'address') {
           setFormData(prev => ({
