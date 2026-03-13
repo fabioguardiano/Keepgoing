@@ -416,14 +416,29 @@ const App: React.FC = () => {
     const fetchClients = async () => {
       setLoadingClients(true);
       try {
-        const { data, error } = await supabase
-          .from('clients') // Nota: Tabela clients não estava no SQL inicial, vou adicioná-la se necessário ou usar JSONB. 
-          // Ajuste: Vou usar a tabela 'clients' (adicionando ao SQL se faltar)
-          .select('*')
-          .order('name');
-        
-        if (error) throw error;
-        const mapped = data.map(c => ({
+        let allClients: any[] = [];
+        let from = 0;
+        const batchSize = 1000;
+        let hasMore = true;
+
+        while (hasMore) {
+          const { data, error } = await supabase
+            .from('clients')
+            .select('*')
+            .order('name')
+            .range(from, from + batchSize - 1);
+          
+          if (error) throw error;
+          if (data && data.length > 0) {
+            allClients = [...allClients, ...data];
+            from += batchSize;
+            if (data.length < batchSize) hasMore = false;
+          } else {
+            hasMore = false;
+          }
+        }
+
+        const mapped = allClients.map(c => ({
           ...c,
           code: c.client_code
         }));
