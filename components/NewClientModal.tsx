@@ -566,18 +566,9 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 italic text-[11px] text-slate-500 flex-1">
-                      <MapPin size={16} className="text-[#ec5b13] shrink-0" />
-                      <p>O mapa ao lado sincroniza automaticamente com o endereço digitado.</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => geocodeAddress(formData.address.street, formData.address.number, formData.address.city, formData.address.state, formData.address.zipCode, 'address')}
-                      className="px-4 py-2 bg-white border border-[#ec5b13] text-[#ec5b13] rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-orange-50 transition-all flex items-center justify-center gap-2"
-                    >
-                      <Globe size={14} /> Forçar Sincronização
-                    </button>
+                  <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 italic text-[11px] text-slate-500 w-full">
+                    <MapPin size={16} className="text-[#ec5b13] shrink-0" />
+                    <p>O mapa ao lado sincroniza automaticamente com o endereço digitado.</p>
                   </div>
 
                 </div>
@@ -732,15 +723,6 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                     disabled={!formData.deliveryAddress}
                   />
                   
-                  {formData.deliveryAddress && (
-                    <button
-                      type="button"
-                      onClick={() => geocodeAddress(formData.deliveryAddress!.street, formData.deliveryAddress!.number, formData.deliveryAddress!.city, formData.deliveryAddress!.state, formData.deliveryAddress!.zipCode, 'deliveryAddress')}
-                      className="w-full px-4 py-3 bg-white border border-[#ec5b13] text-[#ec5b13] rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-orange-50 transition-all flex items-center justify-center gap-2"
-                    >
-                      <Globe size={14} /> Sincronizar Mapa de Entrega
-                    </button>
-                  )}
                 </div>
               </div>
             </div>
