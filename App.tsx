@@ -469,7 +469,8 @@ const App: React.FC = () => {
           cellphone: c.cellphone,
           birthDate: c.birth_date,
           sellerName: c.seller_name,
-          useSpecialTable: c.use_special_table
+          useSpecialTable: c.use_special_table,
+          createdAt: c.created_at
         }));
         setClients(mapped as Client[]);
       } catch (err) {
@@ -518,7 +519,8 @@ const App: React.FC = () => {
           cellphone: (saved as any).cellphone,
           birthDate: (saved as any).birth_date,
           sellerName: (saved as any).seller_name,
-          useSpecialTable: (saved as any).use_special_table
+          useSpecialTable: (saved as any).use_special_table,
+          createdAt: (saved as any).created_at
         };
         if (exists) return prev.map(x => (x.id === c.id || x.id === mappedSaved.id) ? mappedSaved : x);
         return [mappedSaved, ...prev];

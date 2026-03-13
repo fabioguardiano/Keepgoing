@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, UserCheck, MapPin, Phone, Mail, Globe, ShieldCheck, Truck, MessageSquare, Plus } from 'lucide-react';
 import { Supplier } from '../types';
-import { formatCPF, formatCNPJ, validateDocument } from '../utils/documentValidation';
+import { formatCPF, formatCNPJ, validateDocument, formatPhone } from '../utils/documentValidation';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -489,7 +489,8 @@ export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onCl
                   <input 
                     className={inputClass}
                     value={formData.phone}
-                    onChange={e => setFormData({...formData, phone: e.target.value})}
+                    onChange={e => setFormData({...formData, phone: formatPhone(e.target.value)})}
+                    placeholder="(00) 0000-0000 ou +00..."
                   />
                 </div>
                 <div>
@@ -497,7 +498,8 @@ export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onCl
                   <input 
                     className={inputClass}
                     value={formData.cellphone || ''}
-                    onChange={e => setFormData({...formData, cellphone: e.target.value})}
+                    onChange={e => setFormData({...formData, cellphone: formatPhone(e.target.value)})}
+                    placeholder="(00) 00000-0000 ou +00..."
                   />
                 </div>
                 <div className="md:col-span-2">
