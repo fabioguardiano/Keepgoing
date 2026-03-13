@@ -209,6 +209,7 @@ export interface Architect {
   phone: string;
   cellphone?: string;
   createdAt: string;
+  observations?: string;
   address: {
     street: string;
     number?: string;

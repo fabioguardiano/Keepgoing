@@ -44,7 +44,8 @@ export const NewArchitectModal: React.FC<NewArchitectModalProps> = ({ isOpen, on
       city: '',
       state: '',
       zipCode: ''
-    }
+    },
+    observations: ''
   });
 
   const [activeTab, setActiveTab] = useState<'geral' | 'endereco' | 'extras'>('geral');
@@ -71,7 +72,8 @@ export const NewArchitectModal: React.FC<NewArchitectModalProps> = ({ isOpen, on
           city: '',
           state: '',
           zipCode: ''
-        }
+        },
+        observations: ''
       });
     }
   }, [editingArchitect, isOpen]);
@@ -167,7 +169,7 @@ export const NewArchitectModal: React.FC<NewArchitectModalProps> = ({ isOpen, on
           </button>
         </div>
 
-        <div className="px-8 flex border-b border-slate-100">
+        <div className="px-8 flex gap-8 border-b border-slate-100 overflow-x-auto scrollbar-hide">
           {[
             { id: 'geral', label: 'Cadastro', icon: UserCheck },
             { id: 'endereco', label: 'Localização', icon: MapPin },
