@@ -464,7 +464,12 @@ const App: React.FC = () => {
 
         const mapped = allClients.map(c => ({
           ...c,
-          code: c.client_code
+          code: c.client_code,
+          rgInsc: c.rg_insc,
+          cellphone: c.cellphone,
+          birthDate: c.birth_date,
+          sellerName: c.seller_name,
+          useSpecialTable: c.use_special_table
         }));
         setClients(mapped as Client[]);
       } catch (err) {
@@ -491,7 +496,12 @@ const App: React.FC = () => {
           email: c.email,
           phone: c.phone,
           address: c.address,
-          client_code: c.code
+          client_code: c.code,
+          rg_insc: c.rgInsc,
+          cellphone: c.cellphone,
+          birth_date: c.birthDate,
+          seller_name: c.sellerName,
+          use_special_table: c.useSpecialTable
         })
         .select()
         .single();
@@ -501,7 +511,15 @@ const App: React.FC = () => {
       
       setClients(prev => {
         const exists = prev.find(x => x.id === c.id || (saved.id && x.id === saved.id));
-        const mappedSaved = { ...saved, code: (saved as any).client_code };
+        const mappedSaved = { 
+          ...saved, 
+          code: (saved as any).client_code,
+          rgInsc: (saved as any).rg_insc,
+          cellphone: (saved as any).cellphone,
+          birthDate: (saved as any).birth_date,
+          sellerName: (saved as any).seller_name,
+          useSpecialTable: (saved as any).use_special_table
+        };
         if (exists) return prev.map(x => (x.id === c.id || x.id === mappedSaved.id) ? mappedSaved : x);
         return [mappedSaved, ...prev];
       });
