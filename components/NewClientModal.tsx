@@ -492,11 +492,12 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="md:col-span-1 min-w-[140px]">
+                  <div className="grid grid-cols-6 gap-4">
+                    {/* Linha 1 - CEP */}
+                    <div className="col-span-6">
                       <label className={labelClass}>CEP {isLoadingCEP && <span className="text-[#ec5b13] animate-pulse font-normal lowercase">(Busca...)</span>}</label>
                       <input 
-                        className={inputClass}
+                        className="w-full md:w-1/3 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#ec5b13]/20 transition-all disabled:opacity-50"
                         placeholder="00000-000"
                         maxLength={9}
                         value={formData.address.zipCode}
@@ -512,7 +513,9 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                         }}
                       />
                     </div>
-                    <div className="md:col-span-2">
+
+                    {/* Linha 2 - Endereço - Número */}
+                    <div className="col-span-4">
                       <label className={labelClass}>Logradouro</label>
                       <input 
                         className={inputClass}
@@ -521,7 +524,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                         onBlur={() => geocodeAddress(formData.address.street, formData.address.number, formData.address.city, formData.address.state, formData.address.zipCode, 'address')}
                       />
                     </div>
-                    <div>
+                    <div className="col-span-2">
                       <label className={labelClass}>Número</label>
                       <input 
                         className={inputClass}
@@ -530,7 +533,9 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                         onBlur={() => geocodeAddress(formData.address.street, formData.address.number, formData.address.city, formData.address.state, formData.address.zipCode, 'address')}
                       />
                     </div>
-                    <div className="md:col-span-2">
+
+                    {/* Linha 3 - Complemento */}
+                    <div className="col-span-6">
                       <label className={labelClass}>Complemento</label>
                       <input 
                         className={inputClass}
@@ -539,7 +544,9 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                         onChange={e => setFormData({...formData, address: {...formData.address, complement: e.target.value}})}
                       />
                     </div>
-                    <div className="md:col-span-3">
+
+                    {/* Linha 4 - Bairro */}
+                    <div className="col-span-6">
                       <label className={labelClass}>Bairro</label>
                       <input 
                         className={inputClass}
@@ -547,7 +554,9 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                         onChange={e => setFormData({...formData, address: {...formData.address, neighborhood: e.target.value}})}
                       />
                     </div>
-                    <div className="md:col-span-2">
+
+                    {/* Linha 5 - Cidade - UF */}
+                    <div className="col-span-4">
                       <label className={labelClass}>Cidade</label>
                       <input 
                         className={inputClass}
@@ -555,7 +564,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                         onChange={e => setFormData({...formData, address: {...formData.address, city: e.target.value}})}
                       />
                     </div>
-                    <div className="md:col-span-1">
+                    <div className="col-span-2">
                       <label className={labelClass}>UF</label>
                       <input 
                         maxLength={2}
@@ -570,7 +579,6 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                     <MapPin size={16} className="text-[#ec5b13] shrink-0" />
                     <p>O mapa ao lado sincroniza automaticamente com o endereço digitado.</p>
                   </div>
-
                 </div>
 
                 <div className="h-[400px] rounded-[24px] overflow-hidden border border-slate-200 shadow-inner relative group bg-slate-100">
@@ -633,11 +641,12 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 opacity-80">
-                <div className="md:col-span-1">
+              <div className="grid grid-cols-6 gap-6 opacity-80">
+                {/* Linha 1 - CEP */}
+                <div className="col-span-6">
                   <label className={labelClass}>CEP Entrega</label>
                   <input 
-                    className={inputClass}
+                    className="w-full md:w-1/3 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#ec5b13]/20 transition-all disabled:opacity-50"
                     value={formData.deliveryAddress?.zipCode || ''}
                     onChange={e => {
                       const val = e.target.value;
@@ -649,21 +658,9 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                     disabled={!formData.deliveryAddress}
                   />
                 </div>
-                 <div className="md:col-span-1">
-                  <label className={labelClass}>Número</label>
-                  <input 
-                    className={inputClass}
-                    value={formData.deliveryAddress?.number || ''}
-                    onChange={e => setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), number: e.target.value} as any})}
-                    onBlur={() => {
-                      if (formData.deliveryAddress) {
-                        geocodeAddress(formData.deliveryAddress.street, formData.deliveryAddress.number, formData.deliveryAddress.city, formData.deliveryAddress.state, formData.deliveryAddress.zipCode, 'deliveryAddress');
-                      }
-                    }}
-                    disabled={!formData.deliveryAddress}
-                  />
-                </div>
-                <div className="md:col-span-2">
+
+                {/* Linha 2 - Endereço - Número */}
+                <div className="col-span-4">
                   <label className={labelClass}>Rua / Av. Entrega</label>
                   <input 
                     className={inputClass}
@@ -677,7 +674,23 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                     disabled={!formData.deliveryAddress}
                   />
                 </div>
-                <div className="md:col-span-2">
+                <div className="col-span-2">
+                  <label className={labelClass}>Número</label>
+                  <input 
+                    className={inputClass}
+                    value={formData.deliveryAddress?.number || ''}
+                    onChange={e => setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), number: e.target.value} as any})}
+                    onBlur={() => {
+                      if (formData.deliveryAddress) {
+                        geocodeAddress(formData.deliveryAddress.street, formData.deliveryAddress.number, formData.deliveryAddress.city, formData.deliveryAddress.state, formData.deliveryAddress.zipCode, 'deliveryAddress');
+                      }
+                    }}
+                    disabled={!formData.deliveryAddress}
+                  />
+                </div>
+
+                {/* Linha 3 - Complemento */}
+                <div className="col-span-6">
                   <label className={labelClass}>Complemento Entrega</label>
                   <input 
                     className={inputClass}
@@ -686,7 +699,9 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                     disabled={!formData.deliveryAddress}
                   />
                 </div>
-                <div className="md:col-span-2">
+
+                {/* Linha 4 - Bairro */}
+                <div className="col-span-6">
                   <label className={labelClass}>Bairro</label>
                   <input 
                     className={inputClass}
@@ -695,25 +710,30 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                     disabled={!formData.deliveryAddress}
                   />
                 </div>
-                <div className="md:col-span-2">
-                  <label className={labelClass}>Cidade / UF</label>
-                  <div className="flex gap-2">
-                    <input 
-                      className={inputClass}
-                      value={formData.deliveryAddress?.city || ''}
-                      onChange={e => setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), city: e.target.value} as any})}
-                      disabled={!formData.deliveryAddress}
-                    />
-                    <input 
-                        className={`${inputClass} w-20`}
-                        maxLength={2}
-                        value={formData.deliveryAddress?.state || ''}
-                        onChange={e => setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), state: e.target.value.toUpperCase()} as any})}
-                        disabled={!formData.deliveryAddress}
-                      />
-                  </div>
+
+                {/* Linha 5 - Cidade - UF */}
+                <div className="col-span-4">
+                  <label className={labelClass}>Cidade</label>
+                  <input 
+                    className={inputClass}
+                    value={formData.deliveryAddress?.city || ''}
+                    onChange={e => setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), city: e.target.value} as any})}
+                    disabled={!formData.deliveryAddress}
+                  />
                 </div>
-                <div className="md:col-span-2">
+                <div className="col-span-2">
+                  <label className={labelClass}>UF</label>
+                  <input 
+                    maxLength={2}
+                    className={inputClass}
+                    value={formData.deliveryAddress?.state || ''}
+                    onChange={e => setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), state: e.target.value.toUpperCase()} as any})}
+                    disabled={!formData.deliveryAddress}
+                  />
+                </div>
+
+                {/* Linha 6 - Ponto de Referência */}
+                <div className="col-span-6">
                   <label className={labelClass}>Ponto de Referência</label>
                   <textarea 
                     rows={3}
@@ -722,7 +742,6 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                     onChange={e => setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), referencePoint: e.target.value} as any})}
                     disabled={!formData.deliveryAddress}
                   />
-                  
                 </div>
               </div>
             </div>
