@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, UserCheck, MapPin, Phone, Mail, Globe, ShieldCheck, Truck, MessageSquare, Plus } from 'lucide-react';
 import { Supplier } from '../types';
+import { formatCPF, formatCNPJ, validateDocument } from '../utils/documentValidation';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -50,6 +51,8 @@ export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onCl
   const [activeTab, setActiveTab] = useState<'geral' | 'endereco' | 'extras'>('geral');
   const [isLoadingCEP, setIsLoadingCEP] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [isDocumentInvalid, setIsDocumentInvalid] = useState(false);
+  const [isFetchingCNPJ, setIsFetchingCNPJ] = useState(false);
 
   useEffect(() => {
     if (editingSupplier) {
@@ -76,23 +79,104 @@ export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onCl
     }
   }, [editingSupplier, isOpen]);
 
-  const geocodeAddress = async (street: string, number: string, city: string, state: string) => {
-    if (!city || !street) return;
+  const geocodeAddress = async (street: string, number: string, city: string, state: string, zipCode: string) => {
+    if (!city && !zipCode) return;
+    
     setIsGeocoding(true);
+    const cleanZip = zipCode?.replace(/\D/g, '') || '';
+    
     try {
-      const query = `${street}, ${number}, ${city}, ${state}, Brasil`;
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
-      const data = await response.json();
-      if (data && data[0]) {
+      const fetchWithHeaders = (query: string) => fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`, {
+        headers: { 'Accept-Language': 'pt-BR,pt;q=0.9', 'User-Agent': 'KeepGoing-ERP/1.0' }
+      });
+
+      let finalData = null;
+
+      // STEP 1: Full Address Search
+      if (street && city) {
+        const query = `${street}${number ? `, ${number}` : ''}, ${city}, ${state}, Brasil`;
+        const res = await fetchWithHeaders(query);
+        const data = await res.json();
+        if (data && data[0]) finalData = data[0];
+      }
+
+      // STEP 2: Fallback to ZIP Code
+      if (!finalData && cleanZip.length === 8) {
+        const res = await fetchWithHeaders(`${cleanZip}, Brasil`);
+        const data = await res.json();
+        if (data && data[0]) finalData = data[0];
+      }
+
+      // STEP 3: Fallback without number
+      if (!finalData && street && city) {
+        const res = await fetchWithHeaders(`${street}, ${city}, ${state}, Brasil`);
+        const data = await res.json();
+        if (data && data[0]) finalData = data[0];
+      }
+
+      if (finalData) {
+        const lat = parseFloat(finalData.lat);
+        const lng = parseFloat(finalData.lon);
+        
         setFormData(prev => ({
           ...prev,
-          address: { ...prev.address, lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
+          address: { ...prev.address, lat, lng }
         }));
       }
     } catch (error) {
-      console.error('Geocoding error:', error);
+      console.error('Erro na geocodificação:', error);
     } finally {
       setIsGeocoding(false);
+    }
+  };
+
+  const fetchCNPJData = async (cnpj: string) => {
+    const cleanCNPJ = cnpj.replace(/\D/g, '');
+    if (cleanCNPJ.length !== 14) return;
+
+    setIsFetchingCNPJ(true);
+    try {
+      const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCNPJ}`);
+      if (!response.ok) throw new Error('CNPJ não encontrado');
+      
+      const data = await response.json();
+      
+      setFormData(prev => {
+        const updatedData = {
+          ...prev,
+          legalName: data.razao_social || prev.legalName,
+          tradingName: data.nome_fantasia || prev.tradingName,
+          email: data.email || prev.email,
+          phone: data.ddd_telefone_1 ? `(${data.ddd_telefone_1.substring(0,2)}) ${data.ddd_telefone_1.substring(2)}` : prev.phone,
+          address: {
+            ...prev.address,
+            street: data.logradouro || prev.address.street,
+            number: data.numero || prev.address.number,
+            complement: data.complemento || prev.address.complement,
+            neighborhood: data.bairro || prev.address.neighborhood,
+            city: data.municipio || prev.address.city,
+            state: data.uf || prev.address.state,
+            zipCode: data.cep ? `${data.cep.substring(0,5)}-${data.cep.substring(5,8)}` : prev.address.zipCode
+          }
+        };
+
+        // Proactively geocode the new address to update the map
+        if (updatedData.address.street && updatedData.address.city) {
+          geocodeAddress(
+            updatedData.address.street, 
+            updatedData.address.number || '', 
+            updatedData.address.city, 
+            updatedData.address.state, 
+            updatedData.address.zipCode, 
+          );
+        }
+
+        return updatedData;
+      });
+    } catch (error) {
+      console.error('Erro ao buscar CNPJ:', error);
+    } finally {
+      setIsFetchingCNPJ(false);
     }
   };
 
@@ -122,7 +206,7 @@ export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onCl
       }));
       
       // Proactive geocoding immediately after CEP lookup
-      geocodeAddress(data.logradouro, '', data.localidade, data.uf);
+      geocodeAddress(data.logradouro, '', data.localidade, data.uf, cleanCEP);
     } catch (error) {
       console.error('Erro ao buscar CEP:', error);
     } finally {
@@ -134,6 +218,13 @@ export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onCl
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (formData.document && !validateDocument(formData.document, formData.type)) {
+      setIsDocumentInvalid(true);
+      alert(`O ${formData.type === 'Pessoa Física' ? 'CPF' : 'CNPJ'} informado é inválido. Por favor, verifique os números.`);
+      return;
+    }
+
     onSave({
       ...formData,
       id: editingSupplier?.id || Math.random().toString(36).substr(2, 9).toUpperCase(),
@@ -206,14 +297,35 @@ export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onCl
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className={labelClass}>{formData.type === 'Pessoa Jurídica' ? 'CNPJ' : 'CPF'}</label>
+                  <label className={labelClass}>{formData.type === 'Pessoa Jurídica' ? 'CNPJ' : 'CPF'} {isFetchingCNPJ && <span className="text-white animate-pulse font-normal lowercase">(Consultando...)</span>}</label>
                   <input 
                     required
-                    className={inputClass}
+                    className={`${inputClass} ${isDocumentInvalid ? 'border-red-500 bg-red-50 focus:ring-red-200' : ''} ${isFetchingCNPJ ? 'animate-pulse' : ''}`}
                     placeholder={formData.type === 'Pessoa Jurídica' ? '00.000.000/0000-00' : '000.000.000-00'}
                     value={formData.document}
-                    onChange={e => setFormData({...formData, document: e.target.value})}
+                    onChange={e => {
+                      const val = e.target.value;
+                      const formatted = formData.type === 'Pessoa Física' ? formatCPF(val) : formatCNPJ(val);
+                      setFormData({...formData, document: formatted});
+                      if (isDocumentInvalid) setIsDocumentInvalid(false);
+                      
+                      // Trigger CNPJ lookup automatically when fully entered and valid
+                      if (formData.type === 'Pessoa Jurídica') {
+                        const clean = val.replace(/\D/g, '');
+                        if (clean.length === 14) {
+                          fetchCNPJData(clean);
+                        }
+                      }
+                    }}
+                    onBlur={() => {
+                      if (formData.document) {
+                        setIsDocumentInvalid(!validateDocument(formData.document, formData.type));
+                      }
+                    }}
                   />
+                  {isDocumentInvalid && (
+                    <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-wider">Documento Inválido</p>
+                  )}
                 </div>
                 <div>
                   <label className={labelClass}>{formData.type === 'Pessoa Jurídica' ? 'Inscrição Estadual' : 'RG'}</label>
@@ -276,7 +388,7 @@ export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onCl
                       className={inputClass}
                       value={formData.address.street}
                       onChange={e => setFormData({...formData, address: {...formData.address, street: e.target.value}})}
-                      onBlur={() => geocodeAddress(formData.address.street, formData.address.number || '', formData.address.city, formData.address.state)}
+                      onBlur={() => geocodeAddress(formData.address.street, formData.address.number || '', formData.address.city, formData.address.state, formData.address.zipCode)}
                     />
                   </div>
                   <div>
@@ -285,7 +397,7 @@ export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onCl
                       className={inputClass}
                       value={formData.address.number || ''}
                       onChange={e => setFormData({...formData, address: {...formData.address, number: e.target.value}})}
-                      onBlur={() => geocodeAddress(formData.address.street, formData.address.number || '', formData.address.city, formData.address.state)}
+                      onBlur={() => geocodeAddress(formData.address.street, formData.address.number || '', formData.address.city, formData.address.state, formData.address.zipCode)}
                     />
                   </div>
                   <div className="md:col-span-2">

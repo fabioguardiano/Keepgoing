@@ -182,6 +182,7 @@ export interface Supplier {
   phone: string;
   cellphone?: string;
   website?: string;
+  observations?: string;
   createdAt: string;
   address: {
     street: string;
