@@ -466,6 +466,53 @@ const App: React.FC = () => {
     }
   };
 
+  const handleImportClients = async (data: any[]) => {
+    try {
+      const batchSize = 50;
+      const totalGroups = Math.ceil(data.length / batchSize);
+      
+      for (let i = 0; i < totalGroups; i++) {
+        const start = i * batchSize;
+        const end = Math.min(start + batchSize, data.length);
+        const batch = data.slice(start, end);
+        
+        const clientsToInsert = batch.map(row => ({
+          name: row.nome || row.name || 'Sem Nome',
+          type: row.tipo || row.type || 'Pessoa Física',
+          document: row.documento || row.document || '',
+          email: row.email || '',
+          phone: row.telefone || row.phone || row.celular || '',
+          cellphone: row.celular || row.phone || '',
+          address: {
+            street: row.rua || row.street || '',
+            number: row.numero || row.number || '',
+            complement: row.complemento || row.complement || '',
+            neighborhood: row.bairro || row.neighborhood || '',
+            city: row.cidade || row.city || '',
+            state: row.estado || row.state || '',
+            zipCode: row.cep || row.zipCode || ''
+          },
+          created_at: new Date().toISOString()
+        }));
+
+        const { data: insertedData, error } = await supabase
+          .from('clients')
+          .insert(clientsToInsert)
+          .select();
+        
+        if (error) throw error;
+        if (insertedData) {
+          setClients(prev => [...(insertedData as Client[]), ...prev]);
+        }
+      }
+      
+      logActivity('update', `Importou ${data.length} clientes via planilha`, 'bulk_import', 'BATCH');
+    } catch (err) {
+      console.error('Erro na importação em lote:', err);
+      alert('Ocorreu um erro durante a importação. Verifique o console para mais detalhes.');
+    }
+  };
+
   const [materials, setMaterials] = useState<Material[]>([]);
   const [loadingMaterials, setLoadingMaterials] = useState(true);
 
@@ -1347,6 +1394,7 @@ const App: React.FC = () => {
             onReorderSalesPhases={reorderSalesPhases}
             companyInfo={companyInfo}
             onUpdateCompany={setCompanyInfo}
+            onImportClients={handleImportClients}
           />
         );
       case 'Clientes':

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Settings, Layout, Check, ChevronRight, Plus, Trash2, Edit2, GripVertical, Info, Building2, MapPin, Phone, Mail, ShoppingBag } from 'lucide-react';
+import { Settings, Layout, Check, ChevronRight, Plus, Trash2, Edit2, GripVertical, Info, Building2, MapPin, Phone, Mail, ShoppingBag, FileSpreadsheet, Download, Upload, AlertCircle, Loader2 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { PhaseConfig, CompanyInfo, SalesPhaseConfig } from '../types';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
@@ -17,6 +18,7 @@ interface SettingsViewProps {
     onReorderSalesPhases: (startIndex: number, endIndex: number) => void;
     companyInfo: CompanyInfo;
     onUpdateCompany: (info: CompanyInfo) => void;
+    onImportClients: (clients: any[]) => Promise<void>;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -32,14 +34,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     onDeleteSalesPhase,
     onReorderSalesPhases,
     companyInfo,
-    onUpdateCompany
+    onUpdateCompany,
+    onImportClients
 }) => {
-    const [activeTab, setActiveTab] = useState<'fluxo' | 'vendas' | 'empresa'>('fluxo');
+    const [activeTab, setActiveTab] = useState<'fluxo' | 'vendas' | 'empresa' | 'dados'>('fluxo');
     const [newPhaseName, setNewPhaseName] = useState('');
     const [editingPhase, setEditingPhase] = useState<string | null>(null);
     const [editingLostReasonIdx, setEditingLostReasonIdx] = useState<number | null>(null);
     const [tempName, setTempName] = useState('');
     const [tempReasonName, setTempReasonName] = useState('');
+    const [importLoading, setImportLoading] = useState(false);
+    const [importStats, setImportStats] = useState<{ total: number; success: number; errors: number; } | null>(null);
 
     const handleUpdateCompany = (field: keyof CompanyInfo, value: string) => {
         onUpdateCompany({ ...companyInfo, [field]: value });
@@ -101,6 +106,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <div className="flex items-center gap-3">
                             <Building2 size={20} />
                             Cadastro da Empresa
+                        </div>
+                        <ChevronRight size={16} />
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('dados')}
+                        className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold border transition-all ${activeTab === 'dados' ? 'bg-orange-50 text-[#ec5b13] border-orange-100' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
+                    >
+                        <div className="flex items-center gap-3">
+                            <FileSpreadsheet size={20} />
+                            Importação de Dados
                         </div>
                         <ChevronRight size={16} />
                     </button>
@@ -403,7 +418,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 </div>
                             </div>
                         </div>
-                    ) : (
+                    ) : activeTab === 'empresa' ? (
                         <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
                             <div className="p-6 border-b border-slate-100">
                                 <h2 className="text-lg font-bold text-slate-800">Dados da Empresa</h2>
@@ -552,6 +567,118 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden text-center p-12">
+                            <div className="max-w-md mx-auto space-y-6">
+                                <div className="w-20 h-20 bg-orange-50 text-[#ec5b13] rounded-3xl flex items-center justify-center mx-auto mb-6">
+                                    <FileSpreadsheet size={40} />
+                                </div>
+                                <h2 className="text-2xl font-black text-slate-800">Importação de Clientes</h2>
+                                <p className="text-slate-500 font-medium leading-relaxed"> Suba sua planilha do Excel (.xlsx) para importar seus clientes em lote para o sistema.</p>
+                                
+                                <div className="p-6 bg-slate-50 border border-slate-100 rounded-3xl space-y-4 text-left">
+                                    <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                        <Download size={16} className="text-blue-500" /> Instruções Importantes:
+                                    </h3>
+                                    <ul className="text-xs text-slate-400 space-y-2 font-medium">
+                                        <li className="flex items-start gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0" />
+                                            Certifique-se que a primeira linha contém os cabeçalhos.
+                                        </li>
+                                        <li className="flex items-start gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0" />
+                                            Colunas obrigatórias: <strong className="text-slate-600">nome, tipo, documento</strong>.
+                                        </li>
+                                        <li className="flex items-start gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0" />
+                                            Colunas de endereço recomendadas: <strong className="text-slate-600">rua, numero, bairro, cidade, estado, cep</strong>.
+                                        </li>
+                                    </ul>
+                                    <button 
+                                        onClick={() => {
+                                            const template = [
+                                                ['nome', 'tipo', 'documento', 'email', 'telefone', 'celular', 'rua', 'numero', 'complemento', 'bairro', 'cidade', 'estado', 'cep'],
+                                                ['João Silva', 'Pessoa Física', '000.000.000-00', 'joao@email.com', '(11) 9999-9999', '(11) 99999-9999', 'Av. Paulista', '1000', 'Sala 1', 'Centro', 'São Paulo', 'SP', '01310-100']
+                                            ];
+                                            const ws = XLSX.utils.aoa_to_sheet(template);
+                                            const wb = XLSX.utils.book_new();
+                                            XLSX.utils.book_append_sheet(wb, ws, "Modelo");
+                                            XLSX.writeFile(wb, "modelo_importacao_clientes.xlsx");
+                                        }}
+                                        className="w-full py-2 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold hover:bg-blue-100 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <Download size={14} /> Baixar Planilha Modelo
+                                    </button>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <label className={`w-full flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-3xl cursor-pointer transition-all ${importLoading ? 'opacity-50 pointer-events-none' : 'hover:border-[#ec5b13] hover:bg-orange-50/30'}`}>
+                                        {importLoading ? (
+                                            <>
+                                                <Loader2 size={32} className="text-[#ec5b13] animate-spin mb-3" />
+                                                <p className="text-sm font-bold text-slate-700">Processando planilha...</p>
+                                                <p className="text-xs text-slate-400 mt-1">Isso pode levar alguns minutos para listas grandes.</p>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Upload size={32} className="text-slate-300 mb-3" />
+                                                <p className="text-sm font-bold text-slate-700">Clique para selecionar ou arraste o arquivo</p>
+                                                <p className="text-xs text-slate-400 mt-1">Suporta arquivos .xlsx e .csv</p>
+                                            </>
+                                        )}
+                                        <input 
+                                            type="file" 
+                                            className="hidden" 
+                                            accept=".xlsx, .csv" 
+                                            onChange={async (e) => {
+                                                const file = e.target.files?.[0];
+                                                if (!file) return;
+                                                
+                                                setImportLoading(true);
+                                                setImportStats(null);
+                                                
+                                                try {
+                                                    const reader = new FileReader();
+                                                    reader.onload = async (evt) => {
+                                                        const bstr = evt.target?.result;
+                                                        const wb = XLSX.read(bstr, { type: 'binary' });
+                                                        const wsname = wb.SheetNames[0];
+                                                        const ws = wb.Sheets[wsname];
+                                                        const data = XLSX.utils.sheet_to_json(ws);
+                                                        
+                                                        // Passar para o App.tsx processar
+                                                        await onImportClients(data);
+                                                        
+                                                        setImportStats({
+                                                            total: data.length,
+                                                            success: data.length, // Simplificado, o App.tsx pode retornar mais detalhes depois
+                                                            errors: 0
+                                                        });
+                                                    };
+                                                    reader.readAsBinaryString(file);
+                                                } catch (error) {
+                                                    console.error("Erro na importação:", error);
+                                                } finally {
+                                                    setImportLoading(false);
+                                                }
+                                            }}
+                                        />
+                                    </label>
+
+                                    {importStats && (
+                                        <div className="p-4 bg-green-50 border border-green-100 rounded-2xl flex items-center gap-4 text-left animate-in fade-in slide-in-from-bottom-2">
+                                            <div className="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center shrink-0">
+                                                <Check size={20} />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-bold text-green-800">Importação Concluída!</p>
+                                                <p className="text-xs text-green-600 font-medium">Foram processados {importStats.total} registros com sucesso.</p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
