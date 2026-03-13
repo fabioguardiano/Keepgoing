@@ -539,7 +539,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                         onChange={e => setFormData({...formData, address: {...formData.address, complement: e.target.value}})}
                       />
                     </div>
-                    <div className="md:col-span-1">
+                    <div className="md:col-span-3">
                       <label className={labelClass}>Bairro</label>
                       <input 
                         className={inputClass}
@@ -686,7 +686,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                     disabled={!formData.deliveryAddress}
                   />
                 </div>
-                <div>
+                <div className="md:col-span-2">
                   <label className={labelClass}>Bairro</label>
                   <input 
                     className={inputClass}
@@ -695,7 +695,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                     disabled={!formData.deliveryAddress}
                   />
                 </div>
-                <div className="md:col-span-1">
+                <div className="md:col-span-2">
                   <label className={labelClass}>Cidade / UF</label>
                   <div className="flex gap-2">
                     <input 
