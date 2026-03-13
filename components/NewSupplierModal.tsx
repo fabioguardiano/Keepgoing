@@ -45,7 +45,10 @@ export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onCl
       city: '',
       state: '',
       zipCode: ''
-    }
+    },
+    rgInsc: '',
+    cellphone: '',
+    observations: ''
   });
 
   const [activeTab, setActiveTab] = useState<'geral' | 'endereco' | 'extras'>('geral');
@@ -74,7 +77,10 @@ export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onCl
           city: '',
           state: '',
           zipCode: ''
-        }
+        },
+        rgInsc: '',
+        cellphone: '',
+        observations: ''
       });
     }
   }, [editingSupplier, isOpen]);

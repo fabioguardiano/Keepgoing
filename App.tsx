@@ -914,6 +914,9 @@ const App: React.FC = () => {
             legalName: s.legal_name,
             tradingName: s.trading_name,
             contactName: s.contact_name,
+            rgInsc: s.rg_insc,
+            cellphone: s.cellphone,
+            observations: s.observations,
             createdAt: s.created_at
           }));
           setSuppliers(mapped as Supplier[]);
@@ -944,7 +947,10 @@ const App: React.FC = () => {
           email: s.email,
           phone: s.phone,
           website: s.website,
-          address: s.address
+          address: s.address,
+          rg_insc: s.rgInsc,
+          cellphone: s.cellphone,
+          observations: s.observations
         })
         .select()
         .single();
@@ -955,6 +961,9 @@ const App: React.FC = () => {
         legalName: data.legal_name, 
         tradingName: data.trading_name, 
         contactName: data.contact_name,
+        rgInsc: data.rg_insc,
+        cellphone: data.cellphone,
+        observations: data.observations,
         createdAt: data.created_at
       } as Supplier;
       
