@@ -294,8 +294,6 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
     ? [formData.deliveryAddress.lat, formData.deliveryAddress.lng]
     : [-23.5505, -46.6333]; // Default to SP if not found
 
-  const activeMapCenter = activeTab === 'endereco' ? mapCenter : deliveryMapCenter;
-
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[3000] flex items-center justify-center p-4">
       <div className="bg-white rounded-[32px] w-full max-w-4xl shadow-2xl overflow-hidden border border-white/20 flex flex-col max-h-[95vh]">
@@ -514,8 +512,8 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                       />
                     </div>
 
-                    {/* Linha 2 - Endereço - Número */}
-                    <div className="col-span-4">
+                    {/* Linha 2 - Logradouro */}
+                    <div className="col-span-6">
                       <label className={labelClass}>Logradouro</label>
                       <input 
                         className={inputClass}
@@ -524,6 +522,8 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                         onBlur={() => geocodeAddress(formData.address.street, formData.address.number, formData.address.city, formData.address.state, formData.address.zipCode, 'address')}
                       />
                     </div>
+
+                    {/* Linha 3 - Número e Complemento */}
                     <div className="col-span-2">
                       <label className={labelClass}>Número</label>
                       <input 
@@ -533,9 +533,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                         onBlur={() => geocodeAddress(formData.address.street, formData.address.number, formData.address.city, formData.address.state, formData.address.zipCode, 'address')}
                       />
                     </div>
-
-                    {/* Linha 3 - Complemento */}
-                    <div className="col-span-6">
+                    <div className="col-span-4">
                       <label className={labelClass}>Complemento</label>
                       <input 
                         className={inputClass}
@@ -590,7 +588,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                       </div>
                     </div>
                   )}
-                  <MapContainer center={activeMapCenter} zoom={15} style={{ height: '100%', width: '100%' }}>
+                  <MapContainer center={mapCenter} zoom={15} style={{ height: '100%', width: '100%' }}>
                     <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                     <MapController center={mapCenter} />
                     {formData.address.lat && formData.address.lng && (
@@ -611,137 +609,172 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
 
           {activeTab === 'entrega' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-bold text-slate-600">O endereço de entrega é o mesmo do principal?</p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!formData.deliveryAddress) {
-                      setFormData({
-                        ...formData,
-                        deliveryAddress: {
-                          street: formData.address.street,
-                          number: formData.address.number,
-                          complement: formData.address.complement,
-                          neighborhood: formData.address.neighborhood,
-                          city: formData.address.city,
-                          state: formData.address.state,
-                          zipCode: formData.address.zipCode,
-                          lat: formData.address.lat,
-                          lng: formData.address.lng
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-bold text-slate-600">Endereço de Entrega Diferente?</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!formData.deliveryAddress) {
+                          setFormData({
+                            ...formData,
+                            deliveryAddress: {
+                              street: formData.address.street,
+                              number: formData.address.number,
+                              complement: formData.address.complement,
+                              neighborhood: formData.address.neighborhood,
+                              city: formData.address.city,
+                              state: formData.address.state,
+                              zipCode: formData.address.zipCode,
+                              lat: formData.address.lat,
+                              lng: formData.address.lng
+                            }
+                          });
+                        } else {
+                          setFormData({...formData, deliveryAddress: undefined});
                         }
-                      });
-                    } else {
-                      setFormData({...formData, deliveryAddress: undefined});
-                    }
-                  }}
-                  className="text-[#ec5b13] text-sm font-black hover:underline"
-                >
-                  {formData.deliveryAddress ? 'Remover Endereço de Entrega' : 'Copiar Endereço Principal'}
-                </button>
-              </div>
+                      }}
+                      className="text-[#ec5b13] text-sm font-black hover:underline"
+                    >
+                      {formData.deliveryAddress ? 'Limpar/Remover' : 'Copiar Principal'}
+                    </button>
+                  </div>
 
-              <div className="grid grid-cols-6 gap-6 opacity-80">
-                {/* Linha 1 - CEP */}
-                <div className="col-span-6">
-                  <label className={labelClass}>CEP Entrega</label>
-                  <input 
-                    className="w-full md:w-1/3 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#ec5b13]/20 transition-all disabled:opacity-50"
-                    value={formData.deliveryAddress?.zipCode || ''}
-                    onChange={e => {
-                      const val = e.target.value;
-                      setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), zipCode: val} as any});
-                      if (val.replace(/\D/g, '').length === 8) {
-                        fetchAddressByCEP(val, 'deliveryAddress');
-                      }
-                    }}
-                    disabled={!formData.deliveryAddress}
-                  />
+                  <div className="grid grid-cols-6 gap-4">
+                    {/* Linha 1 - CEP */}
+                    <div className="col-span-6">
+                      <label className={labelClass}>CEP Entrega</label>
+                      <input 
+                        className="w-full md:w-1/3 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#ec5b13]/20 transition-all disabled:opacity-50"
+                        placeholder="00000-000"
+                        maxLength={9}
+                        value={formData.deliveryAddress?.zipCode || ''}
+                        onChange={e => {
+                          let val = e.target.value.replace(/\D/g, '');
+                          if (val.length > 5) {
+                            val = `${val.slice(0, 5)}-${val.slice(5, 8)}`;
+                          }
+                          setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), zipCode: val} as any});
+                          if (val.replace(/\D/g, '').length === 8) {
+                            fetchAddressByCEP(val, 'deliveryAddress');
+                          }
+                        }}
+                        disabled={!formData.deliveryAddress}
+                      />
+                    </div>
+
+                    {/* Linha 2 - Logradouro */}
+                    <div className="col-span-6">
+                      <label className={labelClass}>Logradouro</label>
+                      <input 
+                        className={inputClass}
+                        value={formData.deliveryAddress?.street || ''}
+                        onChange={e => setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), street: e.target.value} as any})}
+                        onBlur={() => {
+                          if (formData.deliveryAddress) {
+                            geocodeAddress(formData.deliveryAddress.street, formData.deliveryAddress.number, formData.deliveryAddress.city, formData.deliveryAddress.state, formData.deliveryAddress.zipCode, 'deliveryAddress');
+                          }
+                        }}
+                        disabled={!formData.deliveryAddress}
+                      />
+                    </div>
+
+                    {/* Linha 3 - Número e Complemento */}
+                    <div className="col-span-2">
+                      <label className={labelClass}>Número</label>
+                      <input 
+                        className={inputClass}
+                        value={formData.deliveryAddress?.number || ''}
+                        onChange={e => setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), number: e.target.value} as any})}
+                        onBlur={() => {
+                          if (formData.deliveryAddress) {
+                            geocodeAddress(formData.deliveryAddress.street, formData.deliveryAddress.number, formData.deliveryAddress.city, formData.deliveryAddress.state, formData.deliveryAddress.zipCode, 'deliveryAddress');
+                          }
+                        }}
+                        disabled={!formData.deliveryAddress}
+                      />
+                    </div>
+                    <div className="col-span-4">
+                      <label className={labelClass}>Complemento</label>
+                      <input 
+                        className={inputClass}
+                        placeholder="Ex: Apto 12..."
+                        value={formData.deliveryAddress?.complement || ''}
+                        onChange={e => setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), complement: e.target.value} as any})}
+                        disabled={!formData.deliveryAddress}
+                      />
+                    </div>
+
+                    {/* Linha 4 - Bairro */}
+                    <div className="col-span-6">
+                      <label className={labelClass}>Bairro</label>
+                      <input 
+                        className={inputClass}
+                        value={formData.deliveryAddress?.neighborhood || ''}
+                        onChange={e => setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), neighborhood: e.target.value} as any})}
+                        disabled={!formData.deliveryAddress}
+                      />
+                    </div>
+
+                    {/* Linha 5 - Cidade - UF */}
+                    <div className="col-span-4">
+                      <label className={labelClass}>Cidade</label>
+                      <input 
+                        className={inputClass}
+                        value={formData.deliveryAddress?.city || ''}
+                        onChange={e => setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), city: e.target.value} as any})}
+                        disabled={!formData.deliveryAddress}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className={labelClass}>UF</label>
+                      <input 
+                        maxLength={2}
+                        className={inputClass}
+                        value={formData.deliveryAddress?.state || ''}
+                        onChange={e => setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), state: e.target.value.toUpperCase()} as any})}
+                        disabled={!formData.deliveryAddress}
+                      />
+                    </div>
+
+                    {/* Linha 6 - Ponto de Referência */}
+                    <div className="col-span-6">
+                      <label className={labelClass}>Ponto de Referência</label>
+                      <textarea 
+                        rows={2}
+                        className={`${inputClass} resize-none`}
+                        value={formData.deliveryAddress?.referencePoint || ''}
+                        onChange={e => setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), referencePoint: e.target.value} as any})}
+                        disabled={!formData.deliveryAddress}
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                {/* Linha 2 - Endereço - Número */}
-                <div className="col-span-4">
-                  <label className={labelClass}>Rua / Av. Entrega</label>
-                  <input 
-                    className={inputClass}
-                    value={formData.deliveryAddress?.street || ''}
-                    onChange={e => setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), street: e.target.value} as any})}
-                    onBlur={() => {
-                      if (formData.deliveryAddress) {
-                        geocodeAddress(formData.deliveryAddress.street, formData.deliveryAddress.number, formData.deliveryAddress.city, formData.deliveryAddress.state, formData.deliveryAddress.zipCode, 'deliveryAddress');
-                      }
-                    }}
-                    disabled={!formData.deliveryAddress}
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className={labelClass}>Número</label>
-                  <input 
-                    className={inputClass}
-                    value={formData.deliveryAddress?.number || ''}
-                    onChange={e => setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), number: e.target.value} as any})}
-                    onBlur={() => {
-                      if (formData.deliveryAddress) {
-                        geocodeAddress(formData.deliveryAddress.street, formData.deliveryAddress.number, formData.deliveryAddress.city, formData.deliveryAddress.state, formData.deliveryAddress.zipCode, 'deliveryAddress');
-                      }
-                    }}
-                    disabled={!formData.deliveryAddress}
-                  />
-                </div>
-
-                {/* Linha 3 - Complemento */}
-                <div className="col-span-6">
-                  <label className={labelClass}>Complemento Entrega</label>
-                  <input 
-                    className={inputClass}
-                    value={formData.deliveryAddress?.complement || ''}
-                    onChange={e => setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), complement: e.target.value} as any})}
-                    disabled={!formData.deliveryAddress}
-                  />
-                </div>
-
-                {/* Linha 4 - Bairro */}
-                <div className="col-span-6">
-                  <label className={labelClass}>Bairro</label>
-                  <input 
-                    className={inputClass}
-                    value={formData.deliveryAddress?.neighborhood || ''}
-                    onChange={e => setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), neighborhood: e.target.value} as any})}
-                    disabled={!formData.deliveryAddress}
-                  />
-                </div>
-
-                {/* Linha 5 - Cidade - UF */}
-                <div className="col-span-4">
-                  <label className={labelClass}>Cidade</label>
-                  <input 
-                    className={inputClass}
-                    value={formData.deliveryAddress?.city || ''}
-                    onChange={e => setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), city: e.target.value} as any})}
-                    disabled={!formData.deliveryAddress}
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className={labelClass}>UF</label>
-                  <input 
-                    maxLength={2}
-                    className={inputClass}
-                    value={formData.deliveryAddress?.state || ''}
-                    onChange={e => setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), state: e.target.value.toUpperCase()} as any})}
-                    disabled={!formData.deliveryAddress}
-                  />
-                </div>
-
-                {/* Linha 6 - Ponto de Referência */}
-                <div className="col-span-6">
-                  <label className={labelClass}>Ponto de Referência</label>
-                  <textarea 
-                    rows={3}
-                    className={`${inputClass} resize-none mb-4`}
-                    value={formData.deliveryAddress?.referencePoint || ''}
-                    onChange={e => setFormData({...formData, deliveryAddress: {...(formData.deliveryAddress || {}), referencePoint: e.target.value} as any})}
-                    disabled={!formData.deliveryAddress}
-                  />
+                <div className="h-[430px] mt-8 rounded-[24px] overflow-hidden border border-slate-200 shadow-inner relative group bg-slate-100">
+                  {isGeocoding && (
+                    <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] z-[1000] flex items-center justify-center">
+                      <div className="bg-white p-3 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-100">
+                        <div className="w-5 h-5 border-2 border-[#ec5b13] border-t-transparent animate-spin rounded-full" />
+                        <span className="text-xs font-bold text-slate-600 tracking-tight uppercase">Localizando...</span>
+                      </div>
+                    </div>
+                  )}
+                  <MapContainer center={deliveryMapCenter} zoom={15} style={{ height: '100%', width: '100%' }}>
+                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                    <MapController center={deliveryMapCenter} />
+                    {formData.deliveryAddress?.lat && formData.deliveryAddress?.lng && (
+                      <Marker position={[formData.deliveryAddress.lat, formData.deliveryAddress.lng]}>
+                        <Popup>
+                          <div className="text-xs font-bold leading-tight">
+                            <p className="text-slate-400 font-black uppercase tracking-widest text-[9px] mb-1">Local da Entrega</p>
+                            <p>{formData.deliveryAddress.street}, {formData.deliveryAddress.number}</p>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    )}
+                  </MapContainer>
                 </div>
               </div>
             </div>
