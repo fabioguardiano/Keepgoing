@@ -67,7 +67,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     return (
         <div className="h-full max-w-5xl mx-auto space-y-6">
             <div className="flex items-center gap-3 mb-8">
-                <div className="p-3 bg-white border border-slate-200 rounded-2xl shadow-sm text-[#ec5b13]">
+                <div className="p-3 bg-white border border-slate-200 rounded-2xl shadow-sm text-primary">
                     <Settings size={28} />
                 </div>
                 <div>
@@ -81,7 +81,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <div className="space-y-2">
                     <button 
                         onClick={() => setActiveTab('fluxo')}
-                        className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold border transition-all ${activeTab === 'fluxo' ? 'bg-orange-50 text-[#ec5b13] border-orange-100' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
+                        className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold border transition-all ${activeTab === 'fluxo' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
                     >
                         <div className="flex items-center gap-3">
                             <Layout size={20} />
@@ -91,7 +91,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     </button>
                     <button 
                         onClick={() => setActiveTab('vendas')}
-                        className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold border transition-all ${activeTab === 'vendas' ? 'bg-orange-50 text-[#ec5b13] border-orange-100' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
+                        className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold border transition-all ${activeTab === 'vendas' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
                     >
                         <div className="flex items-center gap-3">
                             <ShoppingBag size={20} />
@@ -101,7 +101,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     </button>
                     <button 
                         onClick={() => setActiveTab('empresa')}
-                        className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold border transition-all ${activeTab === 'empresa' ? 'bg-orange-50 text-[#ec5b13] border-orange-100' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
+                        className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold border transition-all ${activeTab === 'empresa' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
                     >
                         <div className="flex items-center gap-3">
                             <Building2 size={20} />
@@ -111,7 +111,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     </button>
                     <button 
                         onClick={() => setActiveTab('dados')}
-                        className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold border transition-all ${activeTab === 'dados' ? 'bg-orange-50 text-[#ec5b13] border-orange-100' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
+                        className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold border transition-all ${activeTab === 'dados' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
                     >
                         <div className="flex items-center gap-3">
                             <FileSpreadsheet size={20} />
@@ -143,11 +143,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                         value={newPhaseName}
                                         onChange={(e) => setNewPhaseName(e.target.value)}
                                         placeholder="Nome da nova fase..."
-                                        className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 font-medium"
+                                        className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 font-medium"
                                     />
                                     <button
                                         onClick={handleAdd}
-                                        className="px-4 py-2 bg-[#ec5b13] text-white rounded-xl font-bold text-sm hover:bg-orange-600 transition-colors flex items-center gap-2"
+                                        className="px-4 py-2 bg-primary text-white rounded-xl font-bold text-sm hover:bg-secondary transition-colors flex items-center gap-2"
                                     >
                                         <Plus size={18} /> Adicionar
                                     </button>
@@ -196,7 +196,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                                         <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Exigir Responsável</span>
                                                                         <button
                                                                             onClick={() => onToggleRequirement(phase.name)}
-                                                                            className={`relative w-11 h-6 rounded-full transition-colors ${phase.requiresResponsible ? 'bg-[#ec5b13]' : 'bg-slate-200'}`}
+                                                                            className={`relative w-11 h-6 rounded-full transition-colors ${phase.requiresResponsible ? 'bg-primary' : 'bg-slate-200'}`}
                                                                         >
                                                                             <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${phase.requiresResponsible ? 'translate-x-5' : ''}`} />
                                                                         </button>
@@ -251,7 +251,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                         value={newPhaseName}
                                         onChange={(e) => setNewPhaseName(e.target.value)}
                                         placeholder="Nome da nova etapa de venda..."
-                                        className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 font-medium"
+                                        className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 font-medium"
                                     />
                                     <button
                                         onClick={() => {
@@ -260,7 +260,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                 setNewPhaseName('');
                                             }
                                         }}
-                                        className="px-4 py-2 bg-[#ec5b13] text-white rounded-xl font-bold text-sm hover:bg-orange-600 transition-colors flex items-center gap-2"
+                                        className="px-4 py-2 bg-primary text-white rounded-xl font-bold text-sm hover:bg-secondary transition-colors flex items-center gap-2"
                                     >
                                         <Plus size={18} /> Adicionar
                                     </button>
@@ -343,7 +343,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                         <input
                                             id="newLostReason"
                                             placeholder="Ex: Preço da concorrência..."
-                                            className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 font-medium"
+                                            className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 font-medium"
                                         />
                                         <button
                                             onClick={() => {
@@ -354,7 +354,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                     el.value = '';
                                                 }
                                             }}
-                                            className="px-4 py-2 bg-[#ec5b13] text-white rounded-xl font-bold text-sm hover:bg-orange-600 transition-colors flex items-center justify-center h-10 w-10 shrink-0"
+                                            className="px-4 py-2 bg-primary text-white rounded-xl font-bold text-sm hover:bg-secondary transition-colors flex items-center justify-center h-10 w-10 shrink-0"
                                         >
                                             <Plus size={18} />
                                         </button>
@@ -386,7 +386,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                                 setEditingLostReasonIdx(null);
                                                             }
                                                         }}
-                                                        className="flex-1 bg-white border border-[#ec5b13] rounded-lg px-2 py-1 text-sm font-bold focus:outline-none"
+                                                        className="flex-1 bg-white border border-primary rounded-lg px-2 py-1 text-sm font-bold focus:outline-none"
                                                     />
                                                 ) : (
                                                     <span className="text-sm font-bold text-slate-600">{reason}</span>
@@ -479,7 +479,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                         <input 
                                             value={companyInfo.name}
                                             onChange={(e) => handleUpdateCompany('name', e.target.value)}
-                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#ec5b13]/20 transition-all"
+                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -489,7 +489,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                         <input 
                                             value={companyInfo.phone}
                                             onChange={(e) => handleUpdateCompany('phone', e.target.value)}
-                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#ec5b13]/20 transition-all"
+                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                                         />
                                     </div>
                                     <div className="md:col-span-2 space-y-2">
@@ -499,7 +499,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                         <input 
                                             value={companyInfo.address}
                                             onChange={(e) => handleUpdateCompany('address', e.target.value)}
-                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#ec5b13]/20 transition-all"
+                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                                         />
                                         <p className="text-[10px] text-slate-400 italic">Este endereço será usado como ponto de partida (Saída) para todas as rotas na Agenda de Entregas.</p>
                                     </div>
@@ -510,14 +510,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                         <input 
                                             value={companyInfo.email}
                                             onChange={(e) => handleUpdateCompany('email', e.target.value)}
-                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#ec5b13]/20 transition-all"
+                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                                         />
                                     </div>
 
                                     {/* Sidebar Customization Section */}
                                     <div className="md:col-span-2 p-6 bg-slate-100/50 border border-slate-200 rounded-3xl space-y-4 shadow-inner">
                                         <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                            <Layout size={18} className="text-[#ec5b13]" /> Personalização Visual
+                                            <Layout size={18} className="text-primary" /> Personalização Visual
                                         </h3>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="space-y-3">
@@ -573,7 +573,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     ) : (
                         <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden text-center p-12">
                             <div className="max-w-md mx-auto space-y-6">
-                                <div className="w-20 h-20 bg-orange-50 text-[#ec5b13] rounded-3xl flex items-center justify-center mx-auto mb-6">
+                                <div className="w-20 h-20 bg-primary/5 text-primary rounded-3xl flex items-center justify-center mx-auto mb-6">
                                     <FileSpreadsheet size={40} />
                                 </div>
                                 <h2 className="text-2xl font-black text-slate-800">Importação de Clientes</h2>
@@ -616,10 +616,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 </div>
 
                                 <div className="space-y-4">
-                                    <label className={`w-full flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-3xl cursor-pointer transition-all ${importLoading ? 'opacity-50 pointer-events-none' : 'hover:border-[#ec5b13] hover:bg-orange-50/30'}`}>
+                                    <label className={`w-full flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-3xl cursor-pointer transition-all ${importLoading ? 'opacity-50 pointer-events-none' : 'hover:border-primary hover:bg-primary/5'}`}>
                                         {importLoading ? (
                                             <>
-                                                <Loader2 size={32} className="text-[#ec5b13] animate-spin mb-3" />
+                                                <Loader2 size={32} className="text-primary animate-spin mb-3" />
                                                 <p className="text-sm font-bold text-slate-700">Processando planilha...</p>
                                                 <p className="text-xs text-slate-400 mt-1">Isso pode levar alguns minutos para listas grandes.</p>
                                             </>

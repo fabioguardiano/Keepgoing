@@ -283,7 +283,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
     onClose();
   };
 
-  const inputClass = "w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#ec5b13]/20 transition-all disabled:opacity-50";
+  const inputClass = "w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all disabled:opacity-50";
   const labelClass = "text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-2";
 
   const mapCenter: [number, number] = (formData.address.lat && formData.address.lng) 
@@ -300,14 +300,14 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
         {/* Header */}
         <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-white rounded-2xl text-[#ec5b13] shadow-sm border border-slate-100">
+            <div className="p-2.5 bg-white rounded-2xl text-primary shadow-sm border border-slate-100">
               <User size={24} />
             </div>
             <div>
               <h3 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
                 {editingClient ? 'Editar Cliente' : 'Novo Cadastro de Cliente'}
                 {editingClient?.code && (
-                  <span className="text-[#ec5b13] bg-orange-50 px-2 py-0.5 rounded-lg text-sm">
+                  <span className="text-primary bg-primary/10 px-2 py-0.5 rounded-lg text-sm">
                     #{editingClient.code}
                   </span>
                 )}
@@ -331,7 +331,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
               className={`py-4 text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
-                activeTab === tab.id ? 'border-[#ec5b13] text-[#ec5b13]' : 'border-transparent text-slate-400 hover:text-slate-600'
+                activeTab === tab.id ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'
               }`}
             >
               <tab.icon size={18} />
@@ -375,7 +375,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                   />
                 </div>
                 <div>
-                  <label className={labelClass}><CreditCard size={14} /> CPF / CNPJ {isFetchingCNPJ && <span className="text-[#ec5b13] animate-pulse font-normal lowercase">(Consultando...)</span>}</label>
+                  <label className={labelClass}><CreditCard size={14} /> CPF / CNPJ {isFetchingCNPJ && <span className="text-primary animate-pulse font-normal lowercase">(Consultando...)</span>}</label>
                   <input 
                     required
                     className={`${inputClass} ${isDocumentInvalid ? 'border-red-500 bg-red-50 focus:ring-red-200' : ''} ${isFetchingCNPJ ? 'animate-pulse' : ''}`}
@@ -467,7 +467,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
 
               <div className="p-4 bg-orange-50 border border-orange-100 rounded-2xl flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-white rounded-xl text-[#ec5b13] shadow-sm">
+                  <div className="p-2 bg-white rounded-xl text-primary shadow-sm">
                     <Info size={18} />
                   </div>
                   <div className="text-xs">
@@ -478,7 +478,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                 <button
                   type="button"
                   onClick={() => setFormData({...formData, useSpecialTable: !formData.useSpecialTable})}
-                  className={`relative w-12 h-6 rounded-full transition-colors ${formData.useSpecialTable ? 'bg-[#ec5b13]' : 'bg-slate-200'}`}
+                  className={`relative w-12 h-6 rounded-full transition-colors ${formData.useSpecialTable ? 'bg-primary' : 'bg-slate-200'}`}
                 >
                   <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${formData.useSpecialTable ? 'translate-x-6' : ''}`} />
                 </button>
@@ -574,7 +574,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                   </div>
                   
                   <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 italic text-[11px] text-slate-500 w-full">
-                    <MapPin size={16} className="text-[#ec5b13] shrink-0" />
+                    <MapPin size={16} className="text-primary shrink-0" />
                     <p>O mapa ao lado sincroniza automaticamente com o endereço digitado.</p>
                   </div>
                 </div>
@@ -583,7 +583,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                   {isGeocoding && (
                     <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] z-[1000] flex items-center justify-center">
                       <div className="bg-white p-3 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-100">
-                        <div className="w-5 h-5 border-2 border-[#ec5b13] border-t-transparent animate-spin rounded-full" />
+                        <div className="w-5 h-5 border-2 border-primary border-t-transparent animate-spin rounded-full" />
                         <span className="text-xs font-bold text-slate-600 tracking-tight uppercase">Localizando no Mapa...</span>
                       </div>
                     </div>
@@ -756,7 +756,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                   {isGeocoding && (
                     <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] z-[1000] flex items-center justify-center">
                       <div className="bg-white p-3 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-100">
-                        <div className="w-5 h-5 border-2 border-[#ec5b13] border-t-transparent animate-spin rounded-full" />
+                        <div className="w-5 h-5 border-2 border-primary border-t-transparent animate-spin rounded-full" />
                         <span className="text-xs font-bold text-slate-600 tracking-tight uppercase">Localizando...</span>
                       </div>
                     </div>
@@ -786,7 +786,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
           <button type="button" onClick={onClose} className="px-6 py-3 text-slate-500 font-bold hover:bg-slate-100 rounded-2xl transition-all">
             Cancelar
           </button>
-          <button type="submit" onClick={handleSubmit} className="px-8 py-3 bg-[#ec5b13] text-white font-black rounded-2xl shadow-lg shadow-[#ec5b13]/20 hover:bg-[#d84a0d] transition-all transform hover:scale-[1.02] active:scale-95">
+          <button type="submit" onClick={handleSubmit} className="px-8 py-3 bg-primary text-white font-black rounded-2xl shadow-lg shadow-primary/20 hover:bg-secondary transition-all transform hover:scale-[1.02] active:scale-95">
             Salvar Cliente
           </button>
         </div>

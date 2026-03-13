@@ -355,7 +355,10 @@ const App: React.FC = () => {
       phone: '(16) 3636-0114',
       email: 'vendas@tokdeart.com.br',
       logoUrl: '',
-      lostReasonOptions: ['Tinha preço menor', 'Prazo de entrega melhor', 'Desistiu de fazer', 'Não aprovaram o material', 'Distância da obra']
+      lostReasonOptions: ['Tinha preço menor', 'Prazo de entrega melhor', 'Desistiu de fazer', 'Não aprovaram o material', 'Distância da obra'],
+      buttonColor: '#ec5b13',
+      sidebarColor: '#0f172a',
+      sidebarTextColor: '#cbd5e1'
     };
     try {
       const saved = localStorage.getItem('marmo_company');
@@ -366,6 +369,27 @@ const App: React.FC = () => {
       return defaultData;
     }
   });
+
+  // Inject theme colors into CSS variables
+  useEffect(() => {
+    const root = document.documentElement;
+    const primary = companyInfo.buttonColor || '#ec5b13';
+    root.style.setProperty('--primary-color', primary);
+    root.style.setProperty('--sidebar-bg', companyInfo.sidebarColor || '#0f172a');
+    root.style.setProperty('--sidebar-text', companyInfo.sidebarTextColor || '#cbd5e1');
+
+    // Simple helper to generate a darker version for secondary/hover states
+    const darken = (hex: string, percent: number) => {
+      const num = parseInt(hex.replace('#', ''), 16),
+        amt = Math.round(2.55 * percent),
+        R = (num >> 16) - amt,
+        G = (num >> 8 & 0x00FF) - amt,
+        B = (num & 0x0000FF) - amt;
+      return '#' + (0x1000000 + (R < 255 ? R < 0 ? 0 : R : 255) * 0x10000 + (G < 255 ? G < 0 ? 0 : G : 255) * 0x100 + (B < 255 ? B < 0 ? 0 : B : 255)).toString(16).slice(1);
+    };
+    
+    root.style.setProperty('--secondary-color', darken(primary, 10));
+  }, [companyInfo]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [currentView, setCurrentView] = useState<View>('Produção');
   const [searchQuery, setSearchQuery] = useState('');

@@ -59,7 +59,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return <ArrowUpDown size={14} className="opacity-30 group-hover:opacity-100 transition-opacity" />;
-    return sortDirection === 'asc' ? <ChevronUp size={14} className="text-[#ec5b13]" /> : <ChevronDown size={14} className="text-[#ec5b13]" />;
+    return sortDirection === 'asc' ? <ChevronUp size={14} className="text-primary" /> : <ChevronDown size={14} className="text-primary" />;
   };
 
   return (
@@ -71,7 +71,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
         </div>
         <button 
           onClick={handleAddNew}
-          className="bg-[#ec5b13] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[#ec5b13]/20 hover:bg-[#d84a0d] transition-all transform hover:scale-[1.02] active:scale-95"
+          className="bg-primary text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-secondary transition-all transform hover:scale-[1.02] active:scale-95"
         >
           <Plus size={20} /> Novo Cliente
         </button>
@@ -84,7 +84,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
           <input 
             type="text"
             placeholder="Nome, documento, telefone ou cidade..."
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ec5b13]/20 font-medium text-sm"
+            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -133,18 +133,18 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
               {filteredAndSortedClients.map(client => (
                 <tr key={client.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-6 py-4">
-                    <span className="text-xs font-black text-[#ec5b13] bg-orange-50 px-2 py-1 rounded-lg">#{client.code || '---'}</span>
+                    <span className="text-xs font-black text-primary bg-primary/10 px-2 py-1 rounded-lg">#{client.code || '---'}</span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${client.type === 'Pessoa Jurídica' ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-[#ec5b13]'}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${client.type === 'Pessoa Jurídica' ? 'bg-blue-50 text-blue-600' : 'bg-primary/10 text-primary'}`}>
                         {client.type === 'Pessoa Jurídica' ? <ShieldCheck size={16} /> : <Users size={16} />}
                       </div>
                       <div>
                         <div className="font-bold text-slate-700 leading-tight flex items-center gap-2">
                           {client.name}
                           {client.useSpecialTable && (
-                            <span className="text-[10px] bg-orange-100 text-[#ec5b13] px-1.5 py-0.5 rounded-md font-black uppercase tracking-tighter">Esp</span>
+                            <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-md font-black uppercase tracking-tighter">Esp</span>
                           )}
                         </div>
                         <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">{client.document}</div>

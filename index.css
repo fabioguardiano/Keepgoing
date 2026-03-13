@@ -4,6 +4,8 @@
 
 :root {
   --primary-color: #ec5b13;
+  --secondary-color: #d84a0d;
+  --accent-color: #7f13ec;
   --sidebar-bg: #0f172a;
   --sidebar-text: #cbd5e1;
 }
