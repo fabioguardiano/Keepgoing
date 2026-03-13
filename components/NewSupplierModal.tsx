@@ -264,7 +264,7 @@ export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onCl
           </button>
         </div>
 
-        <div className="px-8 flex border-b border-slate-100">
+        <div className="px-8 flex gap-8 border-b border-slate-100">
           {[
             { id: 'geral', label: 'Dados Gerais', icon: UserCheck },
             { id: 'endereco', label: 'Localização', icon: MapPin },
@@ -273,7 +273,7 @@ export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onCl
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`py-4 text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
+              className={`py-4 px-4 text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
                 activeTab === tab.id ? 'border-[#ec5b13] text-[#ec5b13]' : 'border-transparent text-slate-400 hover:text-slate-600'
               }`}
             >
