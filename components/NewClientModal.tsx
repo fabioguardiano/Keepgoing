@@ -179,17 +179,39 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
 
     setIsFetchingCNPJ(true);
     try {
+      // Step 1: Fetch main data from BrasilAPI
       const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCNPJ}`);
       if (!response.ok) throw new Error('CNPJ não encontrado');
       
       const data = await response.json();
       
+      // Step 2: Try to fetch Inscrição Estadual from CNPJá (Public API)
+      let inscricaoEstadual = '';
+      try {
+        const ieResponse = await fetch(`https://open.cnpja.com/office/${cleanCNPJ}`);
+        if (ieResponse.ok) {
+          const ieData = await ieResponse.ok && await ieResponse.json();
+          if (ieData && ieData.registrations) {
+            // Find active registration for the state
+            const stateIE = ieData.registrations.find((reg: any) => 
+              reg.state === data.uf && reg.enabled
+            );
+            if (stateIE) {
+              inscricaoEstadual = stateIE.number;
+            }
+          }
+        }
+      } catch (ieError) {
+        console.warn('Erro ao buscar Inscrição Estadual:', ieError);
+      }
+
       setFormData(prev => {
         const updatedData = {
           ...prev,
           name: data.razao_social || data.nome_fantasia || prev.name,
           email: data.email || prev.email,
           birthDate: data.data_inicio_atividade || prev.birthDate,
+          rgInsc: inscricaoEstadual || prev.rgInsc,
           phone: data.ddd_telefone_1 ? `(${data.ddd_telefone_1.substring(0,2)}) ${data.ddd_telefone_1.substring(2)}` : prev.phone,
           address: {
             ...prev.address,
