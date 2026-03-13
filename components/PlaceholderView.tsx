@@ -14,7 +14,7 @@ export const PlaceholderView: React.FC<PlaceholderViewProps> = ({ title }) => {
       </div>
       <h2 className="text-2xl font-bold text-gray-900 mb-2">{title}</h2>
       <p className="text-gray-500 max-w-md mx-auto">
-        Esta funcionalidade está em desenvolvimento para a próxima versão do MarmoFlow. 
+        Esta funcionalidade está em desenvolvimento para a próxima versão do KeepGoing. 
         Estamos trabalhando para trazer o melhor gerenciamento de {title.toLowerCase()} para sua marmoraria.
       </p>
       <button 

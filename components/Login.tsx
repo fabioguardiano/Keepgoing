@@ -22,7 +22,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
       {/* Decorative Elements */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none opacity-20 dark:opacity-10">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#ec5b13] rounded-full blur-[120px]"></div>
-        <div class="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-[#ec5b13] rounded-full blur-[100px]"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-[#ec5b13] rounded-full blur-[100px]"></div>
         <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(236, 91, 19, 0.1) 1px, transparent 0)', backgroundSize: '40px 40px' }}></div>
       </div>
 
@@ -33,7 +33,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
           <div className="w-16 h-16 bg-[#ec5b13] rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-[#ec5b13]/20">
             <Layers className="text-white w-8 h-8" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">MarmoFlow</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">KeepGoing</h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Industrial Workflow Management</p>
         </div>
 
