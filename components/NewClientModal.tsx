@@ -55,6 +55,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
   const [isLoadingCEP, setIsLoadingCEP] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [isDocumentInvalid, setIsDocumentInvalid] = useState(false);
+  const [isFetchingCNPJ, setIsFetchingCNPJ] = useState(false);
 
   useEffect(() => {
     if (editingClient) {
@@ -169,6 +170,56 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
       console.error('Erro na geocodificação:', error);
     } finally {
       setIsGeocoding(false);
+    }
+  };
+
+  const fetchCNPJData = async (cnpj: string) => {
+    const cleanCNPJ = cnpj.replace(/\D/g, '');
+    if (cleanCNPJ.length !== 14) return;
+
+    setIsFetchingCNPJ(true);
+    try {
+      const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCNPJ}`);
+      if (!response.ok) throw new Error('CNPJ não encontrado');
+      
+      const data = await response.json();
+      
+      setFormData(prev => {
+        const updatedData = {
+          ...prev,
+          name: data.razao_social || data.nome_fantasia || prev.name,
+          email: data.email || prev.email,
+          phone: data.ddd_telefone_1 ? `(${data.ddd_telefone_1.substring(0,2)}) ${data.ddd_telefone_1.substring(2)}` : prev.phone,
+          address: {
+            ...prev.address,
+            street: data.logradouro || prev.address.street,
+            number: data.numero || prev.address.number,
+            complement: data.complemento || prev.address.complement,
+            neighborhood: data.bairro || prev.address.neighborhood,
+            city: data.municipio || prev.address.city,
+            state: data.uf || prev.address.state,
+            zipCode: data.cep ? `${data.cep.substring(0,5)}-${data.cep.substring(5,8)}` : prev.address.zipCode
+          }
+        };
+
+        // Proactively geocode the new address to update the map
+        if (updatedData.address.street && updatedData.address.city) {
+          geocodeAddress(
+            updatedData.address.street, 
+            updatedData.address.number, 
+            updatedData.address.city, 
+            updatedData.address.state, 
+            updatedData.address.zipCode, 
+            'address'
+          );
+        }
+
+        return updatedData;
+      });
+    } catch (error) {
+      console.error('Erro ao buscar CNPJ:', error);
+    } finally {
+      setIsFetchingCNPJ(false);
     }
   };
 
@@ -325,16 +376,24 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                   />
                 </div>
                 <div>
-                  <label className={labelClass}><CreditCard size={14} /> CPF / CNPJ</label>
+                  <label className={labelClass}><CreditCard size={14} /> CPF / CNPJ {isFetchingCNPJ && <span className="text-[#ec5b13] animate-pulse font-normal lowercase">(Consultando...)</span>}</label>
                   <input 
                     required
-                    className={`${inputClass} ${isDocumentInvalid ? 'border-red-500 bg-red-50 focus:ring-red-200' : ''}`}
+                    className={`${inputClass} ${isDocumentInvalid ? 'border-red-500 bg-red-50 focus:ring-red-200' : ''} ${isFetchingCNPJ ? 'animate-pulse' : ''}`}
                     value={formData.document}
                     onChange={e => {
                       const val = e.target.value;
                       const formatted = formData.type === 'Pessoa Física' ? formatCPF(val) : formatCNPJ(val);
                       setFormData({...formData, document: formatted});
                       if (isDocumentInvalid) setIsDocumentInvalid(false);
+                      
+                      // Trigger CNPJ lookup automatically when fully entered and valid
+                      if (formData.type === 'Pessoa Jurídica') {
+                        const clean = val.replace(/\D/g, '');
+                        if (clean.length === 14) {
+                          fetchCNPJData(clean);
+                        }
+                      }
                     }}
                     onBlur={() => {
                       if (formData.document) {
