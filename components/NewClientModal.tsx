@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, User, Building2, MapPin, Phone, Mail, Globe, CreditCard, Calendar, UserCheck, ShieldCheck, Info, FileText } from 'lucide-react';
 import { Client } from '../types';
+import { formatCPF, formatCNPJ, validateDocument } from '../utils/documentValidation';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -53,6 +54,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
   const [activeTab, setActiveTab] = useState<'geral' | 'endereco' | 'entrega'>('geral');
   const [isLoadingCEP, setIsLoadingCEP] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [isDocumentInvalid, setIsDocumentInvalid] = useState(false);
 
   useEffect(() => {
     if (editingClient) {
@@ -214,6 +216,13 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (formData.document && !validateDocument(formData.document, formData.type)) {
+      setIsDocumentInvalid(true);
+      alert(`O ${formData.type === 'Pessoa Física' ? 'CPF' : 'CNPJ'} informado é inválido. Por favor, verifique os números.`);
+      return;
+    }
+
     onSave({
       ...formData,
       id: editingClient?.id || String(Date.now()),
@@ -286,7 +295,15 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                   <select 
                     className={inputClass}
                     value={formData.type}
-                    onChange={e => setFormData({...formData, type: e.target.value as any})}
+                    onChange={e => {
+                      const newType = e.target.value as any;
+                      setFormData({
+                        ...formData, 
+                        type: newType,
+                        document: '' // Limpar documento ao trocar tipo para evitar máscaras misturadas
+                      });
+                      setIsDocumentInvalid(false);
+                    }}
                   >
                     <option value="Pessoa Física">Pessoa Física</option>
                     <option value="Pessoa Jurídica">Pessoa Jurídica</option>
@@ -306,11 +323,24 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                   <label className={labelClass}><CreditCard size={14} /> CPF / CNPJ</label>
                   <input 
                     required
-                    className={inputClass}
+                    className={`${inputClass} ${isDocumentInvalid ? 'border-red-500 bg-red-50 focus:ring-red-200' : ''}`}
                     value={formData.document}
-                    onChange={e => setFormData({...formData, document: e.target.value})}
-                    placeholder="000.000.000-00"
+                    onChange={e => {
+                      const val = e.target.value;
+                      const formatted = formData.type === 'Pessoa Física' ? formatCPF(val) : formatCNPJ(val);
+                      setFormData({...formData, document: formatted});
+                      if (isDocumentInvalid) setIsDocumentInvalid(false);
+                    }}
+                    onBlur={() => {
+                      if (formData.document) {
+                        setIsDocumentInvalid(!validateDocument(formData.document, formData.type));
+                      }
+                    }}
+                    placeholder={formData.type === 'Pessoa Física' ? "000.000.000-00" : "00.000.000/0000-00"}
                   />
+                  {isDocumentInvalid && (
+                    <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-wider">Documento Inválido</p>
+                  )}
                 </div>
                 <div>
                   <label className={labelClass}><FileText size={14} /> RG / Inscrição Estadual</label>
