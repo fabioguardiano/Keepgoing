@@ -189,6 +189,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
           ...prev,
           name: data.razao_social || data.nome_fantasia || prev.name,
           email: data.email || prev.email,
+          birthDate: data.data_inicio_atividade || prev.birthDate,
           phone: data.ddd_telefone_1 ? `(${data.ddd_telefone_1.substring(0,2)}) ${data.ddd_telefone_1.substring(2)}` : prev.phone,
           address: {
             ...prev.address,
