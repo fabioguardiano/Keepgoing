@@ -159,8 +159,10 @@ export interface Client {
     lat?: number;
     lng?: number;
   };
+  code?: number;
   createdAt: string;
 }
+
 
 export interface SalesChannel {
   id: string;

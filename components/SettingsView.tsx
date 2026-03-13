@@ -600,14 +600,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                     <button 
                                         onClick={() => {
                                             const template = [
-                                                ['nome', 'tipo', 'documento', 'email', 'telefone', 'celular', 'rua', 'numero', 'complemento', 'bairro', 'cidade', 'estado', 'cep'],
-                                                ['João Silva', 'Pessoa Física', '000.000.000-00', 'joao@email.com', '(11) 9999-9999', '(11) 99999-9999', 'Av. Paulista', '1000', 'Sala 1', 'Centro', 'São Paulo', 'SP', '01310-100']
+                                                ['codigo', 'nome', 'tipo', 'documento', 'email', 'telefone', 'celular', 'rua', 'numero', 'complemento', 'bairro', 'cidade', 'estado', 'cep'],
+                                                ['1', 'João Silva', 'Pessoa Física', '000.000.000-00', 'joao@email.com', '(11) 9999-9999', '(11) 99999-9999', 'Av. Paulista', '1000', 'Sala 1', 'Centro', 'São Paulo', 'SP', '01310-100']
                                             ];
                                             const ws = XLSX.utils.aoa_to_sheet(template);
                                             const wb = XLSX.utils.book_new();
                                             XLSX.utils.book_append_sheet(wb, ws, "Modelo");
                                             XLSX.writeFile(wb, "modelo_importacao_clientes.xlsx");
                                         }}
+
                                         className="w-full py-2 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold hover:bg-blue-100 transition-all flex items-center justify-center gap-2"
                                     >
                                         <Download size={14} /> Baixar Planilha Modelo

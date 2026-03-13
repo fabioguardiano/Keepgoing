@@ -9,15 +9,15 @@ interface ClientsViewProps {
   onDeleteClient: (id: string) => void;
 }
 
-type SortField = 'id' | 'name' | 'city' | 'createdAt';
+type SortField = 'code' | 'name' | 'city' | 'createdAt';
 type SortDirection = 'asc' | 'desc';
 
 export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient, onDeleteClient }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [sortField, setSortField] = useState<SortField>('name');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [sortField, setSortField] = useState<SortField>('code');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -30,6 +30,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
 
   const filteredAndSortedClients = clients
     .filter(c => 
+      String(c.code).includes(searchTerm) ||
       c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.document.includes(searchTerm) ||
       c.phone.includes(searchTerm) ||
@@ -39,7 +40,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
     .sort((a, b) => {
       let comparison = 0;
       if (sortField === 'name') comparison = a.name.localeCompare(b.name);
-      if (sortField === 'id') comparison = a.id.localeCompare(b.id);
+      if (sortField === 'code') comparison = (a.code || 0) - (b.code || 0);
       if (sortField === 'createdAt') comparison = a.createdAt.localeCompare(b.createdAt);
       if (sortField === 'city') comparison = a.address.city.localeCompare(b.address.city);
       
@@ -100,9 +101,9 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th onClick={() => handleSort('id')} className="px-6 py-4 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                <th onClick={() => handleSort('code')} className="px-6 py-4 cursor-pointer group hover:bg-slate-100/50 transition-colors">
                   <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
-                    ID <SortIcon field="id" />
+                    Cód <SortIcon field="code" />
                   </div>
                 </th>
                 <th onClick={() => handleSort('name')} className="px-6 py-4 cursor-pointer group hover:bg-slate-100/50 transition-colors">
@@ -132,7 +133,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
               {filteredAndSortedClients.map(client => (
                 <tr key={client.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-6 py-4">
-                    <span className="text-xs font-black text-slate-300">#{client.id.slice(-4).toUpperCase()}</span>
+                    <span className="text-xs font-black text-[#ec5b13] bg-orange-50 px-2 py-1 rounded-lg">#{client.code || '---'}</span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">

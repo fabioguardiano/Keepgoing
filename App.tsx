@@ -423,7 +423,11 @@ const App: React.FC = () => {
           .order('name');
         
         if (error) throw error;
-        setClients(data as Client[]);
+        const mapped = data.map(c => ({
+          ...c,
+          code: c.client_code
+        }));
+        setClients(mapped as Client[]);
       } catch (err) {
         console.error('Erro ao carregar clientes do Supabase:', err);
         const saved = localStorage.getItem('marmo_clients');
@@ -447,7 +451,8 @@ const App: React.FC = () => {
           document: c.document,
           email: c.email,
           phone: c.phone,
-          address: c.address
+          address: c.address,
+          client_code: c.code
         })
         .select()
         .single();
@@ -456,9 +461,10 @@ const App: React.FC = () => {
       const saved = data as Client;
       
       setClients(prev => {
-        const exists = prev.find(x => x.id === c.id || x.id === saved.id);
-        if (exists) return prev.map(x => (x.id === c.id || x.id === saved.id) ? saved : x);
-        return [saved, ...prev];
+        const exists = prev.find(x => x.id === c.id || (saved.id && x.id === saved.id));
+        const mappedSaved = { ...saved, code: (saved as any).client_code };
+        if (exists) return prev.map(x => (x.id === c.id || x.id === mappedSaved.id) ? mappedSaved : x);
+        return [mappedSaved, ...prev];
       });
     } catch (err) {
       console.error('Erro ao salvar cliente:', err);
@@ -492,6 +498,7 @@ const App: React.FC = () => {
             state: row.estado || row.state || '',
             zipCode: row.cep || row.zipCode || ''
           },
+          client_code: row.codigo || row.code || undefined,
           created_at: new Date().toISOString()
         }));
 
@@ -502,7 +509,8 @@ const App: React.FC = () => {
         
         if (error) throw error;
         if (insertedData) {
-          setClients(prev => [...(insertedData as Client[]), ...prev]);
+          const mappedBatch = insertedData.map(c => ({ ...c, code: (c as any).client_code }));
+          setClients(prev => [...(mappedBatch as Client[]), ...prev]);
         }
       }
       
