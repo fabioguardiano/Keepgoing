@@ -71,8 +71,14 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onSearch, onTogg
           </div>
 
           <div className="relative group cursor-pointer">
-            <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-[var(--primary-color)]/20 overflow-hidden flex items-center justify-center relative">
-              <UserIcon className="text-slate-500" />
+            <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-[var(--primary-color)]/20 overflow-hidden flex items-center justify-center relative shadow-inner">
+              {user.avatarUrl ? (
+                <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-[var(--primary-color)] flex items-center justify-center text-white font-bold text-sm">
+                  {user.name ? user.name.trim().split(/\s+/).slice(0, 2).map((n: string) => n[0]).join('').toUpperCase() : '??'}
+                </div>
+              )}
             </div>
 
             <div className="absolute right-0 top-12 w-48 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-all z-50 py-2">

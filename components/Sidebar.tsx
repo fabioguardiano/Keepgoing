@@ -8,7 +8,7 @@ interface SidebarProps {
   currentView: View;
   onViewChange: (view: View) => void;
   companyInfo: CompanyInfo;
-  userRole: string;
+  user: any;
   exchangeRates: { usd: number; eur: number; lastUpdate: string };
 }
 
@@ -19,7 +19,8 @@ interface NavItem {
   subItems?: { label: string; view: View; icon: any }[];
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, onViewChange, companyInfo, userRole, exchangeRates }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, onViewChange, companyInfo, user, exchangeRates }) => {
+  const userRole = user.role;
   const [expandedMenus, setExpandedMenus] = useState<string[]>(['Cadastros']);
 
   const toggleMenu = (label: string) => {
@@ -43,6 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
     { icon: LayoutDashboard, label: 'Produção', view: 'Produção' as View },
     { icon: Kanban, label: 'Ordens de Serviço', view: 'Ordens de Serviço' as View },
     { icon: MapPin, label: 'Agenda de Entregas', view: 'Agenda de Entregas' as View },
+    { icon: MapPin, label: 'Agenda de Medições', view: 'Agenda de Medições' as View },
     { 
       icon: Box, 
       label: 'Estoque / Acabamentos', 
@@ -181,6 +183,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
         </div>
       </div>
 
+      {/* User Profile Section */}
+      <div className={`p-4 border-t transition-all duration-300 ${isOpen ? 'opacity-100' : 'items-center'}`} style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+        <div className={`flex items-center gap-3 ${!isOpen ? 'justify-center' : ''}`}>
+          <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 overflow-hidden flex items-center justify-center shrink-0 shadow-inner">
+            {user.avatarUrl ? (
+              <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-[var(--primary-color)] flex items-center justify-center text-white font-bold text-xs">
+                {user.name ? user.name.trim().split(/\s+/).slice(0, 2).map((n: string) => n[0]).join('').toUpperCase() : '??'}
+              </div>
+            )}
+          </div>
+          {isOpen && (
+            <div className="overflow-hidden">
+              <p className="text-sm font-bold truncate leading-none mb-1">{user.name}</p>
+              <p className="text-[10px] uppercase font-black opacity-40 truncate">{userRole === 'admin' ? 'Gerente Produção' : userRole}</p>
+            </div>
+          )}
+        </div>
+      </div>
     </aside>
   );
 };

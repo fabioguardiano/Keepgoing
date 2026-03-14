@@ -10,6 +10,7 @@ import { ReportsView } from './components/ReportsView';
 import { SettingsView } from './components/SettingsView';
 import { RecentActivity } from './components/RecentActivity';
 import { DeliverySchedule } from './components/DeliverySchedule';
+import { MeasurementSchedule } from './components/MeasurementSchedule';
 import { ClientsView } from './components/ClientsView.tsx';
 import { SalesView } from './components/SalesView.tsx';
 import { InventoryView } from './components/InventoryView.tsx';
@@ -23,7 +24,7 @@ import { BrandsView } from './components/BrandsView.tsx';
 import { ProductGroupsView } from './components/ProductGroupsView.tsx';
 import { ServiceGroupsView } from './components/ServiceGroupsView.tsx';
 import { MOCK_ORDERS } from './constants.tsx';
-import { OrderService, User, View, ProductionPhase, INITIAL_PHASES, AppUser, ProductionStaff, PhaseConfig, ActivityLog, PhaseRecord, PhaseResponsible, Delivery, CompanyInfo, Client, Material, SalesOrder, SalesChannel, FinanceTransaction, Supplier, Architect, ProductService, Brand, ProductGroup, ServiceGroup, SalesPhaseConfig, ExchangeRates } from './types';
+import { OrderService, User, View, ProductionPhase, INITIAL_PHASES, AppUser, ProductionStaff, PhaseConfig, ActivityLog, PhaseRecord, PhaseResponsible, Delivery, Measurement, CompanyInfo, Client, Material, SalesOrder, SalesChannel, FinanceTransaction, Supplier, Architect, ProductService, Brand, ProductGroup, ServiceGroup, SalesPhaseConfig, ExchangeRates } from './types';
 import { supabase } from './lib/supabase';
 import 'leaflet/dist/leaflet.css';
 
@@ -39,14 +40,274 @@ const INITIAL_STAFF: ProductionStaff[] = [
   { id: '3', name: 'Pedro Alves', position: 'ajudante_serrador', hourlyRate: 16, phone: '(11) 98765-0000', status: 'ativo' },
   { id: '4', name: 'Lucas Costa', position: 'medidor', hourlyRate: 18, phone: '(11) 97654-3210', status: 'inativo' },
 ];
-
 const App: React.FC = () => {
+  console.log('%c[System] KeepGoing v13-stable carregando...', 'color: #ec5b13; font-weight: bold;');
   const [user, setUser] = useState<User | null>(null);
+  const [loadingSession, setLoadingSession] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  // Monitorar sessão do Supabase
+  useEffect(() => {
+    let isProcessing = false;
+    
+    // Timeout de segurança: se não carregar nada em 10 segundos, libera a tela
+    const timeoutId = setTimeout(() => {
+      setLoadingSession(prev => {
+        if (prev) {
+          console.warn('Timeout de carregamento inicial atingido. Liberando tela...');
+          return false;
+        }
+        return prev;
+      });
+    }, 10000);
+
+    // No Supabase v2+, o onAuthStateChange já dispara o evento INITIAL_SESSION
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (isProcessing) return;
+
+      isProcessing = true;
+      try {
+        if (session) {
+          await fetchUserProfile(session.user.id);
+        } else {
+          setUser(null);
+          setLoadingSession(false);
+        }
+      } catch (err) {
+        console.error('Erro na autenticação:', err);
+        setLoadingSession(false);
+      } finally {
+        isProcessing = false;
+      }
+    });
+
+    return () => {
+      clearTimeout(timeoutId);
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      console.log('[AuthAudit] Buscando perfil no banco para:', userId);
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.error('[AuthAudit] Erro ao buscar perfil:', error.message, error);
+        if (error.code === 'PGRST116') {
+          console.warn('[AuthAudit] Perfil não encontrado na tabela profiles.');
+          setAuthError('Sua conta foi autenticada, mas seu perfil de acesso não foi encontrado. Por favor, entre em contato com o administrador.');
+        } else {
+          setAuthError('Erro ao carregar permissões do sistema. Tente novamente em instantes.');
+        }
+        setLoadingSession(false);
+        return;
+      }
+      
+      if (data) {
+        console.log('[AuthAudit] Perfil encontrado com sucesso:', data.name);
+        setAuthError(null);
+        const newUser: User = {
+          id: data.id,
+          name: data.name,
+          role: data.role as any,
+          email: '', // Pode vir do auth.user se necessário
+          status: 'ativo',
+          createdAt: data.created_at || new Date().toISOString(),
+          isMaster: data.is_master,
+          avatarUrl: data.avatar_url
+        };
+        setUser(newUser);
+        console.log('[AuthAudit] Estado "user" atualizado.');
+      }
+    } catch (err: any) {
+      console.error('[AuthAudit] Erro crítico em fetchUserProfile:', err.message || err);
+    } finally {
+      console.log('[AuthAudit] Finalizando processo de loading da sessão.');
+      setLoadingSession(false);
+    }
+  };
+
   const [orders, setOrders] = useState<OrderService[]>([]);
-  const [loadingOrders, setLoadingOrders] = useState(true);
+  const [loadingOrders, setLoadingOrders] = useState(true);  const refreshAppData = async () => {
+    if (!user) return;
+    console.log('--- Iniciando Orquestração de Dados Sequencial ---');
+    
+    // Função auxiliar para rodar cada fetch com log e catch individual
+    const runner = async (name: string, fn: () => Promise<void>) => {
+      try {
+        console.log(`[Fetch] Carregando ${name}...`);
+        await fn();
+        // Pequeno atraso para evitar que requisições sequenciais disparem o lock do navigator
+        await new Promise(resolve => setTimeout(resolve, 150));
+      } catch (err) {
+        console.error(`[Fetch] Erro em ${name}:`, err);
+      }
+    };
+
+    // Rodar sequencialmente para evitar conflitos de lock no Supabase
+    await runner('Profiles', async () => {
+      setLoadingUsers(true);
+      const { data, error } = await supabase.from('profiles').select('*').order('name');
+      if (error) throw error;
+      if (data) setAppUsers(data.map(p => ({
+        id: p.id, name: p.name, role: p.role as any, email: '', status: 'ativo',
+        createdAt: p.created_at ? p.created_at.slice(0, 10) : new Date().toISOString().slice(0, 10),
+        isMaster: p.is_master, avatarUrl: p.avatar_url
+      })));
+      setLoadingUsers(false);
+    });
+
+    await runner('Orders', async () => {
+      setLoadingOrders(true);
+      const { data, error } = await supabase.from('orders_service').select('*').order('os_number', { ascending: false });
+      if (error) throw error;
+      if (data) setOrders(data.map(o => ({
+        ...o, osNumber: o.os_number, orderNumber: o.order_number, clientName: o.client_name,
+        clientPhone: o.client_phone, responsibleStaffName: o.responsible_staff_name,
+        totalValue: Number(o.total_value), imageUrls: o.image_urls || [], phaseHistory: o.phase_history || [],
+        createdAt: o.created_at
+      })) as OrderService[]);
+      setLoadingOrders(false);
+    });
+
+    await runner('Suppliers', async () => {
+      setLoadingSuppliers(true);
+      const { data, error } = await supabase.from('suppliers').select('*').order('trading_name');
+      if (error) throw error;
+      if (data) setSuppliers(data.map(s => ({
+        ...s, legalName: s.legal_name, tradingName: s.trading_name, contactName: s.contact_name,
+        rgInsc: s.rg_insc, cellphone: s.cellphone, observations: s.observations,
+        code: s.supplier_code, createdAt: s.created_at
+      })) as Supplier[]);
+      setLoadingSuppliers(false);
+    });
+
+    await runner('Clients', async () => {
+      setLoadingClients(true);
+      let allClients: any[] = [];
+      let from = 0;
+      const batchSize = 1000;
+      let hasMore = true;
+      while (hasMore) {
+        const { data, error } = await supabase.from('clients').select('*').order('name').range(from, from + batchSize - 1);
+        if (error) throw error;
+        if (data && data.length > 0) {
+          allClients = [...allClients, ...data];
+          from += batchSize;
+          if (data.length < batchSize) hasMore = false;
+        } else { hasMore = false; }
+      }
+      setClients(allClients.map(c => ({
+        ...c, code: c.client_code, rgInsc: c.rg_insc, cellphone: c.cellphone,
+        birthDate: c.birth_date, sellerName: c.seller_name, useSpecialTable: c.use_special_table,
+        createdAt: c.created_at
+      })) as Client[]);
+      setLoadingClients(false);
+    });
+
+    await runner('Products', async () => {
+      setLoadingProducts(true);
+      const { data, error } = await supabase.from('products').select('*').order('name');
+      if (error) throw error;
+      if (data) setProducts(data.map(p => ({
+        ...p, description: p.name, type: p.category, sellingPrice: p.base_price, imageUrl: p.image_url
+      })) as ProductService[]);
+      setLoadingProducts(false);
+    });
+
+    await runner('Deliveries', async () => {
+      setLoadingDeliveries(true);
+      const { data, error } = await supabase.from('deliveries').select('*').order('date');
+      if (error) throw error;
+      if (data) setDeliveries(data.map(d => ({
+        id: d.id, orderId: d.order_id, osNumber: d.os_number, clientName: d.client_name,
+        address: d.address, date: d.date, time: d.time, status: d.status as any
+      })) as Delivery[]);
+      setLoadingDeliveries(false);
+    });
+
+    await runner('Measurements', async () => {
+      setLoadingMeasurements(true);
+      const { data, error } = await supabase.from('measurements').select('*').order('date');
+      if (error) throw error;
+      if (data) setMeasurements(data.map(m => ({
+        id: m.id, orderId: m.order_id, osNumber: m.os_number, clientName: m.client_name,
+        address: m.address, date: m.date, time: m.time, status: m.status as any
+      })) as Measurement[]);
+      setLoadingMeasurements(false);
+    });
+
+    await runner('Materials', async () => {
+      setLoadingMaterials(true);
+      const { data, error } = await supabase.from('materials').select('*').order('name');
+      if (error) throw error;
+      if (data) setMaterials(data.map(m => ({
+        ...m, unitCost: m.unit_cost, minStock: m.min_stock, stockQuantity: m.stock_quantity,
+        registrationDate: m.registration_date, freightCost: m.freight_cost, taxPercentage: m.tax_percentage,
+        lossPercentage: m.loss_percentage, profitMargin: m.profit_margin, commissionPercentage: m.commission_percentage,
+        discountPercentage: m.discount_percentage, suggestedPrice: m.suggested_price,
+        sellingPrice: m.selling_price, dolarRate: m.dolar_rate, euroRate: m.euro_rate,
+        priceHistory: m.price_history, imageUrl: m.image_url, stockLocation: m.inventory_location,
+        m2PerUnit: m.m2_per_unit
+      })) as Material[]);
+      setLoadingMaterials(false);
+    });
+
+    await runner('Architects', async () => {
+      setLoadingArchitects(true);
+      const { data, error } = await supabase.from('architects').select('*').order('trading_name');
+      if (error) throw error;
+      if (data) setArchitects(data.map(a => ({
+        ...a, legalName: a.legal_name, tradingName: a.trading_name, contactName: a.contact_name,
+        rgInsc: a.rg_insc, cellphone: a.cellphone, observations: a.observations,
+        code: a.architect_code, createdAt: a.created_at
+      })) as Architect[]);
+      setLoadingArchitects(false);
+    });
+
+    await runner('Sales', async () => {
+      setLoadingSales(true);
+      const { data, error } = await supabase.from('sales').select('*').order('order_number', { ascending: false });
+      if (error) throw error;
+      if (data) setSales(data.map(s => ({
+        ...s, orderNumber: s.order_number, clientName: s.client_name, totalValue: s.total,
+        createdAt: s.created_at, deliveryDeadline: s.delivery_date, seller: s.seller_name,
+        isOsGenerated: s.is_os_generated, observations: s.notes,
+        totals: { vendas: Number(s.subtotal), desconto: Number(s.discount), geral: Number(s.total) }
+      })) as SalesOrder[]);
+      setLoadingSales(false);
+    });
+
+    await runner('Activities', async () => {
+      setLoadingActivities(true);
+      const { data, error } = await supabase.from('activity_logs').select('*').order('created_at', { ascending: false }).limit(100);
+      if (error) throw error;
+      if (data) setActivities(data.map(l => ({
+        id: l.id, timestamp: l.created_at, userName: l.user_name, action: l.type as any,
+        details: l.message, orderId: l.reference_id
+      })) as ActivityLog[]);
+      setLoadingActivities(false);
+    });
+
+    console.log('--- Orquestração de Dados Concluída ---');
+  };
+
+  useEffect(() => {
+    if (user?.id) {
+      refreshAppData();
+    }
+  }, [user?.id]);
 
   // Fetch initial data from Supabase for Orders
   useEffect(() => {
+    if (!user) return;
+
     const fetchOrders = async () => {
       setLoadingOrders(true);
       try {
@@ -199,14 +460,10 @@ const App: React.FC = () => {
       return INITIAL_PHASES;
     }
   });
-  const [appUsers, setAppUsers] = useState<AppUser[]>(() => {
-    try {
-      const saved = localStorage.getItem('marmo_app_users');
-      return saved ? (JSON.parse(saved) || INITIAL_APP_USERS) : INITIAL_APP_USERS;
-    } catch {
-      return INITIAL_APP_USERS;
-    }
-  });
+  const [appUsers, setAppUsers] = useState<AppUser[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+
+  // Profiles será buscado no orquestrador central
   const [staff, setStaff] = useState<ProductionStaff[]>(() => {
     try {
       const saved = localStorage.getItem('marmo_staff');
@@ -218,40 +475,7 @@ const App: React.FC = () => {
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [loadingActivities, setLoadingActivities] = useState(true);
 
-  // Fetch initial data from Supabase for Activities
-  useEffect(() => {
-    const fetchActivities = async () => {
-      setLoadingActivities(true);
-      try {
-        const { data, error } = await supabase
-          .from('activity_logs')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(100);
-        
-        if (error) throw error;
-        if (data) {
-          const mapped = data.map(l => ({
-            id: l.id,
-            timestamp: l.created_at,
-            userName: l.user_name,
-            action: l.type as any,
-            details: l.message,
-            orderId: l.reference_id
-          }));
-          setActivities(mapped as ActivityLog[]);
-        }
-      } catch (err) {
-        console.error('Erro ao carregar logs do Supabase:', err);
-        const saved = localStorage.getItem('marmo_activities');
-        if (saved) setActivities(JSON.parse(saved));
-      } finally {
-        setLoadingActivities(false);
-      }
-    };
-
-    fetchActivities();
-  }, []);
+  // Activities será buscado no orquestrador central
   const [brands, setBrands] = useState<Brand[]>(() => {
     try {
       const saved = localStorage.getItem('marmo_brands');
@@ -279,38 +503,7 @@ const App: React.FC = () => {
   const [products, setProducts] = useState<ProductService[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
 
-  // Fetch initial data from Supabase for Products
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoadingProducts(true);
-      try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .order('name');
-        
-        if (error) throw error;
-        if (data) {
-          const mapped = data.map(p => ({
-            ...p,
-            description: p.name,
-            type: p.category,
-            sellingPrice: p.base_price,
-            imageUrl: p.image_url
-          }));
-          setProducts(mapped as ProductService[]);
-        }
-      } catch (err) {
-        console.error('Erro ao carregar produtos do Supabase:', err);
-        const saved = localStorage.getItem('marmo_products');
-        if (saved) setProducts(JSON.parse(saved));
-      } finally {
-        setLoadingProducts(false);
-      }
-    };
-
-    fetchProducts();
-  }, []);
+  // Products será buscado no orquestrador central
 
   const handleSaveProduct = async (p: ProductService) => {
     try {
@@ -397,93 +590,14 @@ const App: React.FC = () => {
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [loadingDeliveries, setLoadingDeliveries] = useState(true);
 
-  // Fetch initial data from Supabase for Deliveries
-  useEffect(() => {
-    const fetchDeliveries = async () => {
-      setLoadingDeliveries(true);
-      try {
-        const { data, error } = await supabase
-          .from('deliveries')
-          .select('*')
-          .order('date');
-        
-        if (error) throw error;
-        if (data) {
-          const mapped = data.map(d => ({
-            id: d.id,
-            orderId: d.order_id,
-            osNumber: d.os_number,
-            clientName: d.client_name,
-            address: d.address,
-            date: d.date,
-            time: d.time,
-            status: d.status as any
-          }));
-          setDeliveries(mapped as Delivery[]);
-        }
-      } catch (err) {
-        console.error('Erro ao carregar entregas do Supabase:', err);
-        const saved = localStorage.getItem('marmo_deliveries');
-        if (saved) setDeliveries(JSON.parse(saved));
-      } finally {
-        setLoadingDeliveries(false);
-      }
-    };
+  const [measurements, setMeasurements] = useState<Measurement[]>([]);
+  const [loadingMeasurements, setLoadingMeasurements] = useState(true);
 
-    fetchDeliveries();
-  }, []);
+  // Deliveries será buscado no orquestrador central
   const [clients, setClients] = useState<Client[]>([]);
   const [loadingClients, setLoadingClients] = useState(true);
 
-  // Fetch initial data from Supabase for Clients
-  useEffect(() => {
-    const fetchClients = async () => {
-      setLoadingClients(true);
-      try {
-        let allClients: any[] = [];
-        let from = 0;
-        const batchSize = 1000;
-        let hasMore = true;
-
-        while (hasMore) {
-          const { data, error } = await supabase
-            .from('clients')
-            .select('*')
-            .order('name')
-            .range(from, from + batchSize - 1);
-          
-          if (error) throw error;
-          if (data && data.length > 0) {
-            allClients = [...allClients, ...data];
-            from += batchSize;
-            if (data.length < batchSize) hasMore = false;
-          } else {
-            hasMore = false;
-          }
-        }
-
-        const mapped = allClients.map(c => ({
-          ...c,
-          code: c.client_code,
-          rgInsc: c.rg_insc,
-          cellphone: c.cellphone,
-          birthDate: c.birth_date,
-          sellerName: c.seller_name,
-          useSpecialTable: c.use_special_table,
-          createdAt: c.created_at
-        }));
-        setClients(mapped as Client[]);
-      } catch (err) {
-        console.error('Erro ao carregar clientes do Supabase:', err);
-        const saved = localStorage.getItem('marmo_clients');
-        if (saved) setClients(JSON.parse(saved));
-      } finally {
-        setLoadingClients(false);
-      }
-    };
-
-    fetchClients();
-  }, []);
+  // Clients será buscado no orquestrador central
 
   const handleSaveClient = async (c: Client) => {
     try {
@@ -598,52 +712,7 @@ const App: React.FC = () => {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [loadingMaterials, setLoadingMaterials] = useState(true);
 
-  // Fetch initial data from Supabase
-  useEffect(() => {
-    const fetchMaterials = async () => {
-      setLoadingMaterials(true);
-      try {
-        const { data: materialsData, error: materialsError } = await supabase
-          .from('materials')
-          .select('*')
-          .order('name');
-        
-        if (materialsError) throw materialsError;
-        if (materialsData) {
-          const mappedMaterials = materialsData.map(m => ({
-            ...m,
-            unitCost: m.unit_cost,
-            minStock: m.min_stock,
-            stockQuantity: m.stock_quantity,
-            registrationDate: m.registration_date,
-            freightCost: m.freight_cost,
-            taxPercentage: m.tax_percentage,
-            lossPercentage: m.loss_percentage,
-            profitMargin: m.profit_margin,
-            commissionPercentage: m.commission_percentage,
-            discountPercentage: m.discount_percentage,
-            suggestedPrice: m.suggested_price,
-            sellingPrice: m.selling_price,
-            dolarRate: m.dolar_rate,
-            euroRate: m.euro_rate,
-            priceHistory: m.price_history,
-            imageUrl: m.image_url,
-            stockLocation: m.inventory_location,
-            m2PerUnit: m.m2_per_unit
-          }));
-          setMaterials(mappedMaterials as Material[]);
-        }
-      } catch (err) {
-        console.error('Erro ao carregar materiais do Supabase:', err);
-        const saved = localStorage.getItem('marmo_materials');
-        if (saved) setMaterials(JSON.parse(saved));
-      } finally {
-        setLoadingMaterials(false);
-      }
-    };
-
-    fetchMaterials();
-  }, []);
+  // Materials será buscado no orquestrador central
 
   const handleSaveMaterial = async (m: Material) => {
     try {
@@ -734,42 +803,7 @@ const App: React.FC = () => {
   const [architects, setArchitects] = useState<Architect[]>([]);
   const [loadingArchitects, setLoadingArchitects] = useState(true);
 
-  // Fetch initial data from Supabase for Architects
-  useEffect(() => {
-    const fetchArchitects = async () => {
-      setLoadingArchitects(true);
-      try {
-        const { data, error } = await supabase
-          .from('architects')
-          .select('*')
-          .order('trading_name');
-        
-        if (error) throw error;
-        if (data) {
-          const mapped = data.map(a => ({
-            ...a,
-            legalName: a.legal_name,
-            tradingName: a.trading_name,
-            contactName: a.contact_name,
-            rgInsc: a.rg_insc,
-            cellphone: a.cellphone,
-            observations: a.observations,
-            code: a.architect_code,
-            createdAt: a.created_at
-          }));
-          setArchitects(mapped as Architect[]);
-        }
-      } catch (err) {
-        console.error('Erro ao carregar arquitetos do Supabase:', err);
-        const saved = localStorage.getItem('marmo_architects');
-        if (saved) setArchitects(JSON.parse(saved));
-      } finally {
-        setLoadingArchitects(false);
-      }
-    };
-
-    fetchArchitects();
-  }, []);
+  // Architects será buscado no orquestrador central
 
   const handleSaveArchitect = async (a: Architect) => {
     try {
@@ -820,47 +854,7 @@ const App: React.FC = () => {
   const [sales, setSales] = useState<SalesOrder[]>([]);
   const [loadingSales, setLoadingSales] = useState(true);
 
-  // Fetch initial data from Supabase for Sales
-  useEffect(() => {
-    const fetchSales = async () => {
-      setLoadingSales(true);
-      try {
-        const { data, error } = await supabase
-          .from('sales')
-          .select('*')
-          .order('order_number', { ascending: false });
-        
-        if (error) throw error;
-        if (data) {
-          const mapped = data.map(s => ({
-            ...s,
-            orderNumber: s.order_number,
-            clientName: s.client_name,
-            totalValue: s.total,
-            createdAt: s.created_at,
-            deliveryDeadline: s.delivery_date,
-            seller: s.seller_name,
-            isOsGenerated: s.is_os_generated,
-            observations: s.notes,
-            totals: {
-              vendas: Number(s.subtotal),
-              desconto: Number(s.discount),
-              geral: Number(s.total)
-            }
-          }));
-          setSales(mapped as SalesOrder[]);
-        }
-      } catch (err) {
-        console.error('Erro ao carregar vendas do Supabase:', err);
-        const saved = localStorage.getItem('keepgoing_sales');
-        if (saved) setSales(JSON.parse(saved));
-      } finally {
-        setLoadingSales(false);
-      }
-    };
-
-    fetchSales();
-  }, []);
+  // Sales será buscado no orquestrador central
 
   const handleSaveSale = async (s: SalesOrder) => {
     try {
@@ -994,42 +988,7 @@ const App: React.FC = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loadingSuppliers, setLoadingSuppliers] = useState(true);
 
-  // Fetch initial data from Supabase for Suppliers
-  useEffect(() => {
-    const fetchSuppliers = async () => {
-      setLoadingSuppliers(true);
-      try {
-        const { data, error } = await supabase
-          .from('suppliers')
-          .select('*')
-          .order('trading_name');
-        
-        if (error) throw error;
-        if (data) {
-          const mapped = data.map(s => ({
-            ...s,
-            legalName: s.legal_name,
-            tradingName: s.trading_name,
-            contactName: s.contact_name,
-            rgInsc: s.rg_insc,
-            cellphone: s.cellphone,
-            observations: s.observations,
-            code: s.supplier_code,
-            createdAt: s.created_at
-          }));
-          setSuppliers(mapped as Supplier[]);
-        }
-      } catch (err) {
-        console.error('Erro ao carregar fornecedores do Supabase:', err);
-        const saved = localStorage.getItem('marmo_suppliers');
-        if (saved) setSuppliers(JSON.parse(saved));
-      } finally {
-        setLoadingSuppliers(false);
-      }
-    };
-
-    fetchSuppliers();
-  }, []);
+  // Suppliers será buscado no orquestrador central
 
   const handleSaveSupplier = async (s: Supplier) => {
     try {
@@ -1109,29 +1068,27 @@ const App: React.FC = () => {
 
   // Persistence simulation
   useEffect(() => {
-    const savedUser = localStorage.getItem('marmo_user');
-    if (savedUser) setUser(JSON.parse(savedUser));
+    const safeLoad = (key: string, setter: (val: any) => void) => {
+      try {
+        const saved = localStorage.getItem(key);
+        if (saved) setter(JSON.parse(saved));
+      } catch (err) {
+        console.error(`Erro ao carregar ${key} do localStorage:`, err);
+      }
+    };
 
-    const savedPhases = localStorage.getItem('marmo_phases');
-    if (savedPhases) setPhases(JSON.parse(savedPhases));
-
-    const savedStaff = localStorage.getItem('marmo_staff');
-    if (savedStaff) setStaff(JSON.parse(savedStaff));
-
-    const savedActivities = localStorage.getItem('marmo_activities');
-    if (savedActivities) setActivities(JSON.parse(savedActivities));
-
-    const savedCompany = localStorage.getItem('marmo_company');
-    if (savedCompany) setCompanyInfo(JSON.parse(savedCompany));
-
-    const savedBrands = localStorage.getItem('marmo_brands');
-    if (savedBrands) setBrands(JSON.parse(savedBrands));
-
-    const savedProductGroups = localStorage.getItem('marmo_product_groups');
-    if (savedProductGroups) setProductGroups(JSON.parse(savedProductGroups));
-
-    const savedServiceGroups = localStorage.getItem('marmo_service_groups');
-    if (savedServiceGroups) setServiceGroups(JSON.parse(savedServiceGroups));
+    safeLoad('marmo_phases', setPhases);
+    safeLoad('marmo_staff', setStaff);
+    safeLoad('marmo_activities', setActivities);
+    safeLoad('marmo_company', setCompanyInfo);
+    safeLoad('marmo_brands', setBrands);
+    safeLoad('marmo_product_groups', setProductGroups);
+    safeLoad('marmo_service_groups', setServiceGroups);
+    safeLoad('marmo_transactions', setTransactions);
+    safeLoad('marmo_products', setProducts);
+    safeLoad('marmo_orders', setOrders);
+    safeLoad('marmo_app_users', setAppUsers);
+    safeLoad('keepgoing_sales', setSales);
   }, []);
 
   useEffect(() => {
@@ -1163,21 +1120,8 @@ const App: React.FC = () => {
   }, [serviceGroups]);
 
   useEffect(() => {
-    localStorage.setItem('marmo_clients', JSON.stringify(clients));
-  }, [clients]);
-
-
-  useEffect(() => {
-    localStorage.setItem('marmo_deliveries', JSON.stringify(deliveries));
-  }, [deliveries]);
-
-  useEffect(() => {
     localStorage.setItem('marmo_transactions', JSON.stringify(transactions));
   }, [transactions]);
-
-  useEffect(() => {
-    localStorage.setItem('marmo_architects', JSON.stringify(architects));
-  }, [architects]);
 
   useEffect(() => {
     localStorage.setItem('marmo_products', JSON.stringify(products));
@@ -1246,16 +1190,32 @@ const App: React.FC = () => {
 
   const handleLogin = (u: User) => {
     setUser(u);
-    localStorage.setItem('marmo_user', JSON.stringify(u));
-    // If driver, set initial view to Delivery Schedule
     if (u.role === 'driver') {
       setCurrentView('Agenda de Entregas');
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('Erro ao deslogar:', err);
+    }
+    
+    // Limpeza de estado para evitar persistência de dados de um usuário para outro
     setUser(null);
-    localStorage.removeItem('marmo_user');
+    setOrders([]);
+    setDeliveries([]);
+    setSales([]);
+    setActivities([]);
+    setClients([]);
+    setSuppliers([]);
+    setMaterials([]);
+    setProducts([]);
+    setAppUsers([]);
+    
+    // Opcional: Recarregar a página para garantir um estado 100% limpo sem lock
+    window.location.reload();
   };
 
   const updateOrder = (orderId: string, updates: Partial<OrderService>) => {
@@ -1388,6 +1348,100 @@ const App: React.FC = () => {
     }
   };
 
+  const addMeasurement = async (measurement: Omit<Measurement, 'id'>) => {
+    try {
+      const payload = {
+        order_id: measurement.orderId,
+        os_number: measurement.osNumber,
+        client_name: measurement.clientName,
+        address: measurement.address,
+        date: measurement.date,
+        time: measurement.time,
+        status: measurement.status
+      };
+
+      const { data, error } = await supabase
+        .from('measurements')
+        .insert(payload)
+        .select()
+        .single();
+      
+      if (error) throw error;
+
+      const newMeasurement = {
+        ...data,
+        orderId: data.order_id,
+        osNumber: data.os_number,
+        clientName: data.client_name
+      } as Measurement;
+
+      setMeasurements(prev => [newMeasurement, ...prev]);
+      logActivity('update', `Agendou medição para a O.S. ${newMeasurement.osNumber} em ${newMeasurement.address}`, newMeasurement.orderId, newMeasurement.osNumber);
+    } catch (err) {
+      console.error('Erro ao adicionar medição:', err);
+    }
+  };
+
+  const updateMeasurementStatus = async (id: string, status: Measurement['status']) => {
+    try {
+      const { error } = await supabase
+        .from('measurements')
+        .update({ status })
+        .eq('id', id);
+      
+      if (error) throw error;
+      setMeasurements(prev => prev.map(m => m.id === id ? { ...m, status } : m));
+    } catch (err) {
+      console.error('Erro ao atualizar status da medição:', err);
+    }
+  };
+
+  const deleteMeasurement = async (id: string) => {
+    const measurement = measurements.find(m => m.id === id);
+    if (!measurement) return;
+
+    try {
+      const { error } = await supabase
+        .from('measurements')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      setMeasurements(prev => prev.filter(m => m.id !== id));
+      logActivity('delete', `Removeu agendamento de medição da O.S. ${measurement.osNumber}`, measurement.orderId, measurement.osNumber);
+    } catch (err) {
+      console.error('Erro ao deletar medição:', err);
+    }
+  };
+
+  const updateMeasurement = async (id: string, updates: Partial<Measurement>) => {
+    try {
+      const payload: any = { ...updates };
+      if (updates.orderId) payload.order_id = updates.orderId;
+      if (updates.osNumber) payload.os_number = updates.osNumber;
+      if (updates.clientName) payload.client_name = updates.clientName;
+
+      delete payload.orderId;
+      delete payload.osNumber;
+      delete payload.clientName;
+
+      const { error } = await supabase
+        .from('measurements')
+        .update(payload)
+        .eq('id', id);
+      
+      if (error) throw error;
+
+      setMeasurements(prev => prev.map(m => m.id === id ? { ...m, ...updates } : m));
+      const measurement = measurements.find(m => m.id === id);
+      if (measurement) {
+        logActivity('update', `Atualizou agendamento de medição da O.S. ${measurement.osNumber}`, measurement.orderId, measurement.osNumber);
+      }
+    } catch (err) {
+      console.error('Erro ao atualizar medição:', err);
+    }
+  };
+
   const updateDelivery = async (id: string, updates: Partial<Delivery>) => {
     try {
       const payload: any = { ...updates };
@@ -1443,12 +1497,54 @@ const App: React.FC = () => {
     setPhases(prev => prev.map(p => p.name === phaseName ? { ...p, requiresResponsible: !p.requiresResponsible } : p));
   };
 
-  const handleSaveUser = (u: AppUser) => {
-    setAppUsers(prev => prev.find(x => x.id === u.id) ? prev.map(x => x.id === u.id ? u : x) : [...prev, u]);
+  const handleSaveUser = async (u: AppUser) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          name: u.name, 
+          role: u.role,
+          avatar_url: u.avatarUrl 
+        })
+        .eq('id', u.id);
+      
+      if (error) throw error;
+      setAppUsers(prev => prev.map(x => x.id === u.id ? u : x));
+    } catch (err: any) {
+      console.error('Erro ao salvar usuário:', err);
+      alert('Erro ao atualizar perfil: ' + err.message);
+    }
   };
 
-  const handleDeleteUser = (id: string) => {
-    setAppUsers(prev => prev.filter(x => x.id !== id));
+  const handleDeleteUser = async (id: string) => {
+    const targetUser = appUsers.find(u => u.id === id);
+    if (targetUser?.isMaster) {
+      alert('Ação Bloqueada: Este é o Administrador Master e não pode ser excluído.');
+      return;
+    }
+
+    if (!window.confirm('Tem certeza que deseja remover o acesso deste usuário?')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        if (error.message.includes('Administrador Master')) {
+          alert('Ação Bloqueada: ' + error.message);
+          return;
+        }
+        throw error;
+      }
+      
+      setAppUsers(prev => prev.filter(x => x.id !== id));
+      logActivity('delete', `Removeu acesso do usuário: ${targetUser?.name || id}`);
+    } catch (err: any) {
+      console.error('Erro ao deletar usuário:', err);
+      alert('Erro ao excluir usuário: ' + err.message);
+    }
   };
 
   const handleSaveStaff = (s: ProductionStaff) => {
@@ -1481,8 +1577,56 @@ const App: React.FC = () => {
     setSalesPhases(result);
   };
 
+  if (loadingSession) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-6 max-w-sm text-center">
+          <div className="w-16 h-16 border-4 border-[#ec5b13] border-t-transparent rounded-full animate-spin"></div>
+          <div className="space-y-2">
+            <p className="text-slate-700 font-bold text-lg animate-pulse">Carregando KeepGoing...</p>
+            <p className="text-slate-400 text-sm">Validando sua sessão e dados locais...</p>
+          </div>
+          
+          <div className="pt-8 border-t border-slate-200">
+            <button 
+              onClick={() => {
+                if (window.confirm("Isso irá limpar as configurações locais salvas no seu navegador (como cores e preferências) para tentar destravar o sistema. Deseja continuar?")) {
+                  localStorage.clear();
+                  window.location.reload();
+                }
+              }}
+              className="text-xs text-slate-400 underline hover:text-[#ec5b13] transition-colors"
+            >
+              O sistema está demorando? Clique aqui para resetar dados locais.
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
-    return <Login onLogin={handleLogin} />;
+    return (
+      <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
+        {authError && (
+          <div className="max-w-md w-full mb-6 p-4 bg-orange-50 border-l-4 border-orange-500 rounded shadow-md">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-orange-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-orange-700 font-medium">
+                  {authError}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        <Login onLogin={handleLogin} />
+      </div>
+    );
   }
 
   const filteredOrders = orders.filter(o =>
@@ -1531,6 +1675,21 @@ const App: React.FC = () => {
             onUpdateDelivery={updateDelivery}
             onDeleteDelivery={deleteDelivery}
             onReorderDeliveries={setDeliveries}
+            companyAddress={companyInfo.address}
+            companyName={companyInfo.name}
+            companyLogoUrl={companyInfo.logoUrl}
+          />
+        );
+      case 'Agenda de Medições':
+        return (
+          <MeasurementSchedule 
+            orders={orders} 
+            measurements={measurements} 
+            onAddMeasurement={addMeasurement} 
+            onUpdateMeasurementStatus={updateMeasurementStatus} 
+            onUpdateMeasurement={updateMeasurement}
+            onDeleteMeasurement={deleteMeasurement}
+            onReorderMeasurements={setMeasurements}
             companyAddress={companyInfo.address}
             companyName={companyInfo.name}
             companyLogoUrl={companyInfo.logoUrl}
@@ -1690,7 +1849,7 @@ const App: React.FC = () => {
         currentView={currentView}
         onViewChange={setCurrentView}
         companyInfo={companyInfo}
-        userRole={user.role}
+        user={user}
         exchangeRates={exchangeRates}
       />
 
