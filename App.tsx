@@ -1753,8 +1753,9 @@ const App: React.FC = () => {
             onAddMeasurement={addMeasurement} 
             onUpdateMeasurementStatus={updateMeasurementStatus} 
             onUpdateMeasurement={updateMeasurement}
+            onDeleteMeasurement={deleteMeasurement}
             onReorderMeasurements={(newMeasurements) => setMeasurements(newMeasurements)}
-            companyAddress={companyProfile?.address || ''}
+            companyAddress={companyInfo.address}
             companyName={companyInfo.name}
             companyLogoUrl={companyInfo.logoUrl}
             userRole={user?.role}

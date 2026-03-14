@@ -49,9 +49,10 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
   companyAddress,
   companyName,
   companyLogoUrl,
-  userRole = 'admin'
+  userRole = 'admin',
+  staffLocations = {}
 }) => {
-  const [viewMode, setViewMode] = useState<'map' | 'calendar'>('map');
+  const [viewMode, setViewMode] = useState<'map' | 'calendar'>('calendar');
   const [calendarMode, setCalendarMode] = useState<'day' | 'week' | 'month'>('week');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isModalOpen, setIsModalOpen] = useState(false);
