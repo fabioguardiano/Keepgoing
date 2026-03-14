@@ -77,14 +77,14 @@ export interface User {
   name: string;
   email: string;
   avatarUrl?: string;
-  role: 'admin' | 'manager' | 'seller';
+  role: 'admin' | 'manager' | 'seller' | 'medidor';
 }
 
 export interface AppUser {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'manager' | 'seller';
+  role: 'admin' | 'manager' | 'seller' | 'medidor';
   status: 'ativo' | 'inativo';
   createdAt: string;
   avatarUrl?: string;

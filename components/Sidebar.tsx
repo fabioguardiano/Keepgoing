@@ -73,6 +73,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
     if (userRole === 'driver') {
       return item.view === 'Agenda de Entregas';
     }
+    if (userRole === 'medidor') {
+      return item.view === 'Agenda de Medições';
+    }
     return true;
   });
 

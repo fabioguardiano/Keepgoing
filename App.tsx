@@ -599,6 +599,71 @@ const App: React.FC = () => {
 
   // Clients será buscado no orquestrador central
 
+  // Real-time location sharing for Medidor
+  useEffect(() => {
+    if (user?.role !== 'medidor' || !('geolocation' in navigator)) return;
+
+    const intervalId = setInterval(() => {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          try {
+            await supabase
+              .from('profiles')
+              .update({ 
+                last_lat: latitude, 
+                last_lng: longitude, 
+                last_update: new Date().toISOString() 
+              })
+              .eq('id', user.id);
+          } catch (err) {
+            console.error('Erro ao atualizar localização:', err);
+          }
+        },
+        (error) => console.error('Erro de geolocalização:', error),
+        { enableHighAccuracy: true }
+      );
+    }, 30000); // Update every 30 seconds
+
+    return () => clearInterval(intervalId);
+  }, [user]);
+
+  // Real-time location fetching for Admin/Manager
+  const [staffLocations, setStaffLocations] = useState<Record<string, DriverStatus>>({});
+
+  useEffect(() => {
+    if (user?.role !== 'admin' && user?.role !== 'manager') return;
+
+    const fetchLocations = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, last_lat, last_lng, last_update')
+          .not('last_lat', 'is', null);
+
+        if (error) throw error;
+
+        const locations: Record<string, DriverStatus> = {};
+        data.forEach((p: any) => {
+          locations[p.id] = {
+            lat: p.last_lat,
+            lng: p.last_lng,
+            lastUpdate: new Date(p.last_update).toLocaleTimeString('pt-BR'),
+            isOnline: true // Simplified logic
+          };
+        });
+        setStaffLocations(locations);
+      } catch (err) {
+        console.error('Erro ao buscar localizações:', err);
+      }
+    };
+
+    const intervalId = setInterval(fetchLocations, 30000);
+    fetchLocations();
+
+    return () => clearInterval(intervalId);
+  }, [user]);
+
   const handleSaveClient = async (c: Client) => {
     try {
       const { data, error } = await supabase
@@ -1688,11 +1753,12 @@ const App: React.FC = () => {
             onAddMeasurement={addMeasurement} 
             onUpdateMeasurementStatus={updateMeasurementStatus} 
             onUpdateMeasurement={updateMeasurement}
-            onDeleteMeasurement={deleteMeasurement}
-            onReorderMeasurements={setMeasurements}
-            companyAddress={companyInfo.address}
+            onReorderMeasurements={(newMeasurements) => setMeasurements(newMeasurements)}
+            companyAddress={companyProfile?.address || ''}
             companyName={companyInfo.name}
             companyLogoUrl={companyInfo.logoUrl}
+            userRole={user?.role}
+            staffLocations={staffLocations}
           />
         );
       case 'Equipe':

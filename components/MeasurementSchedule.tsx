@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { MapPin, Clock, Calendar, Plus, Search, ChevronRight, X, Navigation, Phone, Map as MapIcon, Building2, Info, History, Edit2, Trash2, Ruler, FileDown } from 'lucide-react';
+import { MapPin, Clock, Calendar as CalendarIcon, Plus, Search, ChevronRight, ChevronLeft, X, Navigation, Phone, Map as MapIcon, Building2, Info, History, Edit2, Trash2, Ruler, FileDown, Layout, Grid } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { Measurement, OrderService, DriverStatus } from '../types';
@@ -34,6 +34,8 @@ interface MeasurementScheduleProps {
   companyAddress: string;
   companyName: string;
   companyLogoUrl?: string;
+  userRole?: string;
+  staffLocations?: Record<string, DriverStatus>;
 }
 
 export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({ 
@@ -46,8 +48,12 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
   onReorderMeasurements,
   companyAddress,
   companyName,
-  companyLogoUrl
+  companyLogoUrl,
+  userRole = 'admin'
 }) => {
+  const [viewMode, setViewMode] = useState<'map' | 'calendar'>('map');
+  const [calendarMode, setCalendarMode] = useState<'day' | 'week' | 'month'>('week');
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMeasurementId, setSelectedMeasurementId] = useState<string | null>(measurements.length > 0 ? measurements[0].id : null);
@@ -150,6 +156,32 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
     });
   };
 
+  // Helper for calendar days
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const days = new Date(year, month + 1, 0).getDate();
+    return Array.from({ length: days }, (_, i) => new Date(year, month, i + 1));
+  };
+
+  const getWeekDays = (date: Date) => {
+    const start = new Date(date);
+    start.setDate(date.getDate() - date.getDay());
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      return d;
+    });
+  };
+
+  const navigateCalendar = (direction: 'prev' | 'next') => {
+    const newDate = new Date(currentDate);
+    if (calendarMode === 'day') newDate.setDate(currentDate.getDate() + (direction === 'next' ? 1 : -1));
+    if (calendarMode === 'week') newDate.setDate(currentDate.getDate() + (direction === 'next' ? 7 : -7));
+    if (calendarMode === 'month') newDate.setMonth(currentDate.getMonth() + (direction === 'next' ? 1 : -1));
+    setCurrentDate(newDate);
+  };
+
   // Geocoding effect
   useEffect(() => {
     const geocode = async (address: string) => {
@@ -171,6 +203,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
 
   // Routing effect
   useEffect(() => {
+    if (viewMode !== 'map') return;
     const fetchRoutes = async () => {
       const groups = Array.from(new Set(measurements.map(m => m.routeGroup || 'Manhã')));
       const newPaths: Record<string, [number, number][]> = {};
@@ -212,7 +245,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
     };
 
     if (Object.keys(coords).length > 0) fetchRoutes();
-  }, [coords, companyAddress, measurements]);
+  }, [coords, companyAddress, measurements, viewMode]);
 
   const filteredMeasurements = measurements.filter(m => 
     m.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -373,12 +406,22 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
         <div className="p-6 border-b">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-gray-900">Agenda de Medições</h2>
-            <button 
-              onClick={() => setIsModalOpen(true)}
-              className="p-2 bg-[#ec5b13] text-white rounded-lg hover:bg-[#d84a0d] transition-colors"
-            >
-              <Plus size={20} />
-            </button>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setViewMode(viewMode === 'map' ? 'calendar' : 'map')}
+                className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
+                title={viewMode === 'map' ? 'Ver Calendário' : 'Ver Mapa'}
+              >
+                {viewMode === 'map' ? <CalendarIcon size={20} /> : <MapIcon size={20} />}
+              </button>
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="p-2 bg-[#ec5b13] text-white rounded-lg hover:bg-[#d84a0d] transition-colors"
+                title="Agendar Medição"
+              >
+                <Plus size={20} />
+              </button>
+            </div>
           </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
@@ -464,7 +507,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-1.5">
-                        <Calendar size={14} className="text-gray-400" />
+                        <CalendarIcon size={14} className="text-gray-400" />
                         <span>{new Date(measurement.date).toLocaleDateString('pt-BR')}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
@@ -488,176 +531,324 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
         </div>
       </div>
 
-      <div className="flex-1 relative bg-gray-200">
-        <div className="absolute inset-0 bg-[#f8f9fa] flex flex-col">
-          <div className="p-4 bg-white/80 backdrop-blur-md border-b flex items-center justify-between z-[1000] absolute top-0 left-0 right-0">
-            <div className="flex items-center gap-4">
-               <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border shadow-sm text-sm font-bold text-gray-700">
-                 <Ruler size={16} className="text-[#ec5b13]" /> Rota de hoje: {measurements.length} paradas
-               </div>
-               <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border shadow-sm text-sm font-bold text-gray-700">
-                 <Navigation size={16} className="text-blue-500" /> Estimativa: 3h 45min
-               </div>
+      <div className="flex-1 relative bg-gray-50 flex flex-col">
+        {viewMode === 'map' ? (
+          <div className="absolute inset-0 bg-[#f8f9fa] flex flex-col">
+            <div className="p-4 bg-white/80 backdrop-blur-md border-b flex items-center justify-between z-[1000] absolute top-0 left-0 right-0">
+              <div className="flex items-center gap-4">
+                 <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border shadow-sm text-sm font-bold text-gray-700">
+                   <Ruler size={16} className="text-[#ec5b13]" /> Rota de hoje: {measurements.length} paradas
+                 </div>
+                 <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border shadow-sm text-sm font-bold text-gray-700">
+                   <Navigation size={16} className="text-blue-500" /> Estimativa: 3h 45min
+                 </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={generatePDF}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-black transition-all"
+                >
+                  <FileDown size={18} /> PDF da Rota
+                </button>
+                <button 
+                  onClick={() => setIsSimulating(!isSimulating)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold shadow-lg transition-all ${isSimulating ? 'bg-red-500 text-white animate-pulse' : 'bg-green-600 text-white hover:bg-green-700'}`}
+                >
+                  <div className={`w-2 h-2 rounded-full ${isSimulating ? 'bg-white' : 'bg-green-300'}`} />
+                  {isSimulating ? 'Parar Rastreamento' : 'Rastrear Medidor (Simular)'}
+                </button>
+                <button 
+                  onClick={() => {
+                    const destination = filteredMeasurements.length > 0 ? filteredMeasurements[filteredMeasurements.length - 1].address : '';
+                    const waypoints = filteredMeasurements.slice(0, -1).map(m => m.address).join('/');
+                    window.open('https://www.google.com/maps/dir/' + encodeURIComponent(companyAddress) + '/' + (waypoints ? encodeURIComponent(waypoints) + '/' : '') + encodeURIComponent(destination), '_blank');
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all"
+                >
+                  <Navigation size={18} /> Ver Rota no Google Maps
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={generatePDF}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-black transition-all"
-              >
-                <FileDown size={18} /> PDF da Rota
-              </button>
-              <button 
-                onClick={() => setIsSimulating(!isSimulating)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold shadow-lg transition-all ${isSimulating ? 'bg-red-500 text-white animate-pulse' : 'bg-green-600 text-white hover:bg-green-700'}`}
-              >
-                <div className={`w-2 h-2 rounded-full ${isSimulating ? 'bg-white' : 'bg-green-300'}`} />
-                {isSimulating ? 'Parar Rastreamento' : 'Rastrear Medidor (Simular)'}
-              </button>
-              <button 
-                onClick={() => {
-                  const destination = filteredMeasurements.length > 0 ? filteredMeasurements[filteredMeasurements.length - 1].address : '';
-                  const waypoints = filteredMeasurements.slice(0, -1).map(m => m.address).join('/');
-                  window.open('https://www.google.com/maps/dir/' + encodeURIComponent(companyAddress) + '/' + (waypoints ? encodeURIComponent(waypoints) + '/' : '') + encodeURIComponent(destination), '_blank');
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all"
-              >
-                <Navigation size={18} /> Ver Rota no Google Maps
-              </button>
-            </div>
-          </div>
-          
-          <div className="flex-1 relative z-0">
-            <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }} scrollWheelZoom={true}>
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              <MapController center={mapCenter} />
-              
-              {coords[companyAddress] && (
-                <Marker position={coords[companyAddress] as L.LatLngTuple} icon={createCompanyIcon()}>
-                  <Popup>
-                    <div className="p-1">
-                      <p className="font-black text-xs uppercase text-gray-400 mb-1">Ponto de Saída</p>
-                      <p className="font-bold text-sm">{companyName}</p>
-                      <p className="text-xs text-gray-500">{companyAddress}</p>
-                    </div>
-                  </Popup>
-                </Marker>
-              )}
-
-              {measurements.map((m, i) => (
-                coords[m.address] && (
-                  <Marker 
-                    key={m.id} 
-                    position={coords[m.address] as L.LatLngTuple} 
-                    icon={createNumberedIcon(i + 1, m.id === selectedMeasurementId ? '#2563eb' : '#ec5b13')}
-                    eventHandlers={{ click: () => setSelectedMeasurementId(m.id) }}
-                  >
+            
+            <div className="flex-1 relative z-0 mt-16">
+              <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }} scrollWheelZoom={true}>
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <MapController center={mapCenter} />
+                
+                {coords[companyAddress] && (
+                  <Marker position={coords[companyAddress] as L.LatLngTuple} icon={createCompanyIcon()}>
                     <Popup>
                       <div className="p-1">
-                        <p className="font-black text-[10px] uppercase text-gray-400 mb-1">Medição {i + 1}</p>
-                        <p className="font-bold text-sm text-gray-900">{m.clientName}</p>
-                        <p className="text-[11px] font-bold text-[#ec5b13] mb-1">O.S. {m.osNumber}</p>
-                        <p className="text-xs text-gray-500 line-clamp-2">{m.address}</p>
-                        <div className="mt-2 text-[10px] font-black uppercase text-gray-400 flex items-center gap-1">
-                          <Clock size={10} /> {m.time}
-                        </div>
+                        <p className="font-black text-xs uppercase text-gray-400 mb-1">Ponto de Saída</p>
+                        <p className="font-bold text-sm">{companyName}</p>
+                        <p className="text-xs text-gray-500">{companyAddress}</p>
                       </div>
                     </Popup>
                   </Marker>
-                )
-              ))}
+                )}
 
-              {Array.from(new Set(measurements.map(m => m.routeGroup || 'Manhã'))).map((group, idx) => {
-                const colors = ['#ec5b13', '#2563eb', '#10b981', '#f59e0b', '#8b5cf6'];
-                const groupColor = colors[idx % colors.length];
-                
-                if (roadPaths[group]) {
-                  return (
-                    <Polyline 
-                      key={group}
-                      positions={roadPaths[group] as L.LatLngExpression[]} 
-                      color={groupColor} 
-                      weight={5} 
-                      opacity={0.6}
-                    />
-                  );
-                }
-                return null;
-              })}
+                {measurements.map((m, i) => (
+                  coords[m.address] && (
+                    <Marker 
+                      key={m.id} 
+                      position={coords[m.address] as L.LatLngTuple} 
+                      icon={createNumberedIcon(i + 1, m.id === selectedMeasurementId ? '#2563eb' : '#ec5b13')}
+                      eventHandlers={{ click: () => setSelectedMeasurementId(m.id) }}
+                    >
+                      <Popup>
+                        <div className="p-1">
+                          <p className="font-black text-[10px] uppercase text-gray-400 mb-1">Medição {i + 1}</p>
+                          <p className="font-bold text-sm text-gray-900">{m.clientName}</p>
+                          <p className="text-[11px] font-bold text-[#ec5b13] mb-1">O.S. {m.osNumber}</p>
+                          <p className="text-xs text-gray-500 line-clamp-2">{m.address}</p>
+                          <div className="mt-2 text-[10px] font-black uppercase text-gray-400 flex items-center gap-1">
+                            <Clock size={10} /> {m.time}
+                          </div>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  )
+                ))}
 
-              {staffLocation && (
-                <Marker position={[staffLocation.lat, staffLocation.lng]} icon={createStaffIcon()}>
-                  <Popup>
-                    <div className="p-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                        <p className="font-black text-xs uppercase text-green-600">Medidor Online</p>
-                      </div>
-                      <p className="font-bold text-sm">Equipe de Medição</p>
-                      <p className="text-[10px] text-gray-500 font-medium">Última atualização: {staffLocation.lastUpdate}</p>
-                    </div>
-                  </Popup>
-                </Marker>
-              )}
-            </MapContainer>
-            
-            <div className="absolute bottom-6 left-6 space-y-2 z-[1000]">
-                <div className="bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-white flex flex-col gap-3 min-w-[280px] max-h-[400px] overflow-y-auto">
-                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b pb-2">Legenda das Rotas</h4>
+                {Array.from(new Set(measurements.map(m => m.routeGroup || 'Manhã'))).map((group, idx) => {
+                  const colors = ['#ec5b13', '#2563eb', '#10b981', '#f59e0b', '#8b5cf6'];
+                  const groupColor = colors[idx % colors.length];
                   
-                  {Array.from(new Set(measurements.map(m => m.routeGroup || 'Manhã'))).map((group, groupIdx) => {
-                    const colors = ['#ec5b13', '#2563eb', '#10b981', '#f59e0b', '#8b5cf6'];
-                    const groupColor = colors[groupIdx % colors.length];
-                    
+                  if (roadPaths[group]) {
                     return (
-                      <div key={group} className="space-y-2 pb-2 border-b border-gray-100 last:border-0">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: groupColor }} />
-                          <span className="text-[10px] font-black text-gray-500 uppercase">{group}</span>
-                        </div>
-                        
-                        <div 
-                          className="flex items-center gap-3 cursor-pointer hover:bg-black/5 p-1 rounded-lg transition-all"
-                          onClick={() => setSelectedMeasurementId(null)}
-                        >
-                          <div className="w-8 h-8 bg-white border border-gray-200 text-gray-400 rounded-lg flex items-center justify-center shadow-sm overflow-hidden">
-                            {companyLogoUrl ? (
-                              <img src={companyLogoUrl} alt="Logo" className="w-full h-full object-cover" />
-                            ) : (
-                              <Building2 size={16} />
-                            )}
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-black text-gray-400 uppercase leading-none mb-1">Saída (Sede)</p>
-                            <p className="text-xs font-bold text-gray-800 line-clamp-1">{companyAddress}</p>
-                          </div>
-                        </div>
+                      <Polyline 
+                        key={group}
+                        positions={roadPaths[group] as L.LatLngExpression[]} 
+                        color={groupColor} 
+                        weight={5} 
+                        opacity={0.6}
+                      />
+                    );
+                  }
+                  return null;
+                })}
 
-                        {measurements.filter(m => (m.routeGroup || 'Manhã') === group).map((m, i) => (
+                {staffLocation && (
+                  <Marker position={[staffLocation.lat, staffLocation.lng]} icon={createStaffIcon()}>
+                    <Popup>
+                      <div className="p-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                          <p className="font-black text-xs uppercase text-green-600">Medidor Online (Simulação)</p>
+                        </div>
+                        <p className="font-bold text-sm">Equipe de Medição</p>
+                        <p className="text-[10px] text-gray-500 font-medium">Última atualização: {staffLocation.lastUpdate}</p>
+                      </div>
+                    </Popup>
+                  </Marker>
+                )}
+
+                {staffLocations && Object.entries(staffLocations).map(([id, loc]) => (
+                  <Marker key={id} position={[loc.lat, loc.lng]} icon={createStaffIcon()}>
+                    <Popup>
+                      <div className="p-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                          <p className="font-black text-xs uppercase text-green-600">Medidor Online</p>
+                        </div>
+                        <p className="font-bold text-sm">Equipe (ID: {id})</p>
+                        <p className="text-[10px] text-gray-500 font-medium">Última atualização: {loc.lastUpdate}</p>
+                      </div>
+                    </Popup>
+                  </Marker>
+                ))}
+              </MapContainer>
+              
+              <div className="absolute bottom-6 left-6 space-y-2 z-[1000]">
+                  <div className="bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-white flex flex-col gap-3 min-w-[280px] max-h-[400px] overflow-y-auto">
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b pb-2">Legenda das Rotas</h4>
+                    
+                    {Array.from(new Set(measurements.map(m => m.routeGroup || 'Manhã'))).map((group, groupIdx) => {
+                      const colors = ['#ec5b13', '#2563eb', '#10b981', '#f59e0b', '#8b5cf6'];
+                      const groupColor = colors[groupIdx % colors.length];
+                      
+                      return (
+                        <div key={group} className="space-y-2 pb-2 border-b border-gray-100 last:border-0">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: groupColor }} />
+                            <span className="text-[10px] font-black text-gray-500 uppercase">{group}</span>
+                          </div>
+                          
                           <div 
-                            key={m.id} 
                             className="flex items-center gap-3 cursor-pointer hover:bg-black/5 p-1 rounded-lg transition-all"
-                            onClick={() => setSelectedMeasurementId(m.id)}
+                            onClick={() => setSelectedMeasurementId(null)}
                           >
-                            <div className={`w-8 h-8 ${m.id === selectedMeasurementId ? 'bg-blue-600' : ''} text-white rounded-lg flex items-center justify-center font-black text-xs shadow-lg`} style={{ backgroundColor: m.id === selectedMeasurementId ? '#2563eb' : groupColor }}>
-                              {i + 1}
+                            <div className="w-8 h-8 bg-white border border-gray-200 text-gray-400 rounded-lg flex items-center justify-center shadow-sm overflow-hidden">
+                              {companyLogoUrl ? (
+                                <img src={companyLogoUrl} alt="Logo" className="w-full h-full object-cover" />
+                              ) : (
+                                <Building2 size={16} />
+                              )}
                             </div>
                             <div>
-                              <p className="text-[10px] font-black text-gray-400 uppercase leading-none mb-1">Medição {i + 1}</p>
-                              <p className="text-xs font-bold text-gray-800 line-clamp-1">{m.clientName}</p>
-                              <p className="text-[10px] text-gray-500 font-medium line-clamp-1">{m.address}</p>
+                              <p className="text-[10px] font-black text-gray-400 uppercase leading-none mb-1">Saída (Sede)</p>
+                              <p className="text-xs font-bold text-gray-800 line-clamp-1">{companyAddress}</p>
                             </div>
                           </div>
-                        ))}
+
+                          {measurements.filter(m => (m.routeGroup || 'Manhã') === group).map((m, i) => (
+                            <div 
+                              key={m.id} 
+                              className="flex items-center gap-3 cursor-pointer hover:bg-black/5 p-1 rounded-lg transition-all"
+                              onClick={() => setSelectedMeasurementId(m.id)}
+                            >
+                              <div className={`w-8 h-8 ${m.id === selectedMeasurementId ? 'bg-blue-600' : ''} text-white rounded-lg flex items-center justify-center font-black text-xs shadow-lg`} style={{ backgroundColor: m.id === selectedMeasurementId ? '#2563eb' : groupColor }}>
+                                {i + 1}
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-black text-gray-400 uppercase leading-none mb-1">Medição {i + 1}</p>
+                                <p className="text-xs font-bold text-gray-800 line-clamp-1">{m.clientName}</p>
+                                <p className="text-[10px] text-gray-500 font-medium line-clamp-1">{m.address}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col p-6 overflow-hidden">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                <div className="flex bg-gray-100 p-1 rounded-xl">
+                  {(['day', 'week', 'month'] as const).map(mode => (
+                    <button
+                      key={mode}
+                      onClick={() => setCalendarMode(mode)}
+                      className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${calendarMode === mode ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                      {mode === 'day' ? 'Dia' : mode === 'week' ? 'Semana' : 'Mês'}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2 ml-4">
+                  <button onClick={() => navigateCalendar('prev')} className="p-2 hover:bg-gray-200 rounded-lg transition-colors border shadow-sm bg-white">
+                    <ChevronLeft size={20} />
+                  </button>
+                  <h3 className="text-lg font-bold text-gray-900 min-w-[200px] text-center">
+                    {calendarMode === 'month' 
+                      ? currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+                      : calendarMode === 'week'
+                      ? `Semana de ${getWeekDays(currentDate)[0].toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })}`
+                      : currentDate.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })
+                    }
+                  </h3>
+                  <button onClick={() => navigateCalendar('next')} className="p-2 hover:bg-gray-200 rounded-lg transition-colors border shadow-sm bg-white">
+                    <ChevronRight size={20} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-1 bg-white rounded-3xl border shadow-xl overflow-hidden flex flex-col">
+              {calendarMode === 'month' ? (
+                <div className="grid grid-cols-7 h-full">
+                  {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
+                    <div key={day} className="p-4 text-center text-xs font-black text-gray-400 border-b border-r bg-gray-50">
+                      {day}
+                    </div>
+                  ))}
+                  {getDaysInMonth(currentDate).map((day, i) => {
+                    const dayMeasurements = measurements.filter(m => new Date(m.date).toDateString() === day.toDateString());
+                    const isToday = day.toDateString() === new Date().toDateString();
+                    const isCurrentMonth = day.getMonth() === currentDate.getMonth();
+
+                    return (
+                      <div key={i} className={`min-h-[120px] p-2 border-b border-r transition-all group hover:bg-orange-50/10 ${!isCurrentMonth ? 'opacity-30' : ''}`}>
+                        <div className="flex justify-between items-start mb-2">
+                          <span className={`text-sm font-black w-7 h-7 flex items-center justify-center rounded-full ${isToday ? 'bg-[#ec5b13] text-white shadow-lg' : 'text-gray-400'}`}>
+                            {day.getDate()}
+                          </span>
+                        </div>
+                        <div className="space-y-1">
+                          {dayMeasurements.slice(0, 3).map(m => (
+                            <div key={m.id} className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-1 rounded-md border border-blue-100 truncate flex items-center gap-1">
+                              <div className="w-1 h-1 rounded-full bg-blue-600" />
+                              {m.clientName}
+                            </div>
+                          ))}
+                          {dayMeasurements.length > 3 && (
+                            <div className="text-[9px] font-black text-gray-400 pl-1 uppercase tracking-widest">
+                              + {dayMeasurements.length - 3} Medições
+                            </div>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
                 </div>
+              ) : (
+                <div className="flex flex-col h-full overflow-y-auto">
+                  <div className={`grid ${calendarMode === 'week' ? 'grid-cols-7' : 'grid-cols-1'} bg-gray-50 border-b sticky top-0 z-10`}>
+                    {(calendarMode === 'week' ? getWeekDays(currentDate) : [currentDate]).map((day, i) => (
+                      <div key={i} className="p-4 text-center border-r last:border-0">
+                        <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">{day.toLocaleDateString('pt-BR', { weekday: 'short' })}</p>
+                        <p className={`text-2xl font-black ${day.toDateString() === new Date().toDateString() ? 'text-[#ec5b13]' : 'text-gray-900'}`}>{day.getDate()}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex-1 relative">
+                    <div className="grid grid-cols-1 divide-y divide-gray-100">
+                      {Array.from({ length: 15 }, (_, i) => i + 7).map(hour => (
+                        <div key={hour} className="flex min-h-[100px] group">
+                          <div className="w-20 p-4 text-right border-r bg-gray-50/30">
+                            <span className="text-sm font-black text-gray-400">{hour}:00</span>
+                          </div>
+                          <div className={`flex-1 grid ${calendarMode === 'week' ? 'grid-cols-7' : 'grid-cols-1'} divide-x divide-gray-100 relative`}>
+                            {(calendarMode === 'week' ? getWeekDays(currentDate) : [currentDate]).map((day, dIdx) => {
+                              const hourMeasurements = measurements.filter(m => {
+                                const mDate = new Date(m.date);
+                                const mHour = parseInt(m.time.split(':')[0]);
+                                return mDate.toDateString() === day.toDateString() && mHour === hour;
+                              });
+
+                              return (
+                                <div key={dIdx} className="p-2 hover:bg-gray-50/50 transition-colors relative h-full">
+                                  {hourMeasurements.map(m => (
+                                    <div 
+                                      key={m.id} 
+                                      onClick={() => { setSelectedMeasurementId(m.id); setViewMode('map'); }}
+                                      className="bg-blue-600/90 backdrop-blur-md text-white p-3 rounded-2xl shadow-lg border border-white/20 cursor-pointer hover:scale-[1.02] transition-all relative z-10 mb-2"
+                                    >
+                                      <div className="flex justify-between items-start mb-1">
+                                        <p className="text-[10px] font-black uppercase tracking-widest opacity-80">O.S. {m.osNumber}</p>
+                                        <div className="bg-white/20 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-[0.1em]">{m.status}</div>
+                                      </div>
+                                      <p className="text-xs font-black truncate">{m.clientName}</p>
+                                      <div className="flex items-center gap-1 mt-1 opacity-80">
+                                        <Clock size={10} />
+                                        <span className="text-[10px] font-bold">{m.time}</span>
+                                      </div>
+                                      <div className="flex items-center gap-1 mt-1 opacity-80">
+                                        <MapPin size={10} />
+                                        <span className="text-[10px] font-bold truncate">{m.address}</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {isModalOpen && (
