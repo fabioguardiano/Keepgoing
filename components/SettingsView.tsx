@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Layout, Check, ChevronRight, Plus, Trash2, Edit2, GripVertical, Info, Building2, MapPin, Phone, Mail, ShoppingBag, FileSpreadsheet, Download, Upload, AlertCircle, Loader2 } from 'lucide-react';
+import { Settings, Layout, Check, ChevronRight, Plus, Trash2, Edit2, GripVertical, Info, Building2, MapPin, Phone, Mail, ShoppingBag, FileSpreadsheet, Download, Upload, AlertCircle, Loader2, Database } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { PhaseConfig, CompanyInfo, SalesPhaseConfig } from '../types';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
@@ -19,6 +19,8 @@ interface SettingsViewProps {
     companyInfo: CompanyInfo;
     onUpdateCompany: (info: CompanyInfo) => void;
     onImportClients: (clients: any[]) => Promise<void>;
+    onImportMaterials: (materials: any[]) => Promise<void>;
+    onMigrateData?: () => Promise<void>;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -35,7 +37,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     onReorderSalesPhases,
     companyInfo,
     onUpdateCompany,
-    onImportClients
+    onImportClients,
+    onImportMaterials,
+    onMigrateData
 }) => {
     const [activeTab, setActiveTab] = useState<'fluxo' | 'vendas' | 'empresa' | 'dados'>('fluxo');
     const [newPhaseName, setNewPhaseName] = useState('');
@@ -450,6 +454,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                             onChange={(e) => {
                                                                 const file = e.target.files?.[0];
                                                                 if (file) {
+                                                                    if (file.size > 1024 * 1024) {
+                                                                        alert('A imagem do logotipo deve ter no máximo 1MB. Por favor, escolha uma imagem menor ou comprima-a.');
+                                                                        return;
+                                                                    }
                                                                     const reader = new FileReader();
                                                                     reader.onloadend = () => {
                                                                         handleUpdateCompany('logoUrl', reader.result as string);
@@ -576,98 +584,118 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 <div className="w-20 h-20 bg-primary/5 text-primary rounded-3xl flex items-center justify-center mx-auto mb-6">
                                     <FileSpreadsheet size={40} />
                                 </div>
-                                <h2 className="text-2xl font-black text-slate-800">Importação de Clientes</h2>
-                                <p className="text-slate-500 font-medium leading-relaxed"> Suba sua planilha do Excel (.xlsx) para importar seus clientes em lote para o sistema.</p>
+                                <h2 className="text-2xl font-black text-slate-800">Central de Importação</h2>
+                                <p className="text-slate-500 font-medium leading-relaxed"> Suba sua planilha do Excel (.xlsx) para importar dados em lote para o sistema.</p>
                                 
-                                <div className="p-6 bg-slate-50 border border-slate-100 rounded-3xl space-y-4 text-left">
-                                    <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                        <Download size={16} className="text-blue-500" /> Instruções Importantes:
-                                    </h3>
-                                    <ul className="text-xs text-slate-400 space-y-2 font-medium">
-                                        <li className="flex items-start gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0" />
-                                            Certifique-se que a primeira linha contém os cabeçalhos.
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0" />
-                                            Colunas obrigatórias: <strong className="text-slate-600">nome, tipo, documento</strong>.
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0" />
-                                            Colunas de endereço recomendadas: <strong className="text-slate-600">rua, numero, bairro, cidade, estado, cep</strong>.
-                                        </li>
-                                    </ul>
-                                    <button 
-                                        onClick={() => {
-                                            const template = [
-                                                ['codigo', 'nome', 'tipo', 'documento', 'email', 'telefone', 'celular', 'rua', 'numero', 'complemento', 'bairro', 'cidade', 'estado', 'cep'],
-                                                ['1', 'João Silva', 'Pessoa Física', '000.000.000-00', 'joao@email.com', '(11) 9999-9999', '(11) 99999-9999', 'Av. Paulista', '1000', 'Sala 1', 'Centro', 'São Paulo', 'SP', '01310-100']
-                                            ];
-                                            const ws = XLSX.utils.aoa_to_sheet(template);
-                                            const wb = XLSX.utils.book_new();
-                                            XLSX.utils.book_append_sheet(wb, ws, "Modelo");
-                                            XLSX.writeFile(wb, "modelo_importacao_clientes.xlsx");
-                                        }}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="p-6 bg-slate-50 border border-slate-100 rounded-3xl space-y-4 text-left">
+                                        <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                            <ShoppingBag size={18} className="text-primary" /> Matéria Prima
+                                        </h3>
+                                        <p className="text-[11px] text-slate-500 font-medium">Importe chapas e insumos com custos e margens.</p>
+                                        <div className="space-y-2">
+                                            <button 
+                                                onClick={() => {
+                                                    const template = [
+                                                        ['codigo', 'grupo', 'descricao', 'espessura', 'custo', 'frete', 'perda', 'imposto', 'margem', 'comissao', 'desconto', 'preco_venda'],
+                                                        ['28', 'AGLOSTONE', 'AGL. BEGE PRIME AGLOSTONE', '2 CM', '250.00', '0.00', '20.00', '6.00', '46.50', '2.50', '5.00', '750.00']
+                                                    ];
+                                                    const ws = XLSX.utils.aoa_to_sheet(template);
+                                                    const wb = XLSX.utils.book_new();
+                                                    XLSX.utils.book_append_sheet(wb, ws, "Modelo Materiais");
+                                                    XLSX.writeFile(wb, "modelo_importacao_materiais.xlsx");
+                                                }}
+                                                className="w-full py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                                            >
+                                                <Download size={14} /> Modelo Materiais
+                                            </button>
+                                            <label className={`w-full flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-2xl cursor-pointer transition-all ${importLoading ? 'opacity-50 pointer-events-none' : 'hover:border-primary hover:bg-primary/5'}`}>
+                                                <Upload size={24} className="text-slate-300 mb-2" />
+                                                <span className="text-[10px] font-bold text-slate-700">Importar Materiais</span>
+                                                <input 
+                                                    type="file" 
+                                                    className="hidden" 
+                                                    accept=".xlsx, .csv" 
+                                                    onChange={async (e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (!file) return;
+                                                        setImportLoading(true);
+                                                        try {
+                                                            const reader = new FileReader();
+                                                            reader.onload = async (evt) => {
+                                                                const bstr = evt.target?.result;
+                                                                const wb = XLSX.read(bstr, { type: 'binary' });
+                                                                const ws = wb.Sheets[wb.SheetNames[0]];
+                                                                const data = XLSX.utils.sheet_to_json(ws);
+                                                                await onImportMaterials(data);
+                                                                setImportStats({ total: data.length, success: data.length, errors: 0 });
+                                                            };
+                                                            reader.readAsBinaryString(file);
+                                                        } catch (err) { console.error(err); } finally { setImportLoading(false); }
+                                                    }}
+                                                />
+                                            </label>
+                                        </div>
+                                    </div>
 
-                                        className="w-full py-2 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold hover:bg-blue-100 transition-all flex items-center justify-center gap-2"
-                                    >
-                                        <Download size={14} /> Baixar Planilha Modelo
-                                    </button>
+                                    <div className="p-6 bg-slate-50 border border-slate-100 rounded-3xl space-y-4 text-left">
+                                        <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                            <Building2 size={18} className="text-blue-500" /> Clientes
+                                        </h3>
+                                        <p className="text-[11px] text-slate-500 font-medium">Importe sua base de clientes e contatos.</p>
+                                        <div className="space-y-2">
+                                            <button 
+                                                onClick={() => {
+                                                    const template = [
+                                                        ['codigo', 'nome', 'tipo', 'documento', 'email', 'telefone', 'celular', 'rua', 'numero', 'complemento', 'bairro', 'cidade', 'estado', 'cep'],
+                                                        ['1', 'João Silva', 'Pessoa Física', '000.000.000-00', 'joao@email.com', '(11) 9999-9999', '(11) 99999-9999', 'Av. Paulista', '1000', 'Sala 1', 'Centro', 'São Paulo', 'SP', '01310-100']
+                                                    ];
+                                                    const ws = XLSX.utils.aoa_to_sheet(template);
+                                                    const wb = XLSX.utils.book_new();
+                                                    XLSX.utils.book_append_sheet(wb, ws, "Modelo Clientes");
+                                                    XLSX.writeFile(wb, "modelo_importacao_clientes.xlsx");
+                                                }}
+                                                className="w-full py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                                            >
+                                                <Download size={14} /> Modelo Clientes
+                                            </button>
+                                            <label className={`w-full flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-2xl cursor-pointer transition-all ${importLoading ? 'opacity-50 pointer-events-none' : 'hover:border-primary hover:bg-primary/5'}`}>
+                                                <Upload size={24} className="text-slate-300 mb-2" />
+                                                <span className="text-[10px] font-bold text-slate-700">Importar Clientes</span>
+                                                <input 
+                                                    type="file" 
+                                                    className="hidden" 
+                                                    accept=".xlsx, .csv" 
+                                                    onChange={async (e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (!file) return;
+                                                        setImportLoading(true);
+                                                        try {
+                                                            const reader = new FileReader();
+                                                            reader.onload = async (evt) => {
+                                                                const bstr = evt.target?.result;
+                                                                const wb = XLSX.read(bstr, { type: 'binary' });
+                                                                const ws = wb.Sheets[wb.SheetNames[0]];
+                                                                const data = XLSX.utils.sheet_to_json(ws);
+                                                                await onImportClients(data);
+                                                                setImportStats({ total: data.length, success: data.length, errors: 0 });
+                                                            };
+                                                            reader.readAsBinaryString(file);
+                                                        } catch (err) { console.error(err); } finally { setImportLoading(false); }
+                                                    }}
+                                                />
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <label className={`w-full flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-3xl cursor-pointer transition-all ${importLoading ? 'opacity-50 pointer-events-none' : 'hover:border-primary hover:bg-primary/5'}`}>
-                                        {importLoading ? (
-                                            <>
-                                                <Loader2 size={32} className="text-primary animate-spin mb-3" />
-                                                <p className="text-sm font-bold text-slate-700">Processando planilha...</p>
-                                                <p className="text-xs text-slate-400 mt-1">Isso pode levar alguns minutos para listas grandes.</p>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Upload size={32} className="text-slate-300 mb-3" />
-                                                <p className="text-sm font-bold text-slate-700">Clique para selecionar ou arraste o arquivo</p>
-                                                <p className="text-xs text-slate-400 mt-1">Suporta arquivos .xlsx e .csv</p>
-                                            </>
-                                        )}
-                                        <input 
-                                            type="file" 
-                                            className="hidden" 
-                                            accept=".xlsx, .csv" 
-                                            onChange={async (e) => {
-                                                const file = e.target.files?.[0];
-                                                if (!file) return;
-                                                
-                                                setImportLoading(true);
-                                                setImportStats(null);
-                                                
-                                                try {
-                                                    const reader = new FileReader();
-                                                    reader.onload = async (evt) => {
-                                                        const bstr = evt.target?.result;
-                                                        const wb = XLSX.read(bstr, { type: 'binary' });
-                                                        const wsname = wb.SheetNames[0];
-                                                        const ws = wb.Sheets[wsname];
-                                                        const data = XLSX.utils.sheet_to_json(ws);
-                                                        
-                                                        // Passar para o App.tsx processar
-                                                        await onImportClients(data);
-                                                        
-                                                        setImportStats({
-                                                            total: data.length,
-                                                            success: data.length, // Simplificado, o App.tsx pode retornar mais detalhes depois
-                                                            errors: 0
-                                                        });
-                                                    };
-                                                    reader.readAsBinaryString(file);
-                                                } catch (error) {
-                                                    console.error("Erro na importação:", error);
-                                                } finally {
-                                                    setImportLoading(false);
-                                                }
-                                            }}
-                                        />
-                                    </label>
+                                <div className="p-4 bg-orange-50 border border-orange-100 rounded-2xl flex gap-3 text-orange-700 text-left">
+                                    <AlertCircle size={20} className="shrink-0" />
+                                    <div className="text-[11px] font-medium leading-relaxed">
+                                        <p className="font-bold mb-1 uppercase tracking-wider">Atenção ao Formato:</p>
+                                        <p>Use os botões acima para baixar as planilhas modelo. Preencha os dados e suba o arquivo no campo correspondente. O sistema irá ignorar registros com códigos duplicados e atualizará os dados existentes.</p>
+                                    </div>
+                                </div>
 
                                     {importStats && (
                                         <div className="p-4 bg-green-50 border border-green-100 rounded-2xl flex items-center gap-4 text-left animate-in fade-in slide-in-from-bottom-2">
@@ -680,10 +708,37 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                             </div>
                                         </div>
                                     )}
+
+                                    {onMigrateData && (
+                                        <div className="mt-8 pt-8 border-t border-slate-100">
+                                            <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-4 text-left">
+                                                <div className="flex items-center gap-3 text-white">
+                                                    <div className="p-2 bg-primary/20 text-primary rounded-xl">
+                                                        <Database size={20} />
+                                                    </div>
+                                                    <h3 className="text-lg font-bold">Migração de Dados Locais</h3>
+                                                </div>
+                                                <p className="text-slate-400 text-sm font-medium leading-relaxed">
+                                                    Se você tem dados salvos localmente neste navegador (Marcas, Grupos, Colaboradores, etc.) que não aparecem no banco de dados, use o botão abaixo para sincronizá-los manualmente com o Supabase.
+                                                </p>
+                                                <button 
+                                                    onClick={async () => {
+                                                        if (confirm('Deseja iniciar a migração dos dados locais para o banco de dados? Isso não apagará seus dados locais, apenas enviará uma cópia para o servidor.')) {
+                                                            await onMigrateData();
+                                                        }
+                                                    }}
+                                                    className="w-full py-4 bg-primary text-white rounded-2xl font-black text-sm hover:bg-secondary transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-3"
+                                                >
+                                                    <Upload size={20} /> SINCRONIZAR COM BANCO DE DADOS
+                                                </button>
+                                                <p className="text-[10px] text-slate-500 text-center font-bold uppercase tracking-widest">Ação recomendada após deploy ou troca de navegador</p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )
+                    }
                 </div>
             </div>
         </div>

@@ -22,7 +22,8 @@ const ROLE_LABELS: Record<AppUser['role'], string> = {
   manager: 'Gerente',
   seller: 'Vendedor',
   driver: 'Motorista/Entregador',
-  viewer: 'Visualizador'
+  viewer: 'Visualizador',
+  medidor: 'Medidor'
 };
 
 const getRoleLabel = (user: AppUser) => {
@@ -35,11 +36,12 @@ const ROLE_COLORS: Record<AppUser['role'], string> = {
   manager: 'bg-blue-100 text-blue-700',
   seller: 'bg-green-100 text-green-700',
   driver: 'bg-orange-100 text-orange-700',
-  viewer: 'bg-slate-100 text-slate-700'
+  viewer: 'bg-slate-100 text-slate-700',
+  medidor: 'bg-purple-100 text-purple-700'
 };
 
 const AVATAR_COLORS = [
-  'bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-pink-500', 'bg-teal-500'
+  'bg-primary', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-pink-500', 'bg-teal-500'
 ];
 const avatarColor = (id: string) => AVATAR_COLORS[parseInt(id) % AVATAR_COLORS.length] || 'bg-slate-500';
 
@@ -51,7 +53,7 @@ const initials = (name?: string) => {
 // ─── Modal: Invite New User ───────────────────────────────────────────────────
 
 interface InviteFormProps {
-  onSave: (email: string, name: string, role: string) => void;
+  onSave: (email: string, name: string, role: string, skipEmail: boolean) => void;
   onClose: () => void;
 }
 
@@ -59,13 +61,14 @@ const InviteForm: React.FC<InviteFormProps> = ({ onSave, onClose }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<AppUser['role']>('seller');
+  const [skipEmail, setSkipEmail] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await onSave(email, name, role);
+      await onSave(email, name, role, skipEmail);
       onClose();
     } catch (err) {
       console.error(err);
@@ -82,7 +85,7 @@ const InviteForm: React.FC<InviteFormProps> = ({ onSave, onClose }) => {
         onSubmit={handleSubmit}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-slate-800">Convidar Novo Usuário</h2>
+          <h2 className="text-lg font-bold text-slate-800">Cadastrar Novo Usuário</h2>
           <button type="button" onClick={onClose}><X className="text-slate-400" /></button>
         </div>
 
@@ -94,36 +97,47 @@ const InviteForm: React.FC<InviteFormProps> = ({ onSave, onClose }) => {
           <div>
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Nome Completo</label>
             <input required value={name} onChange={e => setName(e.target.value)}
-              className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
               placeholder="Ex: João Silva" />
           </div>
           <div>
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Email</label>
             <input required type="email" value={email} onChange={e => setEmail(e.target.value)}
-              className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
               placeholder="joao@empresa.com" />
           </div>
           <div>
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Perfil de Acesso</label>
             <div className="relative mt-1">
               <select value={role} onChange={e => setRole(e.target.value as AppUser['role'])}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-orange-400">
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50">
                 <option value="admin">Administrador</option>
                 <option value="manager">Gerente</option>
                 <option value="seller">Vendedor</option>
                 <option value="driver">Motorista/Entregador</option>
                 <option value="viewer">Visualizador</option>
               </select>
-              <ChevronDown className="absolute right-3 top-2.5 text-slate-400 w-4 h-4 pointer-events-none" />
             </div>
+          </div>
+          <div className="flex items-center gap-2 pt-2">
+            <input
+              type="checkbox"
+              id="skipEmail"
+              checked={skipEmail}
+              onChange={e => setSkipEmail(e.target.checked)}
+              className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary"
+            />
+            <label htmlFor="skipEmail" className="text-sm text-slate-600 font-medium cursor-pointer">
+              Somente cadastrar (não enviar convite por e-mail)
+            </label>
           </div>
         </div>
 
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={onClose} className="flex-1 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancelar</button>
-          <button type="submit" disabled={loading} className="flex-1 py-2 rounded-lg bg-[#ec5b13] text-white text-sm font-bold hover:bg-orange-700 transition-colors flex items-center justify-center gap-2">
+          <button type="submit" disabled={loading} className="flex-1 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-secondary transition-colors flex items-center justify-center gap-2">
             {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Send size={16} />}
-            Enviar Convite
+            Cadastrar Usuário
           </button>
         </div>
       </form>
@@ -223,7 +237,7 @@ const EditUserForm: React.FC<EditUserFormProps> = ({ user: initialUser, onSave, 
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Perfil de Acesso</label>
             <div className="relative mt-1">
               <select value={role} onChange={e => setRole(e.target.value as AppUser['role'])}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-orange-400">
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50">
                 <option value="admin">Administrador</option>
                 <option value="manager">Gerente</option>
                 <option value="seller">Vendedor</option>
@@ -233,7 +247,7 @@ const EditUserForm: React.FC<EditUserFormProps> = ({ user: initialUser, onSave, 
               <ChevronDown className="absolute right-3 top-2.5 text-slate-400 w-4 h-4 pointer-events-none" />
             </div>
             {initialUser.isMaster && (
-              <p className="mt-2 text-[10px] font-bold text-orange-600 uppercase flex items-center gap-1">
+              <p className="mt-2 text-[10px] font-bold text-primary uppercase flex items-center gap-1">
                 <Shield size={10} /> Este é o Administrador Master (Protegido)
               </p>
             )}
@@ -242,7 +256,7 @@ const EditUserForm: React.FC<EditUserFormProps> = ({ user: initialUser, onSave, 
 
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={onClose} className="flex-1 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancelar</button>
-          <button type="submit" disabled={loading} className="flex-1 py-2 rounded-lg bg-[#ec5b13] text-white text-sm font-bold hover:bg-orange-700 transition-colors flex items-center justify-center gap-2">
+          <button type="submit" disabled={loading} className="flex-1 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-secondary transition-colors flex items-center justify-center gap-2">
             {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Edit2 size={16} />}
             Salvar Alterações
           </button>
@@ -295,7 +309,7 @@ const StaffForm: React.FC<StaffFormProps> = ({ initial, onSave, onClose }) => {
           <div>
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Nome Completo</label>
             <input required value={name} onChange={e => setName(e.target.value)}
-              className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
               placeholder="Ex: João Ferreira" />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -303,7 +317,7 @@ const StaffForm: React.FC<StaffFormProps> = ({ initial, onSave, onClose }) => {
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Função</label>
               <div className="relative mt-1">
                 <select value={position} onChange={e => setPosition(e.target.value as StaffPosition)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-orange-400">
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50">
                   {Object.entries(POSITION_LABELS).map(([key, label]) => (
                     <option key={key} value={key}>{label}</option>
                   ))}
@@ -314,21 +328,21 @@ const StaffForm: React.FC<StaffFormProps> = ({ initial, onSave, onClose }) => {
             <div>
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Valor Hora (R$)</label>
               <input type="number" step="0.01" value={hourlyRate} onChange={e => setHourlyRate(e.target.value)}
-                className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                 placeholder="Ex: 18.50" />
             </div>
           </div>
           <div>
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Telefone</label>
             <input value={phone} onChange={e => setPhone(e.target.value)}
-              className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
               placeholder="(11) 99999-9999" />
           </div>
         </div>
 
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={onClose} className="flex-1 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancelar</button>
-          <button type="submit" className="flex-1 py-2 rounded-lg bg-[#ec5b13] text-white text-sm font-bold hover:bg-orange-700 transition-colors">
+          <button type="submit" className="flex-1 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-secondary transition-colors">
             {initial?.id ? 'Salvar' : 'Cadastrar'}
           </button>
         </div>
@@ -386,8 +400,13 @@ export const TeamView: React.FC<TeamViewProps> = ({
     setLoadingInvites(false);
   };
 
-  const handleSendInvite = async (email: string, name: string, role: string) => {
-    const { error } = await supabase.from('user_invites').insert([{ email, name, role }]);
+  const handleSendInvite = async (email: string, name: string, role: string, skipEmail: boolean) => {
+    const { error } = await supabase.from('user_invites').insert([{ 
+      email, 
+      name, 
+      role,
+      skip_email: skipEmail
+    }]);
     if (error) {
       alert('Erro ao enviar convite: ' + error.message);
       throw error;
@@ -412,15 +431,15 @@ export const TeamView: React.FC<TeamViewProps> = ({
           {tab === 'usuarios' || tab === 'convites' ? (
             <button
               onClick={() => setShowInviteForm(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-[#ec5b13] text-white rounded-xl font-bold text-sm hover:bg-orange-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-bold text-sm hover:bg-secondary transition-colors"
             >
-              <Send size={16} />
-              Convidar Usuário
+              <Plus size={16} />
+              Cadastrar Usuário
             </button>
           ) : (
             <button
               onClick={() => setShowStaffForm(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-[#ec5b13] text-white rounded-xl font-bold text-sm hover:bg-orange-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-bold text-sm hover:bg-secondary transition-colors"
             >
               <Plus size={16} />
               Novo Colaborador
@@ -433,7 +452,7 @@ export const TeamView: React.FC<TeamViewProps> = ({
       <div className="flex border-b border-slate-200 px-6 gap-6 overflow-x-auto whitespace-nowrap scrollbar-hide">
         <button
           onClick={() => setTab('usuarios')}
-          className={`flex items-center gap-2 py-3 text-sm font-bold border-b-2 transition-colors ${tab === 'usuarios' ? 'border-[#ec5b13] text-[#ec5b13]' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          className={`flex items-center gap-2 py-3 text-sm font-bold border-b-2 transition-colors ${tab === 'usuarios' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
         >
           <Users size={16} />
           Usuários Ativos
@@ -441,15 +460,15 @@ export const TeamView: React.FC<TeamViewProps> = ({
         </button>
         <button
           onClick={() => setTab('convites')}
-          className={`flex items-center gap-2 py-3 text-sm font-bold border-b-2 transition-colors ${tab === 'convites' ? 'border-[#ec5b13] text-[#ec5b13]' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          className={`flex items-center gap-2 py-3 text-sm font-bold border-b-2 transition-colors ${tab === 'convites' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
         >
           <Send size={16} />
-          Convites Pendentes
+          Cadastros Pendentes
           <span className="bg-slate-100 text-slate-600 text-[10px] font-black px-2 py-0.5 rounded-full">{invites.length}</span>
         </button>
         <button
           onClick={() => setTab('producao')}
-          className={`flex items-center gap-2 py-3 text-sm font-bold border-b-2 transition-colors ${tab === 'producao' ? 'border-[#ec5b13] text-[#ec5b13]' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          className={`flex items-center gap-2 py-3 text-sm font-bold border-b-2 transition-colors ${tab === 'producao' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
         >
           <HardHat size={16} />
           Equipe de Produção
@@ -475,9 +494,9 @@ export const TeamView: React.FC<TeamViewProps> = ({
                     <div>
                       <h3 className="font-bold text-slate-900 leading-tight flex items-center gap-1.5">
                         {user.name}
-                        {user.isMaster && <Shield size={12} className="text-orange-500" />}
+                        {user.isMaster && <Shield size={12} className="text-primary" />}
                       </h3>
-                      <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${user.isMaster ? 'bg-orange-100 text-orange-700' : ROLE_COLORS[user.role]}`}>
+                      <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${user.isMaster ? 'bg-primary/10 text-primary' : ROLE_COLORS[user.role]}`}>
                         {getRoleLabel(user)}
                       </span>
                     </div>
@@ -529,8 +548,8 @@ export const TeamView: React.FC<TeamViewProps> = ({
                       </span>
                     </div>
                   </div>
-                  <span className="text-[10px] font-black px-2 py-1 rounded-full bg-orange-100 text-orange-700 uppercase tracking-tighter">
-                    Aguardando Cadastro
+                  <span className="text-[10px] font-black px-2 py-1 rounded-full bg-primary/10 text-primary uppercase tracking-tighter">
+                    Aguardando Primeiro Acesso
                   </span>
                 </div>
                 <div className="space-y-2 pt-3 border-t border-slate-100 font-normal">
@@ -545,7 +564,7 @@ export const TeamView: React.FC<TeamViewProps> = ({
                     onClick={() => handleDeleteInvite(invite.email)}
                     className="flex-1 py-1.5 bg-red-50 rounded-lg text-xs font-bold text-red-600 hover:bg-red-100 flex items-center justify-center gap-1.5 transition-colors"
                   >
-                    <Trash2 size={12} /> Cancelar Convite
+                    <Trash2 size={12} /> Excluir Cadastro
                   </button>
                 </div>
               </div>
@@ -553,7 +572,7 @@ export const TeamView: React.FC<TeamViewProps> = ({
             {invites.length === 0 && !loadingInvites && (
               <div className="col-span-full py-12 flex flex-col items-center justify-center text-slate-400 space-y-3">
                 <Send size={48} className="opacity-20" />
-                <p className="font-semibold text-center">Nenhum convite pendente.<br/><span className="text-xs font-normal">Convide novos membros para que eles possam acessar o sistema.</span></p>
+                <p className="font-semibold text-center">Nenhum cadastro pendente.<br/><span className="text-xs font-normal">Cadastre novos membros para que eles possam acessar o sistema.</span></p>
               </div>
             )}
           </div>

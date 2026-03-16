@@ -20,7 +20,7 @@ export const OSCard: React.FC<OSCardProps> = ({ order, index, onUpdateOrder, act
 
   const priorityColors = {
     baixa: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
-    media: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400',
+    media: 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary',
     alta: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
   };
 
@@ -51,7 +51,7 @@ export const OSCard: React.FC<OSCardProps> = ({ order, index, onUpdateOrder, act
             {...provided.draggableProps}
             {...provided.dragHandleProps}
             onClick={() => setIsModalOpen(true)}
-            className={`bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-2 group cursor-grab hover:border-[var(--primary-color)]/50 transition-all ${order.phase === 'Serviço Finalizado' ? 'border-l-4 border-l-green-500' : ''} ${snapshot.isDragging ? 'opacity-80 shadow-2xl scale-105 z-50 ring-2 ring-[var(--primary-color)]' : ''}`}
+            className={`bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-2 group cursor-grab hover:border-primary/50 transition-all ${order.phase === 'Serviço Finalizado' ? 'border-l-4 border-l-green-500' : ''} ${snapshot.isDragging ? 'opacity-80 shadow-2xl scale-105 z-50 ring-2 ring-primary' : ''}`}
             style={provided.draggableProps.style}
           >
             <div className="flex justify-between items-start mb-1">
@@ -132,12 +132,12 @@ export const OSCard: React.FC<OSCardProps> = ({ order, index, onUpdateOrder, act
                 {order.phase === 'Serviço Finalizado' ? (
                   <Calendar className="w-3.5 h-3.5" />
                 ) : order.phase === 'Corte' ? (
-                  <PlayCircle className="w-3.5 h-3.5 text-[var(--primary-color)]" />
+                  <PlayCircle className="w-3.5 h-3.5 text-primary" />
                 ) : (
                   <Clock className="w-3.5 h-3.5" />
                 )}
 
-                <span className={`text-[11px] font-medium ${order.phase === 'Corte' ? 'text-[var(--primary-color)] font-bold' : ''}`}>
+                <span className={`text-[11px] font-medium ${order.phase === 'Corte' ? 'text-primary font-bold' : ''}`}>
                   {order.phase === 'Serviço Finalizado' ? 'Hoje, 09:30' :
                     order.phase === 'Corte' ? 'Em progresso...' : (order.deadline || '45m')}
                 </span>
@@ -146,7 +146,7 @@ export const OSCard: React.FC<OSCardProps> = ({ order, index, onUpdateOrder, act
               {order.phase !== 'Serviço Finalizado' && (
                 <div className="flex items-center gap-2">
                   {order.responsibleStaffName && (
-                    <span className="text-[10px] font-bold text-[var(--primary-color)] bg-orange-50 px-2 py-0.5 rounded-full border border-[var(--primary-color)]/10">
+                    <span className="text-[10px] font-bold text-primary bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10">
                       {order.responsibleStaffName.split(' ')[0]}
                     </span>
                   )}

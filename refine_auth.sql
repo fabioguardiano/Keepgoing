@@ -6,13 +6,23 @@ CREATE TABLE IF NOT EXISTS public.user_invites (
   name TEXT,
   role TEXT DEFAULT 'seller' CHECK (role IN ('admin', 'seller', 'driver', 'manager')),
   invited_by UUID REFERENCES auth.users(id),
+  skip_email BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
 -- Habilitar RLS para convites
 ALTER TABLE public.user_invites ENABLE ROW LEVEL SECURITY;
 
--- Apenas admins podem gerenciar convites (CORRIGIDO: FOR ALL para evitar erro de sintaxe)
+-- Garantir que a coluna skip_email exista
+DO $$ 
+BEGIN 
+  IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'user_invites' AND COLUMN_NAME = 'skip_email') THEN
+    ALTER TABLE public.user_invites ADD COLUMN skip_email BOOLEAN DEFAULT FALSE;
+  END IF;
+END $$;
+
+-- Apenas admins podem gerenciar convites
+DROP POLICY IF EXISTS "Admins can manage invites" ON public.user_invites;
 CREATE POLICY "Admins can manage invites" 
 ON public.user_invites FOR ALL
 USING (

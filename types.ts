@@ -1,5 +1,16 @@
 export type Category = 'Matéria Prima' | 'Produtos de Revenda' | 'Serviços' | 'Colocação' | 'Acabamentos';
 
+export type StaffPosition = 
+  | 'serrador' 
+  | 'acabador' 
+  | 'ajudante_serrador' 
+  | 'ajudante_acabador' 
+  | 'motorista' 
+  | 'medidor' 
+  | 'instalador' 
+  | 'vendedor' 
+  | 'gerente';
+
 export type ProductionPhase = 
   | 'Serviço Lançado' 
   | 'Medição' 
@@ -58,18 +69,44 @@ export interface OrderService {
   osNumber: string;
   orderNumber: string;
   clientName: string;
+  clientPhone?: string;
   projectName?: string;
+  projectDescription?: string;
+  material?: string;
+  materialArea?: number;
   phase: ProductionPhase;
   priority: 'baixa' | 'media' | 'alta';
   dueDate: string;
-  items: string[];
+  items: any[];
   totalValue: number;
+  remainingValue?: number;
   notes?: string;
+  observations?: string;
+  internalObservations?: string;
   address?: string;
   installationAddress?: string;
-  imageUrls: string;
+  imageUrls: string[];
   responsibleStaffName?: string;
   phaseHistory?: PhaseRecord[];
+  seller?: string;
+  deadline?: string;
+  clientId?: string;
+  architectId?: string;
+  architectName?: string;
+  salesChannel?: string;
+  salesPhase?: string;
+  isOsGenerated?: boolean;
+  status?: string;
+  discountValue?: number;
+  discountPercentage?: number;
+  paymentConditions?: string;
+  deliveryDeadline?: string;
+  totals?: any;
+  payments?: any[];
+  logs?: any[];
+  lostReason?: string;
+  lostDetails?: string;
+  createdAt?: string;
 }
 
 export interface User {
@@ -77,14 +114,17 @@ export interface User {
   name: string;
   email: string;
   avatarUrl?: string;
-  role: 'admin' | 'manager' | 'seller' | 'medidor';
+  role: 'admin' | 'manager' | 'seller' | 'medidor' | 'driver' | 'viewer';
+  status?: string;
+  isMaster?: boolean;
+  createdAt?: string;
 }
 
 export interface AppUser {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'manager' | 'seller' | 'medidor';
+  role: 'admin' | 'manager' | 'seller' | 'medidor' | 'driver' | 'viewer';
   status: 'ativo' | 'inativo';
   createdAt: string;
   avatarUrl?: string;
@@ -94,7 +134,7 @@ export interface AppUser {
 export interface ProductionStaff {
   id: string;
   name: string;
-  position: string;
+  position: StaffPosition;
   hourlyRate: number;
   phone: string;
   status: 'ativo' | 'inativo';
@@ -103,10 +143,15 @@ export interface ProductionStaff {
 export interface ActivityLog {
   id: string;
   type: 'create' | 'move' | 'update' | 'delete' | 'upload';
+  action?: 'create' | 'move' | 'update' | 'delete' | 'upload'; // Alias usado em alguns locais
   description: string;
+  details?: string; // Alias usado em alguns locais
+  message?: string;
   timestamp: string;
+  userName?: string;
   orderId?: string;
   osNumber?: string;
+  reference_id?: string;
 }
 
 export interface OrderLog {
@@ -161,6 +206,8 @@ export interface CompanyInfo {
   sidebarTextColor?: string;
   primaryColor?: string;
   secondaryColor?: string;
+  buttonColor?: string;
+  lostReasonOptions?: string[];
 }
 
 export interface Client {
@@ -171,26 +218,62 @@ export interface Client {
   address: string;
   document: string;
   notes?: string;
+  code?: string;
+  rgInsc?: string;
+  cellphone?: string;
+  birthDate?: string;
+  sellerName?: string;
+  useSpecialTable?: boolean;
+  createdAt?: string;
+  type?: string;
 }
 
 export interface Material {
   id: string;
   name: string;
   category: string;
+  type?: string;
   unit: string;
   price: number;
   stock: number;
   minStock: number;
   status: 'ativo' | 'inativo';
   imageUrl?: string;
+  unitCost?: number;
+  stockQuantity?: number;
+  registrationDate?: string;
+  brand?: string;
+  supplier?: string;
+  difal?: number;
+  freightCost?: number;
+  taxPercentage?: number;
+  lossPercentage?: number;
+  profitMargin?: number;
+  commissionPercentage?: number;
+  discountPercentage?: number;
+  suggestedPrice?: number;
+  sellingPrice?: number;
+  currency?: string;
+  dolarRate?: number;
+  euroRate?: number;
+  bcfp?: number;
+  thickness?: number;
+  weight?: number;
+  m2PerUnit?: number;
+  stockLocation?: string;
+  priceHistory?: any[];
+  code?: string;
 }
 
 export interface ProductService {
   id: string;
   name: string;
+  description: string;
   category: Category;
+  type?: string;
   unit: string;
   price: number;
+  sellingPrice: number;
   status: 'ativo' | 'inativo';
   imageUrl?: string;
   brand?: string;
@@ -201,11 +284,24 @@ export interface SalesOrder {
   id: string;
   orderNumber: string;
   clientName: string;
+  clientId?: string;
   date: string;
   total: number;
-  status: 'pendente' | 'aprovado' | 'cancelado';
+  totals?: any;
+  totalValue?: number;
+  deliveryDeadline?: string;
+  seller?: string;
+  observations?: string;
+  notes?: string;
+  status: 'Orçamento' | 'Pedido' | 'Confirmado' | 'Finalizado' | 'Cancelado' | 'pendente' | 'aprovado' | 'cancelado';
   items: any[];
   salesPhase?: string;
+  isOsGenerated?: boolean;
+  projectDescription?: string;
+  salesChannel?: string;
+  createdAt?: string;
+  lostReason?: string;
+  lostDetails?: string;
 }
 
 export interface SalesChannel {
@@ -221,6 +317,7 @@ export interface FinanceTransaction {
   value: number;
   type: 'receita' | 'despesa';
   category: string;
+  status?: 'pago' | 'pendente';
 }
 
 export interface Supplier {
@@ -230,6 +327,16 @@ export interface Supplier {
   phone: string;
   address: string;
   document: string;
+  type?: string;
+  legalName?: string;
+  tradingName?: string;
+  contactName?: string;
+  website?: string;
+  rgInsc?: string;
+  cellphone?: string;
+  observations?: string;
+  code?: string;
+  createdAt?: string;
 }
 
 export interface Architect {
@@ -237,27 +344,45 @@ export interface Architect {
   name: string;
   email: string;
   phone: string;
-  office: string;
+  office?: string;
+  type?: string;
+  document?: string;
+  legalName?: string;
+  tradingName?: string;
+  contactName?: string;
+  cellphone?: string;
+  address?: string;
+  observations?: string;
+  rgInsc?: string;
+  code?: string;
+  createdAt?: string;
 }
 
 export interface Brand {
   id: string;
-  name: string;
+  code: string;
+  description: string;
+  createdAt: string;
 }
 
 export interface ProductGroup {
   id: string;
-  name: string;
+  code: string;
+  description: string;
+  createdAt: string;
 }
 
 export interface ServiceGroup {
   id: string;
-  name: string;
+  code: string;
+  description: string;
+  createdAt: string;
 }
 
 export interface ExchangeRates {
   usd: number;
   eur: number;
+  lastUpdate: string;
 }
 
 export type View = 

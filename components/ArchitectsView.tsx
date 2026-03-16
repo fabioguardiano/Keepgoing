@@ -74,7 +74,7 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return <ArrowUpDown size={14} className="opacity-30 group-hover:opacity-100 transition-opacity" />;
-    return sortDirection === 'asc' ? <ChevronUp size={14} className="text-[#ec5b13]" /> : <ChevronDown size={14} className="text-[#ec5b13]" />;
+    return sortDirection === 'asc' ? <ChevronUp size={14} className="text-primary" /> : <ChevronDown size={14} className="text-primary" />;
   };
 
   return (
@@ -86,7 +86,7 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
         </div>
         <button 
           onClick={handleAddNew}
-          className="bg-[#ec5b13] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[#ec5b13]/20 hover:bg-[#d84a0d] transition-all transform hover:scale-[1.02] active:scale-95"
+          className="bg-primary text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-secondary transition-all transform hover:scale-[1.02] active:scale-95"
         >
           <Plus size={20} /> Novo Arquiteto
         </button>
@@ -99,7 +99,7 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
           <input 
             type="text"
             placeholder="Escritório, profissional, documento, contato ou cidade..."
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ec5b13]/20 font-medium text-sm"
+            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -153,13 +153,13 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
               {paginatedArchitects.map(architect => (
                 <tr key={architect.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-6 py-4">
-                    <span className="text-sm font-black text-[#ec5b13] bg-[#ec5b13]/10 px-3 py-1.5 rounded-xl border border-[#ec5b13]/20 shadow-sm">
+                    <span className="text-sm font-black text-primary bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20 shadow-sm">
                       #{String(architect.code || 0).padStart(3, '0')}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${architect.type === 'Pessoa Jurídica' ? 'bg-indigo-50 text-indigo-600' : 'bg-orange-50 text-[#ec5b13]'}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${architect.type === 'Pessoa Jurídica' ? 'bg-indigo-50 text-indigo-600' : 'bg-primary/5 text-primary'}`}>
                         <Briefcase size={16} />
                       </div>
                       <div>
@@ -247,7 +247,7 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`w-10 h-10 rounded-xl text-sm font-bold transition-all shrink-0 ${currentPage === page ? 'bg-[#ec5b13] text-white shadow-lg shadow-[#ec5b13]/20' : 'bg-white border border-slate-200 text-slate-600 hover:border-[#ec5b13]/30 hover:text-[#ec5b13]'}`}
+                        className={`w-10 h-10 rounded-xl text-sm font-bold transition-all shrink-0 ${currentPage === page ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary/30 hover:text-primary'}`}
                         type="button"
                       >
                         {page}

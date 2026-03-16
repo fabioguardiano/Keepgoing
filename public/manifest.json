@@ -1,0 +1,17 @@
+{
+  "name": "KeepGoing CRM",
+  "short_name": "KeepGoing",
+  "description": "CRM Inteligente para Marmorarias e Granitos",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ec5b13",
+  "icons": [
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

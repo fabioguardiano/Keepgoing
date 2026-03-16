@@ -11,8 +11,8 @@ interface RecentActivityProps {
 const ACTION_ICONS = {
     create: <Plus className="text-green-500" size={14} />,
     move: <Move className="text-blue-500" size={14} />,
-    update: <FileEdit className="text-orange-500" size={14} />,
-    upload: <ImageIcon className="text-purple-500" size={14} />,
+    update: <FileEdit className="text-primary" size={14} />,
+    upload: <ImageIcon className="text-blue-500" size={14} />,
     delete: <Trash2 className="text-red-500" size={14} />,
     phase_change: <Move className="text-blue-500" size={14} />,
 };
@@ -45,7 +45,7 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities, isOp
                 <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                     <div>
                         <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                            <Clock size={18} className="text-[#ec5b13]" />
+                            <Clock size={18} className="text-primary" />
                             Atividade Recente
                         </h2>
                         <p className="text-xs text-slate-500 font-medium">{activities.length} ações registradas</p>
@@ -75,14 +75,14 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities, isOp
                                     <React.Fragment key={activity.id}>
                                         {showDate && (
                                             <div className="sticky top-0 bg-white/90 backdrop-blur py-2">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-[#ec5b13] bg-orange-50 px-2 py-0.5 rounded-full">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/5 px-2 py-0.5 rounded-full">
                                                     {getRelativeDate(activity.timestamp)}
                                                 </span>
                                             </div>
                                         )}
                                         <div className="flex gap-4 group">
                                             <div className="flex flex-col items-center gap-1 shrink-0">
-                                                <div className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm group-hover:border-orange-200 group-hover:bg-orange-50 transition-all">
+                                                <div className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm group-hover:border-primary/20 group-hover:bg-primary/5 transition-all">
                                                     {ACTION_ICONS[activity.action]}
                                                 </div>
                                                 {idx < activities.length - 1 && (

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Diamond, LayoutDashboard, Kanban, Package, BarChart3, Users, Settings, PlusCircle, MapPin, ShoppingBag, Wallet, Box, ChevronDown, ChevronRight, Truck, Briefcase, Wrench, TrendingUp } from 'lucide-react';
+import { Diamond, LayoutDashboard, Kanban, Package, BarChart3, Users, Settings, PlusCircle, MapPin, ShoppingBag, Wallet, Box, ChevronDown, ChevronRight, Truck, Briefcase, Wrench, TrendingUp, LogOut, RefreshCcw } from 'lucide-react';
 import { View, CompanyInfo } from '../types';
 
 interface SidebarProps {
@@ -10,6 +10,8 @@ interface SidebarProps {
   companyInfo: CompanyInfo;
   user: any;
   exchangeRates: { usd: number; eur: number; lastUpdate: string };
+  onLogout: () => void;
+  onRefresh?: () => Promise<void>;
 }
 
 interface NavItem {
@@ -19,9 +21,22 @@ interface NavItem {
   subItems?: { label: string; view: View; icon: any }[];
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, onViewChange, companyInfo, user, exchangeRates }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ 
+  isOpen, toggle, currentView, onViewChange, companyInfo, 
+  user, exchangeRates, onLogout, onRefresh 
+}) => {
   const userRole = user.role;
-  const [expandedMenus, setExpandedMenus] = useState<string[]>(['Cadastros']);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const roleLabels: Record<string, string> = {
+    admin: 'Administrador',
+    manager: 'Gerente',
+    seller: 'Vendedor',
+    medidor: 'Medidor',
+    driver: 'Motorista',
+    viewer: 'Visualizador'
+  };
 
   const toggleMenu = (label: string) => {
     setExpandedMenus(prev => 
@@ -199,9 +214,35 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
             )}
           </div>
           {isOpen && (
-            <div className="overflow-hidden">
-              <p className="text-sm font-bold truncate leading-none mb-1">{user.name}</p>
-              <p className="text-[10px] uppercase font-black opacity-40 truncate">{userRole === 'admin' ? 'Gerente Produção' : userRole}</p>
+            <div className="flex-1 overflow-hidden">
+              <div className="flex items-center justify-between gap-1">
+                <div className="overflow-hidden">
+                  <p className="text-sm font-bold truncate leading-none mb-1">{user.name}</p>
+                  <p className="text-[10px] uppercase font-black opacity-40 truncate">{roleLabels[userRole] || userRole}</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  {onRefresh && (
+                    <button 
+                      onClick={async () => {
+                        setRefreshing(true);
+                        await onRefresh();
+                        setTimeout(() => setRefreshing(false), 1000);
+                      }}
+                      className={`p-1.5 hover:bg-white/10 rounded-lg text-white/40 hover:text-primary transition-all ${refreshing ? 'animate-spin text-primary' : ''}`}
+                      title="Sincronizar Dados"
+                    >
+                      <RefreshCcw size={16} />
+                    </button>
+                  )}
+                  <button 
+                    onClick={onLogout}
+                    className="p-1.5 hover:bg-white/10 rounded-lg text-white/40 hover:text-red-400 transition-colors"
+                    title="Sair"
+                  >
+                    <LogOut size={16} />
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>

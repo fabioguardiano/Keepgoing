@@ -24,8 +24,9 @@ import { BrandsView } from './components/BrandsView.tsx';
 import { ProductGroupsView } from './components/ProductGroupsView.tsx';
 import { ServiceGroupsView } from './components/ServiceGroupsView.tsx';
 import { MOCK_ORDERS } from './constants.tsx';
-import { OrderService, User, View, ProductionPhase, INITIAL_PHASES, AppUser, ProductionStaff, PhaseConfig, ActivityLog, PhaseRecord, PhaseResponsible, Delivery, Measurement, CompanyInfo, Client, Material, SalesOrder, SalesChannel, FinanceTransaction, Supplier, Architect, ProductService, Brand, ProductGroup, ServiceGroup, SalesPhaseConfig, ExchangeRates } from './types';
+import { OrderService, User, View, ProductionPhase, INITIAL_PHASES, AppUser, ProductionStaff, PhaseConfig, ActivityLog, PhaseRecord, PhaseResponsible, Delivery, Measurement, CompanyInfo, Client, Material, SalesOrder, SalesChannel, FinanceTransaction, Supplier, Architect, ProductService, Brand, ProductGroup, ServiceGroup, SalesPhaseConfig, ExchangeRates, DriverStatus } from './types';
 import { supabase } from './lib/supabase';
+import { notificationService, AppNotification } from './lib/notifications';
 import 'leaflet/dist/leaflet.css';
 
 const INITIAL_APP_USERS: AppUser[] = [
@@ -41,7 +42,7 @@ const INITIAL_STAFF: ProductionStaff[] = [
   { id: '4', name: 'Lucas Costa', position: 'medidor', hourlyRate: 18, phone: '(11) 97654-3210', status: 'inativo' },
 ];
 const App: React.FC = () => {
-  console.log('%c[System] KeepGoing v13-stable carregando...', 'color: #ec5b13; font-weight: bold;');
+  console.log('%c[System] KeepGoing v13-stable carregando...', 'color: var(--primary-color); font-weight: bold;');
   const [user, setUser] = useState<User | null>(null);
   const [loadingSession, setLoadingSession] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -134,8 +135,48 @@ const App: React.FC = () => {
   };
 
   const [orders, setOrders] = useState<OrderService[]>([]);
-  const [loadingOrders, setLoadingOrders] = useState(true);  const refreshAppData = async () => {
-    if (!user) return;
+  const [loadingOrders, setLoadingOrders] = useState(true);
+  
+  console.log('[App] Sincronização v4 carregada');
+
+  const safeLoad = (key: string, setter: (val: any) => void) => {
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        
+        // Especial logic for Service Groups to merge with Master List
+        if (key === 'marmo_service_groups') {
+          const existingGroups = Array.isArray(parsed) ? parsed : [];
+          const merged = [...existingGroups];
+          
+          MASTER_SERVICE_GROUPS.forEach(master => {
+            if (!merged.find(g => g.code === master.code)) {
+              merged.push({
+                ...master,
+                createdAt: new Date().toISOString()
+              });
+            }
+          });
+          setter(merged);
+          return;
+        }
+        
+        setter(parsed);
+      } else if (key === 'marmo_service_groups') {
+        // If nothing saved, load master list
+        setter(MASTER_SERVICE_GROUPS.map(g => ({ ...g, createdAt: new Date().toISOString() })));
+      }
+    } catch (err) {
+      console.error(`Erro ao carregar ${key} do localStorage:`, err);
+    }
+  };
+
+  const refreshAppData = async (showLoading = true) => {
+    if (!user) {
+      console.warn('[App] refreshAppData abortado: usuário não autenticado');
+      return;
+    }
     console.log('--- Iniciando Orquestração de Dados Sequencial ---');
     
     // Função auxiliar para rodar cada fetch com log e catch individual
@@ -151,6 +192,64 @@ const App: React.FC = () => {
     };
 
     // Rodar sequencialmente para evitar conflitos de lock no Supabase
+    await runner('CompanyInfo', async () => {
+      const { data, error } = await supabase.from('company_info').select('*').single();
+      if (error && error.code !== 'PGRST116') throw error; // Ignorar apenas erro de "não encontrado"
+      if (data) {
+        const mapped: CompanyInfo = {
+          name: data.name,
+          document: data.document,
+          address: data.address,
+          phone: data.phone,
+          email: data.email,
+          logoUrl: data.logo_url,
+          lostReasonOptions: data.lost_reason_options || [],
+          buttonColor: data.button_color,
+          sidebarColor: data.sidebar_color,
+          sidebarTextColor: data.sidebar_text_color
+        };
+        setCompanyInfo(mapped);
+      }
+    });
+
+    await runner('Brands', async () => {
+      setLoadingBrands(true);
+      const { data, error } = await supabase.from('brands').select('*');
+      if (error) throw error;
+      if (data) setBrands(data.map(b => ({ 
+        id: b.id, 
+        code: b.code || b.id, 
+        description: b.name || b.description, 
+        createdAt: b.created_at || new Date().toISOString() 
+      })));
+      setLoadingBrands(false);
+    });
+
+    await runner('ProductGroups', async () => {
+      setLoadingProductGroups(true);
+      const { data, error } = await supabase.from('product_groups').select('*');
+      if (error) throw error;
+      if (data) setProductGroups(data.map(g => ({ 
+        id: g.id, 
+        code: g.code || g.id, 
+        description: g.name || g.description, 
+        createdAt: g.created_at || new Date().toISOString() 
+      })));
+      setLoadingProductGroups(false);
+    });
+
+    await runner('ServiceGroups', async () => {
+      setLoadingServiceGroups(true);
+      const { data, error } = await supabase.from('service_groups').select('*');
+      if (error) throw error;
+      if (data) setServiceGroups(data.map(g => ({ 
+        id: g.id, 
+        code: g.code || g.id, 
+        description: g.name || g.description, 
+        createdAt: g.created_at || new Date().toISOString() 
+      })));
+      setLoadingServiceGroups(false);
+    });
     await runner('Profiles', async () => {
       setLoadingUsers(true);
       const { data, error } = await supabase.from('profiles').select('*').order('name');
@@ -248,13 +347,31 @@ const App: React.FC = () => {
       const { data, error } = await supabase.from('materials').select('*').order('name');
       if (error) throw error;
       if (data) setMaterials(data.map(m => ({
-        ...m, unitCost: m.unit_cost, minStock: m.min_stock, stockQuantity: m.stock_quantity,
-        registrationDate: m.registration_date, freightCost: m.freight_cost, taxPercentage: m.tax_percentage,
-        lossPercentage: m.loss_percentage, profitMargin: m.profit_margin, commissionPercentage: m.commission_percentage,
-        discountPercentage: m.discount_percentage, suggestedPrice: m.suggested_price,
-        sellingPrice: m.selling_price, dolarRate: m.dolar_rate, euroRate: m.euro_rate,
-        priceHistory: m.price_history, imageUrl: m.image_url, stockLocation: m.inventory_location,
-        m2PerUnit: m.m2_per_unit
+        ...m, 
+        unitCost: m.unit_cost || 0, 
+        minStock: m.min_stock || 0, 
+        stockQuantity: m.stock_quantity || 0,
+        registrationDate: m.registration_date, 
+        freightCost: m.freight_cost || 0, 
+        taxPercentage: m.tax_percentage || 0,
+        lossPercentage: m.loss_percentage || 0, 
+        profitMargin: m.profit_margin || 0, 
+        commissionPercentage: m.commission_percentage || 0,
+        discountPercentage: m.discount_percentage || 0, 
+        suggestedPrice: m.suggested_price || 0,
+        sellingPrice: m.selling_price || 0, 
+        dolarRate: m.dolar_rate || 1, 
+        euroRate: m.euro_rate || 1,
+        priceHistory: m.price_history || [], 
+        imageUrl: m.image_url, 
+        stockLocation: m.inventory_location,
+        m2PerUnit: m.m2_per_unit || 1,
+        status: m.status || 'ativo',
+        type: m.type || 'Matéria Prima',
+        name: m.name || 'Sem Nome',
+        code: m.code || 'S/C',
+        price: m.selling_price || 0,
+        stock: m.stock_quantity || 0
       })) as Material[]);
       setLoadingMaterials(false);
     });
@@ -284,13 +401,94 @@ const App: React.FC = () => {
       setLoadingSales(false);
     });
 
+    await runner('Staff', async () => {
+      const { data, error } = await supabase.from('production_staff').select('*').order('name');
+      if (error) {
+        console.error('Erro ao carregar staff:', error);
+        safeLoad('marmo_staff', setStaff);
+      } else if (data) {
+        setStaff(data.map(s => ({
+          id: s.id,
+          name: s.name,
+          position: s.position,
+          hourlyRate: s.hourly_rate,
+          phone: s.phone,
+          status: s.status,
+          createdAt: s.created_at
+        })));
+      }
+    });
+
+    await runner('SalesChannels', async () => {
+      const { data, error } = await supabase.from('sales_channels').select('*').order('name');
+      if (error) {
+        console.error('Erro ao carregar canais:', error);
+        safeLoad('marmo_sales_channels', setSalesChannels);
+      } else if (data) {
+        setSalesChannels(data.map(c => ({ 
+          id: c.id, 
+          name: c.name,
+          color: '#3B82F6' // Default color if missing in DB
+        } as SalesChannel)));
+      }
+    });
+
+    await runner('SalesPhases', async () => {
+      const { data, error } = await supabase.from('sales_phases').select('*').order('name');
+      if (error) {
+        console.error('Erro ao carregar fases de venda:', error);
+        safeLoad('marmo_sales_phases', setSalesPhases);
+      } else if (data) {
+        setSalesPhases(data.map(p => ({ name: p.name })));
+      }
+    });
+
+    await runner('ProductionPhases', async () => {
+      const { data, error } = await supabase.from('production_phases').select('*');
+      if (error) {
+        console.error('Erro ao carregar fases de produção:', error);
+        safeLoad('marmo_phases', setPhases);
+      } else if (data && data.length > 0) {
+        setPhases(data.map(p => ({ 
+          name: p.name, 
+          description: '', 
+          isRequired: true, 
+          requiresResponsible: false 
+        })));
+      }
+    });
+
+    await runner('Transactions', async () => {
+      const { data, error } = await supabase.from('finance_transactions').select('*').order('date', { ascending: false });
+      if (error) {
+        console.error('Erro ao carregar transações:', error);
+        safeLoad('marmo_transactions', setTransactions);
+      } else if (data) {
+        setTransactions(data.map(t => ({
+          id: t.id,
+          description: t.description,
+          value: Number(t.amount), // Correct mapping to 'value'
+          type: (t.type === 'revenue' ? 'receita' : 'despesa') as 'receita' | 'despesa', // Align with types.ts
+          category: t.category,
+          date: t.date,
+          status: t.status === 'completed' ? 'pago' : 'pendente' // Align with types.ts
+        })));
+      }
+    });
+
     await runner('Activities', async () => {
       setLoadingActivities(true);
       const { data, error } = await supabase.from('activity_logs').select('*').order('created_at', { ascending: false }).limit(100);
       if (error) throw error;
-      if (data) setActivities(data.map(l => ({
-        id: l.id, timestamp: l.created_at, userName: l.user_name, action: l.type as any,
-        details: l.message, orderId: l.reference_id
+      if (data)      setActivities(data.map(l => ({ 
+        id: l.id, 
+        timestamp: l.created_at, 
+        userName: l.user_name, 
+        type: l.type as any, 
+        action: l.type as any, // Alias for legacy code
+        description: l.message, 
+        details: l.message, // Alias for legacy code
+        orderId: l.reference_id 
       })) as ActivityLog[]);
       setLoadingActivities(false);
     });
@@ -476,30 +674,12 @@ const App: React.FC = () => {
   const [loadingActivities, setLoadingActivities] = useState(true);
 
   // Activities será buscado no orquestrador central
-  const [brands, setBrands] = useState<Brand[]>(() => {
-    try {
-      const saved = localStorage.getItem('marmo_brands');
-      return saved ? (JSON.parse(saved) || []) : [];
-    } catch {
-      return [];
-    }
-  });
-  const [productGroups, setProductGroups] = useState<ProductGroup[]>(() => {
-    try {
-      const saved = localStorage.getItem('marmo_product_groups');
-      return saved ? (JSON.parse(saved) || []) : [];
-    } catch {
-      return [];
-    }
-  });
-  const [serviceGroups, setServiceGroups] = useState<ServiceGroup[]>(() => {
-    try {
-      const saved = localStorage.getItem('marmo_service_groups');
-      return saved ? (JSON.parse(saved) || []) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [loadingBrands, setLoadingBrands] = useState(true);
+  const [productGroups, setProductGroups] = useState<ProductGroup[]>([]);
+  const [loadingProductGroups, setLoadingProductGroups] = useState(true);
+  const [serviceGroups, setServiceGroups] = useState<ServiceGroup[]>([]);
+  const [loadingServiceGroups, setLoadingServiceGroups] = useState(true);
   const [products, setProducts] = useState<ProductService[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
 
@@ -563,6 +743,18 @@ const App: React.FC = () => {
     }
   });
 
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [loadingSuppliers, setLoadingSuppliers] = useState(true);
+
+  const [architects, setArchitects] = useState<Architect[]>([]);
+  const [loadingArchitects, setLoadingArchitects] = useState(true);
+
+  const [sales, setSales] = useState<SalesOrder[]>([]);
+  const [loadingSales, setLoadingSales] = useState(true);
+
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [loadingMaterials, setLoadingMaterials] = useState(true);
+
   // Inject theme colors into CSS variables
   useEffect(() => {
     const root = document.documentElement;
@@ -584,7 +776,7 @@ const App: React.FC = () => {
     root.style.setProperty('--secondary-color', darken(primary, 10));
   }, [companyInfo]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [currentView, setCurrentView] = useState<View>('Produção');
+  const [currentView, setCurrentView] = useState<View>('Clientes');
   const [searchQuery, setSearchQuery] = useState('');
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
@@ -626,6 +818,28 @@ const App: React.FC = () => {
     }, 30000); // Update every 30 seconds
 
     return () => clearInterval(intervalId);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const sub = notificationService.subscribe(user.id, (n: AppNotification) => {
+      // Usar a Notification API do navegador se permitida
+      if (window.Notification && window.Notification.permission === 'granted') {
+        new window.Notification(n.title, { body: n.message });
+      }
+      // Alerta simples no sistema (pode ser melhorado com um Toast)
+      alert(`${n.title}\n${n.message}`);
+    });
+
+    // Pedir permissão para notificações de navegador
+    if ('Notification' in window && window.Notification.permission === 'default') {
+      window.Notification.requestPermission();
+    }
+
+    return () => {
+      sub.unsubscribe();
+    };
   }, [user]);
 
   // Real-time location fetching for Admin/Manager
@@ -712,6 +926,24 @@ const App: React.FC = () => {
 
   const handleImportClients = async (data: any[]) => {
     try {
+      if (!data || data.length === 0) return;
+
+      // Detecção inteligente: se a planilha parecer de materiais, redireciona
+      const firstRow = data[0] || {};
+      const keys = Object.keys(firstRow).map(k => k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim());
+      
+      const materialIndicators = ['custo', 'margem', 'perda', 'preco', 'material', 'descricao', 'desc', 'unit_cost', 'selling_price'];
+      const clientIndicators = ['documento', 'email', 'doc', 'cpf', 'cnpj', 'cliente'];
+      
+      const hasMaterialKeys = keys.some(k => materialIndicators.some(mi => k.includes(mi)));
+      const hasClientKeys = keys.some(k => clientIndicators.some(ci => k.includes(ci)));
+
+      // Se tiver indicadores de material e não tiver indicadores fortes de cliente, roteia para materiais
+      if (hasMaterialKeys && !hasClientKeys) {
+        console.log('Detectado formato de materiais. Redirecionando importação...');
+        return handleImportMaterials(data);
+      }
+
       const batchSize = 50;
       const totalGroups = Math.ceil(data.length / batchSize);
       
@@ -720,10 +952,10 @@ const App: React.FC = () => {
         const end = Math.min(start + batchSize, data.length);
         const batch = data.slice(start, end);
         
-        const clientsToInsert = batch.map(row => {
+        const clientsToInsertRaw = batch.map(row => {
           const rawCode = row.codigo || row.code;
           const parsedCode = (rawCode !== undefined && rawCode !== null && rawCode !== '') 
-            ? Number(rawCode) 
+            ? Number(String(rawCode).replace(/\D/g, '')) 
             : undefined;
 
           return {
@@ -747,19 +979,48 @@ const App: React.FC = () => {
           };
         });
 
+        // Desduplicação por client_code para evitar erro de conflito no mesmo lote
+        const clientsMap = new Map();
+        const clientsWithoutCode = [];
+        
+        clientsToInsertRaw.forEach(c => {
+          if (c.client_code) {
+            clientsMap.set(c.client_code, c);
+          } else {
+            clientsWithoutCode.push(c);
+          }
+        });
+        
+        const clientsToInsert = [...Array.from(clientsMap.values()), ...clientsWithoutCode];
+
         const { data: insertedData, error } = await supabase
           .from('clients')
-          .insert(clientsToInsert)
+          .upsert(clientsToInsert, { onConflict: 'client_code' })
           .select();
         
         if (error) throw error;
         if (insertedData) {
-          const mappedBatch = insertedData.map(c => ({ ...c, code: (c as any).client_code }));
-          setClients(prev => [...(mappedBatch as Client[]), ...prev]);
+          const mappedBatch = insertedData.map(c => ({
+            ...c,
+            code: (c as any).client_code,
+            rgInsc: (c as any).rg_insc,
+            cellphone: (c as any).cellphone,
+            birthDate: (c as any).birth_date,
+            sellerName: (c as any).seller_name,
+            useSpecialTable: (c as any).use_special_table,
+            createdAt: (c as any).created_at
+          }));
+          
+          setClients(prev => {
+            const newBatch = mappedBatch as Client[];
+            const prevFiltered = prev.filter(p => !newBatch.some(n => n.id === p.id || (n.code && p.code && n.code === p.code)));
+            return [...newBatch, ...prevFiltered];
+          });
         }
       }
       
       logActivity('update', `Importou ${data.length} clientes via planilha`, 'bulk_import', 'BATCH');
+      refreshAppData();
     } catch (err: any) {
       console.error('Erro na importação em lote:', err);
       let errorMsg = 'Ocorreu um erro durante a importação.';
@@ -774,11 +1035,234 @@ const App: React.FC = () => {
     }
   };
 
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const [loadingMaterials, setLoadingMaterials] = useState(true);
+  const handleImportMaterials = async (data: any[]) => {
+    try {
+      const batchSize = 50;
+      const totalGroups = Math.ceil(data.length / batchSize);
+      
+      for (let i = 0; i < totalGroups; i++) {
+        const start = i * batchSize;
+        const end = Math.min(start + batchSize, data.length);
+        const batch = data.slice(start, end);
+        
+        const materialsToInsertRaw = batch.map((row, idx) => {
+          // Helper para buscar valor independente de case, acento ou espaços
+          const getVal = (possibleKeys: string[]) => {
+            const keys = Object.keys(row);
+            for (const pk of possibleKeys) {
+              const foundKey = keys.find(k => 
+                k.toLowerCase().trim() === pk.toLowerCase().trim() ||
+                k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim() === pk.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim()
+              );
+              if (foundKey) return row[foundKey];
+            }
+            return undefined;
+          };
+
+          const cost = Number(String(getVal(['custo', 'unit_cost', 'cost', 'unitCost', 'valor']) || 0).replace(/[^\d.,]/g, '').replace(',', '.'));
+          const freight = Number(String(getVal(['frete', 'freight', 'freight_cost', 'freightCost']) || 0).replace(/[^\d.,]/g, '').replace(',', '.'));
+          const loss = Number(String(getVal(['perda', 'loss', 'loss_percentage']) || 20).replace(/[^\d.,]/g, '').replace(',', '.'));
+          const tax = Number(String(getVal(['imposto', 'tax', 'tax_percentage']) || 6).replace(/[^\d.,]/g, '').replace(',', '.'));
+          const margin = Number(String(getVal(['margem', 'margin', 'profit_margin']) || 40).replace(/[^\d.,]/g, '').replace(',', '.'));
+          const commission = Number(String(getVal(['comissao', 'commission', 'commission_percentage']) || 2.5).replace(/[^\d.,]/g, '').replace(',', '.'));
+          const discount = Number(String(getVal(['desconto', 'discount', 'discount_percentage']) || 5).replace(/[^\d.,]/g, '').replace(',', '.'));
+          const stock = Number(String(getVal(['estoque', 'stock', 'stock_quantity', 'stockQuantity', 'qtd', 'quantidade']) || 0).replace(/[^\d.,]/g, '').replace(',', '.'));
+          const sellingPrice = Number(String(getVal(['preco venda', 'preco_venda', 'selling_price', 'sellingPrice', 'venda', 'preco', 'preco_total']) || 0).replace(/[^\d.,]/g, '').replace(',', '.'));
+
+          // Cálculo sugerido caso não venha na planilha
+          const totalMarkup = (loss + tax + margin + commission + discount) / 100;
+          const calculatedSellingPrice = totalMarkup < 1 ? cost / (1 - totalMarkup) : cost * 2;
+          const finalSellingPrice = sellingPrice || Number(calculatedSellingPrice.toFixed(2));
+
+          // Gerar código único se não houver
+          let itemCode = String(getVal(['codigo', 'code', 'cod', 'item']) || '').trim();
+          if (!itemCode) {
+            itemCode = `IMP-${Date.now()}-${start + idx}`;
+          }
+
+          return {
+            code: itemCode,
+            name: String(getVal(['descricao', 'name', 'material', 'produto', 'desc']) || 'Sem Descrição'),
+            brand: String(getVal(['grupo', 'brand', 'group', 'categoria', 'marca', 'gr']) || 'Geral'),
+            category: 'Matéria Prima',
+            type: 'Matéria Prima',
+            thickness: Number(String(getVal(['espessura', 'thickness', 'bitola']) || '').replace(/\D/g, '')) || 2,
+            unit_cost: cost,
+            freight_cost: freight,
+            loss_percentage: loss,
+            tax_percentage: tax,
+            profit_margin: margin,
+            commission_percentage: commission,
+            discount_percentage: discount,
+            suggested_price: finalSellingPrice,
+            selling_price: finalSellingPrice,
+            unit: String(getVal(['unidade', 'unit', 'un', 'medida']) || 'M2').toUpperCase(),
+            status: 'ativo',
+            currency: 'BRL',
+            dolar_rate: 1,
+            euro_rate: 1,
+            stock_quantity: stock
+          };
+        });
+
+        // Desduplicação por code para evitar erro do Postgres no UPSERT
+        const materialsMap = new Map();
+        materialsToInsertRaw.forEach(m => {
+          materialsMap.set(m.code, m);
+        });
+        const materialsToInsert = Array.from(materialsMap.values());
+
+        const { data: insertedData, error } = await supabase
+          .from('materials')
+          .upsert(materialsToInsert, { onConflict: 'code' })
+          .select();
+        
+        if (error) throw error;
+        if (insertedData) {
+          const mappedBatch = insertedData.map(m => ({
+            ...m,
+            unitCost: m.unit_cost,
+            freightCost: m.freight_cost,
+            lossPercentage: m.loss_percentage,
+            taxPercentage: m.tax_percentage,
+            profitMargin: m.profit_margin,
+            commissionPercentage: m.commission_percentage,
+            discountPercentage: m.discount_percentage,
+            suggestedPrice: m.suggested_price,
+            sellingPrice: m.selling_price,
+            minStock: m.min_stock,
+            stockQuantity: m.stock_quantity,
+            stockLocation: m.inventory_location
+          }));
+          
+          setMaterials(prev => {
+            const newBatch = mappedBatch as Material[];
+            const prevFiltered = prev.filter(p => !newBatch.some(n => n.id === p.id || n.code === p.code));
+            return [...newBatch, ...prevFiltered];
+          });
+        }
+      }
+      
+      logActivity('update', `Importou ${data.length} matérias-primas via planilha`, 'bulk_import', 'BATCH');
+      refreshAppData();
+    } catch (err: any) {
+      console.error('Erro na importação de materiais:', err);
+      alert('Erro na importação: ' + err.message);
+    }
+  };
 
   // Materials será buscado no orquestrador central
 
+  // Marcas
+  const handleSaveBrand = async (b: Brand) => {
+    try {
+      const { error } = await supabase.from('brands').upsert({
+        id: b.id.length > 5 ? b.id : undefined, // Supabase gera ID se não for fornecido um UUID válido
+        name: b.description
+      });
+      if (error) throw error;
+      setBrands(prev => {
+        const index = prev.findIndex(item => item.id === b.id || item.description === b.description);
+        if (index >= 0) return prev.map((item, i) => i === index ? b : item);
+        return [b, ...prev];
+      });
+      logActivity('create', `Salvou marca: ${b.description}`);
+    } catch (err) {
+      console.error('Erro ao salvar marca:', err);
+      // Fallback local se falhar
+      setBrands(prev => prev.find(item => item.id === b.id) ? prev.map(item => item.id === b.id ? b : item) : [b, ...prev]);
+    }
+  };
+
+  const handleDeleteBrand = async (id: string) => {
+    try {
+      if (id.length > 5) {
+        await supabase.from('brands').delete().eq('id', id);
+      } else {
+        await supabase.from('brands').delete().eq('name', brands.find(b => b.id === id)?.description);
+      }
+      setBrands(prev => prev.filter(item => item.id !== id));
+      logActivity('delete', `Removeu marca`);
+    } catch (err) {
+      console.error('Erro ao deletar marca:', err);
+      setBrands(prev => prev.filter(item => item.id !== id));
+    }
+  };
+
+  // Grupos de Produtos
+  const handleSaveProductGroup = async (g: Omit<Brand, 'createdAt'> & {createdAt?: string}) => {
+    try {
+      const { error } = await supabase.from('product_groups').upsert({
+        id: g.id.length > 5 ? g.id : undefined,
+        code: g.code,
+        description: g.description
+      });
+      if (error) throw error;
+      
+      const groupWithDate = { ...g, createdAt: g.createdAt || new Date().toISOString() };
+      setProductGroups(prev => {
+        const index = prev.findIndex(item => item.id === g.id || item.code === g.code);
+        if (index >= 0) return prev.map((item, i) => i === index ? groupWithDate : item);
+        return [groupWithDate, ...prev];
+      });
+    } catch (err) {
+      console.error('Erro ao salvar grupo de produtos:', err);
+      const groupWithDate = { ...g, createdAt: g.createdAt || new Date().toISOString() };
+      setProductGroups(prev => prev.find(item => item.id === g.id) ? prev.map(item => item.id === g.id ? groupWithDate : item) : [groupWithDate, ...prev]);
+    }
+  };
+
+  const handleDeleteProductGroup = async (id: string) => {
+    try {
+      if (id.length > 5) {
+        await supabase.from('product_groups').delete().eq('id', id);
+      } else {
+        await supabase.from('product_groups').delete().eq('code', productGroups.find(g => g.id === id)?.code);
+      }
+      setProductGroups(prev => prev.filter(item => item.id !== id));
+    } catch (err) {
+      console.error('Erro ao deletar grupo de produtos:', err);
+      setProductGroups(prev => prev.filter(item => item.id !== id));
+    }
+  };
+
+  // Grupos de Serviços
+  const handleSaveServiceGroup = async (g: Omit<Brand, 'createdAt'> & {createdAt?: string}) => {
+    try {
+      const { error } = await supabase.from('service_groups').upsert({
+        id: g.id.length > 5 ? g.id : undefined,
+        code: g.code,
+        description: g.description
+      });
+      if (error) throw error;
+      
+      const groupWithDate = { ...g, createdAt: g.createdAt || new Date().toISOString() };
+      setServiceGroups(prev => {
+        const index = prev.findIndex(item => item.id === g.id || item.code === g.code);
+        if (index >= 0) return prev.map((item, i) => i === index ? groupWithDate : item);
+        return [groupWithDate, ...prev];
+      });
+    } catch (err) {
+      console.error('Erro ao salvar grupo de serviços:', err);
+      const groupWithDate = { ...g, createdAt: g.createdAt || new Date().toISOString() };
+      setServiceGroups(prev => prev.find(item => item.id === g.id) ? prev.map(item => item.id === g.id ? groupWithDate : item) : [groupWithDate, ...prev]);
+    }
+  };
+
+  const handleDeleteServiceGroup = async (id: string) => {
+    try {
+      if (id.length > 5) {
+        await supabase.from('service_groups').delete().eq('id', id);
+      } else {
+        await supabase.from('service_groups').delete().eq('code', serviceGroups.find(g => g.id === id)?.code);
+      }
+      setServiceGroups(prev => prev.filter(item => item.id !== id));
+    } catch (err) {
+      console.error('Erro ao deletar grupo de serviços:', err);
+      setServiceGroups(prev => prev.filter(item => item.id !== id));
+    }
+  };
+  
   const handleSaveMaterial = async (m: Material) => {
     try {
       const payload = {
@@ -865,9 +1349,6 @@ const App: React.FC = () => {
     }
   };
   
-  const [architects, setArchitects] = useState<Architect[]>([]);
-  const [loadingArchitects, setLoadingArchitects] = useState(true);
-
   // Architects será buscado no orquestrador central
 
   const handleSaveArchitect = async (a: Architect) => {
@@ -915,9 +1396,6 @@ const App: React.FC = () => {
       alert('Erro ao salvar arquiteto no banco de dados.');
     }
   };
-
-  const [sales, setSales] = useState<SalesOrder[]>([]);
-  const [loadingSales, setLoadingSales] = useState(true);
 
   // Sales será buscado no orquestrador central
 
@@ -985,7 +1463,11 @@ const App: React.FC = () => {
             ...s,
             id: crypto.randomUUID(), 
             osNumber: `OS-${new Date().getFullYear()}-${s.orderNumber}`,
-            phase: 'Serviço Lançado' as ProductionPhase, 
+            phase: 'Serviço Lançado' as ProductionPhase,
+            priority: 'media',
+            dueDate: s.date,
+            totalValue: s.total,
+            imageUrls: []
           };
           await handleSaveOrder(newOrder);
         }
@@ -994,6 +1476,78 @@ const App: React.FC = () => {
     } catch (err) {
       console.error('Erro ao salvar venda:', err);
       alert('Erro ao salvar venda no banco de dados.');
+    }
+  };
+
+  const handleMigrateLocalData = async () => {
+    if (!user) return;
+    try {
+      console.log('[Migration] Iniciando migração manual de dados locais...');
+      
+      const migrate = async (key: string, table: string, mapFn: (item: any) => any) => {
+        const localData = localStorage.getItem(key);
+        if (localData) {
+          const parsed = JSON.parse(localData);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            console.log(`[Migration] Migrando ${parsed.length} itens da chave ${key} para tabela ${table}...`);
+            const payload = parsed.map(mapFn);
+            const { error } = await supabase.from(table).upsert(payload);
+            if (error) console.error(`[Migration] Erro ao migrar ${table}:`, error);
+          }
+        }
+      };
+
+      await migrate('marmo_staff', 'production_staff', (s: ProductionStaff) => ({
+        id: s.id.length > 5 ? s.id : undefined,
+        name: s.name,
+        position: s.position,
+        hourly_rate: s.hourlyRate,
+        phone: s.phone,
+        status: s.status
+      }));
+
+      await migrate('marmo_brands', 'brands', (b: any) => ({
+        id: b.id.length > 5 ? b.id : undefined,
+        name: b.description || b.name
+      }));
+
+      await migrate('marmo_product_groups', 'product_groups', (g: any) => ({
+        id: g.id.length > 5 ? g.id : undefined,
+        code: g.code,
+        description: g.description
+      }));
+
+      await migrate('marmo_service_groups', 'service_groups', (g: any) => ({
+        id: g.id.length > 5 ? g.id : undefined,
+        code: g.code,
+        description: g.description
+      }));
+
+      await migrate('marmo_sales_channels', 'sales_channels', (c: any) => ({
+        id: c.id.length > 5 ? c.id : undefined,
+        name: c.name,
+        color: c.color || '#3B82F6'
+      }));
+
+      await migrate('marmo_sales_phases', 'sales_phases', (p: any) => ({
+        name: p.name
+      }));
+
+      await migrate('marmo_transactions', 'finance_transactions', (t: FinanceTransaction) => ({
+        id: t.id.length > 5 ? t.id : undefined,
+        description: t.description,
+        amount: t.value,
+        type: t.type === 'receita' ? 'revenue' : 'expense',
+        category: t.category,
+        date: t.date,
+        status: t.status === 'pago' ? 'completed' : 'pending'
+      }));
+
+      alert('Migração concluída com sucesso! Os dados foram enviados para o Supabase.');
+      refreshAppData();
+    } catch (err) {
+      console.error('Erro na migração:', err);
+      alert('Erro inesperado durante a migração. Verifique o console.');
     }
   };
 
@@ -1050,10 +1604,35 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('marmo_sales_phases', JSON.stringify(salesPhases));
   }, [salesPhases]);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [loadingSuppliers, setLoadingSuppliers] = useState(true);
-
-  // Suppliers será buscado no orquestrador central
+  const handleUpdateCompany = async (info: CompanyInfo) => {
+    setCompanyInfo(info);
+    try {
+      // Tentar salvar no banco se houver sessão
+      if (user) {
+        console.log('[App] Persistindo configurações da empresa no Supabase...');
+        const { error } = await supabase
+          .from('company_info')
+          .upsert({
+            id: 1, // Usamos um ID fixo para configurações globais
+            name: info.name,
+            document: info.document,
+            address: info.address,
+            phone: info.phone,
+            email: info.email,
+            logo_url: info.logoUrl,
+            button_color: info.buttonColor,
+            sidebar_color: info.sidebarColor,
+            sidebar_text_color: info.sidebarTextColor,
+            lost_reason_options: info.lostReasonOptions
+          });
+        if (error) {
+          console.warn('[App] Erro ao persistir no banco (pode ser falta da tabela):', error.message);
+        }
+      }
+    } catch (err) {
+      console.error('[App] Erro crítico ao salvar configurações:', err);
+    }
+  };
 
   const handleSaveSupplier = async (s: Supplier) => {
     try {
@@ -1131,30 +1710,80 @@ const App: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Persistence simulation
-  useEffect(() => {
-    const safeLoad = (key: string, setter: (val: any) => void) => {
-      try {
-        const saved = localStorage.getItem(key);
-        if (saved) setter(JSON.parse(saved));
-      } catch (err) {
-        console.error(`Erro ao carregar ${key} do localStorage:`, err);
-      }
-    };
+  // Master List for Service Groups provided by User
+  const MASTER_SERVICE_GROUPS = [
+    { id: '06', code: '06', description: 'BALCAO' },
+    { id: '28', code: '28', description: 'BANCADA' },
+    { id: '29', code: '29', description: 'BASE' },
+    { id: '40', code: '40', description: 'BOQUETA' },
+    { id: '42', code: '42', description: 'BORDA' },
+    { id: '34', code: '34', description: 'CACOS / RETALHOS' },
+    { id: '32', code: '32', description: 'CANTONEIRA' },
+    { id: '21', code: '21', description: 'COLUNA' },
+    { id: '16', code: '16', description: 'CUBA ESCULPIDA' },
+    { id: '39', code: '39', description: 'DEGRAUS' },
+    { id: '19', code: '19', description: 'DIVISORIA' },
+    { id: '23', code: '23', description: 'ENGROSSO' },
+    { id: '07', code: '07', description: 'ESPELHO' },
+    { id: '46', code: '46', description: 'EXTENSAO' },
+    { id: '22', code: '22', description: 'FAIXA' },
+    { id: '44', code: '44', description: 'FECHAMENTO' },
+    { id: '37', code: '37', description: 'FILETE' },
+    { id: '47', code: '47', description: 'FRONTAO' },
+    { id: '11', code: '11', description: 'GUARNICAO' },
+    { id: '03', code: '03', description: 'LAVATORIO' },
+    { id: '25', code: '25', description: 'MESA' },
+    { id: '36', code: '36', description: 'MOLDURA' },
+    { id: '33', code: '33', description: 'NICHO' },
+    { id: '05', code: '05', description: 'PALITO' },
+    { id: '48', code: '48', description: 'PAPELEIRA' },
+    { id: '31', code: '31', description: 'PATAMAR' },
+    { id: '30', code: '30', description: 'PE' },
+    { id: '24', code: '24', description: 'PE CAIXA' },
+    { id: '08', code: '08', description: 'PEITORIL' },
+    { id: '02', code: '02', description: 'PIA' },
+    { id: '09', code: '09', description: 'PISANTE' },
+    { id: '17', code: '17', description: 'PISO' },
+    { id: '20', code: '20', description: 'PRATELEIRA' },
+    { id: '45', code: '45', description: 'REVESTIMENTO' },
+    { id: '18', code: '18', description: 'RODABASE' },
+    { id: '10', code: '10', description: 'RODAPE' },
+    { id: '15', code: '15', description: 'SAIA' },
+    { id: '26', code: '26', description: 'SERVIÇO' },
+    { id: '04', code: '04', description: 'SOLEIRA' },
+    { id: '12', code: '12', description: 'TAMPO' },
+    { id: '35', code: '35', description: 'TAMPO REDONDO' },
+    { id: '41', code: '41', description: 'TESTEIRA' },
+    { id: '43', code: '43', description: 'TUMULO' }
+  ];
 
-    safeLoad('marmo_phases', setPhases);
-    safeLoad('marmo_staff', setStaff);
-    safeLoad('marmo_activities', setActivities);
+  // Efeito principal de startup do app
+  useEffect(() => {
     safeLoad('marmo_company', setCompanyInfo);
-    safeLoad('marmo_brands', setBrands);
-    safeLoad('marmo_product_groups', setProductGroups);
-    safeLoad('marmo_service_groups', setServiceGroups);
-    safeLoad('marmo_transactions', setTransactions);
+    safeLoad('marmo_activities', setActivities);
     safeLoad('marmo_products', setProducts);
     safeLoad('marmo_orders', setOrders);
     safeLoad('marmo_app_users', setAppUsers);
     safeLoad('keepgoing_sales', setSales);
-  }, []);
+    safeLoad('marmo_deliveries', setDeliveries);
+    safeLoad('marmo_measurements', setMeasurements);
+    safeLoad('marmo_architects', setArchitects);
+
+    if (user?.id) {
+      refreshAppData(true);
+    }
+
+    const subscription = supabase
+      .channel('public:any')
+      .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
+        refreshAppData(false);
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     localStorage.setItem('marmo_phases', JSON.stringify(phases));
@@ -1171,18 +1800,6 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('marmo_company', JSON.stringify(companyInfo));
   }, [companyInfo]);
-
-  useEffect(() => {
-    localStorage.setItem('marmo_brands', JSON.stringify(brands));
-  }, [brands]);
-
-  useEffect(() => {
-    localStorage.setItem('marmo_product_groups', JSON.stringify(productGroups));
-  }, [productGroups]);
-
-  useEffect(() => {
-    localStorage.setItem('marmo_service_groups', JSON.stringify(serviceGroups));
-  }, [serviceGroups]);
 
   useEffect(() => {
     localStorage.setItem('marmo_transactions', JSON.stringify(transactions));
@@ -1231,7 +1848,9 @@ const App: React.FC = () => {
         id: data.id,
         timestamp: data.created_at,
         userName: data.user_name,
+        type: data.type as any,
         action: data.type as any,
+        description: data.message,
         details: data.message,
         orderId: data.reference_id
       };
@@ -1242,12 +1861,15 @@ const App: React.FC = () => {
       console.error('Erro ao registrar log no Supabase:', err);
       // Fallback local se falhar
       const fallbackLog: ActivityLog = {
-        id: String(Date.now()),
+        id: crypto.randomUUID(),
         timestamp: new Date().toISOString(),
-        userName: user.name,
-        action,
+        userName: user?.name || 'Sistema',
+        type: action,
+        action: action,
+        description: message,
         details: message,
-        orderId: referenceId
+        orderId: referenceId,
+        osNumber: orderNumber
       };
       setActivities(prev => [fallbackLog, ...prev].slice(0, 100));
     }
@@ -1612,27 +2234,134 @@ const App: React.FC = () => {
     }
   };
 
-  const handleSaveStaff = (s: ProductionStaff) => {
-    setStaff(prev => prev.find(x => x.id === s.id) ? prev.map(x => x.id === s.id ? s : x) : [...prev, s]);
-  };
-
-  const handleDeleteStaff = (id: string) => {
-    setStaff(prev => prev.filter(x => x.id !== id));
-  };
-
-  const addSalesPhase = (name: string) => {
-    if (!salesPhases.find(p => p.name === name)) {
-      setSalesPhases([...salesPhases, { name }]);
+  const handleSaveStaff = async (s: ProductionStaff) => {
+    try {
+      const { error } = await supabase.from('production_staff').upsert({
+        id: s.id.length > 5 ? s.id : undefined,
+        name: s.name,
+        position: s.position || '',
+        hourly_rate: s.hourlyRate || 0,
+        phone: s.phone || '',
+        status: s.status || 'ativo'
+      });
+      if (error) throw error;
+      setStaff(prev => {
+        const index = prev.findIndex(item => item.id === s.id);
+        if (index >= 0) return prev.map((item, i) => i === index ? s : item);
+        return [s, ...prev];
+      });
+    } catch (err) {
+      console.error('Erro ao salvar funcionário:', err);
+      // Fallback local se falhar
+      setStaff(prev => prev.find(item => item.id === s.id) ? prev.map(item => item.id === s.id ? s : item) : [s, ...prev]);
     }
   };
 
-  const renameSalesPhase = (oldName: string, newName: string) => {
-    setSalesPhases(prev => prev.map(p => p.name === oldName ? { ...p, name: newName } : p));
-    setSales(prev => prev.map(s => s.salesPhase === oldName ? { ...s, salesPhase: newName } : s));
+  const handleDeleteStaff = async (id: string) => {
+    try {
+      if (id.length > 5) {
+        await supabase.from('production_staff').delete().eq('id', id);
+      }
+      setStaff(prev => prev.filter(x => x.id !== id));
+    } catch (err) {
+      console.error('Erro ao deletar funcionário:', err);
+      setStaff(prev => prev.filter(x => x.id !== id));
+    }
   };
 
-  const deleteSalesPhase = (name: string) => {
-    setSalesPhases(prev => prev.filter(p => p.name !== name));
+  const addSalesPhase = async (name: string) => {
+    try {
+      if (!salesPhases.find(p => p.name === name)) {
+        await supabase.from('sales_phases').insert({ name });
+        setSalesPhases([...salesPhases, { name }]);
+      }
+    } catch (err) {
+      console.error('Erro ao salvar fase de venda:', err);
+      if (!salesPhases.find(p => p.name === name)) {
+        setSalesPhases([...salesPhases, { name }]);
+      }
+    }
+  };
+
+  const renameSalesPhase = async (oldName: string, newName: string) => {
+    try {
+      await supabase.from('sales_phases').update({ name: newName }).eq('name', oldName);
+      setSalesPhases(prev => prev.map(p => p.name === oldName ? { ...p, name: newName } : p));
+      setSales(prev => prev.map(s => s.salesPhase === oldName ? { ...s, salesPhase: newName } : s));
+    } catch(err) {
+      console.error(err);
+      setSalesPhases(prev => prev.map(p => p.name === oldName ? { ...p, name: newName } : p));
+    }
+  };
+
+  const deleteSalesPhase = async (name: string) => {
+    try {
+      await supabase.from('sales_phases').delete().eq('name', name);
+      setSalesPhases(prev => prev.filter(p => p.name !== name));
+    } catch(err) {
+      console.error(err);
+      setSalesPhases(prev => prev.filter(p => p.name !== name));
+    }
+  };
+
+  const handleSaveChannel = async (c: SalesChannel) => {
+    try {
+      await supabase.from('sales_channels').upsert({ id: c.id.length > 5 ? c.id : undefined, name: c.name, color: c.color });
+      setSalesChannels(prev => {
+        const index = prev.findIndex(item => item.id === c.id);
+        if (index >= 0) return prev.map((item, i) => i === index ? c : item);
+        return [c, ...prev];
+      });
+    } catch(err) {
+      console.error(err);
+      setSalesChannels(prev => prev.find(x => x.id === c.id) ? prev.map(x => x.id === c.id ? c : x) : [...prev, c]);
+    }
+  };
+
+  const handleDeleteChannel = async (id: string) => {
+    try {
+      if (id.length > 5) await supabase.from('sales_channels').delete().eq('id', id);
+      setSalesChannels(prev => prev.filter(x => x.id !== id));
+    } catch(err) {
+      console.error(err);
+      setSalesChannels(prev => prev.filter(x => x.id !== id));
+    }
+  };
+
+  const onAddTransaction = async (t: Omit<FinanceTransaction, 'id'>) => {
+    try {
+      const { data, error } = await supabase.from('finance_transactions').insert({
+        description: t.description,
+        amount: t.value,
+        type: t.type === 'receita' ? 'revenue' : 'expense',
+        category: t.category,
+        date: t.date,
+        status: t.status === 'pago' ? 'completed' : 'pending'
+      }).select().single();
+      
+      if (error) throw error;
+      if (data) {
+        const newTrans: FinanceTransaction = {
+          ...t,
+          id: data.id
+        };
+        setTransactions(prev => [newTrans, ...prev]);
+      }
+    } catch (err) {
+      console.error('Erro ao salvar transação:', err);
+      const newTrans: FinanceTransaction = { ...t, id: Date.now().toString() };
+      setTransactions(prev => [newTrans, ...prev]);
+    }
+  };
+
+  const onDeleteTransaction = async (id: string) => {
+    try {
+      if (id.length > 5) await supabase.from('finance_transactions').delete().eq('id', id);
+      setTransactions(prev => prev.filter(t => t.id !== id));
+    } catch (err) {
+      console.error('Erro ao deletar transação:', err);
+      setTransactions(prev => prev.filter(t => t.id !== id));
+    }
   };
 
   const reorderSalesPhases = (startIndex: number, endIndex: number) => {
@@ -1790,8 +2519,10 @@ const App: React.FC = () => {
             onDeleteSalesPhase={deleteSalesPhase}
             onReorderSalesPhases={reorderSalesPhases}
             companyInfo={companyInfo}
-            onUpdateCompany={setCompanyInfo}
+            onUpdateCompany={handleUpdateCompany}
             onImportClients={handleImportClients}
+            onImportMaterials={handleImportMaterials}
+            onMigrateData={handleMigrateLocalData}
           />
         );
       case 'Clientes':
@@ -1846,6 +2577,7 @@ const App: React.FC = () => {
             productGroups={productGroups}
             suppliers={suppliers}
             exchangeRates={exchangeRates}
+            onImportMaterials={handleImportMaterials}
           />
         );
       case 'Acabamentos':
@@ -1872,7 +2604,7 @@ const App: React.FC = () => {
           />
         );
       case 'Financeiro':
-        return <FinanceView transactions={transactions} onAddTransaction={(t) => setTransactions(prev => [t, ...prev])} />;
+        return <FinanceView transactions={transactions} onAddTransaction={onAddTransaction} onDeleteTransaction={onDeleteTransaction} />;
       case 'Fornecedores':
         return (
           <SuppliersView 
@@ -1896,13 +2628,13 @@ const App: React.FC = () => {
           />
         );
       case 'Canais de Vendas':
-        return <SalesChannelsView channels={salesChannels} onSaveChannel={(c) => setSalesChannels(prev => prev.find(x => x.id === c.id) ? prev.map(x => x.id === c.id ? c : x) : [...prev, c])} onDeleteChannel={(id) => setSalesChannels(prev => prev.filter(x => x.id !== id))} />;
+        return <SalesChannelsView channels={salesChannels} onSaveChannel={handleSaveChannel} onDeleteChannel={handleDeleteChannel} />;
       case 'Marcas':
-        return <BrandsView brands={brands} onSaveBrand={(b) => setBrands(prev => prev.find(item => item.id === b.id) ? prev.map(item => item.id === b.id ? b : item) : [b, ...prev])} onDeleteBrand={(id) => setBrands(prev => prev.filter(item => item.id !== id))} />;
+        return <BrandsView brands={brands} onSaveBrand={handleSaveBrand} onDeleteBrand={handleDeleteBrand} />;
       case 'Grupos de Produtos':
-        return <ProductGroupsView groups={productGroups} onSaveGroup={(g) => setProductGroups(prev => prev.find(item => item.id === g.id) ? prev.map(item => item.id === g.id ? g : item) : [g, ...prev])} onDeleteGroup={(id) => setProductGroups(prev => prev.filter(item => item.id !== id))} />;
+        return <ProductGroupsView groups={productGroups} onSaveGroup={handleSaveProductGroup} onDeleteGroup={handleDeleteProductGroup} />;
       case 'Grupos de Serviços':
-        return <ServiceGroupsView groups={serviceGroups} onSaveGroup={(g) => setServiceGroups(prev => prev.find(item => item.id === g.id) ? prev.map(item => item.id === g.id ? g : item) : [g, ...prev])} onDeleteGroup={(id) => setServiceGroups(prev => prev.filter(item => item.id !== id))} />;
+        return <ServiceGroupsView groups={serviceGroups} onSaveGroup={handleSaveServiceGroup} onDeleteGroup={handleDeleteServiceGroup} />;
       default:
         return <PlaceholderView title={currentView} />;
     }
@@ -1918,6 +2650,8 @@ const App: React.FC = () => {
         companyInfo={companyInfo}
         user={user}
         exchangeRates={exchangeRates}
+        onLogout={handleLogout}
+        onRefresh={refreshAppData}
       />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -1926,6 +2660,7 @@ const App: React.FC = () => {
           onLogout={handleLogout} 
           onSearch={setSearchQuery} 
           onToggleActivity={() => setIsHistoryOpen(!isHistoryOpen)} 
+          onRefresh={refreshAppData}
         />
         
         <RecentActivity 

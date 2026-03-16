@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Box, Plus, Search, Package, AlertTriangle, TrendingUp, TrendingDown, Trash2, Edit2, Diamond, ShoppingBag, Wrench, MapPin } from 'lucide-react';
+import { Box, Plus, Search, Package, AlertTriangle, TrendingUp, TrendingDown, Trash2, Edit2, Diamond, ShoppingBag, Wrench, MapPin, FileSpreadsheet, Upload, Loader2 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { Material, Brand, ProductGroup, Supplier, Category } from '../types';
 import { NewMaterialModal } from './NewMaterialModal';
 
@@ -7,6 +8,7 @@ interface InventoryViewProps {
   materials: Material[];
   onSaveMaterial: (material: Material) => void;
   onUpdateStatus: (id: string, status: 'ativo' | 'inativo') => void;
+  onImportMaterials: (data: any[]) => Promise<void>;
   brands: Brand[];
   productGroups: ProductGroup[];
   suppliers: Supplier[];
@@ -14,20 +16,26 @@ interface InventoryViewProps {
 }
 
 export const InventoryView: React.FC<InventoryViewProps> = ({ 
-  materials, onSaveMaterial, onUpdateStatus,
+  materials, onSaveMaterial, onUpdateStatus, onImportMaterials,
   brands, productGroups, suppliers, exchangeRates
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showInactive, setShowInactive] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
+  const [importLoading, setImportLoading] = useState(false);
 
-  const filteredMaterials = materials.filter(m => {
-    const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.type.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredMaterials = (materials || []).filter(m => {
+    if (!m) return false;
+    const name = m.name || '';
+    const code = m.code || '';
+    const type = m.type || '';
     
-    const matchesStatus = showInactive || m.status === 'ativo';
+    const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      type.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = showInactive || (m.status || 'ativo') === 'ativo';
     
     return matchesSearch && matchesStatus;
   });
@@ -47,7 +55,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[#ec5b13] p-1.5 bg-orange-50 rounded-xl">
+            <span className="text-primary p-1.5 bg-primary/5 rounded-xl">
                <Package size={20} />
             </span>
             <h1 className="text-2xl font-black text-slate-800 tracking-tight">Matéria Prima</h1>
@@ -61,9 +69,50 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           >
             {showInactive ? 'Ocultar Inativos' : 'Mostrar Inativos'}
           </button>
+          
+          <label className={`flex items-center gap-2 px-4 py-3 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-sm cursor-pointer hover:bg-slate-50 transition-all ${importLoading ? 'opacity-50 pointer-events-none' : ''}`}>
+            {importLoading ? (
+              <Loader2 size={20} className="animate-spin text-primary" />
+            ) : (
+              <FileSpreadsheet size={20} className="text-primary" />
+            )}
+            {importLoading ? 'Importando...' : 'Importar Planilha'}
+            <input 
+              type="file" 
+              className="hidden" 
+              accept=".xlsx, .csv" 
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setImportLoading(true);
+                try {
+                  const reader = new FileReader();
+                  reader.onload = async (evt) => {
+                    try {
+                      const bstr = evt.target?.result;
+                      const wb = XLSX.read(bstr, { type: 'binary' });
+                      const ws = wb.Sheets[wb.SheetNames[0]];
+                      const data = XLSX.utils.sheet_to_json(ws);
+                      await onImportMaterials(data);
+                    } catch (err) {
+                      console.error('Erro ao processar planilha:', err);
+                      alert('Erro ao ler a planilha. Verifique o formato do arquivo.');
+                    } finally {
+                      setImportLoading(false);
+                    }
+                  };
+                  reader.readAsBinaryString(file);
+                } catch (err) { 
+                  console.error(err); 
+                  setImportLoading(false);
+                }
+              }}
+            />
+          </label>
+
           <button 
             onClick={handleAddNew}
-            className="bg-[#ec5b13] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[#ec5b13]/20 hover:bg-[#d84a0d] transition-all transform hover:scale-[1.02] active:scale-95"
+            className="bg-primary text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-secondary transition-all transform hover:scale-[1.02] active:scale-95"
           >
             <Plus size={20} /> Novo Registro
           </button>
@@ -82,7 +131,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
         </div>
         <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
           <div className="flex items-center gap-4 mb-2">
-            <div className="p-3 bg-orange-50 text-[#ec5b13] rounded-2xl">
+            <div className="p-3 bg-primary/5 text-primary rounded-2xl">
               <TrendingUp size={24} />
             </div>
             <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">Valor em Estoque</span>
@@ -106,7 +155,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           <input 
             type="text"
             placeholder="Buscar por código ou descrição..."
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ec5b13]/20 font-medium"
+            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -158,7 +207,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                   <td className="px-6 py-4 font-bold text-slate-400 text-sm">
                     R$ {material.suggestedPrice?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </td>
-                  <td className="px-6 py-4 font-black text-[#ec5b13]">
+                  <td className="px-6 py-4 font-black text-primary">
                     R$ {material.sellingPrice?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </td>
                   <td className="px-6 py-4 text-right">

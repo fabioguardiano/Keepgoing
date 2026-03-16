@@ -52,8 +52,12 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
           }
           throw authError;
         }
+
+        if (data.user) {
+          onLogin(data.user);
+        }
         
-        console.log('[LoginAudit] Login concluído. Aguardando App.tsx reagir...');
+        console.log('[LoginAudit] Login concluído. App.tsx deve reagir via onLogin e listener.');
       } else {
         // Mode Signup (Primeiro Acesso)
         const { data, error: authError } = await supabase.auth.signUp({
@@ -96,12 +100,12 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </div>
           <h2 className="text-2xl font-bold text-slate-900">Quase lá!</h2>
           <p className="text-slate-600 font-normal">
-            Enviamos um e-mail de confirmação para <strong className="text-[#ec5b13]">{email}</strong>. 
+            Enviamos um e-mail de confirmação para <strong className="text-primary">{email}</strong>. 
             Acesse o link ou insira o código recebido para ativar sua conta e definir sua senha.
           </p>
           <button 
             onClick={() => setMode('login')}
-            className="w-full py-3 bg-[#ec5b13] text-white font-bold rounded-xl hover:bg-orange-700 transition-colors"
+            className="w-full py-3 bg-primary text-white font-bold rounded-xl hover:bg-secondary transition-colors"
           >
             Voltar para o Login
           </button>
@@ -115,15 +119,15 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
       {/* Decorative Elements */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none opacity-20 dark:opacity-10">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#ec5b13] rounded-full blur-[120px]"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-[#ec5b13] rounded-full blur-[100px]"></div>
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary rounded-full blur-[120px]"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-primary rounded-full blur-[100px]"></div>
       </div>
 
-      <div className="w-full max-w-md bg-white dark:bg-[#221610]/50 rounded-2xl shadow-2xl overflow-hidden border border-[#ec5b13]/10">
+      <div className="w-full max-w-md bg-white dark:bg-[#221610]/50 rounded-2xl shadow-2xl overflow-hidden border border-primary/10">
 
         {/* Header Section */}
         <div className="pt-10 pb-6 px-8 flex flex-col items-center">
-          <div className="w-16 h-16 bg-[#ec5b13] rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-[#ec5b13]/20">
+          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-primary/20">
             <Layers className="text-white w-8 h-8" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">KeepGoing</h1>
@@ -133,20 +137,6 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
         {/* Form Container */}
         <div className="px-8 pb-10">
           {/* Toggle Tabs */}
-          <div className="flex bg-slate-100 rounded-xl p-1 mb-8">
-            <button 
-              onClick={() => { setMode('login'); setError(null); }}
-              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${mode === 'login' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
-            >
-              Entrar
-            </button>
-            <button 
-              onClick={() => { setMode('signup'); setError(null); }}
-              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${mode === 'signup' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
-            >
-              Ativar Acesso
-            </button>
-          </div>
 
           <h2 className="text-lg font-bold mb-6 text-center text-slate-800">
             {mode === 'login' ? 'Bem-vindo de volta' : 'Primeiro acesso ao sistema'}
@@ -168,7 +158,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#ec5b13]/50 focus:border-[#ec5b13] outline-none transition-all placeholder:text-slate-400 text-sm"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all placeholder:text-slate-400 text-sm"
                     placeholder="Seu nome completo"
                     required
                   />
@@ -184,7 +174,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#ec5b13]/50 focus:border-[#ec5b13] outline-none transition-all placeholder:text-slate-400 text-sm"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all placeholder:text-slate-400 text-sm"
                   placeholder="seu@email.com"
                   required
                 />
@@ -195,7 +185,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <div className="flex justify-between items-center">
                 <label className="text-xs font-bold text-slate-500 uppercase">Senha{mode === 'signup' ? ' de Acesso' : ''}</label>
                 {mode === 'login' && (
-                  <a href="#" className="text-[11px] font-bold text-[#ec5b13] hover:underline uppercase">Esqueci a senha</a>
+                  <a href="#" className="text-[11px] font-bold text-primary hover:underline uppercase">Esqueci a senha</a>
                 )}
               </div>
               <div className="relative flex items-center">
@@ -204,14 +194,14 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#ec5b13]/50 focus:border-[#ec5b13] outline-none transition-all placeholder:text-slate-400 text-sm"
+                  className="w-full pl-10 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all placeholder:text-slate-400 text-sm"
                   placeholder="••••••••"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 text-slate-400 hover:text-[#ec5b13] transition-colors"
+                  className="absolute right-3 text-slate-400 hover:text-primary transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -221,7 +211,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#ec5b13] hover:bg-orange-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-[#ec5b13]/20 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full bg-primary hover:bg-secondary text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -242,7 +232,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   window.location.reload();
                 }
               }}
-              className="text-[10px] text-slate-400 font-bold uppercase hover:text-[#ec5b13] transition-colors flex items-center gap-2"
+              className="text-[10px] text-slate-400 font-bold uppercase hover:text-primary transition-colors flex items-center gap-2"
             >
               <AlertCircle size={12} /> Problemas persistentes? Resetar Navegador
             </button>
@@ -253,6 +243,23 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 <Headset className="w-3 h-3" /> Suporte: suporte@keepgoing.com
               </span>
             </p>
+
+            {mode === 'login' && (
+              <button 
+                onClick={() => setMode('signup')}
+                className="text-[9px] text-slate-300 hover:text-slate-400 transition-colors uppercase font-medium"
+              >
+                Ativação de Primeiro Acesso
+              </button>
+            )}
+            {mode === 'signup' && (
+              <button 
+                onClick={() => setMode('login')}
+                className="text-[9px] text-slate-300 hover:text-slate-400 transition-colors uppercase font-medium"
+              >
+                Voltar para o Login
+              </button>
+            )}
           </div>
         </div>
       </div>

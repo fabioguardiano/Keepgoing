@@ -452,21 +452,21 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     type="checkbox" 
                     checked={blurMeasurements}
                     onChange={(e) => setBlurMeasurements(e.target.checked)}
-                    className="w-4 h-4 rounded text-[var(--primary-color)] focus:ring-[var(--primary-color)]"
+                    className="w-4 h-4 rounded text-primary focus:ring-primary"
                   />
                   <span className="text-xs font-bold text-slate-600 dark:text-slate-300 group-hover:text-slate-800 dark:group-hover:text-white transition-colors">
                     Ocultar Medidas
                   </span>
                 </label>
-                <div className="w-px h-6 bg-orange-200 dark:bg-slate-600"></div>
+                <div className="w-px h-6 bg-primary/20 dark:bg-slate-600"></div>
                 <button 
                   onClick={handlePrint}
-                  className="p-2 text-[var(--primary-color)] hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all flex items-center gap-2 font-bold text-sm"
+                  className="p-2 text-primary hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all flex items-center gap-2 font-bold text-sm"
                   title="Imprimir Orçamento"
                 >
                   <Printer size={18} /> Imprimir
                 </button>
-                <div className="w-px h-6 bg-orange-200 dark:bg-slate-600"></div>
+                <div className="w-px h-6 bg-primary/20 dark:bg-slate-600"></div>
                 <button 
                   onClick={syncPricesWithMaterials}
                   className="p-2 text-blue-600 hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all flex items-center gap-2 font-bold text-sm"
@@ -500,10 +500,10 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block">Cliente</label>
                 <div 
                   onClick={() => setIsClientModalOpen(true)}
-                  className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 border-2 border-transparent hover:border-[var(--primary-color)] rounded-2xl cursor-pointer transition-all group"
+                  className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 border-2 border-transparent hover:border-primary rounded-2xl cursor-pointer transition-all group"
                 >
                   <div className="flex items-center gap-3">
-                    <User size={20} className="text-slate-400 group-hover:text-[var(--primary-color)]" />
+                    <User size={20} className="text-slate-400 group-hover:text-primary" />
                     <span className={`font-bold ${selectedClient ? 'text-slate-800 dark:text-white' : 'text-slate-400'}`}>
                       {selectedClient ? selectedClient.name : 'Selecionar Cliente...'}
                     </span>

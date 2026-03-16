@@ -323,7 +323,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
       startY: 50,
       head: [['#', 'Cliente', 'O.S.', 'Endereço de Medição', 'Horário']],
       body: tableData,
-      headStyles: { fillColor: [236, 91, 19] },
+      headStyles: { fillColor: [236, 91, 19] }, // Idealmente usar cor dinâmica se possível
       margin: { top: 50 },
       styles: { fontSize: 9, cellPadding: 3 },
       columnStyles: {
@@ -417,7 +417,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
               </button>
               <button 
                 onClick={() => setIsModalOpen(true)}
-                className="p-2 bg-[#ec5b13] text-white rounded-lg hover:bg-[#d84a0d] transition-colors"
+                className="p-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors"
                 title="Agendar Medição"
               >
                 <Plus size={20} />
@@ -429,7 +429,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
             <input
               type="text"
               placeholder="Buscar por O.S. ou Cliente..."
-              className="w-full pl-10 pr-4 py-2 bg-gray-100 border-none rounded-xl text-sm focus:ring-2 focus:ring-[#ec5b13]/20 transition-all font-medium"
+              className="w-full pl-10 pr-4 py-2 bg-gray-100 border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/20 transition-all font-medium"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -439,7 +439,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           <div className="flex items-center justify-between px-2 mb-2">
             <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Medições do Dia</span>
-            <span className="text-xs font-bold text-[#ec5b13] bg-orange-50 px-2 py-1 rounded-full">
+            <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-full">
               {measurements.length} total
             </span>
           </div>
@@ -454,11 +454,11 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                 <div 
                   key={measurement.id} 
                   onClick={() => setSelectedMeasurementId(measurement.id)}
-                  className={`p-4 rounded-2xl border transition-all group cursor-pointer shadow-sm ${selectedMeasurementId === measurement.id ? 'border-[#ec5b13] bg-orange-50/50' : 'border-gray-100 bg-white hover:border-[#ec5b13]/30 hover:bg-orange-50/20'}`}
+                  className={`p-4 rounded-2xl border transition-all group cursor-pointer shadow-sm ${selectedMeasurementId === measurement.id ? 'border-primary bg-primary/5' : 'border-gray-100 bg-white hover:border-primary/30 hover:bg-primary/5'}`}
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h3 className="font-bold text-gray-900 group-hover:text-[#ec5b13] transition-colors">{measurement.clientName}</h3>
+                      <h3 className="font-bold text-gray-900 group-hover:text-primary transition-colors">{measurement.clientName}</h3>
                       <span className="text-xs font-bold text-gray-400">O.S. {measurement.osNumber}</span>
                     </div>
                     <div className="flex items-center gap-1">
@@ -479,14 +479,14 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                       <div className="h-4 w-[1px] bg-gray-200 mx-1" />
                       <button 
                         onClick={(e) => { e.stopPropagation(); moveMeasurement(measurement.id, 'up'); }}
-                        className="p-1 text-gray-400 hover:text-[#ec5b13] hover:bg-orange-50 rounded transition-colors"
+                        className="p-1 text-gray-400 hover:text-primary hover:bg-primary/10 rounded transition-colors"
                         title="Subir posição na rota"
                       >
                         <ChevronRight className="-rotate-90 w-4 h-4" />
                       </button>
                       <button 
                         onClick={(e) => { e.stopPropagation(); moveMeasurement(measurement.id, 'down'); }}
-                        className="p-1 text-gray-400 hover:text-[#ec5b13] hover:bg-orange-50 rounded transition-colors"
+                        className="p-1 text-gray-400 hover:text-primary hover:bg-primary/10 rounded transition-colors"
                         title="Descer posição na rota"
                       >
                         <ChevronRight className="rotate-90 w-4 h-4" />
@@ -494,7 +494,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                       <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${
                         measurement.status === 'entregue' ? 'bg-green-100 text-green-600' :
                         measurement.status === 'em_rota' ? 'bg-blue-100 text-blue-600' :
-                        'bg-orange-100 text-[#ec5b13]'
+                        'bg-primary/10 text-primary'
                       }`}>
                         {measurement.status === 'pendente' ? 'Pendente' : measurement.status === 'em_rota' ? 'Em Rota' : 'Realizada'}
                       </span>
@@ -538,7 +538,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
             <div className="p-4 bg-white/80 backdrop-blur-md border-b flex items-center justify-between z-[1000] absolute top-0 left-0 right-0">
               <div className="flex items-center gap-4">
                  <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border shadow-sm text-sm font-bold text-gray-700">
-                   <Ruler size={16} className="text-[#ec5b13]" /> Rota de hoje: {measurements.length} paradas
+                   <Ruler size={16} className="text-primary" /> Rota de hoje: {measurements.length} paradas
                  </div>
                  <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border shadow-sm text-sm font-bold text-gray-700">
                    <Navigation size={16} className="text-blue-500" /> Estimativa: 3h 45min
@@ -596,14 +596,14 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                     <Marker 
                       key={m.id} 
                       position={coords[m.address] as L.LatLngTuple} 
-                      icon={createNumberedIcon(i + 1, m.id === selectedMeasurementId ? '#2563eb' : '#ec5b13')}
+                      icon={createNumberedIcon(i + 1, m.id === selectedMeasurementId ? '#2563eb' : 'var(--primary-color)')}
                       eventHandlers={{ click: () => setSelectedMeasurementId(m.id) }}
                     >
                       <Popup>
                         <div className="p-1">
                           <p className="font-black text-[10px] uppercase text-gray-400 mb-1">Medição {i + 1}</p>
                           <p className="font-bold text-sm text-gray-900">{m.clientName}</p>
-                          <p className="text-[11px] font-bold text-[#ec5b13] mb-1">O.S. {m.osNumber}</p>
+                          <p className="text-[11px] font-bold text-primary mb-1">O.S. {m.osNumber}</p>
                           <p className="text-xs text-gray-500 line-clamp-2">{m.address}</p>
                           <div className="mt-2 text-[10px] font-black uppercase text-gray-400 flex items-center gap-1">
                             <Clock size={10} /> {m.time}
@@ -615,7 +615,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                 ))}
 
                 {Array.from(new Set(measurements.map(m => m.routeGroup || 'Manhã'))).map((group, idx) => {
-                  const colors = ['#ec5b13', '#2563eb', '#10b981', '#f59e0b', '#8b5cf6'];
+                  const colors = ['var(--primary-color)', '#2563eb', '#10b981', '#f59e0b', '#8b5cf6'];
                   const groupColor = colors[idx % colors.length];
                   
                   if (roadPaths[group]) {
@@ -668,7 +668,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                     <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b pb-2">Legenda das Rotas</h4>
                     
                     {Array.from(new Set(measurements.map(m => m.routeGroup || 'Manhã'))).map((group, groupIdx) => {
-                      const colors = ['#ec5b13', '#2563eb', '#10b981', '#f59e0b', '#8b5cf6'];
+                      const colors = ['var(--primary-color)', '#2563eb', '#10b981', '#f59e0b', '#8b5cf6'];
                       const groupColor = colors[groupIdx % colors.length];
                       
                       return (
@@ -701,7 +701,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                               className="flex items-center gap-3 cursor-pointer hover:bg-black/5 p-1 rounded-lg transition-all"
                               onClick={() => setSelectedMeasurementId(m.id)}
                             >
-                              <div className={`w-8 h-8 ${m.id === selectedMeasurementId ? 'bg-blue-600' : ''} text-white rounded-lg flex items-center justify-center font-black text-xs shadow-lg`} style={{ backgroundColor: m.id === selectedMeasurementId ? '#2563eb' : groupColor }}>
+                              <div className={`w-8 h-8 ${m.id === selectedMeasurementId ? 'bg-blue-600' : ''} text-white rounded-lg flex items-center justify-center font-black text-xs shadow-lg`} style={{ backgroundColor: m.id === selectedMeasurementId ? '#2563eb' : (groupColor.startsWith('var') ? 'var(--primary-color)' : groupColor) }}>
                                 {i + 1}
                               </div>
                               <div>
@@ -795,7 +795,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                     {(calendarMode === 'week' ? getWeekDays(currentDate) : [currentDate]).map((day, i) => (
                       <div key={i} className="p-4 text-center border-r last:border-0">
                         <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">{day.toLocaleDateString('pt-BR', { weekday: 'short' })}</p>
-                        <p className={`text-2xl font-black ${day.toDateString() === new Date().toDateString() ? 'text-[#ec5b13]' : 'text-gray-900'}`}>{day.getDate()}</p>
+                        <p className={`text-2xl font-black ${day.toDateString() === new Date().toDateString() ? 'text-primary' : 'text-gray-900'}`}>{day.getDate()}</p>
                       </div>
                     ))}
                   </div>
