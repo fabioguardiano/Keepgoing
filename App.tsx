@@ -172,6 +172,10 @@ const App: React.FC = () => {
     }
   };
 
+  const validateUUID = (id: string) => {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  };
+
   const refreshAppData = async (showLoading = true) => {
     if (!user) {
       console.warn('[App] refreshAppData abortado: usuário não autenticado');
@@ -1157,10 +1161,13 @@ const App: React.FC = () => {
   const handleSaveBrand = async (b: Brand) => {
     try {
       const { error } = await supabase.from('brands').upsert({
-        id: b.id.length > 5 ? b.id : undefined, // Supabase gera ID se não for fornecido um UUID válido
+        id: validateUUID(b.id) ? b.id : undefined,
         name: b.description
       });
-      if (error) throw error;
+      if (error) {
+        alert('Erro ao salvar no banco de dados. O item será mantido apenas localmente por enquanto.');
+        throw error;
+      }
       setBrands(prev => {
         const index = prev.findIndex(item => item.id === b.id || item.description === b.description);
         if (index >= 0) return prev.map((item, i) => i === index ? b : item);
@@ -1176,7 +1183,7 @@ const App: React.FC = () => {
 
   const handleDeleteBrand = async (id: string) => {
     try {
-      if (id.length > 5) {
+      if (validateUUID(id)) {
         await supabase.from('brands').delete().eq('id', id);
       } else {
         await supabase.from('brands').delete().eq('name', brands.find(b => b.id === id)?.description);
@@ -1193,11 +1200,14 @@ const App: React.FC = () => {
   const handleSaveProductGroup = async (g: Omit<Brand, 'createdAt'> & {createdAt?: string}) => {
     try {
       const { error } = await supabase.from('product_groups').upsert({
-        id: g.id.length > 5 ? g.id : undefined,
+        id: validateUUID(g.id) ? g.id : undefined,
         code: g.code,
         description: g.description
       });
-      if (error) throw error;
+      if (error) {
+        alert('Erro ao salvar no banco de dados. O item será mantido apenas localmente por enquanto.');
+        throw error;
+      }
       
       const groupWithDate = { ...g, createdAt: g.createdAt || new Date().toISOString() };
       setProductGroups(prev => {
@@ -1214,7 +1224,7 @@ const App: React.FC = () => {
 
   const handleDeleteProductGroup = async (id: string) => {
     try {
-      if (id.length > 5) {
+      if (validateUUID(id)) {
         await supabase.from('product_groups').delete().eq('id', id);
       } else {
         await supabase.from('product_groups').delete().eq('code', productGroups.find(g => g.id === id)?.code);
@@ -1230,11 +1240,14 @@ const App: React.FC = () => {
   const handleSaveServiceGroup = async (g: Omit<Brand, 'createdAt'> & {createdAt?: string}) => {
     try {
       const { error } = await supabase.from('service_groups').upsert({
-        id: g.id.length > 5 ? g.id : undefined,
+        id: validateUUID(g.id) ? g.id : undefined,
         code: g.code,
         description: g.description
       });
-      if (error) throw error;
+      if (error) {
+        alert('Erro ao salvar no banco de dados. O item será mantido apenas localmente por enquanto.');
+        throw error;
+      }
       
       const groupWithDate = { ...g, createdAt: g.createdAt || new Date().toISOString() };
       setServiceGroups(prev => {
@@ -1251,7 +1264,7 @@ const App: React.FC = () => {
 
   const handleDeleteServiceGroup = async (id: string) => {
     try {
-      if (id.length > 5) {
+      if (validateUUID(id)) {
         await supabase.from('service_groups').delete().eq('id', id);
       } else {
         await supabase.from('service_groups').delete().eq('code', serviceGroups.find(g => g.id === id)?.code);
@@ -1266,7 +1279,7 @@ const App: React.FC = () => {
   const handleSaveMaterial = async (m: Material) => {
     try {
       const payload = {
-        id: m.id.length > 20 ? m.id : undefined,
+        id: validateUUID(m.id) ? m.id : undefined,
         code: m.code,
         name: m.name,
         type: m.type,
@@ -1498,7 +1511,7 @@ const App: React.FC = () => {
       };
 
       await migrate('marmo_staff', 'production_staff', (s: ProductionStaff) => ({
-        id: s.id.length > 5 ? s.id : undefined,
+        id: validateUUID(s.id) ? s.id : undefined,
         name: s.name,
         position: s.position,
         hourly_rate: s.hourlyRate,
@@ -1507,24 +1520,24 @@ const App: React.FC = () => {
       }));
 
       await migrate('marmo_brands', 'brands', (b: any) => ({
-        id: b.id.length > 5 ? b.id : undefined,
+        id: validateUUID(b.id) ? b.id : undefined,
         name: b.description || b.name
       }));
 
       await migrate('marmo_product_groups', 'product_groups', (g: any) => ({
-        id: g.id.length > 5 ? g.id : undefined,
+        id: validateUUID(g.id) ? g.id : undefined,
         code: g.code,
         description: g.description
       }));
 
       await migrate('marmo_service_groups', 'service_groups', (g: any) => ({
-        id: g.id.length > 5 ? g.id : undefined,
+        id: validateUUID(g.id) ? g.id : undefined,
         code: g.code,
         description: g.description
       }));
 
       await migrate('marmo_sales_channels', 'sales_channels', (c: any) => ({
-        id: c.id.length > 5 ? c.id : undefined,
+        id: validateUUID(c.id) ? c.id : undefined,
         name: c.name,
         color: c.color || '#3B82F6'
       }));
@@ -1534,7 +1547,7 @@ const App: React.FC = () => {
       }));
 
       await migrate('marmo_transactions', 'finance_transactions', (t: FinanceTransaction) => ({
-        id: t.id.length > 5 ? t.id : undefined,
+        id: validateUUID(t.id) ? t.id : undefined,
         description: t.description,
         amount: t.value,
         type: t.type === 'receita' ? 'revenue' : 'expense',
@@ -1768,6 +1781,9 @@ const App: React.FC = () => {
     safeLoad('marmo_deliveries', setDeliveries);
     safeLoad('marmo_measurements', setMeasurements);
     safeLoad('marmo_architects', setArchitects);
+    safeLoad('marmo_brands', setBrands);
+    safeLoad('marmo_product_groups', setProductGroups);
+    safeLoad('marmo_service_groups', setServiceGroups);
 
     if (user?.id) {
       refreshAppData(true);
@@ -1816,6 +1832,18 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('marmo_app_users', JSON.stringify(appUsers));
   }, [appUsers]);
+
+  useEffect(() => {
+    localStorage.setItem('marmo_brands', JSON.stringify(brands));
+  }, [brands]);
+
+  useEffect(() => {
+    localStorage.setItem('marmo_product_groups', JSON.stringify(productGroups));
+  }, [productGroups]);
+
+  useEffect(() => {
+    localStorage.setItem('marmo_service_groups', JSON.stringify(serviceGroups));
+  }, [serviceGroups]);
 
   // Sync colors with CSS variables
   useEffect(() => {
@@ -2237,7 +2265,7 @@ const App: React.FC = () => {
   const handleSaveStaff = async (s: ProductionStaff) => {
     try {
       const { error } = await supabase.from('production_staff').upsert({
-        id: s.id.length > 5 ? s.id : undefined,
+        id: validateUUID(s.id) ? s.id : undefined,
         name: s.name,
         position: s.position || '',
         hourly_rate: s.hourlyRate || 0,
@@ -2259,7 +2287,7 @@ const App: React.FC = () => {
 
   const handleDeleteStaff = async (id: string) => {
     try {
-      if (id.length > 5) {
+      if (validateUUID(id)) {
         await supabase.from('production_staff').delete().eq('id', id);
       }
       setStaff(prev => prev.filter(x => x.id !== id));
@@ -2306,7 +2334,11 @@ const App: React.FC = () => {
 
   const handleSaveChannel = async (c: SalesChannel) => {
     try {
-      await supabase.from('sales_channels').upsert({ id: c.id.length > 5 ? c.id : undefined, name: c.name, color: c.color });
+      await supabase.from('sales_channels').upsert({ 
+        id: validateUUID(c.id) ? c.id : undefined, 
+        name: c.name, 
+        color: c.color 
+      });
       setSalesChannels(prev => {
         const index = prev.findIndex(item => item.id === c.id);
         if (index >= 0) return prev.map((item, i) => i === index ? c : item);
@@ -2320,7 +2352,7 @@ const App: React.FC = () => {
 
   const handleDeleteChannel = async (id: string) => {
     try {
-      if (id.length > 5) await supabase.from('sales_channels').delete().eq('id', id);
+      if (validateUUID(id)) await supabase.from('sales_channels').delete().eq('id', id);
       setSalesChannels(prev => prev.filter(x => x.id !== id));
     } catch(err) {
       console.error(err);
@@ -2356,7 +2388,7 @@ const App: React.FC = () => {
 
   const onDeleteTransaction = async (id: string) => {
     try {
-      if (id.length > 5) await supabase.from('finance_transactions').delete().eq('id', id);
+      if (validateUUID(id)) await supabase.from('finance_transactions').delete().eq('id', id);
       setTransactions(prev => prev.filter(t => t.id !== id));
     } catch (err) {
       console.error('Erro ao deletar transação:', err);
