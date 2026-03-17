@@ -1,16 +1,5 @@
 export type Category = 'Matéria Prima' | 'Produtos de Revenda' | 'Serviços' | 'Colocação' | 'Acabamentos';
 
-export type StaffPosition = 
-  | 'serrador' 
-  | 'acabador' 
-  | 'ajudante_serrador' 
-  | 'ajudante_acabador' 
-  | 'motorista' 
-  | 'medidor' 
-  | 'instalador' 
-  | 'vendedor' 
-  | 'gerente';
-
 export type ProductionPhase = 
   | 'Serviço Lançado' 
   | 'Medição' 
@@ -49,86 +38,20 @@ export const INITIAL_PHASES: PhaseConfig[] = [
   { name: 'Acabamento', isRequired: true, requiresResponsible: false },
   { name: 'Conferência', isRequired: true, requiresResponsible: false },
   { name: 'Serviço Finalizado', isRequired: false, requiresResponsible: false },
+  { name: 'A Retirar', isRequired: false, requiresResponsible: false },
+  { name: 'A Entregar', isRequired: false, requiresResponsible: false },
+  { name: 'Entregue', isRequired: false, requiresResponsible: false }
 ];
 
-export interface PhaseResponsible {
-  id: string;
-  staffName: string;
-  addedAt: string;
-}
-
-export interface PhaseRecord {
-  phaseName: string;
-  startedAt: string;
-  completedAt?: string;
-  responsibles: PhaseResponsible[];
-}
-
-export interface OrderService {
-  id: string;
-  osNumber: string;
-  orderNumber: string;
-  clientName: string;
-  clientPhone?: string;
-  projectName?: string;
-  projectDescription?: string;
-  material?: string;
-  materialArea?: number;
-  phase: ProductionPhase;
-  priority: 'baixa' | 'media' | 'alta';
-  dueDate: string;
-  items: any[];
-  totalValue: number;
-  remainingValue?: number;
-  notes?: string;
-  observations?: string;
-  internalObservations?: string;
-  address?: string;
-  installationAddress?: string;
-  imageUrls: string[];
-  responsibleStaffName?: string;
-  phaseHistory?: PhaseRecord[];
-  seller?: string;
-  deadline?: string;
-  clientId?: string;
-  architectId?: string;
-  architectName?: string;
-  salesChannel?: string;
-  salesPhase?: string;
-  isOsGenerated?: boolean;
-  status?: string;
-  discountValue?: number;
-  discountPercentage?: number;
-  paymentConditions?: string;
-  deliveryDeadline?: string;
-  totals?: any;
-  payments?: any[];
-  logs?: any[];
-  lostReason?: string;
-  lostDetails?: string;
-  createdAt?: string;
-}
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  avatarUrl?: string;
-  role: 'admin' | 'manager' | 'seller' | 'medidor' | 'driver' | 'viewer';
-  status?: string;
-  isMaster?: boolean;
-  createdAt?: string;
-}
+export type StaffPosition = 'serrador' | 'acabador' | 'ajudante_serrador' | 'medidor' | 'instalador' | 'vendedor' | 'gerente';
 
 export interface AppUser {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'manager' | 'seller' | 'medidor' | 'driver' | 'viewer';
+  role: 'admin' | 'manager' | 'seller' | 'viewer' | 'driver';
   status: 'ativo' | 'inativo';
   createdAt: string;
-  avatarUrl?: string;
-  isMaster?: boolean;
 }
 
 export interface ProductionStaff {
@@ -142,16 +65,235 @@ export interface ProductionStaff {
 
 export interface ActivityLog {
   id: string;
-  type: 'create' | 'move' | 'update' | 'delete' | 'upload';
-  action?: 'create' | 'move' | 'update' | 'delete' | 'upload'; // Alias usado em alguns locais
-  description: string;
-  details?: string; // Alias usado em alguns locais
-  message?: string;
   timestamp: string;
-  userName?: string;
+  userName: string;
+  action: 'create' | 'update' | 'delete' | 'move' | 'upload';
+  details: string;
   orderId?: string;
-  osNumber?: string;
-  reference_id?: string;
+  orderNumber?: string;
+}
+
+export interface PhaseRecord {
+  phaseName: string;
+  startedAt: string;
+  completedAt?: string;
+  responsibles: {
+    id: string;
+    staffName: string;
+    addedAt: string;
+  }[];
+}
+
+export interface PhaseResponsible {
+  id: string;
+  staffName: string;
+  addedAt: string;
+}
+
+export interface ProductService {
+  id: string;
+  type: Category;
+  code: string;
+  group: string;
+  description: string;
+  brand?: string;
+  manufacturerNumber?: string;
+  unit: string;
+  stockBalance: number;
+  minStock: number;
+  unitCost: number;
+  freight: number;
+  lossPercentage: number;
+  taxPercentage: number;
+  profitMargin: number;
+  commissionPercentage: number;
+  discountPercentage: number;
+  suggestedPrice: number;
+  sellingPrice: number;
+  status: 'ativo' | 'inativo';
+  createdAt: string;
+  imageUrl?: string;
+  nfeData?: {
+    ncm?: string;
+    cfop?: string;
+    icms?: number;
+    ipi?: number;
+    cest?: string;
+    origem?: string;
+  };
+}
+
+export interface Client {
+  id: string;
+  name: string;
+  type: 'Pessoa Física' | 'Pessoa Jurídica';
+  document: string;
+  rgInsc?: string;
+  email: string;
+  phone: string;
+  cellphone: string;
+  birthDate?: string;
+  sellerName?: string;
+  useSpecialTable: boolean;
+  address: {
+    street: string;
+    number: string;
+    complement?: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    cityCode?: string;
+    lat?: number;
+    lng?: number;
+  };
+  deliveryAddress?: {
+    street: string;
+    number: string;
+    complement?: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    referencePoint?: string;
+    lat?: number;
+    lng?: number;
+  };
+  code?: number;
+  createdAt: string;
+}
+
+
+export interface SalesChannel {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface Supplier {
+  id: string;
+  type: 'Pessoa Física' | 'Pessoa Jurídica';
+  document: string;
+  rgInsc?: string;
+  legalName: string;
+  tradingName: string;
+  contactName?: string;
+  email: string;
+  phone: string;
+  cellphone?: string;
+  website?: string;
+  observations?: string;
+  code?: number;
+  createdAt: string;
+  address: {
+    street: string;
+    number?: string;
+    complement?: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    lat?: number;
+    lng?: number;
+  };
+}
+
+export interface Architect {
+  id: string;
+  type: 'Pessoa Física' | 'Pessoa Jurídica';
+  document: string;
+  rgInsc?: string;
+  legalName: string;
+  tradingName: string;
+  contactName?: string;
+  email: string;
+  phone: string;
+  cellphone?: string;
+  createdAt: string;
+  observations?: string;
+  code?: number;
+  address: {
+    street: string;
+    number?: string;
+    complement?: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    lat?: number;
+    lng?: number;
+  };
+}
+
+export type Priority = 'baixa' | 'media' | 'alta';
+
+export interface OrderService {
+  id: string;
+  osNumber: string;
+  orderNumber: string;
+  clientName: string;
+  projectDescription: string;
+  material: string;
+  materialArea: number;
+  phase: ProductionPhase;
+  seller: string;
+  createdAt: string;
+  deadline: string;
+  priority: Priority;
+  clientId?: string;
+  architectId?: string;
+  architectName?: string;
+  totalValue?: number;
+  remainingValue?: number;
+  observations?: string;
+  internalObservations?: string;
+  imageUrls: string[];
+  items?: OrderItem[];
+  payments?: Payment[];
+  logs?: OrderLog[];
+  phaseHistory?: PhaseRecord[];
+  responsibleStaffName?: string;
+  salesChannel?: string;
+  salesPhase: SalesPhase;
+  isOsGenerated: boolean;
+  status?: 'Orçamento' | 'Pedido' | 'Confirmado' | 'Cancelado' | 'Finalizado';
+  discountValue?: number;
+  discountPercentage?: number;
+  paymentConditions?: string;
+  deliveryDeadline?: string;
+  totals?: {
+    vendas: number;
+    desconto: number;
+    geral: number;
+  };
+  lostReason?: string;
+  lostDetails?: string;
+}
+
+export interface OrderItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  unitPrice: number;
+  totalPrice: number;
+  status: 'pendente' | 'produzindo' | 'concluido';
+  length?: number;
+  width?: number;
+  m2?: number;
+  environment?: string;
+  servicePercentage?: number;
+  materialId?: string;
+  materialName?: string;
+  productId?: string;
+}
+
+export interface Payment {
+  id: string;
+  date: string;
+  value: number;
+  method: string;
+  status: 'confirmado' | 'pendente';
 }
 
 export interface OrderLog {
@@ -175,19 +317,6 @@ export interface Delivery {
   routeGroup?: string;
 }
 
-export interface Measurement {
-  id: string;
-  orderId: string;
-  osNumber: string;
-  clientName: string;
-  address: string;
-  date: string;
-  time: string;
-  status: 'pendente' | 'em_rota' | 'entregue';
-  staffId?: string;
-  routeGroup?: string;
-}
-
 export interface DriverStatus {
   lat: number;
   lng: number;
@@ -204,173 +333,88 @@ export interface CompanyInfo {
   logoUrl?: string;
   sidebarColor?: string;
   sidebarTextColor?: string;
-  primaryColor?: string;
-  secondaryColor?: string;
   buttonColor?: string;
   lostReasonOptions?: string[];
 }
 
-export interface Address {
-  street: string;
-  number: string;
-  complement?: string;
-  neighborhood: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  lat?: number;
-  lng?: number;
-  referencePoint?: string;
+export interface ExchangeRates {
+  usd: number;
+  eur: number;
+  lastUpdate: string;
 }
 
-export interface Client {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  address: Address;
-  document: string;
-  notes?: string;
-  code?: string;
-  rgInsc?: string;
-  cellphone?: string;
-  birthDate?: string;
-  sellerName?: string;
-  useSpecialTable?: boolean;
-  createdAt?: string;
-  type?: 'Pessoa Física' | 'Pessoa Jurídica';
-  deliveryAddress?: Address;
+export interface PriceHistoryEntry {
+  date: string;
+  cost: number;
+  sellingPrice: number;
+  suggestedPrice: number;
+  currency: 'BRL' | 'USD' | 'EUR';
+  supplier: string;
+  difal: number;
+  margin: number;
+  freight: number;
+  tax: number;
+  loss: number;
+  commission: number;
+  discount: number;
+  bcfp: number;
+  dolarRate: number;
+  euroRate: number;
 }
 
 export interface Material {
   id: string;
-  name: string;
-  category: string;
-  type?: string;
-  unit: string;
-  price: number;
-  stock: number;
-  minStock: number;
-  status: 'ativo' | 'inativo';
-  imageUrl?: string;
-  unitCost?: number;
-  stockQuantity?: number;
-  registrationDate?: string;
-  brand?: string;
-  supplier?: string;
-  difal?: number;
-  freightCost?: number;
-  taxPercentage?: number;
-  lossPercentage?: number;
-  profitMargin?: number;
-  commissionPercentage?: number;
-  discountPercentage?: number;
-  suggestedPrice?: number;
-  sellingPrice?: number;
-  currency?: string;
-  dolarRate?: number;
-  euroRate?: number;
-  bcfp?: number;
-  thickness?: number;
-  weight?: number;
-  m2PerUnit?: number;
-  stockLocation?: string;
-  priceHistory?: any[];
-  code?: string;
-  supplierId?: string;
-}
-
-export interface ProductService {
-  id: string;
-  name: string;
-  description: string;
-  category: Category;
-  type?: string;
-  unit: string;
-  price: number;
-  sellingPrice: number;
-  status: 'ativo' | 'inativo';
-  imageUrl?: string;
-  brand?: string;
+  name: string; // Descrição
+  thickness?: number; // Espessura
+  type: Category;
+  code: string;
+  registrationDate: string;
   group?: string;
+  brand?: string;
+  unit: string; // Und
+  stockQuantity: number; // Saldo Estoque
+  minStock: number; // Saldo Mínimo
+  supplier?: string;
+  stockLocation?: string;
+  m2PerUnit?: number;
+  weight?: number; // Qtde/Peso
+  unitCost: number; // Custo Unitário
+  freightCost: number;
+  lossPercentage: number;
+  taxPercentage: number;
+  profitMargin: number;
+  commissionPercentage: number;
+  discountPercentage: number;
+  dolarRate: number;
+  euroRate: number;
+  bcfp: number;
+  suggestedPrice: number;
+  specialTableMargin?: number;
+  specialTableValue?: number;
+  specialTableCommission?: number;
+  sellingPrice: number;
+  currency: 'BRL' | 'USD' | 'EUR';
+  status: 'ativo' | 'inativo';
+  imageUrl?: string;
+  difal?: number;
+  priceHistory?: PriceHistoryEntry[];
+  nfeData?: {
+    ncm?: string;
+    cfop?: string;
+    icms?: number;
+    ipi?: number;
+  };
 }
 
-export interface SalesOrder {
-  id: string;
-  orderNumber: string;
-  clientName: string;
-  clientId?: string;
-  date: string;
-  total: number;
-  totals?: any;
-  totalValue?: number;
-  deliveryDeadline?: string;
-  seller?: string;
-  observations?: string;
-  notes?: string;
-  status: 'Orçamento' | 'Pedido' | 'Confirmado' | 'Finalizado' | 'Cancelado' | 'pendente' | 'aprovado' | 'cancelado';
-  items: any[];
-  salesPhase?: string;
-  isOsGenerated?: boolean;
-  projectDescription?: string;
-  salesChannel?: string;
-  createdAt?: string;
-  lostReason?: string;
-  lostDetails?: string;
-}
-
-export interface SalesChannel {
-  id: string;
-  name: string;
-  color: string;
-}
-
+export interface SalesOrder extends OrderService {}
 export interface FinanceTransaction {
   id: string;
-  date: string;
-  description: string;
-  value: number;
   type: 'receita' | 'despesa';
   category: string;
-  status?: 'pago' | 'pendente';
-}
-
-export interface Supplier {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  document: string;
-  type?: string;
-  legalName?: string;
-  tradingName?: string;
-  contactName?: string;
-  website?: string;
-  rgInsc?: string;
-  cellphone?: string;
-  observations?: string;
-  code?: string;
-  createdAt?: string;
-}
-
-export interface Architect {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  office?: string;
-  type?: string;
-  document?: string;
-  legalName?: string;
-  tradingName?: string;
-  contactName?: string;
-  cellphone?: string;
-  address?: string;
-  observations?: string;
-  rgInsc?: string;
-  code?: string;
-  createdAt?: string;
+  value: number;
+  date: string;
+  status: 'pago' | 'pendente';
+  description: string;
 }
 
 export interface Brand {
@@ -391,20 +435,24 @@ export interface ServiceGroup {
   id: string;
   code: string;
   description: string;
+  altMin?: number;
+  altMax?: number;
+  un?: string;
+  indice?: number;
+  bnto?: string;
+  descFrete?: string;
+  perda?: number;
+  ifp?: number;
+  tpMin?: number;
+  qtFun?: number;
+  es?: string;
   createdAt: string;
-}
-
-export interface ExchangeRates {
-  usd: number;
-  eur: number;
-  lastUpdate: string;
 }
 
 export type View = 
   | 'Produção' 
   | 'Ordens de Serviço' 
   | 'Agenda de Entregas' 
-  | 'Agenda de Medições' 
   | 'Equipe' 
   | 'Relatórios' 
   | 'Configurações' 
@@ -414,14 +462,16 @@ export type View =
   | 'Matéria Prima' 
   | 'Acabamentos' 
   | 'Produtos Revenda' 
-  | 'Mão de obra (Instalação)' 
+  | 'Mão de obra (Instalação)'
   | 'Financeiro' 
   | 'Fornecedores' 
   | 'Arquitetos' 
   | 'Produtos de Revenda' 
   | 'Serviços' 
-  | 'Colocação' 
-  | 'Marcas' 
-  | 'Grupos de Produtos' 
-  | 'Grupos de Serviços' 
-  | 'Canais de Vendas';
+  | 'Colocação'
+  | 'Marcas'
+  | 'Canais de Vendas'
+  | 'Grupos de Produtos'
+  | 'Grupos de Serviços';
+
+export type User = AppUser;

@@ -10,7 +10,6 @@ import { ReportsView } from './components/ReportsView';
 import { SettingsView } from './components/SettingsView';
 import { RecentActivity } from './components/RecentActivity';
 import { DeliverySchedule } from './components/DeliverySchedule';
-import { MeasurementSchedule } from './components/MeasurementSchedule';
 import { ClientsView } from './components/ClientsView.tsx';
 import { SalesView } from './components/SalesView.tsx';
 import { InventoryView } from './components/InventoryView.tsx';
@@ -24,9 +23,8 @@ import { BrandsView } from './components/BrandsView.tsx';
 import { ProductGroupsView } from './components/ProductGroupsView.tsx';
 import { ServiceGroupsView } from './components/ServiceGroupsView.tsx';
 import { MOCK_ORDERS } from './constants.tsx';
-import { OrderService, User, View, ProductionPhase, INITIAL_PHASES, AppUser, ProductionStaff, PhaseConfig, ActivityLog, PhaseRecord, PhaseResponsible, Delivery, Measurement, CompanyInfo, Client, Material, SalesOrder, SalesChannel, FinanceTransaction, Supplier, Architect, ProductService, Brand, ProductGroup, ServiceGroup, SalesPhaseConfig, ExchangeRates, DriverStatus } from './types';
+import { OrderService, User, View, ProductionPhase, INITIAL_PHASES, AppUser, ProductionStaff, PhaseConfig, ActivityLog, PhaseRecord, PhaseResponsible, Delivery, CompanyInfo, Client, Material, SalesOrder, SalesChannel, FinanceTransaction, Supplier, Architect, ProductService, Brand, ProductGroup, ServiceGroup, SalesPhaseConfig, ExchangeRates } from './types';
 import { supabase } from './lib/supabase';
-import { notificationService, AppNotification } from './lib/notifications';
 import 'leaflet/dist/leaflet.css';
 
 const INITIAL_APP_USERS: AppUser[] = [
@@ -42,378 +40,277 @@ const INITIAL_STAFF: ProductionStaff[] = [
   { id: '4', name: 'Lucas Costa', position: 'medidor', hourlyRate: 18, phone: '(11) 97654-3210', status: 'inativo' },
 ];
 
-function App() {
-  console.log('%c[System] KeepGoing v13-stable carregando...', 'color: var(--primary-color); font-weight: bold;');
-  
-  // 1. Estados
+const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [loadingSession, setLoadingSession] = useState(true);
-  const [authError, setAuthError] = useState<string | null>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [currentView, setCurrentView] = useState<View>('Clientes');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-
   const [orders, setOrders] = useState<OrderService[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
-  const [phases, setPhases] = useState<PhaseConfig[]>(INITIAL_PHASES);
-  const [appUsers, setAppUsers] = useState<AppUser[]>([]);
-  const [loadingUsers, setLoadingUsers] = useState(true);
-  const [staff, setStaff] = useState<ProductionStaff[]>(INITIAL_STAFF);
-  const [activities, setActivities] = useState<ActivityLog[]>([]);
-  const [loadingActivities, setLoadingActivities] = useState(true);
-  const [brands, setBrands] = useState<Brand[]>([]);
-  const [loadingBrands, setLoadingBrands] = useState(true);
-  const [productGroups, setProductGroups] = useState<ProductGroup[]>([]);
-  const [loadingProductGroups, setLoadingProductGroups] = useState(true);
-  const [serviceGroups, setServiceGroups] = useState<ServiceGroup[]>([]);
-  const [loadingServiceGroups, setLoadingServiceGroups] = useState(true);
-  const [products, setProducts] = useState<ProductService[]>([]);
-  const [loadingProducts, setLoadingProducts] = useState(true);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [loadingSuppliers, setLoadingSuppliers] = useState(true);
-  const [architects, setArchitects] = useState<Architect[]>([]);
-  const [loadingArchitects, setLoadingArchitects] = useState(true);
-  const [sales, setSales] = useState<SalesOrder[]>([]);
-  const [loadingSales, setLoadingSales] = useState(true);
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const [loadingMaterials, setLoadingMaterials] = useState(true);
-  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
-  const [loadingDeliveries, setLoadingDeliveries] = useState(true);
-  const [measurements, setMeasurements] = useState<Measurement[]>([]);
-  const [loadingMeasurements, setLoadingMeasurements] = useState(true);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [loadingClients, setLoadingClients] = useState(true);
-  const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
-  const [salesChannels, setSalesChannels] = useState<SalesChannel[]>([]);
-  const [salesPhases, setSalesPhases] = useState<SalesPhaseConfig[]>([]);
-  const [staffLocations, setStaffLocations] = useState<Record<string, DriverStatus>>({});
-  const [exchangeRates, setExchangeRates] = useState<ExchangeRates>({ usd: 0, eur: 0, lastUpdate: '--:--' });
-  
-  const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
-    name: 'Tok de Art',
-    document: '14.092.404/0001-67',
-    address: 'Rua Américo Brasiliense, 1853 - Vila Seixas - Ribeirão Preto - SP',
-    phone: '(16) 3636-0114',
-    email: 'vendas@tokdeart.com.br',
-    logoUrl: '',
-    lostReasonOptions: ['Tinha preço menor', 'Prazo de entrega melhor', 'Desistiu de fazer', 'Não aprovaram o material', 'Distância da obra'],
-    buttonColor: '#ec5b13',
-    sidebarColor: '#0f172a',
-    sidebarTextColor: '#cbd5e1'
-  });
 
-  const validateUUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-
-  // 2. Efeitos de Autenticação
+  // Fetch initial data from Supabase for Orders
   useEffect(() => {
-    const timeoutId = setTimeout(() => setLoadingSession(false), 10000);
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session) {
-        try {
-          const { data, error } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
-          if (data) {
-            console.log('[Auth] Perfil carregado com sucesso:', data.name, data.role);
-            setUser({
-              id: data.id, name: data.name, role: data.role as any, email: session.user.email || '',
-              status: 'ativo', createdAt: data.created_at, isMaster: data.is_master, avatarUrl: data.avatar_url
-            });
-            setAuthError(null);
-          } else if (error && error.code === 'PGRST116') {
-            console.error('[Auth] Perfil não encontrado para o ID:', session.user.id);
-            setAuthError('Perfil não encontrado.');
-          }
-        } catch (err) { console.error('Erro ao buscar perfil:', err); }
-      } else {
-        setUser(null);
+    const fetchOrders = async () => {
+      setLoadingOrders(true);
+      try {
+        const { data, error } = await supabase
+          .from('orders_service')
+          .select('*')
+          .order('os_number', { ascending: false });
+        
+        if (error) throw error;
+        if (data) {
+          const mapped = data.map(o => ({
+            ...o,
+            osNumber: o.os_number,
+            orderNumber: o.order_number,
+            clientName: o.client_name,
+            projectDescription: o.project_description,
+            materialArea: o.material_area,
+            clientId: o.client_id,
+            architectId: o.architect_id,
+            architectName: o.architect_name,
+            totalValue: o.total_value,
+            remainingValue: o.remaining_value,
+            imageUrls: o.image_urls,
+            phaseHistory: o.phase_history,
+            responsibleStaffName: o.responsible_staff_name,
+            salesChannel: o.sales_channel,
+            salesPhase: o.sales_phase,
+            isOsGenerated: o.is_os_generated,
+            discountValue: o.discount_value,
+            discountPercentage: o.discount_percentage,
+            paymentConditions: o.payment_conditions,
+            deliveryDeadline: o.delivery_deadline,
+            lostReason: o.lost_reason,
+            lostDetails: o.lost_details,
+            createdAt: o.created_at
+          }));
+          setOrders(mapped as OrderService[]);
+        }
+      } catch (err) {
+        console.error('Erro ao carregar ordens de serviço do Supabase:', err);
+        const saved = localStorage.getItem('marmo_orders');
+        if (saved) setOrders(JSON.parse(saved));
+      } finally {
+        setLoadingOrders(false);
       }
-      setLoadingSession(false);
-    });
-    return () => { clearTimeout(timeoutId); subscription.unsubscribe(); };
-  }, []);
-
-  // 3. Orquestrador de Dados
-  const refreshAppData = async () => {
-    if (!user) return;
-    const runner = async (name: string, fn: () => Promise<void>) => {
-      try { 
-        console.log(`[Fetch] Carregando ${name}...`);
-        await fn(); 
-      }
-      catch (err) { console.error(`Erro em ${name}:`, err); }
     };
 
-    await runner('CompanyInfo', async () => {
-      const { data } = await supabase.from('company_info').select('*').single();
-      if (data) setCompanyInfo({
-        name: data.name, document: data.document, address: data.address, phone: data.phone, email: data.email,
-        logoUrl: data.logo_url, lostReasonOptions: data.lost_reason_options || [],
-        buttonColor: data.button_color, sidebarColor: data.sidebar_color, sidebarTextColor: data.sidebar_text_color
-      });
-    });
+    fetchOrders();
+  }, []);
 
-    await runner('Orders', async () => {
-      const { data } = await supabase.from('orders_service').select('*').order('os_number', { ascending: false });
-      if (data) setOrders(data.map(o => ({
-        ...o, osNumber: o.os_number, orderNumber: o.order_number, clientName: o.client_name,
-        totalValue: Number(o.total_value), phaseHistory: o.phase_history || []
-      })) as OrderService[]);
-      setLoadingOrders(false);
-    });
-
-    await runner('Profiles', async () => {
-      const { data } = await supabase.from('profiles').select('*').order('name');
-      if (data) setAppUsers(data.map(p => ({
-        id: p.id, name: p.name, role: p.role as any, email: '', status: 'ativo',
-        createdAt: p.created_at?.slice(0, 10), isMaster: p.is_master, avatarUrl: p.avatar_url
-      })));
-      setLoadingUsers(false);
-    });
-
-    await runner('Staff', async () => {
-      const { data } = await supabase.from('production_staff').select('*').order('name');
-      if (data) setStaff(data.map(s => ({ ...s, id: s.id, hourlyRate: s.hourly_rate })));
-    });
-
-    await runner('ProductionPhases', async () => {
-      const { data } = await supabase.from('production_phases').select('*');
-      if (data && data.length > 0) setPhases(data.map(p => ({ name: p.name, requiresResponsible: p.requires_responsible || false })));
-    });
-
-    await runner('Activities', async () => {
-      const { data } = await supabase.from('activity_logs').select('*').order('created_at', { ascending: false }).limit(100);
-      if (data) setActivities(data.map(l => ({
-        id: l.id, timestamp: l.created_at, userName: l.user_name, type: l.type as any,
-        action: l.type as any, description: l.message, details: l.message, orderId: l.reference_id
-      })));
-      setLoadingActivities(false);
-    });
-
-    await runner('Clients', async () => {
-      // Supabase limita a 1000 por query - buscar em lotes
-      const PAGE_SIZE = 1000;
-      let allClients: any[] = [];
-      let from = 0;
-      let hasMore = true;
-      
-      while (hasMore) {
-        const { data, error } = await supabase
-          .from('clients')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .range(from, from + PAGE_SIZE - 1);
-        
-        if (error) {
-          console.error('[Runner] Erro ao buscar clientes (page):', error);
-          break;
-        }
-        
-        if (data && data.length > 0) {
-          allClients = allClients.concat(data);
-          from += PAGE_SIZE;
-          hasMore = data.length === PAGE_SIZE;
-        } else {
-          hasMore = false;
-        }
-      }
-      
-      console.log(`[Runner] ${allClients.length} clientes carregados do Supabase (paginado).`);
-      
-      if (allClients.length > 0) {
-        setClients(allClients.map(c => {
-          let addr = c.address;
-          if (typeof addr === 'string') {
-            try { addr = JSON.parse(addr); } catch { addr = null; }
-          }
-          return {
-            ...c, 
-            address: addr || { street: '', number: '', neighborhood: '', city: '', state: '', zipCode: '' },
-            code: c.client_code, 
-            rgInsc: c.rg_insc, 
-            cellphone: c.cellphone,
-            birthDate: c.birth_date, 
-            sellerName: c.seller_name, 
-            useSpecialTable: c.use_special_table,
-            createdAt: c.created_at
-          };
-        }) as Client[]);
-      }
-      setLoadingClients(false);
-    });
-    await runner('Suppliers', async () => {
-      const { data, error } = await supabase.from('suppliers').select('*').order('trading_name');
-      if (error) throw error;
-      if (data) setSuppliers(data.map(s => ({
-        ...s, legalName: s.legal_name, tradingName: s.trading_name, contactName: s.contact_name,
-        rgInsc: s.rg_insc, cellphone: s.cellphone, observations: s.observations,
-        code: s.supplier_code, createdAt: s.created_at
-      })) as Supplier[]);
-    });
-
-    await runner('Products', async () => {
-      const { data, error } = await supabase.from('products').select('*').order('name');
-      if (error) throw error;
-      if (data) setProducts(data.map(p => ({
-        ...p, description: p.name, type: p.category, sellingPrice: p.base_price, imageUrl: p.image_url
-      })) as ProductService[]);
-    });
-
-    await runner('Deliveries', async () => {
-      const { data, error } = await supabase.from('deliveries').select('*').order('date');
-      if (error) throw error;
-      if (data) setDeliveries(data.map(d => ({
-        id: d.id, orderId: d.order_id, osNumber: d.os_number, clientName: d.client_name,
-        address: d.address, date: d.date, time: d.time, status: d.status as any
-      })) as Delivery[]);
-    });
-
-    await runner('Measurements', async () => {
-      const { data, error } = await supabase.from('measurements').select('*').order('date');
-      if (error) throw error;
-      if (data) setMeasurements(data.map(m => ({
-        id: m.id, orderId: m.order_id, osNumber: m.os_number, clientName: m.client_name,
-        address: m.address, date: m.date, time: m.time, status: m.status as any
-      })) as Measurement[]);
-    });
-
-    await runner('Materials', async () => {
-      // Aumentamos o limite para materiais também, embora o usuário tenha ~434 no momento
-      const { data, error } = await supabase.from('materials').select('*').order('name');
-      if (error) throw error;
-      if (data) setMaterials(data.map(m => ({
-        ...m, 
-        unitCost: m.unit_cost || 0, 
-        minStock: m.min_stock || 0, 
-        stockQuantity: m.stock_quantity || 0,
-        registrationDate: m.registration_date, 
-        freightCost: m.freight_cost || 0, 
-        taxPercentage: m.tax_percentage || 0,
-        lossPercentage: m.loss_percentage || 0, 
-        profitMargin: m.profit_margin || 0, 
-        commissionPercentage: m.commission_percentage || 0,
-        discountPercentage: m.discount_percentage || 0, 
-        suggestedPrice: m.suggested_price || 0,
-        sellingPrice: m.selling_price || 0, 
-        dolarRate: m.dolar_rate || 1, 
-        euroRate: m.euro_rate || 1,
-        priceHistory: m.price_history || [], 
-        imageUrl: m.image_url, 
-        stockLocation: m.inventory_location,
-        m2PerUnit: m.m2_per_unit || 1,
-        status: m.status || 'ativo',
-        type: m.type || 'Matéria Prima',
-        name: m.name || 'Sem Nome',
-        code: m.code || 'S/C',
-        price: m.selling_price || 0,
-        stock: m.stock_quantity || 0
-      })) as Material[]);
-    });
-
-    await runner('Architects', async () => {
-      const { data, error } = await supabase.from('architects').select('*').order('trading_name');
-      if (error) throw error;
-      if (data) setArchitects(data.map(a => ({
-        ...a, legalName: a.legal_name, tradingName: a.trading_name, contactName: a.contact_name,
-        rgInsc: a.rg_insc, cellphone: a.cellphone, observations: a.observations,
-        code: a.architect_code, createdAt: a.created_at
-      })) as Architect[]);
-    });
-
-    await runner('Sales', async () => {
-      const { data, error } = await supabase.from('sales').select('*').order('order_number', { ascending: false });
-      if (error) throw error;
-      if (data) setSales(data.map(s => ({
-        ...s, orderNumber: s.order_number, clientName: s.client_name, totalValue: s.total,
-        createdAt: s.created_at, deliveryDeadline: s.delivery_date, seller: s.seller_name,
-        isOsGenerated: s.is_os_generated, observations: s.notes,
-        totals: { vendas: Number(s.subtotal), desconto: Number(s.discount), geral: Number(s.total) }
-      })) as SalesOrder[]);
-    });
-
-    await runner('SalesChannels', async () => {
-      const { data, error } = await supabase.from('sales_channels').select('*').order('name');
-      if (error) throw error;
-      if (data) setSalesChannels(data.map(c => ({ id: c.id, name: c.name, color: '#3B82F6' } as SalesChannel)));
-    });
-
-    await runner('SalesPhases', async () => {
-      const { data, error } = await supabase.from('sales_phases').select('*').order('name');
-      if (error) throw error;
-      if (data) setSalesPhases(data.map(p => ({ name: p.name })));
-    });
-
-    await runner('Transactions', async () => {
-      const { data, error } = await supabase.from('finance_transactions').select('*').order('date', { ascending: false });
-      if (error) throw error;
-      if (data) setTransactions(data.map(t => ({
-        id: t.id,
-        description: t.description,
-        value: Number(t.amount),
-        type: (t.type === 'revenue' ? 'receita' : 'despesa') as 'receita' | 'despesa',
-        category: t.category,
-        date: t.date,
-        status: t.status === 'completed' ? 'pago' : 'pendente'
-      })));
-    });
-
-    console.log('--- Orquestração de Dados Concluída ---');
-  };
-
-  useEffect(() => { if (user?.id) refreshAppData(); }, [user?.id]);
-
-  // 4. Handlers Principais
   const handleSaveOrder = async (o: OrderService) => {
     try {
       const payload = {
         id: o.id.length > 20 ? o.id : undefined,
-        os_number: o.osNumber, 
-        order_number: o.orderNumber, 
+        os_number: o.osNumber,
+        order_number: o.orderNumber,
         client_name: o.clientName,
-        project_description: o.projectDescription, 
-        material: o.material, 
+        project_description: o.projectDescription,
+        material: o.material,
         material_area: o.materialArea,
-        phase: o.phase, 
-        priority: o.priority, 
-        total_value: o.totalValue, 
+        phase: o.phase,
+        seller: o.seller,
+        deadline: o.deadline,
+        priority: o.priority,
+        client_id: o.clientId,
+        architect_id: o.architectId,
+        architect_name: o.architectName,
+        total_value: o.totalValue,
+        remaining_value: o.remainingValue,
+        observations: o.observations,
+        internal_observations: o.internalObservations,
+        image_urls: o.imageUrls,
         items: o.items,
-        phase_history: o.phaseHistory, 
+        payments: o.payments,
+        logs: o.logs,
+        phase_history: o.phaseHistory,
         responsible_staff_name: o.responsibleStaffName,
-        status: o.status
+        sales_channel: o.salesChannel,
+        sales_phase: o.salesPhase,
+        is_os_generated: o.isOsGenerated,
+        status: o.status,
+        discount_value: o.discountValue,
+        discount_percentage: o.discountPercentage,
+        payment_conditions: o.paymentConditions,
+        delivery_deadline: o.deliveryDeadline,
+        totals: o.totals,
+        lost_reason: o.lostReason,
+        lost_details: o.lostDetails
       };
-      
+
       const { data, error } = await supabase
         .from('orders_service')
         .upsert(payload)
         .select()
         .single();
-        
+      
       if (error) throw error;
       
-      const saved = { 
-        ...data, 
-        osNumber: data.os_number, 
-        orderNumber: data.order_number, 
-        clientName: data.client_name, 
-        totalValue: data.total_value 
+      const savedRow = data;
+      const savedOrder = {
+        ...savedRow,
+        osNumber: savedRow.os_number,
+        orderNumber: savedRow.order_number,
+        clientName: savedRow.client_name,
+        projectDescription: savedRow.project_description,
+        materialArea: savedRow.material_area,
+        clientId: savedRow.client_id,
+        architectId: savedRow.architect_id,
+        architectName: savedRow.architect_name,
+        totalValue: savedRow.total_value,
+        remainingValue: savedRow.remaining_value,
+        imageUrls: savedRow.image_urls,
+        phaseHistory: savedRow.phase_history,
+        responsibleStaffName: savedRow.responsible_staff_name,
+        salesChannel: savedRow.sales_channel,
+        salesPhase: savedRow.sales_phase,
+        isOsGenerated: savedRow.is_os_generated,
+        discountValue: savedRow.discount_value,
+        discountPercentage: savedRow.discount_percentage,
+        paymentConditions: savedRow.payment_conditions,
+        deliveryDeadline: savedRow.delivery_deadline,
+        lostReason: savedRow.lost_reason,
+        lost_details: savedRow.lost_details,
+        createdAt: savedRow.created_at
       } as OrderService;
       
       setOrders(prev => {
-        const exists = prev.find(x => x.id === o.id || x.id === saved.id);
-        if (exists) return prev.map(x => (x.id === o.id || x.id === saved.id) ? saved : x);
-        return [saved, ...prev];
+        const exists = prev.find(x => x.id === o.id || x.id === savedOrder.id);
+        if (exists) return prev.map(x => (x.id === o.id || x.id === savedOrder.id) ? savedOrder : x);
+        return [savedOrder, ...prev];
       });
-      
+
       logActivity(
         orders.find(x => x.id === o.id) ? 'update' : 'create', 
-        `${orders.find(x => x.id === o.id) ? 'Atualizou' : 'Criou'} produção OS: ${o.osNumber}`, 
-        saved.id, 
+        `${orders.find(x => x.id === o.id) ? 'Atualizou' : 'Iniciou'} produção da OS: ${o.osNumber}`, 
+        savedOrder.id, 
         o.osNumber
       );
-    } catch (err) { 
-      console.error('Erro ao salvar OS:', err);
-      alert('Erro ao salvar Ordem de Serviço.');
+
+    } catch (err) {
+      console.error('Erro ao salvar ordem de serviço:', err);
+      alert('Erro ao salvar ordem de serviço no banco de dados.');
     }
   };
+  const [phases, setPhases] = useState<PhaseConfig[]>(() => {
+    try {
+      const saved = localStorage.getItem('marmo_phases');
+      return saved ? (JSON.parse(saved) || INITIAL_PHASES) : INITIAL_PHASES;
+    } catch {
+      return INITIAL_PHASES;
+    }
+  });
+  const [appUsers, setAppUsers] = useState<AppUser[]>(() => {
+    try {
+      const saved = localStorage.getItem('marmo_app_users');
+      return saved ? (JSON.parse(saved) || INITIAL_APP_USERS) : INITIAL_APP_USERS;
+    } catch {
+      return INITIAL_APP_USERS;
+    }
+  });
+  const [staff, setStaff] = useState<ProductionStaff[]>(() => {
+    try {
+      const saved = localStorage.getItem('marmo_staff');
+      return saved ? (JSON.parse(saved) || INITIAL_STAFF) : INITIAL_STAFF;
+    } catch {
+      return INITIAL_STAFF;
+    }
+  });
+  const [activities, setActivities] = useState<ActivityLog[]>([]);
+  const [loadingActivities, setLoadingActivities] = useState(true);
+
+  // Fetch initial data from Supabase for Activities
+  useEffect(() => {
+    const fetchActivities = async () => {
+      setLoadingActivities(true);
+      try {
+        const { data, error } = await supabase
+          .from('activity_logs')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(100);
+        
+        if (error) throw error;
+        if (data) {
+          const mapped = data.map(l => ({
+            id: l.id,
+            timestamp: l.created_at,
+            userName: l.user_name,
+            action: l.type as any,
+            details: l.message,
+            orderId: l.reference_id
+          }));
+          setActivities(mapped as ActivityLog[]);
+        }
+      } catch (err) {
+        console.error('Erro ao carregar logs do Supabase:', err);
+        const saved = localStorage.getItem('marmo_activities');
+        if (saved) setActivities(JSON.parse(saved));
+      } finally {
+        setLoadingActivities(false);
+      }
+    };
+
+    fetchActivities();
+  }, []);
+  const [brands, setBrands] = useState<Brand[]>(() => {
+    try {
+      const saved = localStorage.getItem('marmo_brands');
+      return saved ? (JSON.parse(saved) || []) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [productGroups, setProductGroups] = useState<ProductGroup[]>(() => {
+    try {
+      const saved = localStorage.getItem('marmo_product_groups');
+      return saved ? (JSON.parse(saved) || []) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [serviceGroups, setServiceGroups] = useState<ServiceGroup[]>(() => {
+    try {
+      const saved = localStorage.getItem('marmo_service_groups');
+      return saved ? (JSON.parse(saved) || []) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [products, setProducts] = useState<ProductService[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+
+  // Fetch initial data from Supabase for Products
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoadingProducts(true);
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('name');
+        
+        if (error) throw error;
+        if (data) {
+          const mapped = data.map(p => ({
+            ...p,
+            description: p.name,
+            type: p.category,
+            sellingPrice: p.base_price,
+            imageUrl: p.image_url
+          }));
+          setProducts(mapped as ProductService[]);
+        }
+      } catch (err) {
+        console.error('Erro ao carregar produtos do Supabase:', err);
+        const saved = localStorage.getItem('marmo_products');
+        if (saved) setProducts(JSON.parse(saved));
+      } finally {
+        setLoadingProducts(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   const handleSaveProduct = async (p: ProductService) => {
     try {
@@ -450,6 +347,28 @@ function App() {
       alert('Erro ao salvar produto no banco de dados.');
     }
   };
+  const [companyInfo, setCompanyInfo] = useState<CompanyInfo>(() => {
+    const defaultData = {
+      name: 'Tok de Art',
+      document: '14.092.404/0001-67',
+      address: 'Rua Américo Brasiliense, 1853 - Vila Seixas - Ribeirão Preto - SP',
+      phone: '(16) 3636-0114',
+      email: 'vendas@tokdeart.com.br',
+      logoUrl: '',
+      lostReasonOptions: ['Tinha preço menor', 'Prazo de entrega melhor', 'Desistiu de fazer', 'Não aprovaram o material', 'Distância da obra'],
+      buttonColor: '#ec5b13',
+      sidebarColor: '#0f172a',
+      sidebarTextColor: '#cbd5e1'
+    };
+    try {
+      const saved = localStorage.getItem('marmo_company');
+      if (!saved) return defaultData;
+      const parsed = JSON.parse(saved) || {};
+      return { ...defaultData, ...parsed };
+    } catch {
+      return defaultData;
+    }
+  });
 
   // Inject theme colors into CSS variables
   useEffect(() => {
@@ -459,6 +378,7 @@ function App() {
     root.style.setProperty('--sidebar-bg', companyInfo.sidebarColor || '#0f172a');
     root.style.setProperty('--sidebar-text', companyInfo.sidebarTextColor || '#cbd5e1');
 
+    // Simple helper to generate a darker version for secondary/hover states
     const darken = (hex: string, percent: number) => {
       const num = parseInt(hex.replace('#', ''), 16),
         amt = Math.round(2.55 * percent),
@@ -470,93 +390,100 @@ function App() {
     
     root.style.setProperty('--secondary-color', darken(primary, 10));
   }, [companyInfo]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [currentView, setCurrentView] = useState<View>('Produção');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+  const [loadingDeliveries, setLoadingDeliveries] = useState(true);
 
-
-  // Real-time location sharing for Medidor
+  // Fetch initial data from Supabase for Deliveries
   useEffect(() => {
-    if (user?.role !== 'medidor' || !('geolocation' in navigator)) return;
-
-    const intervalId = setInterval(() => {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          try {
-            await supabase
-              .from('profiles')
-              .update({ 
-                last_lat: latitude, 
-                last_lng: longitude, 
-                last_update: new Date().toISOString() 
-              })
-              .eq('id', user.id);
-          } catch (err) {
-            console.error('Erro ao atualizar localização:', err);
-          }
-        },
-        (error) => console.error('Erro de geolocalização:', error),
-        { enableHighAccuracy: true }
-      );
-    }, 30000); // Update every 30 seconds
-
-    return () => clearInterval(intervalId);
-  }, [user]);
-
-  useEffect(() => {
-    if (!user) return;
-
-    const sub = notificationService.subscribe(user.id, (n: AppNotification) => {
-      // Usar a Notification API do navegador se permitida
-      if (window.Notification && window.Notification.permission === 'granted') {
-        new window.Notification(n.title, { body: n.message });
-      }
-      // Alerta simples no sistema (pode ser melhorado com um Toast)
-      alert(`${n.title}\n${n.message}`);
-    });
-
-    // Pedir permissão para notificações de navegador
-    if ('Notification' in window && window.Notification.permission === 'default') {
-      window.Notification.requestPermission();
-    }
-
-    return () => {
-      sub.unsubscribe();
-    };
-  }, [user]);
-
-
-
-  useEffect(() => {
-    if (user?.role !== 'admin' && user?.role !== 'manager') return;
-
-    const fetchLocations = async () => {
+    const fetchDeliveries = async () => {
+      setLoadingDeliveries(true);
       try {
         const { data, error } = await supabase
-          .from('profiles')
-          .select('id, last_lat, last_lng, last_update')
-          .not('last_lat', 'is', null);
-
+          .from('deliveries')
+          .select('*')
+          .order('date');
+        
         if (error) throw error;
-
-        const locations: Record<string, DriverStatus> = {};
-        data.forEach((p: any) => {
-          locations[p.id] = {
-            lat: p.last_lat,
-            lng: p.last_lng,
-            lastUpdate: new Date(p.last_update).toLocaleTimeString('pt-BR'),
-            isOnline: true // Simplified logic
-          };
-        });
-        setStaffLocations(locations);
+        if (data) {
+          const mapped = data.map(d => ({
+            id: d.id,
+            orderId: d.order_id,
+            osNumber: d.os_number,
+            clientName: d.client_name,
+            address: d.address,
+            date: d.date,
+            time: d.time,
+            status: d.status as any
+          }));
+          setDeliveries(mapped as Delivery[]);
+        }
       } catch (err) {
-        console.error('Erro ao buscar localizações:', err);
+        console.error('Erro ao carregar entregas do Supabase:', err);
+        const saved = localStorage.getItem('marmo_deliveries');
+        if (saved) setDeliveries(JSON.parse(saved));
+      } finally {
+        setLoadingDeliveries(false);
       }
     };
 
-    const intervalId = setInterval(fetchLocations, 30000);
-    fetchLocations();
+    fetchDeliveries();
+  }, []);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loadingClients, setLoadingClients] = useState(true);
 
-    return () => clearInterval(intervalId);
-  }, [user]);
+  // Fetch initial data from Supabase for Clients
+  useEffect(() => {
+    const fetchClients = async () => {
+      setLoadingClients(true);
+      try {
+        let allClients: any[] = [];
+        let from = 0;
+        const batchSize = 1000;
+        let hasMore = true;
+
+        while (hasMore) {
+          const { data, error } = await supabase
+            .from('clients')
+            .select('*')
+            .order('name')
+            .range(from, from + batchSize - 1);
+          
+          if (error) throw error;
+          if (data && data.length > 0) {
+            allClients = [...allClients, ...data];
+            from += batchSize;
+            if (data.length < batchSize) hasMore = false;
+          } else {
+            hasMore = false;
+          }
+        }
+
+        const mapped = allClients.map(c => ({
+          ...c,
+          code: c.client_code,
+          rgInsc: c.rg_insc,
+          cellphone: c.cellphone,
+          birthDate: c.birth_date,
+          sellerName: c.seller_name,
+          useSpecialTable: c.use_special_table,
+          createdAt: c.created_at
+        }));
+        setClients(mapped as Client[]);
+      } catch (err) {
+        console.error('Erro ao carregar clientes do Supabase:', err);
+        const saved = localStorage.getItem('marmo_clients');
+        if (saved) setClients(JSON.parse(saved));
+      } finally {
+        setLoadingClients(false);
+      }
+    };
+
+    fetchClients();
+  }, []);
 
   const handleSaveClient = async (c: Client) => {
     try {
@@ -598,13 +525,6 @@ function App() {
         if (exists) return prev.map(x => (x.id === c.id || x.id === mappedSaved.id) ? mappedSaved : x);
         return [mappedSaved, ...prev];
       });
-      
-      logActivity(
-        clients.find(x => x.id === c.id) ? 'update' : 'create',
-        `${clients.find(x => x.id === c.id) ? 'Atualizou' : 'Cadastrou'} cliente: ${c.name}`,
-        saved.id,
-        c.code
-      );
     } catch (err) {
       console.error('Erro ao salvar cliente:', err);
       alert('Erro ao salvar cliente no banco de dados.');
@@ -613,22 +533,6 @@ function App() {
 
   const handleImportClients = async (data: any[]) => {
     try {
-      if (!data || data.length === 0) return;
-
-      const firstRow = data[0] || {};
-      const keys = Object.keys(firstRow).map(k => k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim());
-      
-      const materialIndicators = ['custo', 'margem', 'perda', 'preco', 'material', 'descricao', 'desc', 'unit_cost', 'selling_price'];
-      const clientIndicators = ['documento', 'email', 'doc', 'cpf', 'cnpj', 'cliente'];
-      
-      const hasMaterialKeys = keys.some(k => materialIndicators.some(mi => k.includes(mi)));
-      const hasClientKeys = keys.some(k => clientIndicators.some(ci => k.includes(ci)));
-
-      if (hasMaterialKeys && !hasClientKeys) {
-        console.log('Detectado formato de materiais. Redirecionando importação...');
-        return handleImportMaterials(data);
-      }
-
       const batchSize = 50;
       const totalGroups = Math.ceil(data.length / batchSize);
       
@@ -637,10 +541,10 @@ function App() {
         const end = Math.min(start + batchSize, data.length);
         const batch = data.slice(start, end);
         
-        const clientsToInsertRaw = batch.map(row => {
+        const clientsToInsert = batch.map(row => {
           const rawCode = row.codigo || row.code;
           const parsedCode = (rawCode !== undefined && rawCode !== null && rawCode !== '') 
-            ? Number(String(rawCode).replace(/\D/g, '')) 
+            ? Number(rawCode) 
             : undefined;
 
           return {
@@ -664,290 +568,87 @@ function App() {
           };
         });
 
-        const clientsMap = new Map();
-        const clientsWithoutCode = [];
-        
-        clientsToInsertRaw.forEach(c => {
-          if (c.client_code) {
-            clientsMap.set(c.client_code, c);
-          } else {
-            clientsWithoutCode.push(c);
-          }
-        });
-        
-        const clientsToInsert = [...Array.from(clientsMap.values()), ...clientsWithoutCode];
-
         const { data: insertedData, error } = await supabase
           .from('clients')
-          .upsert(clientsToInsert, { onConflict: 'client_code' })
+          .insert(clientsToInsert)
           .select();
         
         if (error) throw error;
         if (insertedData) {
-          const mappedBatch = insertedData.map(c => ({
-            ...c,
-            code: (c as any).client_code,
-            rgInsc: (c as any).rg_insc,
-            cellphone: (c as any).cellphone,
-            birthDate: (c as any).birth_date,
-            sellerName: (c as any).seller_name,
-            useSpecialTable: (c as any).use_special_table,
-            createdAt: (c as any).created_at
-          }));
-          
-          setClients(prev => {
-            const newBatch = mappedBatch as Client[];
-            const prevFiltered = prev.filter(p => !newBatch.some(n => n.id === p.id || (n.code && p.code && n.code === p.code)));
-            return [...newBatch, ...prevFiltered];
-          });
+          const mappedBatch = insertedData.map(c => ({ ...c, code: (c as any).client_code }));
+          setClients(prev => [...(mappedBatch as Client[]), ...prev]);
         }
       }
       
       logActivity('update', `Importou ${data.length} clientes via planilha`, 'bulk_import', 'BATCH');
-      refreshAppData();
     } catch (err: any) {
       console.error('Erro na importação em lote:', err);
-      alert('Erro na importação: ' + err.message);
+      let errorMsg = 'Ocorreu um erro durante a importação.';
+      
+      if (err.message?.includes('column "client_code" does not exist') || err.message?.includes('column c.client_code does not exist')) {
+        errorMsg = 'ERRO: A coluna "client_code" não foi encontrada no seu banco de dados Supabase.\n\nPor favor, execute o comando SQL que te enviei no painel do Supabase para criar essa coluna.';
+      } else if (err.message) {
+        errorMsg += `\n\nDetalhes: ${err.message}`;
+      }
+      
+      alert(errorMsg);
     }
   };
 
-  const handleImportMaterials = async (data: any[]) => {
-    try {
-      const batchSize = 50;
-      const totalGroups = Math.ceil(data.length / batchSize);
-      
-      for (let i = 0; i < totalGroups; i++) {
-        const start = i * batchSize;
-        const end = Math.min(start + batchSize, data.length);
-        const batch = data.slice(start, end);
-        
-        const materialsToInsertRaw = batch.map((row, idx) => {
-          const getVal = (possibleKeys: string[]) => {
-            const keys = Object.keys(row);
-            for (const pk of possibleKeys) {
-              const foundKey = keys.find(k => 
-                k.toLowerCase().trim() === pk.toLowerCase().trim() ||
-                k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim() === pk.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim()
-              );
-              if (foundKey) return row[foundKey];
-            }
-            return undefined;
-          };
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [loadingMaterials, setLoadingMaterials] = useState(true);
 
-          const cost = Number(String(getVal(['custo', 'unit_cost', 'cost', 'unitCost', 'valor']) || 0).replace(/[^\d.,]/g, '').replace(',', '.'));
-          const freight = Number(String(getVal(['frete', 'freight', 'freight_cost', 'freightCost']) || 0).replace(/[^\d.,]/g, '').replace(',', '.'));
-          const loss = Number(String(getVal(['perda', 'loss', 'loss_percentage']) || 20).replace(/[^\d.,]/g, '').replace(',', '.'));
-          const tax = Number(String(getVal(['imposto', 'tax', 'tax_percentage']) || 6).replace(/[^\d.,]/g, '').replace(',', '.'));
-          const margin = Number(String(getVal(['margem', 'margin', 'profit_margin']) || 40).replace(/[^\d.,]/g, '').replace(',', '.'));
-          const commission = Number(String(getVal(['comissao', 'commission', 'commission_percentage']) || 2.5).replace(/[^\d.,]/g, '').replace(',', '.'));
-          const discount = Number(String(getVal(['desconto', 'discount', 'discount_percentage']) || 5).replace(/[^\d.,]/g, '').replace(',', '.'));
-          const stock = Number(String(getVal(['estoque', 'stock', 'stock_quantity', 'stockQuantity', 'qtd', 'quantidade']) || 0).replace(/[^\d.,]/g, '').replace(',', '.'));
-          const sellingPrice = Number(String(getVal(['preco venda', 'preco_venda', 'selling_price', 'sellingPrice', 'venda', 'preco', 'preco_total']) || 0).replace(/[^\d.,]/g, '').replace(',', '.'));
-
-          const totalMarkup = (loss + tax + margin + commission + discount) / 100;
-          const calculatedSellingPrice = totalMarkup < 1 ? cost / (1 - totalMarkup) : cost * 2;
-          const finalSellingPrice = sellingPrice || Number(calculatedSellingPrice.toFixed(2));
-
-          let itemCode = String(getVal(['codigo', 'code', 'cod', 'item']) || '').trim();
-          if (!itemCode) {
-            itemCode = `IMP-${Date.now()}-${start + idx}`;
-          }
-
-          return {
-            code: itemCode,
-            name: String(getVal(['descricao', 'name', 'material', 'produto', 'desc']) || 'Sem Descrição'),
-            brand: String(getVal(['grupo', 'brand', 'group', 'categoria', 'marca', 'gr']) || 'Geral'),
-            category: 'Matéria Prima',
-            type: 'Matéria Prima',
-            thickness: Number(String(getVal(['espessura', 'thickness', 'bitola']) || '').replace(/\D/g, '')) || 2,
-            unit_cost: cost,
-            freight_cost: freight,
-            loss_percentage: loss,
-            tax_percentage: tax,
-            profit_margin: margin,
-            commission_percentage: commission,
-            discount_percentage: discount,
-            suggested_price: finalSellingPrice,
-            selling_price: finalSellingPrice,
-            unit: String(getVal(['unidade', 'unit', 'un', 'medida']) || 'M2').toUpperCase(),
-            status: 'ativo',
-            currency: 'BRL',
-            dolar_rate: 1,
-            euro_rate: 1,
-            stock_quantity: stock
-          };
-        });
-
-        const materialsMap = new Map();
-        materialsToInsertRaw.forEach(m => {
-          materialsMap.set(m.code, m);
-        });
-        const materialsToInsert = Array.from(materialsMap.values());
-
-        const { data: insertedData, error } = await supabase
+  // Fetch initial data from Supabase
+  useEffect(() => {
+    const fetchMaterials = async () => {
+      setLoadingMaterials(true);
+      try {
+        const { data: materialsData, error: materialsError } = await supabase
           .from('materials')
-          .upsert(materialsToInsert, { onConflict: 'code' })
-          .select();
+          .select('*')
+          .order('name');
         
-        if (error) throw error;
-        if (insertedData) {
-          const mappedBatch = insertedData.map(m => ({
+        if (materialsError) throw materialsError;
+        if (materialsData) {
+          const mappedMaterials = materialsData.map(m => ({
             ...m,
             unitCost: m.unit_cost,
+            minStock: m.min_stock,
+            stockQuantity: m.stock_quantity,
+            registrationDate: m.registration_date,
             freightCost: m.freight_cost,
-            lossPercentage: m.loss_percentage,
             taxPercentage: m.tax_percentage,
+            lossPercentage: m.loss_percentage,
             profitMargin: m.profit_margin,
             commissionPercentage: m.commission_percentage,
             discountPercentage: m.discount_percentage,
             suggestedPrice: m.suggested_price,
             sellingPrice: m.selling_price,
-            minStock: m.min_stock,
-            stockQuantity: m.stock_quantity,
-            stockLocation: m.inventory_location
+            dolarRate: m.dolar_rate,
+            euroRate: m.euro_rate,
+            priceHistory: m.price_history,
+            imageUrl: m.image_url,
+            stockLocation: m.inventory_location,
+            m2PerUnit: m.m2_per_unit
           }));
-          
-          setMaterials(prev => {
-            const newBatch = mappedBatch as Material[];
-            const prevFiltered = prev.filter(p => !newBatch.some(n => n.id === p.id || n.code === p.code));
-            return [...newBatch, ...prevFiltered];
-          });
+          setMaterials(mappedMaterials as Material[]);
         }
+      } catch (err) {
+        console.error('Erro ao carregar materiais do Supabase:', err);
+        const saved = localStorage.getItem('marmo_materials');
+        if (saved) setMaterials(JSON.parse(saved));
+      } finally {
+        setLoadingMaterials(false);
       }
-      
-      logActivity('update', `Importou ${data.length} matérias-primas via planilha`, 'bulk_import', 'BATCH');
-      refreshAppData();
-    } catch (err: any) {
-      console.error('Erro na importação de materiais:', err);
-      alert('Erro na importação: ' + err.message);
-    }
-  };
+    };
 
-  // Materials será buscado no orquestrador central
+    fetchMaterials();
+  }, []);
 
-  // Marcas
-  const handleSaveBrand = async (b: Brand) => {
-    try {
-      const { error } = await supabase.from('brands').upsert({
-        id: validateUUID(b.id) ? b.id : undefined,
-        name: b.description
-      });
-      if (error) {
-        alert('Erro ao salvar no banco de dados. O item será mantido apenas localmente por enquanto.');
-        throw error;
-      }
-      setBrands(prev => {
-        const index = prev.findIndex(item => item.id === b.id || item.description === b.description);
-        if (index >= 0) return prev.map((item, i) => i === index ? b : item);
-        return [b, ...prev];
-      });
-      logActivity('create', `Salvou marca: ${b.description}`);
-    } catch (err) {
-      console.error('Erro ao salvar marca:', err);
-      // Fallback local se falhar
-      setBrands(prev => prev.find(item => item.id === b.id) ? prev.map(item => item.id === b.id ? b : item) : [b, ...prev]);
-    }
-  };
-
-  const handleDeleteBrand = async (id: string) => {
-    try {
-      if (validateUUID(id)) {
-        await supabase.from('brands').delete().eq('id', id);
-      } else {
-        await supabase.from('brands').delete().eq('name', brands.find(b => b.id === id)?.description);
-      }
-      setBrands(prev => prev.filter(item => item.id !== id));
-      logActivity('delete', `Removeu marca`);
-    } catch (err) {
-      console.error('Erro ao deletar marca:', err);
-      setBrands(prev => prev.filter(item => item.id !== id));
-    }
-  };
-
-  // Grupos de Produtos
-  const handleSaveProductGroup = async (g: Omit<Brand, 'createdAt'> & {createdAt?: string}) => {
-    try {
-      const { error } = await supabase.from('product_groups').upsert({
-        id: validateUUID(g.id) ? g.id : undefined,
-        code: g.code,
-        description: g.description
-      });
-      if (error) {
-        alert('Erro ao salvar no banco de dados. O item será mantido apenas localmente por enquanto.');
-        throw error;
-      }
-      
-      const groupWithDate = { ...g, createdAt: g.createdAt || new Date().toISOString() };
-      setProductGroups(prev => {
-        const index = prev.findIndex(item => item.id === g.id || item.code === g.code);
-        if (index >= 0) return prev.map((item, i) => i === index ? groupWithDate : item);
-        return [groupWithDate, ...prev];
-      });
-    } catch (err) {
-      console.error('Erro ao salvar grupo de produtos:', err);
-      const groupWithDate = { ...g, createdAt: g.createdAt || new Date().toISOString() };
-      setProductGroups(prev => prev.find(item => item.id === g.id) ? prev.map(item => item.id === g.id ? groupWithDate : item) : [groupWithDate, ...prev]);
-    }
-  };
-
-  const handleDeleteProductGroup = async (id: string) => {
-    try {
-      if (validateUUID(id)) {
-        await supabase.from('product_groups').delete().eq('id', id);
-      } else {
-        await supabase.from('product_groups').delete().eq('code', productGroups.find(g => g.id === id)?.code);
-      }
-      setProductGroups(prev => prev.filter(item => item.id !== id));
-    } catch (err) {
-      console.error('Erro ao deletar grupo de produtos:', err);
-      setProductGroups(prev => prev.filter(item => item.id !== id));
-    }
-  };
-
-  // Grupos de Serviços
-  const handleSaveServiceGroup = async (g: Omit<Brand, 'createdAt'> & {createdAt?: string}) => {
-    try {
-      const { error } = await supabase.from('service_groups').upsert({
-        id: validateUUID(g.id) ? g.id : undefined,
-        code: g.code,
-        description: g.description
-      });
-      if (error) {
-        alert('Erro ao salvar no banco de dados. O item será mantido apenas localmente por enquanto.');
-        throw error;
-      }
-      
-      const groupWithDate = { ...g, createdAt: g.createdAt || new Date().toISOString() };
-      setServiceGroups(prev => {
-        const index = prev.findIndex(item => item.id === g.id || item.code === g.code);
-        if (index >= 0) return prev.map((item, i) => i === index ? groupWithDate : item);
-        return [groupWithDate, ...prev];
-      });
-    } catch (err) {
-      console.error('Erro ao salvar grupo de serviços:', err);
-      const groupWithDate = { ...g, createdAt: g.createdAt || new Date().toISOString() };
-      setServiceGroups(prev => prev.find(item => item.id === g.id) ? prev.map(item => item.id === g.id ? groupWithDate : item) : [groupWithDate, ...prev]);
-    }
-  };
-
-  const handleDeleteServiceGroup = async (id: string) => {
-    try {
-      if (validateUUID(id)) {
-        await supabase.from('service_groups').delete().eq('id', id);
-      } else {
-        await supabase.from('service_groups').delete().eq('code', serviceGroups.find(g => g.id === id)?.code);
-      }
-      setServiceGroups(prev => prev.filter(item => item.id !== id));
-    } catch (err) {
-      console.error('Erro ao deletar grupo de serviços:', err);
-      setServiceGroups(prev => prev.filter(item => item.id !== id));
-    }
-  };
-  
   const handleSaveMaterial = async (m: Material) => {
     try {
       const payload = {
-        id: validateUUID(m.id) ? m.id : undefined,
+        id: m.id.length > 20 ? m.id : undefined,
         code: m.code,
         name: m.name,
         type: m.type,
@@ -958,7 +659,7 @@ function App() {
         stock_quantity: m.stockQuantity,
         registration_date: m.registrationDate,
         brand: m.brand,
-        supplier_id: m.supplierId, // Sync with column name
+        supplier: m.supplier,
         difal: m.difal,
         freight_cost: m.freightCost,
         tax_percentage: m.taxPercentage,
@@ -1008,8 +709,7 @@ function App() {
         priceHistory: savedRow.price_history,
         imageUrl: savedRow.image_url,
         stockLocation: savedRow.inventory_location,
-        m2PerUnit: savedRow.m2_per_unit,
-        supplierId: savedRow.supplier_id
+        m2PerUnit: savedRow.m2_per_unit
       } as Material;
 
       setMaterials(prev => {
@@ -1031,7 +731,45 @@ function App() {
     }
   };
   
-  // Architects será buscado no orquestrador central
+  const [architects, setArchitects] = useState<Architect[]>([]);
+  const [loadingArchitects, setLoadingArchitects] = useState(true);
+
+  // Fetch initial data from Supabase for Architects
+  useEffect(() => {
+    const fetchArchitects = async () => {
+      setLoadingArchitects(true);
+      try {
+        const { data, error } = await supabase
+          .from('architects')
+          .select('*')
+          .order('trading_name');
+        
+        if (error) throw error;
+        if (data) {
+          const mapped = data.map(a => ({
+            ...a,
+            legalName: a.legal_name,
+            tradingName: a.trading_name,
+            contactName: a.contact_name,
+            rgInsc: a.rg_insc,
+            cellphone: a.cellphone,
+            observations: a.observations,
+            code: a.architect_code,
+            createdAt: a.created_at
+          }));
+          setArchitects(mapped as Architect[]);
+        }
+      } catch (err) {
+        console.error('Erro ao carregar arquitetos do Supabase:', err);
+        const saved = localStorage.getItem('marmo_architects');
+        if (saved) setArchitects(JSON.parse(saved));
+      } finally {
+        setLoadingArchitects(false);
+      }
+    };
+
+    fetchArchitects();
+  }, []);
 
   const handleSaveArchitect = async (a: Architect) => {
     try {
@@ -1079,7 +817,50 @@ function App() {
     }
   };
 
-  // Sales será buscado no orquestrador central
+  const [sales, setSales] = useState<SalesOrder[]>([]);
+  const [loadingSales, setLoadingSales] = useState(true);
+
+  // Fetch initial data from Supabase for Sales
+  useEffect(() => {
+    const fetchSales = async () => {
+      setLoadingSales(true);
+      try {
+        const { data, error } = await supabase
+          .from('sales')
+          .select('*')
+          .order('order_number', { ascending: false });
+        
+        if (error) throw error;
+        if (data) {
+          const mapped = data.map(s => ({
+            ...s,
+            orderNumber: s.order_number,
+            clientName: s.client_name,
+            totalValue: s.total,
+            createdAt: s.created_at,
+            deliveryDeadline: s.delivery_date,
+            seller: s.seller_name,
+            isOsGenerated: s.is_os_generated,
+            observations: s.notes,
+            totals: {
+              vendas: Number(s.subtotal),
+              desconto: Number(s.discount),
+              geral: Number(s.total)
+            }
+          }));
+          setSales(mapped as SalesOrder[]);
+        }
+      } catch (err) {
+        console.error('Erro ao carregar vendas do Supabase:', err);
+        const saved = localStorage.getItem('keepgoing_sales');
+        if (saved) setSales(JSON.parse(saved));
+      } finally {
+        setLoadingSales(false);
+      }
+    };
+
+    fetchSales();
+  }, []);
 
   const handleSaveSale = async (s: SalesOrder) => {
     try {
@@ -1145,11 +926,7 @@ function App() {
             ...s,
             id: crypto.randomUUID(), 
             osNumber: `OS-${new Date().getFullYear()}-${s.orderNumber}`,
-            phase: 'Serviço Lançado' as ProductionPhase,
-            priority: 'media',
-            dueDate: s.date,
-            totalValue: s.total,
-            imageUrls: []
+            phase: 'Serviço Lançado' as ProductionPhase, 
           };
           await handleSaveOrder(newOrder);
         }
@@ -1161,38 +938,98 @@ function App() {
     }
   };
 
-
-
-
-  const handleUpdateCompany = async (info: CompanyInfo) => {
-    setCompanyInfo(info);
+  const [transactions, setTransactions] = useState<FinanceTransaction[]>(() => {
     try {
-      // Tentar salvar no banco se houver sessão
-      if (user) {
-        console.log('[App] Persistindo configurações da empresa no Supabase...');
-        const { error } = await supabase
-          .from('company_info')
-          .upsert({
-            id: 1, // Usamos um ID fixo para configurações globais
-            name: info.name,
-            document: info.document,
-            address: info.address,
-            phone: info.phone,
-            email: info.email,
-            logo_url: info.logoUrl,
-            button_color: info.buttonColor,
-            sidebar_color: info.sidebarColor,
-            sidebar_text_color: info.sidebarTextColor,
-            lost_reason_options: info.lostReasonOptions
-          });
-        if (error) {
-          console.warn('[App] Erro ao persistir no banco (pode ser falta da tabela):', error.message);
-        }
-      }
-    } catch (err) {
-      console.error('[App] Erro crítico ao salvar configurações:', err);
+      const saved = localStorage.getItem('marmo_transactions');
+      return saved ? (JSON.parse(saved) || []) : [
+        { id: '1', value: 5000, description: 'Venda O.S. #1234', category: 'Vendas', date: '2024-03-10', type: 'receita', status: 'pago' }
+      ];
+    } catch {
+      return [];
     }
-  };
+  });
+
+  useEffect(() => {
+    localStorage.setItem('keepgoing_sales', JSON.stringify(sales));
+  }, [sales]);
+
+  const [salesChannels, setSalesChannels] = useState<SalesChannel[]>(() => {
+    try {
+      const saved = localStorage.getItem('marmo_sales_channels');
+      return saved ? (JSON.parse(saved) || []) : [
+        { id: '1', name: 'Google', createdAt: new Date().toISOString() },
+        { id: '2', name: 'Indicação', createdAt: new Date().toISOString() },
+        { id: '3', name: 'Instagram', createdAt: new Date().toISOString() },
+        { id: '4', name: 'Showroom', createdAt: new Date().toISOString() }
+      ];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('marmo_sales_channels', JSON.stringify(salesChannels));
+  }, [salesChannels]);
+
+  const [salesPhases, setSalesPhases] = useState<SalesPhaseConfig[]>(() => {
+    const defaultPhases = [
+      { name: 'Oportunidade' },
+      { name: 'Orçamento' },
+      { name: 'Negociação' },
+      { name: 'Pedido/Ganho' }
+    ];
+    try {
+      const saved = localStorage.getItem('marmo_sales_phases');
+      if (!saved) return defaultPhases;
+      const parsed = JSON.parse(saved);
+      return (parsed && parsed.length > 0) ? parsed : defaultPhases;
+    } catch {
+      return defaultPhases;
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('marmo_sales_phases', JSON.stringify(salesPhases));
+  }, [salesPhases]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [loadingSuppliers, setLoadingSuppliers] = useState(true);
+
+  // Fetch initial data from Supabase for Suppliers
+  useEffect(() => {
+    const fetchSuppliers = async () => {
+      setLoadingSuppliers(true);
+      try {
+        const { data, error } = await supabase
+          .from('suppliers')
+          .select('*')
+          .order('trading_name');
+        
+        if (error) throw error;
+        if (data) {
+          const mapped = data.map(s => ({
+            ...s,
+            legalName: s.legal_name,
+            tradingName: s.trading_name,
+            contactName: s.contact_name,
+            rgInsc: s.rg_insc,
+            cellphone: s.cellphone,
+            observations: s.observations,
+            code: s.supplier_code,
+            createdAt: s.created_at
+          }));
+          setSuppliers(mapped as Supplier[]);
+        }
+      } catch (err) {
+        console.error('Erro ao carregar fornecedores do Supabase:', err);
+        const saved = localStorage.getItem('marmo_suppliers');
+        if (saved) setSuppliers(JSON.parse(saved));
+      } finally {
+        setLoadingSuppliers(false);
+      }
+    };
+
+    fetchSuppliers();
+  }, []);
 
   const handleSaveSupplier = async (s: Supplier) => {
     try {
@@ -1241,7 +1078,7 @@ function App() {
     }
   };
   
-
+  const [exchangeRates, setExchangeRates] = useState<ExchangeRates>({ usd: 0, eur: 0, lastUpdate: '--:--' });
 
   useEffect(() => {
     const fetchRates = async () => {
@@ -1270,83 +1107,97 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Master List for Service Groups provided by User
-  const MASTER_SERVICE_GROUPS = [
-    { id: '06', code: '06', description: 'BALCAO' },
-    { id: '28', code: '28', description: 'BANCADA' },
-    { id: '29', code: '29', description: 'BASE' },
-    { id: '40', code: '40', description: 'BOQUETA' },
-    { id: '42', code: '42', description: 'BORDA' },
-    { id: '34', code: '34', description: 'CACOS / RETALHOS' },
-    { id: '32', code: '32', description: 'CANTONEIRA' },
-    { id: '21', code: '21', description: 'COLUNA' },
-    { id: '16', code: '16', description: 'CUBA ESCULPIDA' },
-    { id: '39', code: '39', description: 'DEGRAUS' },
-    { id: '19', code: '19', description: 'DIVISORIA' },
-    { id: '23', code: '23', description: 'ENGROSSO' },
-    { id: '07', code: '07', description: 'ESPELHO' },
-    { id: '46', code: '46', description: 'EXTENSAO' },
-    { id: '22', code: '22', description: 'FAIXA' },
-    { id: '44', code: '44', description: 'FECHAMENTO' },
-    { id: '37', code: '37', description: 'FILETE' },
-    { id: '47', code: '47', description: 'FRONTAO' },
-    { id: '11', code: '11', description: 'GUARNICAO' },
-    { id: '03', code: '03', description: 'LAVATORIO' },
-    { id: '25', code: '25', description: 'MESA' },
-    { id: '36', code: '36', description: 'MOLDURA' },
-    { id: '33', code: '33', description: 'NICHO' },
-    { id: '05', code: '05', description: 'PALITO' },
-    { id: '48', code: '48', description: 'PAPELEIRA' },
-    { id: '31', code: '31', description: 'PATAMAR' },
-    { id: '30', code: '30', description: 'PE' },
-    { id: '24', code: '24', description: 'PE CAIXA' },
-    { id: '08', code: '08', description: 'PEITORIL' },
-    { id: '02', code: '02', description: 'PIA' },
-    { id: '09', code: '09', description: 'PISANTE' },
-    { id: '17', code: '17', description: 'PISO' },
-    { id: '20', code: '20', description: 'PRATELEIRA' },
-    { id: '45', code: '45', description: 'REVESTIMENTO' },
-    { id: '18', code: '18', description: 'RODABASE' },
-    { id: '10', code: '10', description: 'RODAPE' },
-    { id: '15', code: '15', description: 'SAIA' },
-    { id: '26', code: '26', description: 'SERVIÇO' },
-    { id: '04', code: '04', description: 'SOLEIRA' },
-    { id: '12', code: '12', description: 'TAMPO' },
-    { id: '35', code: '35', description: 'TAMPO REDONDO' },
-    { id: '41', code: '41', description: 'TESTEIRA' },
-    { id: '43', code: '43', description: 'TUMULO' }
-  ];
+  // Persistence simulation
+  useEffect(() => {
+    const savedUser = localStorage.getItem('marmo_user');
+    if (savedUser) setUser(JSON.parse(savedUser));
+
+    const savedPhases = localStorage.getItem('marmo_phases');
+    if (savedPhases) setPhases(JSON.parse(savedPhases));
+
+    const savedStaff = localStorage.getItem('marmo_staff');
+    if (savedStaff) setStaff(JSON.parse(savedStaff));
+
+    const savedActivities = localStorage.getItem('marmo_activities');
+    if (savedActivities) setActivities(JSON.parse(savedActivities));
+
+    const savedCompany = localStorage.getItem('marmo_company');
+    if (savedCompany) setCompanyInfo(JSON.parse(savedCompany));
+
+    const savedBrands = localStorage.getItem('marmo_brands');
+    if (savedBrands) setBrands(JSON.parse(savedBrands));
+
+    const savedProductGroups = localStorage.getItem('marmo_product_groups');
+    if (savedProductGroups) setProductGroups(JSON.parse(savedProductGroups));
+
+    const savedServiceGroups = localStorage.getItem('marmo_service_groups');
+    if (savedServiceGroups) setServiceGroups(JSON.parse(savedServiceGroups));
+  }, []);
 
   useEffect(() => {
-    if (!user?.id) return;
-    // Otimização: Escutar apenas mudanças nas tabelas que realmente afetam a UI principal
-    // E usar um debounce simples (via tempo de resposta)
-    const subscription = supabase
-      .channel('db-changes')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public' }, (payload) => {
-        console.log('[Realtime] Novo registro detectado:', payload.table);
-        refreshAppData();
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public' }, (payload) => {
-        // Se for uma atualização de localização, não precisamos recarregar TUDO
-        if (payload.table === 'profiles' && (payload.new as any).last_lat) return;
-        console.log('[Realtime] Alteração detectada em:', payload.table);
-        refreshAppData();
-      })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public' }, (payload) => {
-        console.log('[Realtime] Remoção detectada:', payload.table);
-        refreshAppData();
-      })
-      .subscribe();
+    localStorage.setItem('marmo_phases', JSON.stringify(phases));
+  }, [phases]);
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [user?.id]);
+  useEffect(() => {
+    localStorage.setItem('marmo_staff', JSON.stringify(staff));
+  }, [staff]);
+
+  useEffect(() => {
+    localStorage.setItem('marmo_activities', JSON.stringify(activities));
+  }, [activities]);
+
+  useEffect(() => {
+    localStorage.setItem('marmo_company', JSON.stringify(companyInfo));
+  }, [companyInfo]);
+
+  useEffect(() => {
+    localStorage.setItem('marmo_brands', JSON.stringify(brands));
+  }, [brands]);
+
+  useEffect(() => {
+    localStorage.setItem('marmo_product_groups', JSON.stringify(productGroups));
+  }, [productGroups]);
+
+  useEffect(() => {
+    localStorage.setItem('marmo_service_groups', JSON.stringify(serviceGroups));
+  }, [serviceGroups]);
+
+  useEffect(() => {
+    localStorage.setItem('marmo_clients', JSON.stringify(clients));
+  }, [clients]);
 
 
+  useEffect(() => {
+    localStorage.setItem('marmo_deliveries', JSON.stringify(deliveries));
+  }, [deliveries]);
 
+  useEffect(() => {
+    localStorage.setItem('marmo_transactions', JSON.stringify(transactions));
+  }, [transactions]);
 
+  useEffect(() => {
+    localStorage.setItem('marmo_architects', JSON.stringify(architects));
+  }, [architects]);
+
+  useEffect(() => {
+    localStorage.setItem('marmo_products', JSON.stringify(products));
+  }, [products]);
+
+  useEffect(() => {
+    localStorage.setItem('marmo_orders', JSON.stringify(orders));
+  }, [orders]);
+
+  useEffect(() => {
+    localStorage.setItem('marmo_app_users', JSON.stringify(appUsers));
+  }, [appUsers]);
+
+  // Sync colors with CSS variables
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--primary-color', companyInfo.buttonColor || '#ec5b13');
+    root.style.setProperty('--sidebar-bg', companyInfo.sidebarColor || '#0f172a');
+    root.style.setProperty('--sidebar-text', companyInfo.sidebarTextColor || '#cbd5e1');
+  }, [companyInfo.buttonColor, companyInfo.sidebarColor, companyInfo.sidebarTextColor]);
 
   const logActivity = async (action: ActivityLog['action'], details: string, referenceId?: string, orderNumber?: string) => {
     if (!user) return;
@@ -1371,9 +1222,7 @@ function App() {
         id: data.id,
         timestamp: data.created_at,
         userName: data.user_name,
-        type: data.type as any,
         action: data.type as any,
-        description: data.message,
         details: data.message,
         orderId: data.reference_id
       };
@@ -1384,15 +1233,12 @@ function App() {
       console.error('Erro ao registrar log no Supabase:', err);
       // Fallback local se falhar
       const fallbackLog: ActivityLog = {
-        id: crypto.randomUUID(),
+        id: String(Date.now()),
         timestamp: new Date().toISOString(),
-        userName: user?.name || 'Sistema',
-        type: action,
-        action: action,
-        description: message,
+        userName: user.name,
+        action,
         details: message,
-        orderId: referenceId,
-        osNumber: orderNumber
+        orderId: referenceId
       };
       setActivities(prev => [fallbackLog, ...prev].slice(0, 100));
     }
@@ -1400,41 +1246,16 @@ function App() {
 
   const handleLogin = (u: User) => {
     setUser(u);
+    localStorage.setItem('marmo_user', JSON.stringify(u));
+    // If driver, set initial view to Delivery Schedule
     if (u.role === 'driver') {
       setCurrentView('Agenda de Entregas');
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (err) {
-      console.error('Erro ao deslogar:', err);
-    }
-    
-    // Limpeza seletiva do localStorage: remove tokens do Supabase (sb-*) e dados do app (marmo_*)
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && (key.startsWith('sb-') || key.startsWith('marmo_'))) {
-        keysToRemove.push(key);
-      }
-    }
-    keysToRemove.forEach(key => localStorage.removeItem(key));
-    
-    // Limpeza de estado React
+  const handleLogout = () => {
     setUser(null);
-    setOrders([]);
-    setDeliveries([]);
-    setSales([]);
-    setActivities([]);
-    setClients([]);
-    setSuppliers([]);
-    setMaterials([]);
-    setProducts([]);
-    setAppUsers([]);
-    
-    window.location.reload();
+    localStorage.removeItem('marmo_user');
   };
 
   const updateOrder = (orderId: string, updates: Partial<OrderService>) => {
@@ -1567,100 +1388,6 @@ function App() {
     }
   };
 
-  const addMeasurement = async (measurement: Omit<Measurement, 'id'>) => {
-    try {
-      const payload = {
-        order_id: measurement.orderId,
-        os_number: measurement.osNumber,
-        client_name: measurement.clientName,
-        address: measurement.address,
-        date: measurement.date,
-        time: measurement.time,
-        status: measurement.status
-      };
-
-      const { data, error } = await supabase
-        .from('measurements')
-        .insert(payload)
-        .select()
-        .single();
-      
-      if (error) throw error;
-
-      const newMeasurement = {
-        ...data,
-        orderId: data.order_id,
-        osNumber: data.os_number,
-        clientName: data.client_name
-      } as Measurement;
-
-      setMeasurements(prev => [newMeasurement, ...prev]);
-      logActivity('update', `Agendou medição para a O.S. ${newMeasurement.osNumber} em ${newMeasurement.address}`, newMeasurement.orderId, newMeasurement.osNumber);
-    } catch (err) {
-      console.error('Erro ao adicionar medição:', err);
-    }
-  };
-
-  const updateMeasurementStatus = async (id: string, status: Measurement['status']) => {
-    try {
-      const { error } = await supabase
-        .from('measurements')
-        .update({ status })
-        .eq('id', id);
-      
-      if (error) throw error;
-      setMeasurements(prev => prev.map(m => m.id === id ? { ...m, status } : m));
-    } catch (err) {
-      console.error('Erro ao atualizar status da medição:', err);
-    }
-  };
-
-  const deleteMeasurement = async (id: string) => {
-    const measurement = measurements.find(m => m.id === id);
-    if (!measurement) return;
-
-    try {
-      const { error } = await supabase
-        .from('measurements')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      setMeasurements(prev => prev.filter(m => m.id !== id));
-      logActivity('delete', `Removeu agendamento de medição da O.S. ${measurement.osNumber}`, measurement.orderId, measurement.osNumber);
-    } catch (err) {
-      console.error('Erro ao deletar medição:', err);
-    }
-  };
-
-  const updateMeasurement = async (id: string, updates: Partial<Measurement>) => {
-    try {
-      const payload: any = { ...updates };
-      if (updates.orderId) payload.order_id = updates.orderId;
-      if (updates.osNumber) payload.os_number = updates.osNumber;
-      if (updates.clientName) payload.client_name = updates.clientName;
-
-      delete payload.orderId;
-      delete payload.osNumber;
-      delete payload.clientName;
-
-      const { error } = await supabase
-        .from('measurements')
-        .update(payload)
-        .eq('id', id);
-      
-      if (error) throw error;
-
-      setMeasurements(prev => prev.map(m => m.id === id ? { ...m, ...updates } : m));
-      const measurement = measurements.find(m => m.id === id);
-      if (measurement) {
-        logActivity('update', `Atualizou agendamento de medição da O.S. ${measurement.osNumber}`, measurement.orderId, measurement.osNumber);
-      }
-    } catch (err) {
-      console.error('Erro ao atualizar medição:', err);
-    }
-  };
-
   const updateDelivery = async (id: string, updates: Partial<Delivery>) => {
     try {
       const payload: any = { ...updates };
@@ -1716,188 +1443,35 @@ function App() {
     setPhases(prev => prev.map(p => p.name === phaseName ? { ...p, requiresResponsible: !p.requiresResponsible } : p));
   };
 
-  const handleSaveUser = async (u: AppUser) => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ 
-          name: u.name, 
-          role: u.role,
-          avatar_url: u.avatarUrl 
-        })
-        .eq('id', u.id);
-      
-      if (error) throw error;
-      setAppUsers(prev => prev.map(x => x.id === u.id ? u : x));
-    } catch (err: any) {
-      console.error('Erro ao salvar usuário:', err);
-      alert('Erro ao atualizar perfil: ' + err.message);
+  const handleSaveUser = (u: AppUser) => {
+    setAppUsers(prev => prev.find(x => x.id === u.id) ? prev.map(x => x.id === u.id ? u : x) : [...prev, u]);
+  };
+
+  const handleDeleteUser = (id: string) => {
+    setAppUsers(prev => prev.filter(x => x.id !== id));
+  };
+
+  const handleSaveStaff = (s: ProductionStaff) => {
+    setStaff(prev => prev.find(x => x.id === s.id) ? prev.map(x => x.id === s.id ? s : x) : [...prev, s]);
+  };
+
+  const handleDeleteStaff = (id: string) => {
+    setStaff(prev => prev.filter(x => x.id !== id));
+  };
+
+  const addSalesPhase = (name: string) => {
+    if (!salesPhases.find(p => p.name === name)) {
+      setSalesPhases([...salesPhases, { name }]);
     }
   };
 
-  const handleDeleteUser = async (id: string) => {
-    const targetUser = appUsers.find(u => u.id === id);
-    if (targetUser?.isMaster) {
-      alert('Ação Bloqueada: Este é o Administrador Master e não pode ser excluído.');
-      return;
-    }
-
-    if (!window.confirm('Tem certeza que deseja remover o acesso deste usuário?')) return;
-    
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', id);
-      
-      if (error) {
-        if (error.message.includes('Administrador Master')) {
-          alert('Ação Bloqueada: ' + error.message);
-          return;
-        }
-        throw error;
-      }
-      
-      setAppUsers(prev => prev.filter(x => x.id !== id));
-      logActivity('delete', `Removeu acesso do usuário: ${targetUser?.name || id}`);
-    } catch (err: any) {
-      console.error('Erro ao deletar usuário:', err);
-      alert('Erro ao excluir usuário: ' + err.message);
-    }
+  const renameSalesPhase = (oldName: string, newName: string) => {
+    setSalesPhases(prev => prev.map(p => p.name === oldName ? { ...p, name: newName } : p));
+    setSales(prev => prev.map(s => s.salesPhase === oldName ? { ...s, salesPhase: newName } : s));
   };
 
-  const handleSaveStaff = async (s: ProductionStaff) => {
-    try {
-      const { error } = await supabase.from('production_staff').upsert({
-        id: validateUUID(s.id) ? s.id : undefined,
-        name: s.name,
-        position: s.position || '',
-        hourly_rate: s.hourlyRate || 0,
-        phone: s.phone || '',
-        status: s.status || 'ativo'
-      });
-      if (error) throw error;
-      setStaff(prev => {
-        const index = prev.findIndex(item => item.id === s.id);
-        if (index >= 0) return prev.map((item, i) => i === index ? s : item);
-        return [s, ...prev];
-      });
-    } catch (err) {
-      console.error('Erro ao salvar funcionário:', err);
-      // Fallback local se falhar
-      setStaff(prev => prev.find(item => item.id === s.id) ? prev.map(item => item.id === s.id ? s : item) : [s, ...prev]);
-    }
-  };
-
-  const handleDeleteStaff = async (id: string) => {
-    try {
-      if (validateUUID(id)) {
-        await supabase.from('production_staff').delete().eq('id', id);
-      }
-      setStaff(prev => prev.filter(x => x.id !== id));
-    } catch (err) {
-      console.error('Erro ao deletar funcionário:', err);
-      setStaff(prev => prev.filter(x => x.id !== id));
-    }
-  };
-
-  const addSalesPhase = async (name: string) => {
-    try {
-      if (!salesPhases.find(p => p.name === name)) {
-        await supabase.from('sales_phases').insert({ name });
-        setSalesPhases([...salesPhases, { name }]);
-      }
-    } catch (err) {
-      console.error('Erro ao salvar fase de venda:', err);
-      if (!salesPhases.find(p => p.name === name)) {
-        setSalesPhases([...salesPhases, { name }]);
-      }
-    }
-  };
-
-  const renameSalesPhase = async (oldName: string, newName: string) => {
-    try {
-      await supabase.from('sales_phases').update({ name: newName }).eq('name', oldName);
-      setSalesPhases(prev => prev.map(p => p.name === oldName ? { ...p, name: newName } : p));
-      setSales(prev => prev.map(s => s.salesPhase === oldName ? { ...s, salesPhase: newName } : s));
-    } catch(err) {
-      console.error(err);
-      setSalesPhases(prev => prev.map(p => p.name === oldName ? { ...p, name: newName } : p));
-    }
-  };
-
-  const deleteSalesPhase = async (name: string) => {
-    try {
-      await supabase.from('sales_phases').delete().eq('name', name);
-      setSalesPhases(prev => prev.filter(p => p.name !== name));
-    } catch(err) {
-      console.error(err);
-      setSalesPhases(prev => prev.filter(p => p.name !== name));
-    }
-  };
-
-  const handleSaveChannel = async (c: SalesChannel) => {
-    try {
-      await supabase.from('sales_channels').upsert({ 
-        id: validateUUID(c.id) ? c.id : undefined, 
-        name: c.name, 
-        color: c.color 
-      });
-      setSalesChannels(prev => {
-        const index = prev.findIndex(item => item.id === c.id);
-        if (index >= 0) return prev.map((item, i) => i === index ? c : item);
-        return [c, ...prev];
-      });
-    } catch(err) {
-      console.error(err);
-      setSalesChannels(prev => prev.find(x => x.id === c.id) ? prev.map(x => x.id === c.id ? c : x) : [...prev, c]);
-    }
-  };
-
-  const handleDeleteChannel = async (id: string) => {
-    try {
-      if (validateUUID(id)) await supabase.from('sales_channels').delete().eq('id', id);
-      setSalesChannels(prev => prev.filter(x => x.id !== id));
-    } catch(err) {
-      console.error(err);
-      setSalesChannels(prev => prev.filter(x => x.id !== id));
-    }
-  };
-
-  const onAddTransaction = async (t: Omit<FinanceTransaction, 'id'>) => {
-    try {
-      const { data, error } = await supabase.from('finance_transactions').insert({
-        description: t.description,
-        amount: t.value,
-        type: t.type === 'receita' ? 'revenue' : 'expense',
-        category: t.category,
-        date: t.date,
-        status: t.status === 'pago' ? 'completed' : 'pending'
-      }).select().single();
-      
-      if (error) throw error;
-      if (data) {
-        const newTrans: FinanceTransaction = {
-          ...t,
-          id: data.id
-        };
-        setTransactions(prev => [newTrans, ...prev]);
-      }
-    } catch (err) {
-      console.error('Erro ao salvar transação:', err);
-      const newTrans: FinanceTransaction = { ...t, id: Date.now().toString() };
-      setTransactions(prev => [newTrans, ...prev]);
-    }
-  };
-
-  const onDeleteTransaction = async (id: string) => {
-    try {
-      if (validateUUID(id)) await supabase.from('finance_transactions').delete().eq('id', id);
-      setTransactions(prev => prev.filter(t => t.id !== id));
-    } catch (err) {
-      console.error('Erro ao deletar transação:', err);
-      setTransactions(prev => prev.filter(t => t.id !== id));
-    }
+  const deleteSalesPhase = (name: string) => {
+    setSalesPhases(prev => prev.filter(p => p.name !== name));
   };
 
   const reorderSalesPhases = (startIndex: number, endIndex: number) => {
@@ -1907,56 +1481,8 @@ function App() {
     setSalesPhases(result);
   };
 
-  if (loadingSession) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-6 max-w-sm text-center">
-          <div className="w-16 h-16 border-4 border-[#ec5b13] border-t-transparent rounded-full animate-spin"></div>
-          <div className="space-y-2">
-            <p className="text-slate-700 font-bold text-lg animate-pulse">Carregando KeepGoing...</p>
-            <p className="text-slate-400 text-sm">Validando sua sessão e dados locais...</p>
-          </div>
-          
-          <div className="pt-8 border-t border-slate-200">
-            <button 
-              onClick={() => {
-                if (window.confirm("Isso irá limpar as configurações locais salvas no seu navegador (como cores e preferências) para tentar destravar o sistema. Deseja continuar?")) {
-                  localStorage.clear();
-                  window.location.reload();
-                }
-              }}
-              className="text-xs text-slate-400 underline hover:text-[#ec5b13] transition-colors"
-            >
-              O sistema está demorando? Clique aqui para resetar dados locais.
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
-        {authError && (
-          <div className="max-w-md w-full mb-6 p-4 bg-orange-50 border-l-4 border-orange-500 rounded shadow-md">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-orange-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-orange-700 font-medium">
-                  {authError}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-        <Login onLogin={handleLogin} />
-      </div>
-    );
+    return <Login onLogin={handleLogin} />;
   }
 
   const filteredOrders = orders.filter(o =>
@@ -2010,23 +1536,6 @@ function App() {
             companyLogoUrl={companyInfo.logoUrl}
           />
         );
-      case 'Agenda de Medições':
-        return (
-          <MeasurementSchedule 
-            orders={orders} 
-            measurements={measurements} 
-            onAddMeasurement={addMeasurement} 
-            onUpdateMeasurementStatus={updateMeasurementStatus} 
-            onUpdateMeasurement={updateMeasurement}
-            onDeleteMeasurement={deleteMeasurement}
-            onReorderMeasurements={(newMeasurements) => setMeasurements(newMeasurements)}
-            companyAddress={companyInfo.address}
-            companyName={companyInfo.name}
-            companyLogoUrl={companyInfo.logoUrl}
-            userRole={user?.role}
-            staffLocations={staffLocations}
-          />
-        );
       case 'Equipe':
         return (
           <TeamView
@@ -2055,9 +1564,8 @@ function App() {
             onDeleteSalesPhase={deleteSalesPhase}
             onReorderSalesPhases={reorderSalesPhases}
             companyInfo={companyInfo}
-            onUpdateCompany={handleUpdateCompany}
+            onUpdateCompany={setCompanyInfo}
             onImportClients={handleImportClients}
-            onImportMaterials={handleImportMaterials}
           />
         );
       case 'Clientes':
@@ -2112,7 +1620,6 @@ function App() {
             productGroups={productGroups}
             suppliers={suppliers}
             exchangeRates={exchangeRates}
-            onImportMaterials={handleImportMaterials}
           />
         );
       case 'Acabamentos':
@@ -2139,9 +1646,7 @@ function App() {
           />
         );
       case 'Financeiro':
-        return <FinanceView transactions={transactions} onAddTransaction={onAddTransaction} onDeleteTransaction={onDeleteTransaction} />;
-      case 'Financeiro':
-        return <FinanceView transactions={transactions} onAddTransaction={onAddTransaction} onDeleteTransaction={onDeleteTransaction} />;
+        return <FinanceView transactions={transactions} onAddTransaction={(t) => setTransactions(prev => [t, ...prev])} />;
       case 'Fornecedores':
         return (
           <SuppliersView 
@@ -2165,13 +1670,13 @@ function App() {
           />
         );
       case 'Canais de Vendas':
-        return <SalesChannelsView channels={salesChannels} onSaveChannel={handleSaveChannel} onDeleteChannel={handleDeleteChannel} />;
+        return <SalesChannelsView channels={salesChannels} onSaveChannel={(c) => setSalesChannels(prev => prev.find(x => x.id === c.id) ? prev.map(x => x.id === c.id ? c : x) : [...prev, c])} onDeleteChannel={(id) => setSalesChannels(prev => prev.filter(x => x.id !== id))} />;
       case 'Marcas':
-        return <BrandsView brands={brands} onSaveBrand={handleSaveBrand} onDeleteBrand={handleDeleteBrand} />;
+        return <BrandsView brands={brands} onSaveBrand={(b) => setBrands(prev => prev.find(item => item.id === b.id) ? prev.map(item => item.id === b.id ? b : item) : [b, ...prev])} onDeleteBrand={(id) => setBrands(prev => prev.filter(item => item.id !== id))} />;
       case 'Grupos de Produtos':
-        return <ProductGroupsView groups={productGroups} onSaveGroup={handleSaveProductGroup} onDeleteGroup={handleDeleteProductGroup} />;
+        return <ProductGroupsView groups={productGroups} onSaveGroup={(g) => setProductGroups(prev => prev.find(item => item.id === g.id) ? prev.map(item => item.id === g.id ? g : item) : [g, ...prev])} onDeleteGroup={(id) => setProductGroups(prev => prev.filter(item => item.id !== id))} />;
       case 'Grupos de Serviços':
-        return <ServiceGroupsView groups={serviceGroups} onSaveGroup={handleSaveServiceGroup} onDeleteGroup={handleDeleteServiceGroup} />;
+        return <ServiceGroupsView groups={serviceGroups} onSaveGroup={(g) => setServiceGroups(prev => prev.find(item => item.id === g.id) ? prev.map(item => item.id === g.id ? g : item) : [g, ...prev])} onDeleteGroup={(id) => setServiceGroups(prev => prev.filter(item => item.id !== id))} />;
       default:
         return <PlaceholderView title={currentView} />;
     }
@@ -2185,9 +1690,8 @@ function App() {
         currentView={currentView}
         onViewChange={setCurrentView}
         companyInfo={companyInfo}
-        user={user}
+        userRole={user.role}
         exchangeRates={exchangeRates}
-        onLogout={handleLogout}
       />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -2210,6 +1714,6 @@ function App() {
       </div>
     </div>
   );
-}
+};
 
 export default App;
