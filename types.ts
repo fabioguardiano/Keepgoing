@@ -210,12 +210,25 @@ export interface CompanyInfo {
   lostReasonOptions?: string[];
 }
 
+export interface Address {
+  street: string;
+  number: string;
+  complement?: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  lat?: number;
+  lng?: number;
+  referencePoint?: string;
+}
+
 export interface Client {
   id: string;
   name: string;
   email: string;
   phone: string;
-  address: string;
+  address: Address;
   document: string;
   notes?: string;
   code?: string;
@@ -225,7 +238,8 @@ export interface Client {
   sellerName?: string;
   useSpecialTable?: boolean;
   createdAt?: string;
-  type?: string;
+  type?: 'Pessoa Física' | 'Pessoa Jurídica';
+  deliveryAddress?: Address;
 }
 
 export interface Material {

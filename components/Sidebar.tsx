@@ -11,7 +11,6 @@ interface SidebarProps {
   user: any;
   exchangeRates: { usd: number; eur: number; lastUpdate: string };
   onLogout: () => void;
-  onRefresh?: () => Promise<void>;
 }
 
 interface NavItem {
@@ -23,11 +22,10 @@ interface NavItem {
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
   isOpen, toggle, currentView, onViewChange, companyInfo, 
-  user, exchangeRates, onLogout, onRefresh 
+  user, exchangeRates, onLogout
 }) => {
   const userRole = user.role;
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
 
   const roleLabels: Record<string, string> = {
     admin: 'Administrador',
@@ -221,19 +219,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <p className="text-[10px] uppercase font-black opacity-40 truncate">{roleLabels[userRole] || userRole}</p>
                 </div>
                 <div className="flex items-center gap-1">
-                  {onRefresh && (
-                    <button 
-                      onClick={async () => {
-                        setRefreshing(true);
-                        await onRefresh();
-                        setTimeout(() => setRefreshing(false), 1000);
-                      }}
-                      className={`p-1.5 hover:bg-white/10 rounded-lg text-white/40 hover:text-primary transition-all ${refreshing ? 'animate-spin text-primary' : ''}`}
-                      title="Sincronizar Dados"
-                    >
-                      <RefreshCcw size={16} />
-                    </button>
-                  )}
                   <button 
                     onClick={onLogout}
                     className="p-1.5 hover:bg-white/10 rounded-lg text-white/40 hover:text-red-400 transition-colors"

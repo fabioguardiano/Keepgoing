@@ -65,7 +65,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return <ArrowUpDown size={14} className="opacity-30 group-hover:opacity-100 transition-opacity" />;
-    return sortDirection === 'asc' ? <ChevronUp size={14} className="text-[#ec5b13]" /> : <ChevronDown size={14} className="text-[#ec5b13]" />;
+    return sortDirection === 'asc' ? <ChevronUp size={14} className="text-primary" /> : <ChevronDown size={14} className="text-primary" />;
   };
 
   const getCategoryIcon = () => {
@@ -84,7 +84,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[#ec5b13] p-1.5 bg-orange-50 rounded-xl">
+            <span className="text-primary p-1.5 bg-primary/5 rounded-xl">
               {getCategoryIcon()}
             </span>
             <h1 className="text-2xl font-black text-slate-800 tracking-tight">{category}</h1>
@@ -100,7 +100,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           </button>
           <button 
             onClick={handleAddNew}
-            className="bg-[#ec5b13] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[#ec5b13]/20 hover:bg-[#d84a0d] transition-all transform hover:scale-[1.02] active:scale-95"
+            className="bg-primary text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-secondary transition-all transform hover:scale-[1.02] active:scale-95"
           >
             <Plus size={20} /> Novo Registro
           </button>
@@ -113,7 +113,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           <input 
             type="text"
             placeholder="Buscar por descrição, código ou grupo..."
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ec5b13]/20 font-medium text-sm"
+            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />

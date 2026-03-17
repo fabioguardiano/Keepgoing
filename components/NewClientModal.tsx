@@ -60,7 +60,15 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
   useEffect(() => {
     if (editingClient) {
       const { id, createdAt, ...rest } = editingClient;
-      setFormData(rest);
+      setFormData({
+        ...rest,
+        address: (typeof rest.address === 'object' && rest.address !== null) 
+          ? rest.address 
+          : { street: '', number: '', complement: '', neighborhood: '', city: '', state: '', zipCode: '' },
+        deliveryAddress: (typeof (rest as any).deliveryAddress === 'object' && (rest as any).deliveryAddress !== null)
+          ? (rest as any).deliveryAddress
+          : undefined
+      } as any);
     } else {
       setFormData({
         name: '',

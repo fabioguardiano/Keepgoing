@@ -20,7 +20,6 @@ interface SettingsViewProps {
     onUpdateCompany: (info: CompanyInfo) => void;
     onImportClients: (clients: any[]) => Promise<void>;
     onImportMaterials: (materials: any[]) => Promise<void>;
-    onMigrateData?: () => Promise<void>;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -38,8 +37,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     companyInfo,
     onUpdateCompany,
     onImportClients,
-    onImportMaterials,
-    onMigrateData
+    onImportMaterials
 }) => {
     const [activeTab, setActiveTab] = useState<'fluxo' | 'vendas' | 'empresa' | 'dados'>('fluxo');
     const [newPhaseName, setNewPhaseName] = useState('');
@@ -709,32 +707,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                         </div>
                                     )}
 
-                                    {onMigrateData && (
-                                        <div className="mt-8 pt-8 border-t border-slate-100">
-                                            <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-4 text-left">
-                                                <div className="flex items-center gap-3 text-white">
-                                                    <div className="p-2 bg-primary/20 text-primary rounded-xl">
-                                                        <Database size={20} />
-                                                    </div>
-                                                    <h3 className="text-lg font-bold">Migração de Dados Locais</h3>
-                                                </div>
-                                                <p className="text-slate-400 text-sm font-medium leading-relaxed">
-                                                    Se você tem dados salvos localmente neste navegador (Marcas, Grupos, Colaboradores, etc.) que não aparecem no banco de dados, use o botão abaixo para sincronizá-los manualmente com o Supabase.
-                                                </p>
-                                                <button 
-                                                    onClick={async () => {
-                                                        if (confirm('Deseja iniciar a migração dos dados locais para o banco de dados? Isso não apagará seus dados locais, apenas enviará uma cópia para o servidor.')) {
-                                                            await onMigrateData();
-                                                        }
-                                                    }}
-                                                    className="w-full py-4 bg-primary text-white rounded-2xl font-black text-sm hover:bg-secondary transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-3"
-                                                >
-                                                    <Upload size={20} /> SINCRONIZAR COM BANCO DE DADOS
-                                                </button>
-                                                <p className="text-[10px] text-slate-500 text-center font-bold uppercase tracking-widest">Ação recomendada após deploy ou troca de navegador</p>
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         )

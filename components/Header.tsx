@@ -7,10 +7,9 @@ interface HeaderProps {
   onLogout: () => void;
   onSearch: (query: string) => void;
   onToggleActivity: () => void;
-  onRefresh?: () => Promise<void>;
 }
 
-export const Header: React.FC<HeaderProps> = ({ user, onLogout, onSearch, onToggleActivity, onRefresh }) => {
+export const Header: React.FC<HeaderProps> = ({ user, onLogout, onSearch, onToggleActivity }) => {
   const [showNotifications, setShowNotifications] = useState(false);
 
   return (
@@ -32,22 +31,6 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onSearch, onTogg
       {/* Right Actions */}
       <div className="flex items-center gap-6">
 
-        {/* Sync Action */}
-        {onRefresh && (
-          <button
-            className="flex items-center gap-2 text-slate-500 hover:text-[var(--primary-color)] transition-all p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl group"
-            onClick={async () => {
-              const btn = document.getElementById('header-sync-btn');
-              if (btn) btn.classList.add('animate-spin');
-              await onRefresh();
-              if (btn) setTimeout(() => btn.classList.remove('animate-spin'), 1000);
-            }}
-            title="Sincronizar Dados"
-          >
-            <RefreshCcw id="header-sync-btn" className="w-5 h-5 transition-transform" />
-            <span className="text-xs font-bold hidden sm:inline">Sincronizar</span>
-          </button>
-        )}
 
         {/* Activity Toggle */}
         <button

@@ -53,11 +53,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
           throw authError;
         }
 
-        if (data.user) {
-          onLogin(data.user);
-        }
-        
-        console.log('[LoginAudit] Login concluído. App.tsx deve reagir via onLogin e listener.');
+        console.log('[LoginAudit] Login concluído. App.tsx reagirá via onAuthStateChange (SIGNED_IN).');
       } else {
         // Mode Signup (Primeiro Acesso)
         const { data, error: authError } = await supabase.auth.signUp({

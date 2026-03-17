@@ -41,643 +41,27 @@ const INITIAL_STAFF: ProductionStaff[] = [
   { id: '3', name: 'Pedro Alves', position: 'ajudante_serrador', hourlyRate: 16, phone: '(11) 98765-0000', status: 'ativo' },
   { id: '4', name: 'Lucas Costa', position: 'medidor', hourlyRate: 18, phone: '(11) 97654-3210', status: 'inativo' },
 ];
-const App: React.FC = () => {
+
+function App() {
   console.log('%c[System] KeepGoing v13-stable carregando...', 'color: var(--primary-color); font-weight: bold;');
+  
+  // 1. Estados
   const [user, setUser] = useState<User | null>(null);
   const [loadingSession, setLoadingSession] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
-
-  // Monitorar sessão do Supabase
-  useEffect(() => {
-    let isProcessing = false;
-    
-    // Timeout de segurança: se não carregar nada em 10 segundos, libera a tela
-    const timeoutId = setTimeout(() => {
-      setLoadingSession(prev => {
-        if (prev) {
-          console.warn('Timeout de carregamento inicial atingido. Liberando tela...');
-          return false;
-        }
-        return prev;
-      });
-    }, 10000);
-
-    // No Supabase v2+, o onAuthStateChange já dispara o evento INITIAL_SESSION
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (isProcessing) return;
-
-      isProcessing = true;
-      try {
-        if (session) {
-          await fetchUserProfile(session.user.id);
-        } else {
-          setUser(null);
-          setLoadingSession(false);
-        }
-      } catch (err) {
-        console.error('Erro na autenticação:', err);
-        setLoadingSession(false);
-      } finally {
-        isProcessing = false;
-      }
-    });
-
-    return () => {
-      clearTimeout(timeoutId);
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  const fetchUserProfile = async (userId: string) => {
-    try {
-      console.log('[AuthAudit] Buscando perfil no banco para:', userId);
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
-      if (error) {
-        console.error('[AuthAudit] Erro ao buscar perfil:', error.message, error);
-        if (error.code === 'PGRST116') {
-          console.warn('[AuthAudit] Perfil não encontrado na tabela profiles.');
-          setAuthError('Sua conta foi autenticada, mas seu perfil de acesso não foi encontrado. Por favor, entre em contato com o administrador.');
-        } else {
-          setAuthError('Erro ao carregar permissões do sistema. Tente novamente em instantes.');
-        }
-        setLoadingSession(false);
-        return;
-      }
-      
-      if (data) {
-        console.log('[AuthAudit] Perfil encontrado com sucesso:', data.name);
-        setAuthError(null);
-        const newUser: User = {
-          id: data.id,
-          name: data.name,
-          role: data.role as any,
-          email: '', // Pode vir do auth.user se necessário
-          status: 'ativo',
-          createdAt: data.created_at || new Date().toISOString(),
-          isMaster: data.is_master,
-          avatarUrl: data.avatar_url
-        };
-        setUser(newUser);
-        console.log('[AuthAudit] Estado "user" atualizado.');
-      }
-    } catch (err: any) {
-      console.error('[AuthAudit] Erro crítico em fetchUserProfile:', err.message || err);
-    } finally {
-      console.log('[AuthAudit] Finalizando processo de loading da sessão.');
-      setLoadingSession(false);
-    }
-  };
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [currentView, setCurrentView] = useState<View>('Clientes');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   const [orders, setOrders] = useState<OrderService[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
-  
-  console.log('[App] Sincronização v4 carregada');
-
-  const safeLoad = (key: string, setter: (val: any) => void) => {
-    try {
-      const saved = localStorage.getItem(key);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        
-        // Especial logic for Service Groups to merge with Master List
-        if (key === 'marmo_service_groups') {
-          const existingGroups = Array.isArray(parsed) ? parsed : [];
-          const merged = [...existingGroups];
-          
-          MASTER_SERVICE_GROUPS.forEach(master => {
-            if (!merged.find(g => g.code === master.code)) {
-              merged.push({
-                ...master,
-                createdAt: new Date().toISOString()
-              });
-            }
-          });
-          setter(merged);
-          return;
-        }
-        
-        setter(parsed);
-      } else if (key === 'marmo_service_groups') {
-        // If nothing saved, load master list
-        setter(MASTER_SERVICE_GROUPS.map(g => ({ ...g, createdAt: new Date().toISOString() })));
-      }
-    } catch (err) {
-      console.error(`Erro ao carregar ${key} do localStorage:`, err);
-    }
-  };
-
-  const validateUUID = (id: string) => {
-    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-  };
-
-  const refreshAppData = async (showLoading = true) => {
-    if (!user) {
-      console.warn('[App] refreshAppData abortado: usuário não autenticado');
-      return;
-    }
-    console.log('--- Iniciando Orquestração de Dados Sequencial ---');
-    
-    // Função auxiliar para rodar cada fetch com log e catch individual
-    const runner = async (name: string, fn: () => Promise<void>) => {
-      try {
-        console.log(`[Fetch] Carregando ${name}...`);
-        await fn();
-        // Pequeno atraso para evitar que requisições sequenciais disparem o lock do navigator
-        await new Promise(resolve => setTimeout(resolve, 150));
-      } catch (err) {
-        console.error(`[Fetch] Erro em ${name}:`, err);
-      }
-    };
-
-    // Rodar sequencialmente para evitar conflitos de lock no Supabase
-    await runner('CompanyInfo', async () => {
-      const { data, error } = await supabase.from('company_info').select('*').single();
-      if (error && error.code !== 'PGRST116') throw error; // Ignorar apenas erro de "não encontrado"
-      if (data) {
-        const mapped: CompanyInfo = {
-          name: data.name,
-          document: data.document,
-          address: data.address,
-          phone: data.phone,
-          email: data.email,
-          logoUrl: data.logo_url,
-          lostReasonOptions: data.lost_reason_options || [],
-          buttonColor: data.button_color,
-          sidebarColor: data.sidebar_color,
-          sidebarTextColor: data.sidebar_text_color
-        };
-        setCompanyInfo(mapped);
-      }
-    });
-
-    await runner('Brands', async () => {
-      setLoadingBrands(true);
-      const { data, error } = await supabase.from('brands').select('*');
-      if (error) throw error;
-      if (data) setBrands(data.map(b => ({ 
-        id: b.id, 
-        code: b.code || b.id, 
-        description: b.name || b.description, 
-        createdAt: b.created_at || new Date().toISOString() 
-      })));
-      setLoadingBrands(false);
-    });
-
-    await runner('ProductGroups', async () => {
-      setLoadingProductGroups(true);
-      const { data, error } = await supabase.from('product_groups').select('*');
-      if (error) throw error;
-      if (data) setProductGroups(data.map(g => ({ 
-        id: g.id, 
-        code: g.code || g.id, 
-        description: g.name || g.description, 
-        createdAt: g.created_at || new Date().toISOString() 
-      })));
-      setLoadingProductGroups(false);
-    });
-
-    await runner('ServiceGroups', async () => {
-      setLoadingServiceGroups(true);
-      const { data, error } = await supabase.from('service_groups').select('*');
-      if (error) throw error;
-      if (data) setServiceGroups(data.map(g => ({ 
-        id: g.id, 
-        code: g.code || g.id, 
-        description: g.name || g.description, 
-        createdAt: g.created_at || new Date().toISOString() 
-      })));
-      setLoadingServiceGroups(false);
-    });
-    await runner('Profiles', async () => {
-      setLoadingUsers(true);
-      const { data, error } = await supabase.from('profiles').select('*').order('name');
-      if (error) throw error;
-      if (data) setAppUsers(data.map(p => ({
-        id: p.id, name: p.name, role: p.role as any, email: '', status: 'ativo',
-        createdAt: p.created_at ? p.created_at.slice(0, 10) : new Date().toISOString().slice(0, 10),
-        isMaster: p.is_master, avatarUrl: p.avatar_url
-      })));
-      setLoadingUsers(false);
-    });
-
-    await runner('Orders', async () => {
-      setLoadingOrders(true);
-      const { data, error } = await supabase.from('orders_service').select('*').order('os_number', { ascending: false });
-      if (error) throw error;
-      if (data) setOrders(data.map(o => ({
-        ...o, osNumber: o.os_number, orderNumber: o.order_number, clientName: o.client_name,
-        clientPhone: o.client_phone, responsibleStaffName: o.responsible_staff_name,
-        totalValue: Number(o.total_value), imageUrls: o.image_urls || [], phaseHistory: o.phase_history || [],
-        createdAt: o.created_at
-      })) as OrderService[]);
-      setLoadingOrders(false);
-    });
-
-    await runner('Suppliers', async () => {
-      setLoadingSuppliers(true);
-      const { data, error } = await supabase.from('suppliers').select('*').order('trading_name');
-      if (error) throw error;
-      if (data) setSuppliers(data.map(s => ({
-        ...s, legalName: s.legal_name, tradingName: s.trading_name, contactName: s.contact_name,
-        rgInsc: s.rg_insc, cellphone: s.cellphone, observations: s.observations,
-        code: s.supplier_code, createdAt: s.created_at
-      })) as Supplier[]);
-      setLoadingSuppliers(false);
-    });
-
-    await runner('Clients', async () => {
-      setLoadingClients(true);
-      let allClients: any[] = [];
-      let from = 0;
-      const batchSize = 1000;
-      let hasMore = true;
-      while (hasMore) {
-        const { data, error } = await supabase.from('clients').select('*').order('name').range(from, from + batchSize - 1);
-        if (error) throw error;
-        if (data && data.length > 0) {
-          allClients = [...allClients, ...data];
-          from += batchSize;
-          if (data.length < batchSize) hasMore = false;
-        } else { hasMore = false; }
-      }
-      setClients(allClients.map(c => ({
-        ...c, code: c.client_code, rgInsc: c.rg_insc, cellphone: c.cellphone,
-        birthDate: c.birth_date, sellerName: c.seller_name, useSpecialTable: c.use_special_table,
-        createdAt: c.created_at
-      })) as Client[]);
-      setLoadingClients(false);
-    });
-
-    await runner('Products', async () => {
-      setLoadingProducts(true);
-      const { data, error } = await supabase.from('products').select('*').order('name');
-      if (error) throw error;
-      if (data) setProducts(data.map(p => ({
-        ...p, description: p.name, type: p.category, sellingPrice: p.base_price, imageUrl: p.image_url
-      })) as ProductService[]);
-      setLoadingProducts(false);
-    });
-
-    await runner('Deliveries', async () => {
-      setLoadingDeliveries(true);
-      const { data, error } = await supabase.from('deliveries').select('*').order('date');
-      if (error) throw error;
-      if (data) setDeliveries(data.map(d => ({
-        id: d.id, orderId: d.order_id, osNumber: d.os_number, clientName: d.client_name,
-        address: d.address, date: d.date, time: d.time, status: d.status as any
-      })) as Delivery[]);
-      setLoadingDeliveries(false);
-    });
-
-    await runner('Measurements', async () => {
-      setLoadingMeasurements(true);
-      const { data, error } = await supabase.from('measurements').select('*').order('date');
-      if (error) throw error;
-      if (data) setMeasurements(data.map(m => ({
-        id: m.id, orderId: m.order_id, osNumber: m.os_number, clientName: m.client_name,
-        address: m.address, date: m.date, time: m.time, status: m.status as any
-      })) as Measurement[]);
-      setLoadingMeasurements(false);
-    });
-
-    await runner('Materials', async () => {
-      setLoadingMaterials(true);
-      const { data, error } = await supabase.from('materials').select('*').order('name');
-      if (error) throw error;
-      if (data) setMaterials(data.map(m => ({
-        ...m, 
-        unitCost: m.unit_cost || 0, 
-        minStock: m.min_stock || 0, 
-        stockQuantity: m.stock_quantity || 0,
-        registrationDate: m.registration_date, 
-        freightCost: m.freight_cost || 0, 
-        taxPercentage: m.tax_percentage || 0,
-        lossPercentage: m.loss_percentage || 0, 
-        profitMargin: m.profit_margin || 0, 
-        commissionPercentage: m.commission_percentage || 0,
-        discountPercentage: m.discount_percentage || 0, 
-        suggestedPrice: m.suggested_price || 0,
-        sellingPrice: m.selling_price || 0, 
-        dolarRate: m.dolar_rate || 1, 
-        euroRate: m.euro_rate || 1,
-        priceHistory: m.price_history || [], 
-        imageUrl: m.image_url, 
-        stockLocation: m.inventory_location,
-        m2PerUnit: m.m2_per_unit || 1,
-        status: m.status || 'ativo',
-        type: m.type || 'Matéria Prima',
-        name: m.name || 'Sem Nome',
-        code: m.code || 'S/C',
-        price: m.selling_price || 0,
-        stock: m.stock_quantity || 0
-      })) as Material[]);
-      setLoadingMaterials(false);
-    });
-
-    await runner('Architects', async () => {
-      setLoadingArchitects(true);
-      const { data, error } = await supabase.from('architects').select('*').order('trading_name');
-      if (error) throw error;
-      if (data) setArchitects(data.map(a => ({
-        ...a, legalName: a.legal_name, tradingName: a.trading_name, contactName: a.contact_name,
-        rgInsc: a.rg_insc, cellphone: a.cellphone, observations: a.observations,
-        code: a.architect_code, createdAt: a.created_at
-      })) as Architect[]);
-      setLoadingArchitects(false);
-    });
-
-    await runner('Sales', async () => {
-      setLoadingSales(true);
-      const { data, error } = await supabase.from('sales').select('*').order('order_number', { ascending: false });
-      if (error) throw error;
-      if (data) setSales(data.map(s => ({
-        ...s, orderNumber: s.order_number, clientName: s.client_name, totalValue: s.total,
-        createdAt: s.created_at, deliveryDeadline: s.delivery_date, seller: s.seller_name,
-        isOsGenerated: s.is_os_generated, observations: s.notes,
-        totals: { vendas: Number(s.subtotal), desconto: Number(s.discount), geral: Number(s.total) }
-      })) as SalesOrder[]);
-      setLoadingSales(false);
-    });
-
-    await runner('Staff', async () => {
-      const { data, error } = await supabase.from('production_staff').select('*').order('name');
-      if (error) {
-        console.error('Erro ao carregar staff:', error);
-        safeLoad('marmo_staff', setStaff);
-      } else if (data) {
-        setStaff(data.map(s => ({
-          id: s.id,
-          name: s.name,
-          position: s.position,
-          hourlyRate: s.hourly_rate,
-          phone: s.phone,
-          status: s.status,
-          createdAt: s.created_at
-        })));
-      }
-    });
-
-    await runner('SalesChannels', async () => {
-      const { data, error } = await supabase.from('sales_channels').select('*').order('name');
-      if (error) {
-        console.error('Erro ao carregar canais:', error);
-        safeLoad('marmo_sales_channels', setSalesChannels);
-      } else if (data) {
-        setSalesChannels(data.map(c => ({ 
-          id: c.id, 
-          name: c.name,
-          color: '#3B82F6' // Default color if missing in DB
-        } as SalesChannel)));
-      }
-    });
-
-    await runner('SalesPhases', async () => {
-      const { data, error } = await supabase.from('sales_phases').select('*').order('name');
-      if (error) {
-        console.error('Erro ao carregar fases de venda:', error);
-        safeLoad('marmo_sales_phases', setSalesPhases);
-      } else if (data) {
-        setSalesPhases(data.map(p => ({ name: p.name })));
-      }
-    });
-
-    await runner('ProductionPhases', async () => {
-      const { data, error } = await supabase.from('production_phases').select('*');
-      if (error) {
-        console.error('Erro ao carregar fases de produção:', error);
-        safeLoad('marmo_phases', setPhases);
-      } else if (data && data.length > 0) {
-        setPhases(data.map(p => ({ 
-          name: p.name, 
-          description: '', 
-          isRequired: true, 
-          requiresResponsible: false 
-        })));
-      }
-    });
-
-    await runner('Transactions', async () => {
-      const { data, error } = await supabase.from('finance_transactions').select('*').order('date', { ascending: false });
-      if (error) {
-        console.error('Erro ao carregar transações:', error);
-        safeLoad('marmo_transactions', setTransactions);
-      } else if (data) {
-        setTransactions(data.map(t => ({
-          id: t.id,
-          description: t.description,
-          value: Number(t.amount), // Correct mapping to 'value'
-          type: (t.type === 'revenue' ? 'receita' : 'despesa') as 'receita' | 'despesa', // Align with types.ts
-          category: t.category,
-          date: t.date,
-          status: t.status === 'completed' ? 'pago' : 'pendente' // Align with types.ts
-        })));
-      }
-    });
-
-    await runner('Activities', async () => {
-      setLoadingActivities(true);
-      const { data, error } = await supabase.from('activity_logs').select('*').order('created_at', { ascending: false }).limit(100);
-      if (error) throw error;
-      if (data)      setActivities(data.map(l => ({ 
-        id: l.id, 
-        timestamp: l.created_at, 
-        userName: l.user_name, 
-        type: l.type as any, 
-        action: l.type as any, // Alias for legacy code
-        description: l.message, 
-        details: l.message, // Alias for legacy code
-        orderId: l.reference_id 
-      })) as ActivityLog[]);
-      setLoadingActivities(false);
-    });
-
-    console.log('--- Orquestração de Dados Concluída ---');
-  };
-
-  useEffect(() => {
-    if (user?.id) {
-      refreshAppData();
-    }
-  }, [user?.id]);
-
-  // Fetch initial data from Supabase for Orders
-  useEffect(() => {
-    if (!user) return;
-
-    const fetchOrders = async () => {
-      setLoadingOrders(true);
-      try {
-        const { data, error } = await supabase
-          .from('orders_service')
-          .select('*')
-          .order('os_number', { ascending: false });
-        
-        if (error) throw error;
-        if (data) {
-          const mapped = data.map(o => ({
-            ...o,
-            osNumber: o.os_number,
-            orderNumber: o.order_number,
-            clientName: o.client_name,
-            projectDescription: o.project_description,
-            materialArea: o.material_area,
-            clientId: o.client_id,
-            architectId: o.architect_id,
-            architectName: o.architect_name,
-            totalValue: o.total_value,
-            remainingValue: o.remaining_value,
-            imageUrls: o.image_urls,
-            phaseHistory: o.phase_history,
-            responsibleStaffName: o.responsible_staff_name,
-            salesChannel: o.sales_channel,
-            salesPhase: o.sales_phase,
-            isOsGenerated: o.is_os_generated,
-            discountValue: o.discount_value,
-            discountPercentage: o.discount_percentage,
-            paymentConditions: o.payment_conditions,
-            deliveryDeadline: o.delivery_deadline,
-            lostReason: o.lost_reason,
-            lostDetails: o.lost_details,
-            createdAt: o.created_at
-          }));
-          setOrders(mapped as OrderService[]);
-        }
-      } catch (err) {
-        console.error('Erro ao carregar ordens de serviço do Supabase:', err);
-        const saved = localStorage.getItem('marmo_orders');
-        if (saved) setOrders(JSON.parse(saved));
-      } finally {
-        setLoadingOrders(false);
-      }
-    };
-
-    fetchOrders();
-  }, []);
-
-  const handleSaveOrder = async (o: OrderService) => {
-    try {
-      const payload = {
-        id: o.id.length > 20 ? o.id : undefined,
-        os_number: o.osNumber,
-        order_number: o.orderNumber,
-        client_name: o.clientName,
-        project_description: o.projectDescription,
-        material: o.material,
-        material_area: o.materialArea,
-        phase: o.phase,
-        seller: o.seller,
-        deadline: o.deadline,
-        priority: o.priority,
-        client_id: o.clientId,
-        architect_id: o.architectId,
-        architect_name: o.architectName,
-        total_value: o.totalValue,
-        remaining_value: o.remainingValue,
-        observations: o.observations,
-        internal_observations: o.internalObservations,
-        image_urls: o.imageUrls,
-        items: o.items,
-        payments: o.payments,
-        logs: o.logs,
-        phase_history: o.phaseHistory,
-        responsible_staff_name: o.responsibleStaffName,
-        sales_channel: o.salesChannel,
-        sales_phase: o.salesPhase,
-        is_os_generated: o.isOsGenerated,
-        status: o.status,
-        discount_value: o.discountValue,
-        discount_percentage: o.discountPercentage,
-        payment_conditions: o.paymentConditions,
-        delivery_deadline: o.deliveryDeadline,
-        totals: o.totals,
-        lost_reason: o.lostReason,
-        lost_details: o.lostDetails
-      };
-
-      const { data, error } = await supabase
-        .from('orders_service')
-        .upsert(payload)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      const savedRow = data;
-      const savedOrder = {
-        ...savedRow,
-        osNumber: savedRow.os_number,
-        orderNumber: savedRow.order_number,
-        clientName: savedRow.client_name,
-        projectDescription: savedRow.project_description,
-        materialArea: savedRow.material_area,
-        clientId: savedRow.client_id,
-        architectId: savedRow.architect_id,
-        architectName: savedRow.architect_name,
-        totalValue: savedRow.total_value,
-        remainingValue: savedRow.remaining_value,
-        imageUrls: savedRow.image_urls,
-        phaseHistory: savedRow.phase_history,
-        responsibleStaffName: savedRow.responsible_staff_name,
-        salesChannel: savedRow.sales_channel,
-        salesPhase: savedRow.sales_phase,
-        isOsGenerated: savedRow.is_os_generated,
-        discountValue: savedRow.discount_value,
-        discountPercentage: savedRow.discount_percentage,
-        paymentConditions: savedRow.payment_conditions,
-        deliveryDeadline: savedRow.delivery_deadline,
-        lostReason: savedRow.lost_reason,
-        lost_details: savedRow.lost_details,
-        createdAt: savedRow.created_at
-      } as OrderService;
-      
-      setOrders(prev => {
-        const exists = prev.find(x => x.id === o.id || x.id === savedOrder.id);
-        if (exists) return prev.map(x => (x.id === o.id || x.id === savedOrder.id) ? savedOrder : x);
-        return [savedOrder, ...prev];
-      });
-
-      logActivity(
-        orders.find(x => x.id === o.id) ? 'update' : 'create', 
-        `${orders.find(x => x.id === o.id) ? 'Atualizou' : 'Iniciou'} produção da OS: ${o.osNumber}`, 
-        savedOrder.id, 
-        o.osNumber
-      );
-
-    } catch (err) {
-      console.error('Erro ao salvar ordem de serviço:', err);
-      alert('Erro ao salvar ordem de serviço no banco de dados.');
-    }
-  };
-  const [phases, setPhases] = useState<PhaseConfig[]>(() => {
-    try {
-      const saved = localStorage.getItem('marmo_phases');
-      return saved ? (JSON.parse(saved) || INITIAL_PHASES) : INITIAL_PHASES;
-    } catch {
-      return INITIAL_PHASES;
-    }
-  });
+  const [phases, setPhases] = useState<PhaseConfig[]>(INITIAL_PHASES);
   const [appUsers, setAppUsers] = useState<AppUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
-
-  // Profiles será buscado no orquestrador central
-  const [staff, setStaff] = useState<ProductionStaff[]>(() => {
-    try {
-      const saved = localStorage.getItem('marmo_staff');
-      return saved ? (JSON.parse(saved) || INITIAL_STAFF) : INITIAL_STAFF;
-    } catch {
-      return INITIAL_STAFF;
-    }
-  });
+  const [staff, setStaff] = useState<ProductionStaff[]>(INITIAL_STAFF);
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [loadingActivities, setLoadingActivities] = useState(true);
-
-  // Activities será buscado no orquestrador central
   const [brands, setBrands] = useState<Brand[]>([]);
   const [loadingBrands, setLoadingBrands] = useState(true);
   const [productGroups, setProductGroups] = useState<ProductGroup[]>([]);
@@ -686,8 +70,188 @@ const App: React.FC = () => {
   const [loadingServiceGroups, setLoadingServiceGroups] = useState(true);
   const [products, setProducts] = useState<ProductService[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [loadingSuppliers, setLoadingSuppliers] = useState(true);
+  const [architects, setArchitects] = useState<Architect[]>([]);
+  const [loadingArchitects, setLoadingArchitects] = useState(true);
+  const [sales, setSales] = useState<SalesOrder[]>([]);
+  const [loadingSales, setLoadingSales] = useState(true);
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [loadingMaterials, setLoadingMaterials] = useState(true);
+  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+  const [loadingDeliveries, setLoadingDeliveries] = useState(true);
+  const [measurements, setMeasurements] = useState<Measurement[]>([]);
+  const [loadingMeasurements, setLoadingMeasurements] = useState(true);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loadingClients, setLoadingClients] = useState(true);
+  const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
+  const [salesChannels, setSalesChannels] = useState<SalesChannel[]>([]);
+  const [salesPhases, setSalesPhases] = useState<SalesPhaseConfig[]>([]);
+  const [staffLocations, setStaffLocations] = useState<Record<string, DriverStatus>>({});
+  const [exchangeRates, setExchangeRates] = useState<ExchangeRates>({ usd: 0, eur: 0, lastUpdate: '--:--' });
+  
+  const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
+    name: 'Tok de Art',
+    document: '14.092.404/0001-67',
+    address: 'Rua Américo Brasiliense, 1853 - Vila Seixas - Ribeirão Preto - SP',
+    phone: '(16) 3636-0114',
+    email: 'vendas@tokdeart.com.br',
+    logoUrl: '',
+    lostReasonOptions: ['Tinha preço menor', 'Prazo de entrega melhor', 'Desistiu de fazer', 'Não aprovaram o material', 'Distância da obra'],
+    buttonColor: '#ec5b13',
+    sidebarColor: '#0f172a',
+    sidebarTextColor: '#cbd5e1'
+  });
 
-  // Products será buscado no orquestrador central
+  const validateUUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+  // 2. Efeitos de Autenticação
+  useEffect(() => {
+    const timeoutId = setTimeout(() => setLoadingSession(false), 10000);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session) {
+        try {
+          const { data, error } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+          if (data) {
+            console.log('[Auth] Perfil carregado com sucesso:', data.name, data.role);
+            setUser({
+              id: data.id, name: data.name, role: data.role as any, email: session.user.email || '',
+              status: 'ativo', createdAt: data.created_at, isMaster: data.is_master, avatarUrl: data.avatar_url
+            });
+            setAuthError(null);
+          } else if (error && error.code === 'PGRST116') {
+            console.error('[Auth] Perfil não encontrado para o ID:', session.user.id);
+            setAuthError('Perfil não encontrado.');
+          }
+        } catch (err) { console.error('Erro ao buscar perfil:', err); }
+      } else {
+        setUser(null);
+      }
+      setLoadingSession(false);
+    });
+    return () => { clearTimeout(timeoutId); subscription.unsubscribe(); };
+  }, []);
+
+  // 3. Orquestrador de Dados
+  const refreshAppData = async () => {
+    if (!user) return;
+    const runner = async (name: string, fn: () => Promise<void>) => {
+      try { 
+        console.log(`[Fetch] Carregando ${name}...`);
+        await fn(); 
+      }
+      catch (err) { console.error(`Erro em ${name}:`, err); }
+    };
+
+    await runner('CompanyInfo', async () => {
+      const { data } = await supabase.from('company_info').select('*').single();
+      if (data) setCompanyInfo({
+        name: data.name, document: data.document, address: data.address, phone: data.phone, email: data.email,
+        logoUrl: data.logo_url, lostReasonOptions: data.lost_reason_options || [],
+        buttonColor: data.button_color, sidebarColor: data.sidebar_color, sidebarTextColor: data.sidebar_text_color
+      });
+    });
+
+    await runner('Orders', async () => {
+      const { data } = await supabase.from('orders_service').select('*').order('os_number', { ascending: false });
+      if (data) setOrders(data.map(o => ({
+        ...o, osNumber: o.os_number, orderNumber: o.order_number, clientName: o.client_name,
+        totalValue: Number(o.total_value), phaseHistory: o.phase_history || []
+      })) as OrderService[]);
+      setLoadingOrders(false);
+    });
+
+    await runner('Profiles', async () => {
+      const { data } = await supabase.from('profiles').select('*').order('name');
+      if (data) setAppUsers(data.map(p => ({
+        id: p.id, name: p.name, role: p.role as any, email: '', status: 'ativo',
+        createdAt: p.created_at?.slice(0, 10), isMaster: p.is_master, avatarUrl: p.avatar_url
+      })));
+      setLoadingUsers(false);
+    });
+
+    await runner('Staff', async () => {
+      const { data } = await supabase.from('production_staff').select('*').order('name');
+      if (data) setStaff(data.map(s => ({ ...s, id: s.id, hourlyRate: s.hourly_rate })));
+    });
+
+    await runner('ProductionPhases', async () => {
+      const { data } = await supabase.from('production_phases').select('*');
+      if (data && data.length > 0) setPhases(data.map(p => ({ name: p.name, requiresResponsible: p.requires_responsible || false })));
+    });
+
+    await runner('Activities', async () => {
+      const { data } = await supabase.from('activity_logs').select('*').order('created_at', { ascending: false }).limit(100);
+      if (data) setActivities(data.map(l => ({
+        id: l.id, timestamp: l.created_at, userName: l.user_name, type: l.type as any,
+        action: l.type as any, description: l.message, details: l.message, orderId: l.reference_id
+      })));
+      setLoadingActivities(false);
+    });
+
+    await runner('Clients', async () => {
+      // Aumentamos o limite para 5000 e ordenamos por data decrescente para garantir que os NOVOS apareçam
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5000);
+
+      if (error) console.error('[Runner] Erro crítico ao buscar clientes:', error);
+      if (data) {
+        console.log(`[Runner] ${data.length} clientes carregados do Supabase.`);
+        setClients(data.map(c => {
+          let addr = c.address;
+          if (typeof addr === 'string') {
+            try { addr = JSON.parse(addr); } catch { addr = null; }
+          }
+          let dAddr = c.delivery_address;
+          if (typeof dAddr === 'string') {
+            try { dAddr = JSON.parse(dAddr); } catch { dAddr = null; }
+          }
+          return {
+            ...c, 
+            address: addr || { street: '', number: '', neighborhood: '', city: '', state: '', zipCode: '' },
+            deliveryAddress: dAddr || undefined,
+            code: c.client_code, 
+            rgInsc: c.rg_insc, 
+            cellphone: c.cellphone,
+            birthDate: c.birth_date, 
+            sellerName: c.seller_name, 
+            useSpecialTable: c.use_special_table
+          };
+        }) as Client[]);
+      }
+      setLoadingClients(false);
+    });
+    
+    // ... outros runners conforme necessário
+  };
+
+  useEffect(() => { if (user?.id) refreshAppData(); }, [user?.id]);
+
+  // 4. Handlers Principais
+  const handleSaveOrder = async (o: OrderService) => {
+    try {
+      const payload = {
+        id: o.id.length > 20 ? o.id : undefined,
+        os_number: o.osNumber, order_number: o.orderNumber, client_name: o.clientName,
+        project_description: o.projectDescription, material: o.material, material_area: o.materialArea,
+        phase: o.phase, priority: o.priority, total_value: o.totalValue, items: o.items,
+        phase_history: o.phaseHistory, responsible_staff_name: o.responsibleStaffName,
+        status: o.status
+      };
+      const { data, error } = await supabase.from('orders_service').upsert(payload).select().single();
+      if (error) throw error;
+      const saved = { ...data, osNumber: data.os_number, orderNumber: data.order_number, clientName: data.client_name, totalValue: data.total_value } as OrderService;
+      setOrders(prev => {
+        const exists = prev.find(x => x.id === o.id || x.id === saved.id);
+        return exists ? prev.map(x => (x.id === o.id || x.id === saved.id) ? saved : x) : [saved, ...prev];
+      });
+      logActivity(orders.find(x => x.id === o.id) ? 'update' : 'create', `Atualizou produção OS: ${o.osNumber}`, saved.id, o.osNumber);
+    } catch (err) { console.error('Erro ao salvar OS:', err); }
+  };
+
 
   const handleSaveProduct = async (p: ProductService) => {
     try {
@@ -724,40 +288,6 @@ const App: React.FC = () => {
       alert('Erro ao salvar produto no banco de dados.');
     }
   };
-  const [companyInfo, setCompanyInfo] = useState<CompanyInfo>(() => {
-    const defaultData = {
-      name: 'Tok de Art',
-      document: '14.092.404/0001-67',
-      address: 'Rua Américo Brasiliense, 1853 - Vila Seixas - Ribeirão Preto - SP',
-      phone: '(16) 3636-0114',
-      email: 'vendas@tokdeart.com.br',
-      logoUrl: '',
-      lostReasonOptions: ['Tinha preço menor', 'Prazo de entrega melhor', 'Desistiu de fazer', 'Não aprovaram o material', 'Distância da obra'],
-      buttonColor: '#ec5b13',
-      sidebarColor: '#0f172a',
-      sidebarTextColor: '#cbd5e1'
-    };
-    try {
-      const saved = localStorage.getItem('marmo_company');
-      if (!saved) return defaultData;
-      const parsed = JSON.parse(saved) || {};
-      return { ...defaultData, ...parsed };
-    } catch {
-      return defaultData;
-    }
-  });
-
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [loadingSuppliers, setLoadingSuppliers] = useState(true);
-
-  const [architects, setArchitects] = useState<Architect[]>([]);
-  const [loadingArchitects, setLoadingArchitects] = useState(true);
-
-  const [sales, setSales] = useState<SalesOrder[]>([]);
-  const [loadingSales, setLoadingSales] = useState(true);
-
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const [loadingMaterials, setLoadingMaterials] = useState(true);
 
   // Inject theme colors into CSS variables
   useEffect(() => {
@@ -767,7 +297,6 @@ const App: React.FC = () => {
     root.style.setProperty('--sidebar-bg', companyInfo.sidebarColor || '#0f172a');
     root.style.setProperty('--sidebar-text', companyInfo.sidebarTextColor || '#cbd5e1');
 
-    // Simple helper to generate a darker version for secondary/hover states
     const darken = (hex: string, percent: number) => {
       const num = parseInt(hex.replace('#', ''), 16),
         amt = Math.round(2.55 * percent),
@@ -779,21 +308,7 @@ const App: React.FC = () => {
     
     root.style.setProperty('--secondary-color', darken(primary, 10));
   }, [companyInfo]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [currentView, setCurrentView] = useState<View>('Clientes');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
-  const [loadingDeliveries, setLoadingDeliveries] = useState(true);
 
-  const [measurements, setMeasurements] = useState<Measurement[]>([]);
-  const [loadingMeasurements, setLoadingMeasurements] = useState(true);
-
-  // Deliveries será buscado no orquestrador central
-  const [clients, setClients] = useState<Client[]>([]);
-  const [loadingClients, setLoadingClients] = useState(true);
-
-  // Clients será buscado no orquestrador central
 
   // Real-time location sharing for Medidor
   useEffect(() => {
@@ -846,8 +361,7 @@ const App: React.FC = () => {
     };
   }, [user]);
 
-  // Real-time location fetching for Admin/Manager
-  const [staffLocations, setStaffLocations] = useState<Record<string, DriverStatus>>({});
+
 
   useEffect(() => {
     if (user?.role !== 'admin' && user?.role !== 'manager') return;
@@ -894,6 +408,7 @@ const App: React.FC = () => {
           email: c.email,
           phone: c.phone,
           address: c.address,
+          delivery_address: c.deliveryAddress,
           client_code: c.code,
           rg_insc: c.rgInsc,
           cellphone: c.cellphone,
@@ -904,13 +419,28 @@ const App: React.FC = () => {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('[SaveClient] Erro crítico no Upsert:', error);
+        throw error;
+      }
+      
       const saved = data as Client;
+      console.log('[SaveClient] Cliente persistido com sucesso ID:', saved.id);
       
       setClients(prev => {
         const exists = prev.find(x => x.id === c.id || (saved.id && x.id === saved.id));
+        let addr = saved.address;
+        if (typeof addr === 'string') {
+          try { addr = JSON.parse(addr); } catch { addr = null; }
+        }
+        let dAddr = (saved as any).delivery_address;
+        if (typeof dAddr === 'string') {
+          try { dAddr = JSON.parse(dAddr); } catch { dAddr = null; }
+        }
         const mappedSaved = { 
           ...saved, 
+          address: addr || { street: '', number: '', neighborhood: '', city: '', state: '', zipCode: '' },
+          deliveryAddress: dAddr || undefined,
           code: (saved as any).client_code,
           rgInsc: (saved as any).rg_insc,
           cellphone: (saved as any).cellphone,
@@ -1492,131 +1022,9 @@ const App: React.FC = () => {
     }
   };
 
-  const handleMigrateLocalData = async () => {
-    if (!user) return;
-    try {
-      console.log('[Migration] Iniciando migração manual de dados locais...');
-      
-      const migrate = async (key: string, table: string, mapFn: (item: any) => any) => {
-        const localData = localStorage.getItem(key);
-        if (localData) {
-          const parsed = JSON.parse(localData);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            console.log(`[Migration] Migrando ${parsed.length} itens da chave ${key} para tabela ${table}...`);
-            const payload = parsed.map(mapFn);
-            const { error } = await supabase.from(table).upsert(payload);
-            if (error) console.error(`[Migration] Erro ao migrar ${table}:`, error);
-          }
-        }
-      };
 
-      await migrate('marmo_staff', 'production_staff', (s: ProductionStaff) => ({
-        id: validateUUID(s.id) ? s.id : undefined,
-        name: s.name,
-        position: s.position,
-        hourly_rate: s.hourlyRate,
-        phone: s.phone,
-        status: s.status
-      }));
 
-      await migrate('marmo_brands', 'brands', (b: any) => ({
-        id: validateUUID(b.id) ? b.id : undefined,
-        name: b.description || b.name
-      }));
 
-      await migrate('marmo_product_groups', 'product_groups', (g: any) => ({
-        id: validateUUID(g.id) ? g.id : undefined,
-        code: g.code,
-        description: g.description
-      }));
-
-      await migrate('marmo_service_groups', 'service_groups', (g: any) => ({
-        id: validateUUID(g.id) ? g.id : undefined,
-        code: g.code,
-        description: g.description
-      }));
-
-      await migrate('marmo_sales_channels', 'sales_channels', (c: any) => ({
-        id: validateUUID(c.id) ? c.id : undefined,
-        name: c.name,
-        color: c.color || '#3B82F6'
-      }));
-
-      await migrate('marmo_sales_phases', 'sales_phases', (p: any) => ({
-        name: p.name
-      }));
-
-      await migrate('marmo_transactions', 'finance_transactions', (t: FinanceTransaction) => ({
-        id: validateUUID(t.id) ? t.id : undefined,
-        description: t.description,
-        amount: t.value,
-        type: t.type === 'receita' ? 'revenue' : 'expense',
-        category: t.category,
-        date: t.date,
-        status: t.status === 'pago' ? 'completed' : 'pending'
-      }));
-
-      alert('Migração concluída com sucesso! Os dados foram enviados para o Supabase.');
-      refreshAppData();
-    } catch (err) {
-      console.error('Erro na migração:', err);
-      alert('Erro inesperado durante a migração. Verifique o console.');
-    }
-  };
-
-  const [transactions, setTransactions] = useState<FinanceTransaction[]>(() => {
-    try {
-      const saved = localStorage.getItem('marmo_transactions');
-      return saved ? (JSON.parse(saved) || []) : [
-        { id: '1', value: 5000, description: 'Venda O.S. #1234', category: 'Vendas', date: '2024-03-10', type: 'receita', status: 'pago' }
-      ];
-    } catch {
-      return [];
-    }
-  });
-
-  useEffect(() => {
-    localStorage.setItem('keepgoing_sales', JSON.stringify(sales));
-  }, [sales]);
-
-  const [salesChannels, setSalesChannels] = useState<SalesChannel[]>(() => {
-    try {
-      const saved = localStorage.getItem('marmo_sales_channels');
-      return saved ? (JSON.parse(saved) || []) : [
-        { id: '1', name: 'Google', createdAt: new Date().toISOString() },
-        { id: '2', name: 'Indicação', createdAt: new Date().toISOString() },
-        { id: '3', name: 'Instagram', createdAt: new Date().toISOString() },
-        { id: '4', name: 'Showroom', createdAt: new Date().toISOString() }
-      ];
-    } catch {
-      return [];
-    }
-  });
-
-  useEffect(() => {
-    localStorage.setItem('marmo_sales_channels', JSON.stringify(salesChannels));
-  }, [salesChannels]);
-
-  const [salesPhases, setSalesPhases] = useState<SalesPhaseConfig[]>(() => {
-    const defaultPhases = [
-      { name: 'Oportunidade' },
-      { name: 'Orçamento' },
-      { name: 'Negociação' },
-      { name: 'Pedido/Ganho' }
-    ];
-    try {
-      const saved = localStorage.getItem('marmo_sales_phases');
-      if (!saved) return defaultPhases;
-      const parsed = JSON.parse(saved);
-      return (parsed && parsed.length > 0) ? parsed : defaultPhases;
-    } catch {
-      return defaultPhases;
-    }
-  });
-
-  useEffect(() => {
-    localStorage.setItem('marmo_sales_phases', JSON.stringify(salesPhases));
-  }, [salesPhases]);
   const handleUpdateCompany = async (info: CompanyInfo) => {
     setCompanyInfo(info);
     try {
@@ -1694,7 +1102,7 @@ const App: React.FC = () => {
     }
   };
   
-  const [exchangeRates, setExchangeRates] = useState<ExchangeRates>({ usd: 0, eur: 0, lastUpdate: '--:--' });
+
 
   useEffect(() => {
     const fetchRates = async () => {
@@ -1770,29 +1178,29 @@ const App: React.FC = () => {
     { id: '43', code: '43', description: 'TUMULO' }
   ];
 
-  // Efeito principal de startup do app
   useEffect(() => {
-    safeLoad('marmo_company', setCompanyInfo);
-    safeLoad('marmo_activities', setActivities);
-    safeLoad('marmo_products', setProducts);
-    safeLoad('marmo_orders', setOrders);
-    safeLoad('marmo_app_users', setAppUsers);
-    safeLoad('keepgoing_sales', setSales);
-    safeLoad('marmo_deliveries', setDeliveries);
-    safeLoad('marmo_measurements', setMeasurements);
-    safeLoad('marmo_architects', setArchitects);
-    safeLoad('marmo_brands', setBrands);
-    safeLoad('marmo_product_groups', setProductGroups);
-    safeLoad('marmo_service_groups', setServiceGroups);
-
     if (user?.id) {
-      refreshAppData(true);
+      console.log('--- Iniciando Sincronização de Dados via Realtime ---');
+      refreshAppData();
     }
 
+    // Otimização: Escutar apenas mudanças nas tabelas que realmente afetam a UI principal
+    // E usar um debounce simples (via tempo de resposta)
     const subscription = supabase
-      .channel('public:any')
-      .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
-        refreshAppData(false);
+      .channel('db-changes')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public' }, (payload) => {
+        console.log('[Realtime] Novo registro detectado:', payload.table);
+        refreshAppData();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public' }, (payload) => {
+        // Se for uma atualização de localização, não precisamos recarregar TUDO
+        if (payload.table === 'profiles' && (payload.new as any).last_lat) return;
+        console.log('[Realtime] Alteração detectada em:', payload.table);
+        refreshAppData();
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public' }, (payload) => {
+        console.log('[Realtime] Remoção detectada:', payload.table);
+        refreshAppData();
       })
       .subscribe();
 
@@ -1801,57 +1209,9 @@ const App: React.FC = () => {
     };
   }, [user?.id]);
 
-  useEffect(() => {
-    localStorage.setItem('marmo_phases', JSON.stringify(phases));
-  }, [phases]);
 
-  useEffect(() => {
-    localStorage.setItem('marmo_staff', JSON.stringify(staff));
-  }, [staff]);
 
-  useEffect(() => {
-    localStorage.setItem('marmo_activities', JSON.stringify(activities));
-  }, [activities]);
 
-  useEffect(() => {
-    localStorage.setItem('marmo_company', JSON.stringify(companyInfo));
-  }, [companyInfo]);
-
-  useEffect(() => {
-    localStorage.setItem('marmo_transactions', JSON.stringify(transactions));
-  }, [transactions]);
-
-  useEffect(() => {
-    localStorage.setItem('marmo_products', JSON.stringify(products));
-  }, [products]);
-
-  useEffect(() => {
-    localStorage.setItem('marmo_orders', JSON.stringify(orders));
-  }, [orders]);
-
-  useEffect(() => {
-    localStorage.setItem('marmo_app_users', JSON.stringify(appUsers));
-  }, [appUsers]);
-
-  useEffect(() => {
-    localStorage.setItem('marmo_brands', JSON.stringify(brands));
-  }, [brands]);
-
-  useEffect(() => {
-    localStorage.setItem('marmo_product_groups', JSON.stringify(productGroups));
-  }, [productGroups]);
-
-  useEffect(() => {
-    localStorage.setItem('marmo_service_groups', JSON.stringify(serviceGroups));
-  }, [serviceGroups]);
-
-  // Sync colors with CSS variables
-  useEffect(() => {
-    const root = document.documentElement;
-    root.style.setProperty('--primary-color', companyInfo.buttonColor || '#ec5b13');
-    root.style.setProperty('--sidebar-bg', companyInfo.sidebarColor || '#0f172a');
-    root.style.setProperty('--sidebar-text', companyInfo.sidebarTextColor || '#cbd5e1');
-  }, [companyInfo.buttonColor, companyInfo.sidebarColor, companyInfo.sidebarTextColor]);
 
   const logActivity = async (action: ActivityLog['action'], details: string, referenceId?: string, orderNumber?: string) => {
     if (!user) return;
@@ -1916,8 +1276,20 @@ const App: React.FC = () => {
     } catch (err) {
       console.error('Erro ao deslogar:', err);
     }
-    
-    // Limpeza de estado para evitar persistência de dados de um usuário para outro
+
+    // Limpeza seletiva do localStorage: remove tokens do Supabase (sb-*) e dados do app (marmo_*)
+    // Preserva dados de outras extensões/sites no mesmo navegador
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('sb-') || key.startsWith('marmo_'))) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    console.log(`[Logout] ${keysToRemove.length} chave(s) removida(s) do localStorage.`);
+
+    // Limpeza de estado React para evitar persistência de dados entre usuários
     setUser(null);
     setOrders([]);
     setDeliveries([]);
@@ -1929,7 +1301,6 @@ const App: React.FC = () => {
     setProducts([]);
     setAppUsers([]);
     
-    // Opcional: Recarregar a página para garantir um estado 100% limpo sem lock
     window.location.reload();
   };
 
@@ -2554,7 +1925,6 @@ const App: React.FC = () => {
             onUpdateCompany={handleUpdateCompany}
             onImportClients={handleImportClients}
             onImportMaterials={handleImportMaterials}
-            onMigrateData={handleMigrateLocalData}
           />
         );
       case 'Clientes':
@@ -2637,6 +2007,8 @@ const App: React.FC = () => {
         );
       case 'Financeiro':
         return <FinanceView transactions={transactions} onAddTransaction={onAddTransaction} onDeleteTransaction={onDeleteTransaction} />;
+      case 'Financeiro':
+        return <FinanceView transactions={transactions} onAddTransaction={onAddTransaction} onDeleteTransaction={onDeleteTransaction} />;
       case 'Fornecedores':
         return (
           <SuppliersView 
@@ -2683,7 +2055,6 @@ const App: React.FC = () => {
         user={user}
         exchangeRates={exchangeRates}
         onLogout={handleLogout}
-        onRefresh={refreshAppData}
       />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -2692,7 +2063,6 @@ const App: React.FC = () => {
           onLogout={handleLogout} 
           onSearch={setSearchQuery} 
           onToggleActivity={() => setIsHistoryOpen(!isHistoryOpen)} 
-          onRefresh={refreshAppData}
         />
         
         <RecentActivity 
@@ -2707,6 +2077,6 @@ const App: React.FC = () => {
       </div>
     </div>
   );
-};
+}
 
 export default App;
