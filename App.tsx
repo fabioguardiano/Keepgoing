@@ -190,17 +190,37 @@ function App() {
     });
 
     await runner('Clients', async () => {
-      // Aumentamos o limite para 5000 e ordenamos por data decrescente para garantir que os NOVOS apareçam
-      const { data, error } = await supabase
-        .from('clients')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5000);
-
-      if (error) console.error('[Runner] Erro crítico ao buscar clientes:', error);
-      if (data) {
-        console.log(`[Runner] ${data.length} clientes carregados do Supabase.`);
-        setClients(data.map(c => {
+      // Supabase limita a 1000 por query - buscar em lotes
+      const PAGE_SIZE = 1000;
+      let allClients: any[] = [];
+      let from = 0;
+      let hasMore = true;
+      
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('clients')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(from, from + PAGE_SIZE - 1);
+        
+        if (error) {
+          console.error('[Runner] Erro ao buscar clientes (page):', error);
+          break;
+        }
+        
+        if (data && data.length > 0) {
+          allClients = allClients.concat(data);
+          from += PAGE_SIZE;
+          hasMore = data.length === PAGE_SIZE;
+        } else {
+          hasMore = false;
+        }
+      }
+      
+      console.log(`[Runner] ${allClients.length} clientes carregados do Supabase (paginado).`);
+      
+      if (allClients.length > 0) {
+        setClients(allClients.map(c => {
           let addr = c.address;
           if (typeof addr === 'string') {
             try { addr = JSON.parse(addr); } catch { addr = null; }
