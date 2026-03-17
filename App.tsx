@@ -224,8 +224,123 @@ function App() {
       }
       setLoadingClients(false);
     });
-    
-    // ... outros runners conforme necessário
+    await runner('Suppliers', async () => {
+      const { data, error } = await supabase.from('suppliers').select('*').order('trading_name');
+      if (error) throw error;
+      if (data) setSuppliers(data.map(s => ({
+        ...s, legalName: s.legal_name, tradingName: s.trading_name, contactName: s.contact_name,
+        rgInsc: s.rg_insc, cellphone: s.cellphone, observations: s.observations,
+        code: s.supplier_code, createdAt: s.created_at
+      })) as Supplier[]);
+    });
+
+    await runner('Products', async () => {
+      const { data, error } = await supabase.from('products').select('*').order('name');
+      if (error) throw error;
+      if (data) setProducts(data.map(p => ({
+        ...p, description: p.name, type: p.category, sellingPrice: p.base_price, imageUrl: p.image_url
+      })) as ProductService[]);
+    });
+
+    await runner('Deliveries', async () => {
+      const { data, error } = await supabase.from('deliveries').select('*').order('date');
+      if (error) throw error;
+      if (data) setDeliveries(data.map(d => ({
+        id: d.id, orderId: d.order_id, osNumber: d.os_number, clientName: d.client_name,
+        address: d.address, date: d.date, time: d.time, status: d.status as any
+      })) as Delivery[]);
+    });
+
+    await runner('Measurements', async () => {
+      const { data, error } = await supabase.from('measurements').select('*').order('date');
+      if (error) throw error;
+      if (data) setMeasurements(data.map(m => ({
+        id: m.id, orderId: m.order_id, osNumber: m.os_number, clientName: m.client_name,
+        address: m.address, date: m.date, time: m.time, status: m.status as any
+      })) as Measurement[]);
+    });
+
+    await runner('Materials', async () => {
+      // Aumentamos o limite para materiais também, embora o usuário tenha ~434 no momento
+      const { data, error } = await supabase.from('materials').select('*').order('name');
+      if (error) throw error;
+      if (data) setMaterials(data.map(m => ({
+        ...m, 
+        unitCost: m.unit_cost || 0, 
+        minStock: m.min_stock || 0, 
+        stockQuantity: m.stock_quantity || 0,
+        registrationDate: m.registration_date, 
+        freightCost: m.freight_cost || 0, 
+        taxPercentage: m.tax_percentage || 0,
+        lossPercentage: m.loss_percentage || 0, 
+        profitMargin: m.profit_margin || 0, 
+        commissionPercentage: m.commission_percentage || 0,
+        discountPercentage: m.discount_percentage || 0, 
+        suggestedPrice: m.suggested_price || 0,
+        sellingPrice: m.selling_price || 0, 
+        dolarRate: m.dolar_rate || 1, 
+        euroRate: m.euro_rate || 1,
+        priceHistory: m.price_history || [], 
+        imageUrl: m.image_url, 
+        stockLocation: m.inventory_location,
+        m2PerUnit: m.m2_per_unit || 1,
+        status: m.status || 'ativo',
+        type: m.type || 'Matéria Prima',
+        name: m.name || 'Sem Nome',
+        code: m.code || 'S/C',
+        price: m.selling_price || 0,
+        stock: m.stock_quantity || 0
+      })) as Material[]);
+    });
+
+    await runner('Architects', async () => {
+      const { data, error } = await supabase.from('architects').select('*').order('trading_name');
+      if (error) throw error;
+      if (data) setArchitects(data.map(a => ({
+        ...a, legalName: a.legal_name, tradingName: a.trading_name, contactName: a.contact_name,
+        rgInsc: a.rg_insc, cellphone: a.cellphone, observations: a.observations,
+        code: a.architect_code, createdAt: a.created_at
+      })) as Architect[]);
+    });
+
+    await runner('Sales', async () => {
+      const { data, error } = await supabase.from('sales').select('*').order('order_number', { ascending: false });
+      if (error) throw error;
+      if (data) setSales(data.map(s => ({
+        ...s, orderNumber: s.order_number, clientName: s.client_name, totalValue: s.total,
+        createdAt: s.created_at, deliveryDeadline: s.delivery_date, seller: s.seller_name,
+        isOsGenerated: s.is_os_generated, observations: s.notes,
+        totals: { vendas: Number(s.subtotal), desconto: Number(s.discount), geral: Number(s.total) }
+      })) as SalesOrder[]);
+    });
+
+    await runner('SalesChannels', async () => {
+      const { data, error } = await supabase.from('sales_channels').select('*').order('name');
+      if (error) throw error;
+      if (data) setSalesChannels(data.map(c => ({ id: c.id, name: c.name, color: '#3B82F6' } as SalesChannel)));
+    });
+
+    await runner('SalesPhases', async () => {
+      const { data, error } = await supabase.from('sales_phases').select('*').order('name');
+      if (error) throw error;
+      if (data) setSalesPhases(data.map(p => ({ name: p.name })));
+    });
+
+    await runner('Transactions', async () => {
+      const { data, error } = await supabase.from('finance_transactions').select('*').order('date', { ascending: false });
+      if (error) throw error;
+      if (data) setTransactions(data.map(t => ({
+        id: t.id,
+        description: t.description,
+        value: Number(t.amount),
+        type: (t.type === 'revenue' ? 'receita' : 'despesa') as 'receita' | 'despesa',
+        category: t.category,
+        date: t.date,
+        status: t.status === 'completed' ? 'pago' : 'pendente'
+      })));
+    });
+
+    console.log('--- Orquestração de Dados Concluída ---');
   };
 
   useEffect(() => { if (user?.id) refreshAppData(); }, [user?.id]);
