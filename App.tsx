@@ -205,20 +205,16 @@ function App() {
           if (typeof addr === 'string') {
             try { addr = JSON.parse(addr); } catch { addr = null; }
           }
-          let dAddr = c.delivery_address;
-          if (typeof dAddr === 'string') {
-            try { dAddr = JSON.parse(dAddr); } catch { dAddr = null; }
-          }
           return {
             ...c, 
             address: addr || { street: '', number: '', neighborhood: '', city: '', state: '', zipCode: '' },
-            deliveryAddress: dAddr || undefined,
             code: c.client_code, 
             rgInsc: c.rg_insc, 
             cellphone: c.cellphone,
             birthDate: c.birth_date, 
             sellerName: c.seller_name, 
-            useSpecialTable: c.use_special_table
+            useSpecialTable: c.use_special_table,
+            createdAt: c.created_at
           };
         }) as Client[]);
       }
@@ -1302,11 +1298,7 @@ function App() {
   ];
 
   useEffect(() => {
-    if (user?.id) {
-      console.log('--- Iniciando Sincronização de Dados via Realtime ---');
-      refreshAppData();
-    }
-
+    if (!user?.id) return;
     // Otimização: Escutar apenas mudanças nas tabelas que realmente afetam a UI principal
     // E usar um debounce simples (via tempo de resposta)
     const subscription = supabase
