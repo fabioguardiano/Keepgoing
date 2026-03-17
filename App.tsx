@@ -41,7 +41,14 @@ const INITIAL_STAFF: ProductionStaff[] = [
 ];
 
 const App: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>({
+    id: 'b4b1bee7-187e-4b1a-9c1a-1a2b3c4d5e6f',
+    name: 'Fábio Admin (Mock)',
+    email: 'fabio@marmoflow.com',
+    role: 'admin',
+    status: 'ativo',
+    createdAt: '2024-01-10'
+  });
   const [orders, setOrders] = useState<OrderService[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
 

@@ -41,7 +41,7 @@ const ResponsibleModal: React.FC<ResponsibleModalProps> = ({ staff, onSelect, on
         <div className="p-6 border-b bg-gray-50 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold text-gray-900">Atribuir Responsável</h2>
-            <p className="text-sm text-gray-500">Obrigatório para a fase: <span className="font-bold text-primary">{phaseName}</span></p>
+            <p className="text-sm text-gray-500">Obrigatório para a fase: <span className="font-bold text-[var(--primary-color)]">{phaseName}</span></p>
           </div>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg">
             <X size={20} />
@@ -55,9 +55,9 @@ const ResponsibleModal: React.FC<ResponsibleModalProps> = ({ staff, onSelect, on
               <button
                 key={s.id}
                 onClick={() => onSelect(s.name)}
-                className="w-full flex items-center gap-4 p-3 rounded-xl border border-slate-100 hover:border-primary hover:bg-primary/5 transition-all text-left group"
+                className="w-full flex items-center gap-4 p-3 rounded-xl border border-slate-100 hover:border-[var(--primary-color)] hover:bg-orange-50 transition-all text-left group"
               >
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
+                <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold shrink-0">
                   {s.name[0]}
                 </div>
                 <div>
@@ -230,7 +230,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                                     onClick={() => onTogglePhaseRequirement(phase.name)}
                                     className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2"
                                   >
-                                    <div className={`w-3 h-3 rounded border ${phase.requiresResponsible ? 'bg-primary border-primary' : 'border-slate-300'} flex items-center justify-center`}>
+                                    <div className={`w-3 h-3 rounded border ${phase.requiresResponsible ? 'bg-[var(--primary-color)] border-[var(--primary-color)]' : 'border-slate-300'} flex items-center justify-center`}>
                                       {phase.requiresResponsible && <Check size={10} className="text-white" />}
                                     </div>
                                     Exigir Responsável
@@ -299,12 +299,12 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                       onChange={(e) => setNewPhaseName(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleAddNewPhase()}
                       placeholder="Nome da fase..."
-                      className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg px-3 py-2 text-sm mb-3 focus:ring-1 focus:ring-primary"
+                      className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg px-3 py-2 text-sm mb-3 focus:ring-1 focus:ring-[var(--primary-color)]"
                     />
                     <div className="flex gap-2">
                       <button
                         onClick={handleAddNewPhase}
-                        className="flex-1 bg-primary text-white text-xs font-bold py-2 rounded-lg hover:opacity-90 transition-colors"
+                        className="flex-1 bg-[var(--primary-color)] text-white text-xs font-bold py-2 rounded-lg hover:opacity-90 transition-colors"
                       >
                         Adicionar
                       </button>

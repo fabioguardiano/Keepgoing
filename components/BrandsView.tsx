@@ -44,7 +44,7 @@ export const BrandsView: React.FC<BrandsViewProps> = ({ brands, onSaveBrand, onD
     b.code.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const inputClass = "w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all";
+  const inputClass = "w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#ec5b13]/20 focus:border-[#ec5b13] transition-all";
   const labelClass = "block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 ml-1";
 
   return (
@@ -52,7 +52,7 @@ export const BrandsView: React.FC<BrandsViewProps> = ({ brands, onSaveBrand, onD
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-            <Diamond className="text-primary" />
+            <Diamond className="text-[#ec5b13]" />
             Cadastro de Marcas
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm">Gerencie as marcas disponíveis no sistema</p>
@@ -66,7 +66,7 @@ export const BrandsView: React.FC<BrandsViewProps> = ({ brands, onSaveBrand, onD
             setFormData({ code: nextCode, description: '' });
             setIsModalOpen(true);
           }}
-          className="bg-primary hover:bg-secondary text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/20 active:scale-95"
+          className="bg-[#ec5b13] hover:bg-[#d84a0d] text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#ec5b13]/20 active:scale-95"
         >
           <Plus size={20} />
           Nova Marca
@@ -80,7 +80,7 @@ export const BrandsView: React.FC<BrandsViewProps> = ({ brands, onSaveBrand, onD
             <input
               type="text"
               placeholder="Buscar por código ou descrição..."
-              className="w-full pl-12 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/20 transition-all"
+              className="w-full pl-12 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl text-sm focus:ring-2 focus:ring-[#ec5b13]/20 transition-all"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -104,7 +104,7 @@ export const BrandsView: React.FC<BrandsViewProps> = ({ brands, onSaveBrand, onD
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {filteredBrands.map((brand) => (
                 <tr key={brand.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
-                  <td className="px-6 py-4 font-mono text-sm text-primary font-bold">{brand.code}</td>
+                  <td className="px-6 py-4 font-mono text-sm text-[#ec5b13] font-bold">{brand.code}</td>
                   <td className="px-6 py-4">
                     <span className="text-slate-900 dark:text-white font-medium">{brand.description}</span>
                   </td>
@@ -115,7 +115,7 @@ export const BrandsView: React.FC<BrandsViewProps> = ({ brands, onSaveBrand, onD
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => handleEdit(brand)}
-                        className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
+                        className="p-2 text-slate-400 hover:text-[#ec5b13] hover:bg-[#ec5b13]/10 rounded-lg transition-all"
                       >
                         <Edit2 size={16} />
                       </button>
@@ -195,7 +195,7 @@ export const BrandsView: React.FC<BrandsViewProps> = ({ brands, onSaveBrand, onD
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-3 bg-primary hover:bg-secondary text-white rounded-xl font-bold shadow-lg shadow-primary/20 transition-all active:scale-95"
+                  className="flex-1 px-6 py-3 bg-[#ec5b13] hover:bg-[#d84a0d] text-white rounded-xl font-bold shadow-lg shadow-[#ec5b13]/20 transition-all active:scale-95"
                 >
                   Salvar Marca
                 </button>

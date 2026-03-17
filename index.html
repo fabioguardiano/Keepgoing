@@ -5,48 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>KeepGoing - Smart Application</title>
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#ec5b13">
-  <link rel="apple-touch-icon" href="/icons/icon-512.png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script>
-    // Script de Emergência para Tela Branca
-    (function() {
-      // Se houver o parâmetro forceUpdate, limpa tudo imediatamente
-      if (window.location.search.includes('forceUpdate=true')) {
-        console.warn('ForceUpdate detectado. Limpando caches...');
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistrations().then(function(registrations) {
-            for(let registration of registrations) { registration.unregister(); }
-          });
-        }
-        if ('caches' in window) {
-          caches.keys().then(function(names) {
-            for (let name of names) caches.delete(name);
-          });
-        }
-        localStorage.clear();
-        window.location.href = window.location.pathname;
-        return;
-      }
-
-      // Verifica se o React montou após 8 segundos
-      setTimeout(function() {
-        var root = document.getElementById('root');
-        if (root && root.innerHTML === '') {
-          console.error('Tela branca detectada! Tentando autoreparo...');
-          if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-              for(let registration of registrations) { registration.unregister(); }
-              window.location.reload(true);
-            });
-          } else {
-            window.location.reload(true);
-          }
-        }
-      }, 8000);
-    })();
-  </script>
 </head>
 
 <body>

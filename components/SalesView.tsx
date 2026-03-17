@@ -100,35 +100,57 @@ export const SalesView: React.FC<SalesViewProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Vendas e Orçamentos</h1>
-          <p className="text-sm text-slate-500 font-medium">Gestão comercial e conversão de pedidos</p>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Vendas e Orçamentos</h1>
+          <p className="text-slate-500 font-medium">Gestão comercial e conversão de pedidos</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-xl flex">
+          <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl flex">
             <button 
               onClick={() => setViewMode('kanban')}
-              className={`p-2 rounded-lg transition-all ${viewMode === 'kanban' ? 'bg-white dark:bg-slate-700 shadow-sm text-[var(--primary-color)]' : 'text-slate-400'}`}
+              className={`p-2 rounded-xl transition-all ${viewMode === 'kanban' ? 'bg-white dark:bg-slate-700 shadow-sm text-[var(--primary-color)]' : 'text-slate-400'}`}
             >
-              <LayoutGrid size={18} />
+              <LayoutGrid size={20} />
             </button>
             <button 
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 shadow-sm text-[var(--primary-color)]' : 'text-slate-400'}`}
+              className={`p-2 rounded-xl transition-all ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 shadow-sm text-[var(--primary-color)]' : 'text-slate-400'}`}
             >
-              <List size={18} />
+              <List size={20} />
             </button>
           </div>
           <button 
             onClick={handleNewSale}
-            className="bg-[var(--primary-color)] text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-[var(--primary-color)]/20 hover:opacity-90 transition-all text-sm"
+            className="bg-[var(--primary-color)] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[var(--primary-color)]/20 hover:opacity-90 transition-all font-premium"
           >
-            <Plus size={18} /> Novo Orçamento
+            <Plus size={20} /> Novo Orçamento
           </button>
         </div>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center">
+          <Clock className="text-orange-400 mb-2" size={24} />
+          <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Orçamentos</span>
+          <p className="text-2xl font-black text-slate-800 dark:text-white">{sales.filter(s => s.status === 'Orçamento').length}</p>
+        </div>
+        <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center">
+          <CheckCircle2 className="text-green-500 mb-2" size={24} />
+          <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Confirmados</span>
+          <p className="text-2xl font-black text-slate-800 dark:text-white">{sales.filter(s => s.status === 'Confirmado' || s.status === 'Pedido').length}</p>
+        </div>
+        <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center">
+          <ShoppingBag className="text-blue-500 mb-2" size={24} />
+          <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Em Produção</span>
+          <p className="text-2xl font-black text-slate-800 dark:text-white">{sales.filter(s => s.status === 'Pedido' && s.phase !== 'Entregue').length}</p>
+        </div>
+        <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center">
+          <CheckCircle2 className="text-[var(--primary-color)] mb-2" size={24} />
+          <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Finalizados</span>
+          <p className="text-2xl font-black text-slate-800 dark:text-white">{sales.filter(s => s.status === 'Finalizado' || s.phase === 'Entregue').length}</p>
+        </div>
+      </div>
 
       {viewMode === 'list' ? (
         <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
@@ -251,11 +273,11 @@ export const SalesView: React.FC<SalesViewProps> = ({
           </div>
           <Droppable droppableId="board" type="column" direction="horizontal">
             {(provided) => (
-                <div 
-                  {...provided.droppableProps}
-                  ref={provided.innerRef}
-                  className="flex gap-3 overflow-x-auto pb-6 custom-scrollbar min-h-[600px] items-start"
-                >
+              <div 
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+                className="flex gap-6 overflow-x-auto pb-6 custom-scrollbar min-h-[600px] items-start"
+              >
                 {salesPhases.map((phaseConfig, index) => {
                   const phase = phaseConfig.name;
                   const isEditing = editingPhase === phase;
@@ -268,16 +290,15 @@ export const SalesView: React.FC<SalesViewProps> = ({
                         <div 
                           ref={provided.innerRef}
                           {...provided.draggableProps}
-                          className="flex-shrink-0 w-64 flex flex-col gap-4"
+                          className="flex-shrink-0 w-80 flex flex-col gap-4"
                         >
                           {/* Column Header */}
                           <div 
-                            className={`flex items-center justify-between mb-4 px-1 group/header transition-all ${snapshot.isDragging ? 'bg-white dark:bg-slate-800 shadow-xl ring-2 ring-[var(--primary-color)] rounded-xl p-2' : ''}`}
+                            {...provided.dragHandleProps}
+                            className={`flex items-center justify-between px-3 py-2 rounded-xl transition-all h-12 ${snapshot.isDragging ? 'bg-white shadow-xl ring-2 ring-[var(--primary-color)]' : 'bg-transparent group/header'}`}
                           >
                             <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <div {...provided.dragHandleProps} className="text-slate-300 hover:text-slate-400 cursor-grab active:cursor-grabbing shrink-0">
-                                <GripVertical size={16} />
-                              </div>
+                              <GripVertical size={14} className="text-slate-300 shrink-0" />
                               {isEditing ? (
                                 <div className="flex items-center gap-1 w-full bg-white dark:bg-slate-800 p-1 rounded-lg border border-[var(--primary-color)]">
                                   <input
@@ -310,12 +331,15 @@ export const SalesView: React.FC<SalesViewProps> = ({
                                         setEditingPhase(phase);
                                         setTempPhaseName(phase);
                                       }}
-                                      className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider truncate cursor-pointer hover:text-[var(--primary-color)] transition-colors"
+                                      className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate cursor-pointer hover:text-[var(--primary-color)] transition-colors leading-none mb-1"
                                     >
                                       {phase}
                                     </h3>
+                                    <span className="text-xs font-black text-slate-700 dark:text-slate-200 tabular-nums leading-none">
+                                      R$ {(phaseTotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </span>
                                   </div>
-                                  <span className="bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold px-2 py-0.5 rounded-full shrink-0">
+                                  <span className="bg-slate-100 dark:bg-slate-800 text-[10px] font-black px-2 py-1 rounded-md text-slate-500 min-w-[24px] text-center shrink-0">
                                     {phaseSales.length}
                                   </span>
                                 </>
@@ -352,11 +376,11 @@ export const SalesView: React.FC<SalesViewProps> = ({
                           
                           {/* Cards List */}
                           <Droppable droppableId={phase} type="card">
-                            {(providedCard, snapshotCard) => (
+                            {(provided, snapshot) => (
                               <div 
-                                {...providedCard.droppableProps}
-                                ref={providedCard.innerRef}
-                                className={`flex-1 flex flex-col gap-2 overflow-y-auto custom-scrollbar pr-2 pb-4 rounded-xl transition-colors ${snapshotCard.isDraggingOver ? 'bg-slate-200/50 dark:bg-slate-800/50' : 'bg-transparent'}`}
+                                {...provided.droppableProps}
+                                ref={provided.innerRef}
+                                className={`flex flex-col gap-3 min-h-[150px] p-2 rounded-2xl transition-colors ${snapshot.isDraggingOver ? 'bg-slate-100/50 dark:bg-slate-800/30' : 'bg-transparent'}`}
                               >
                                 {phaseSales.map((sale, cardIndex) => (
                                   <Draggable key={sale.id} draggableId={sale.id} index={cardIndex}>
@@ -426,7 +450,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
                                     )}
                                   </Draggable>
                                 ))}
-                                {providedCard.placeholder}
+                                {provided.placeholder}
                               </div>
                             )}
                           </Droppable>
@@ -438,7 +462,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
 
                 {/* New Column Column */}
                 {provided.placeholder}
-                <div className="flex-shrink-0 w-64 pt-12">
+                <div className="flex-shrink-0 w-80 pt-12">
                   {showNewPhaseInput ? (
                     <div className="bg-white dark:bg-slate-900 border border-[var(--primary-color)]/30 rounded-3xl p-6 shadow-xl animate-in fade-in zoom-in duration-200 ring-4 ring-orange-50 dark:ring-slate-800/50">
                       <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">

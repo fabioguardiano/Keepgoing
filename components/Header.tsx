@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Bell, LogOut, User as UserIcon, History, RefreshCcw } from 'lucide-react';
+import { Search, Bell, LogOut, User as UserIcon, History } from 'lucide-react';
 import { User } from '../types';
 
 interface HeaderProps {
@@ -31,7 +31,6 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onSearch, onTogg
       {/* Right Actions */}
       <div className="flex items-center gap-6">
 
-
         {/* Activity Toggle */}
         <button
           className="relative text-slate-500 hover:text-[var(--primary-color)] transition-colors p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
@@ -60,6 +59,31 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onSearch, onTogg
               </div>
             </div>
           )}
+        </div>
+
+        <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>
+
+        {/* User Profile Info */}
+        <div className="flex items-center gap-3">
+          <div className="text-right hidden sm:block">
+            <p className="text-sm font-bold leading-none dark:text-white">{user.name}</p>
+            <p className="text-xs text-slate-500 capitalize">{user.role === 'admin' ? 'Gerente Produção' : user.role}</p>
+          </div>
+
+          <div className="relative group cursor-pointer">
+            <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-[var(--primary-color)]/20 overflow-hidden flex items-center justify-center relative">
+              <UserIcon className="text-slate-500" />
+            </div>
+
+            <div className="absolute right-0 top-12 w-48 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-all z-50 py-2">
+              <button
+                onClick={onLogout}
+                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center gap-2 font-bold"
+              >
+                <LogOut className="w-4 h-4" /> Sair
+              </button>
+            </div>
+          </div>
         </div>
 
       </div>

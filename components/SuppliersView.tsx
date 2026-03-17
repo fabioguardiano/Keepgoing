@@ -86,7 +86,7 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
         </div>
         <button 
           onClick={handleAddNew}
-          className="bg-primary text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-secondary transition-all transform hover:scale-[1.02] active:scale-95"
+          className="bg-[#ec5b13] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[#ec5b13]/20 hover:bg-[#d84a0d] transition-all transform hover:scale-[1.02] active:scale-95"
         >
           <Plus size={20} /> Novo Fornecedor
         </button>

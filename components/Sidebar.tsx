@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Diamond, LayoutDashboard, Kanban, Package, BarChart3, Users, Settings, PlusCircle, MapPin, ShoppingBag, Wallet, Box, ChevronDown, ChevronRight, Truck, Briefcase, Wrench, TrendingUp, LogOut, RefreshCcw } from 'lucide-react';
+import { Diamond, LayoutDashboard, Kanban, Package, BarChart3, Users, Settings, PlusCircle, MapPin, ShoppingBag, Wallet, Box, ChevronDown, ChevronRight, Truck, Briefcase, Wrench, TrendingUp } from 'lucide-react';
 import { View, CompanyInfo } from '../types';
 
 interface SidebarProps {
@@ -8,9 +8,8 @@ interface SidebarProps {
   currentView: View;
   onViewChange: (view: View) => void;
   companyInfo: CompanyInfo;
-  user: any;
+  userRole: string;
   exchangeRates: { usd: number; eur: number; lastUpdate: string };
-  onLogout: () => void;
 }
 
 interface NavItem {
@@ -20,21 +19,8 @@ interface NavItem {
   subItems?: { label: string; view: View; icon: any }[];
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ 
-  isOpen, toggle, currentView, onViewChange, companyInfo, 
-  user, exchangeRates, onLogout
-}) => {
-  const userRole = user.role;
-  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
-
-  const roleLabels: Record<string, string> = {
-    admin: 'Administrador',
-    manager: 'Gerente',
-    seller: 'Vendedor',
-    medidor: 'Medidor',
-    driver: 'Motorista',
-    viewer: 'Visualizador'
-  };
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, onViewChange, companyInfo, userRole, exchangeRates }) => {
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(['Cadastros']);
 
   const toggleMenu = (label: string) => {
     setExpandedMenus(prev => 
@@ -57,7 +43,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { icon: LayoutDashboard, label: 'Produção', view: 'Produção' as View },
     { icon: Kanban, label: 'Ordens de Serviço', view: 'Ordens de Serviço' as View },
     { icon: MapPin, label: 'Agenda de Entregas', view: 'Agenda de Entregas' as View },
-    { icon: MapPin, label: 'Agenda de Medições', view: 'Agenda de Medições' as View },
     { 
       icon: Box, 
       label: 'Estoque / Acabamentos', 
@@ -85,9 +70,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ].filter(item => {
     if (userRole === 'driver') {
       return item.view === 'Agenda de Entregas';
-    }
-    if (userRole === 'medidor') {
-      return item.view === 'Agenda de Medições';
     }
     return true;
   });
@@ -199,39 +181,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      {/* User Profile Section */}
-      <div className={`p-4 border-t transition-all duration-300 ${isOpen ? 'opacity-100' : 'items-center'}`} style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
-        <div className={`flex items-center gap-3 ${!isOpen ? 'justify-center' : ''}`}>
-          <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 overflow-hidden flex items-center justify-center shrink-0 shadow-inner">
-            {user.avatarUrl ? (
-              <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full bg-[var(--primary-color)] flex items-center justify-center text-white font-bold text-xs">
-                {user.name ? user.name.trim().split(/\s+/).slice(0, 2).map((n: string) => n[0]).join('').toUpperCase() : '??'}
-              </div>
-            )}
-          </div>
-          {isOpen && (
-            <div className="flex-1 overflow-hidden">
-              <div className="flex items-center justify-between gap-1">
-                <div className="overflow-hidden">
-                  <p className="text-sm font-bold truncate leading-none mb-1">{user.name}</p>
-                  <p className="text-[10px] uppercase font-black opacity-40 truncate">{roleLabels[userRole] || userRole}</p>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button 
-                    onClick={onLogout}
-                    className="p-1.5 hover:bg-white/10 rounded-lg text-white/40 hover:text-red-400 transition-colors"
-                    title="Sair"
-                  >
-                    <LogOut size={16} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
     </aside>
   );
 };

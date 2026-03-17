@@ -23,9 +23,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-.vercel
-.env*.local
-scripts_sql/
-tsc_errors.txt
-build_output.txt
