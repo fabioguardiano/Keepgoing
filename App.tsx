@@ -350,23 +350,54 @@ function App() {
     try {
       const payload = {
         id: o.id.length > 20 ? o.id : undefined,
-        os_number: o.osNumber, order_number: o.orderNumber, client_name: o.clientName,
-        project_description: o.projectDescription, material: o.material, material_area: o.materialArea,
-        phase: o.phase, priority: o.priority, total_value: o.totalValue, items: o.items,
-        phase_history: o.phaseHistory, responsible_staff_name: o.responsibleStaffName,
+        os_number: o.osNumber, 
+        order_number: o.orderNumber, 
+        client_name: o.clientName,
+        project_description: o.projectDescription, 
+        material: o.material, 
+        material_area: o.materialArea,
+        phase: o.phase, 
+        priority: o.priority, 
+        total_value: o.totalValue, 
+        items: o.items,
+        phase_history: o.phaseHistory, 
+        responsible_staff_name: o.responsibleStaffName,
         status: o.status
       };
-      const { data, error } = await supabase.from('orders_service').upsert(payload).select().single();
+      
+      const { data, error } = await supabase
+        .from('orders_service')
+        .upsert(payload)
+        .select()
+        .single();
+        
       if (error) throw error;
-      const saved = { ...data, osNumber: data.os_number, orderNumber: data.order_number, clientName: data.client_name, totalValue: data.total_value } as OrderService;
+      
+      const saved = { 
+        ...data, 
+        osNumber: data.os_number, 
+        orderNumber: data.order_number, 
+        clientName: data.client_name, 
+        totalValue: data.total_value 
+      } as OrderService;
+      
       setOrders(prev => {
         const exists = prev.find(x => x.id === o.id || x.id === saved.id);
-        return exists ? prev.map(x => (x.id === o.id || x.id === saved.id) ? saved : x) : [saved, ...prev];
+        if (exists) return prev.map(x => (x.id === o.id || x.id === saved.id) ? saved : x);
+        return [saved, ...prev];
       });
-      logActivity(orders.find(x => x.id === o.id) ? 'update' : 'create', `Atualizou produção OS: ${o.osNumber}`, saved.id, o.osNumber);
-    } catch (err) { console.error('Erro ao salvar OS:', err); }
+      
+      logActivity(
+        orders.find(x => x.id === o.id) ? 'update' : 'create', 
+        `${orders.find(x => x.id === o.id) ? 'Atualizou' : 'Criou'} produção OS: ${o.osNumber}`, 
+        saved.id, 
+        o.osNumber
+      );
+    } catch (err) { 
+      console.error('Erro ao salvar OS:', err);
+      alert('Erro ao salvar Ordem de Serviço.');
+    }
   };
-
 
   const handleSaveProduct = async (p: ProductService) => {
     try {
@@ -523,7 +554,6 @@ function App() {
           email: c.email,
           phone: c.phone,
           address: c.address,
-          delivery_address: c.deliveryAddress,
           client_code: c.code,
           rg_insc: c.rgInsc,
           cellphone: c.cellphone,
@@ -534,28 +564,13 @@ function App() {
         .select()
         .single();
       
-      if (error) {
-        console.error('[SaveClient] Erro crítico no Upsert:', error);
-        throw error;
-      }
-      
+      if (error) throw error;
       const saved = data as Client;
-      console.log('[SaveClient] Cliente persistido com sucesso ID:', saved.id);
       
       setClients(prev => {
         const exists = prev.find(x => x.id === c.id || (saved.id && x.id === saved.id));
-        let addr = saved.address;
-        if (typeof addr === 'string') {
-          try { addr = JSON.parse(addr); } catch { addr = null; }
-        }
-        let dAddr = (saved as any).delivery_address;
-        if (typeof dAddr === 'string') {
-          try { dAddr = JSON.parse(dAddr); } catch { dAddr = null; }
-        }
         const mappedSaved = { 
           ...saved, 
-          address: addr || { street: '', number: '', neighborhood: '', city: '', state: '', zipCode: '' },
-          deliveryAddress: dAddr || undefined,
           code: (saved as any).client_code,
           rgInsc: (saved as any).rg_insc,
           cellphone: (saved as any).cellphone,
@@ -567,6 +582,13 @@ function App() {
         if (exists) return prev.map(x => (x.id === c.id || x.id === mappedSaved.id) ? mappedSaved : x);
         return [mappedSaved, ...prev];
       });
+      
+      logActivity(
+        clients.find(x => x.id === c.id) ? 'update' : 'create',
+        `${clients.find(x => x.id === c.id) ? 'Atualizou' : 'Cadastrou'} cliente: ${c.name}`,
+        saved.id,
+        c.code
+      );
     } catch (err) {
       console.error('Erro ao salvar cliente:', err);
       alert('Erro ao salvar cliente no banco de dados.');
@@ -577,7 +599,6 @@ function App() {
     try {
       if (!data || data.length === 0) return;
 
-      // Detecção inteligente: se a planilha parecer de materiais, redireciona
       const firstRow = data[0] || {};
       const keys = Object.keys(firstRow).map(k => k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim());
       
@@ -587,7 +608,6 @@ function App() {
       const hasMaterialKeys = keys.some(k => materialIndicators.some(mi => k.includes(mi)));
       const hasClientKeys = keys.some(k => clientIndicators.some(ci => k.includes(ci)));
 
-      // Se tiver indicadores de material e não tiver indicadores fortes de cliente, roteia para materiais
       if (hasMaterialKeys && !hasClientKeys) {
         console.log('Detectado formato de materiais. Redirecionando importação...');
         return handleImportMaterials(data);
@@ -628,7 +648,6 @@ function App() {
           };
         });
 
-        // Desduplicação por client_code para evitar erro de conflito no mesmo lote
         const clientsMap = new Map();
         const clientsWithoutCode = [];
         
@@ -672,15 +691,7 @@ function App() {
       refreshAppData();
     } catch (err: any) {
       console.error('Erro na importação em lote:', err);
-      let errorMsg = 'Ocorreu um erro durante a importação.';
-      
-      if (err.message?.includes('column "client_code" does not exist') || err.message?.includes('column c.client_code does not exist')) {
-        errorMsg = 'ERRO: A coluna "client_code" não foi encontrada no seu banco de dados Supabase.\n\nPor favor, execute o comando SQL que te enviei no painel do Supabase para criar essa coluna.';
-      } else if (err.message) {
-        errorMsg += `\n\nDetalhes: ${err.message}`;
-      }
-      
-      alert(errorMsg);
+      alert('Erro na importação: ' + err.message);
     }
   };
 
@@ -695,7 +706,6 @@ function App() {
         const batch = data.slice(start, end);
         
         const materialsToInsertRaw = batch.map((row, idx) => {
-          // Helper para buscar valor independente de case, acento ou espaços
           const getVal = (possibleKeys: string[]) => {
             const keys = Object.keys(row);
             for (const pk of possibleKeys) {
@@ -718,12 +728,10 @@ function App() {
           const stock = Number(String(getVal(['estoque', 'stock', 'stock_quantity', 'stockQuantity', 'qtd', 'quantidade']) || 0).replace(/[^\d.,]/g, '').replace(',', '.'));
           const sellingPrice = Number(String(getVal(['preco venda', 'preco_venda', 'selling_price', 'sellingPrice', 'venda', 'preco', 'preco_total']) || 0).replace(/[^\d.,]/g, '').replace(',', '.'));
 
-          // Cálculo sugerido caso não venha na planilha
           const totalMarkup = (loss + tax + margin + commission + discount) / 100;
           const calculatedSellingPrice = totalMarkup < 1 ? cost / (1 - totalMarkup) : cost * 2;
           const finalSellingPrice = sellingPrice || Number(calculatedSellingPrice.toFixed(2));
 
-          // Gerar código único se não houver
           let itemCode = String(getVal(['codigo', 'code', 'cod', 'item']) || '').trim();
           if (!itemCode) {
             itemCode = `IMP-${Date.now()}-${start + idx}`;
@@ -754,7 +762,6 @@ function App() {
           };
         });
 
-        // Desduplicação por code para evitar erro do Postgres no UPSERT
         const materialsMap = new Map();
         materialsToInsertRaw.forEach(m => {
           materialsMap.set(m.code, m);
@@ -935,7 +942,7 @@ function App() {
         stock_quantity: m.stockQuantity,
         registration_date: m.registrationDate,
         brand: m.brand,
-        supplier: m.supplier,
+        supplier_id: m.supplierId, // Sync with column name
         difal: m.difal,
         freight_cost: m.freightCost,
         tax_percentage: m.taxPercentage,
@@ -985,7 +992,8 @@ function App() {
         priceHistory: savedRow.price_history,
         imageUrl: savedRow.image_url,
         stockLocation: savedRow.inventory_location,
-        m2PerUnit: savedRow.m2_per_unit
+        m2PerUnit: savedRow.m2_per_unit,
+        supplierId: savedRow.supplier_id
       } as Material;
 
       setMaterials(prev => {
@@ -1391,9 +1399,8 @@ function App() {
     } catch (err) {
       console.error('Erro ao deslogar:', err);
     }
-
+    
     // Limpeza seletiva do localStorage: remove tokens do Supabase (sb-*) e dados do app (marmo_*)
-    // Preserva dados de outras extensões/sites no mesmo navegador
     const keysToRemove: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
@@ -1402,9 +1409,8 @@ function App() {
       }
     }
     keysToRemove.forEach(key => localStorage.removeItem(key));
-    console.log(`[Logout] ${keysToRemove.length} chave(s) removida(s) do localStorage.`);
-
-    // Limpeza de estado React para evitar persistência de dados entre usuários
+    
+    // Limpeza de estado React
     setUser(null);
     setOrders([]);
     setDeliveries([]);

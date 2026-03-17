@@ -277,6 +277,7 @@ export interface Material {
   stockLocation?: string;
   priceHistory?: any[];
   code?: string;
+  supplierId?: string;
 }
 
 export interface ProductService {
