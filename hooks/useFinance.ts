@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { FinanceTransaction } from '../types';
 
-export const useFinance = () => {
+export const useFinance = (companyId?: string, logActivity?: any) => {
   const [transactions, setTransactions] = useState<FinanceTransaction[]>(() => {
+    if (!companyId) return [];
     try {
-      const saved = localStorage.getItem('marmo_transactions');
+      const saved = localStorage.getItem(`marmo_transactions_${companyId}`);
       return saved ? (JSON.parse(saved) || []) : [
         { id: '1', value: 5000, description: 'Venda O.S. #1234', category: 'Vendas', date: '2024-03-10', type: 'receita', status: 'pago' }
       ];
@@ -14,10 +15,12 @@ export const useFinance = () => {
   });
 
   useEffect(() => {
-    localStorage.setItem('marmo_transactions', JSON.stringify(transactions));
-  }, [transactions]);
+    if (companyId) {
+      localStorage.setItem(`marmo_transactions_${companyId}`, JSON.stringify(transactions));
+    }
+  }, [transactions, companyId]);
 
-  const addTransaction = (t: FinanceTransaction) => {
+  const handleSaveTransaction = (t: FinanceTransaction) => {
     setTransactions(prev => [t, ...prev]);
   };
 
@@ -31,7 +34,7 @@ export const useFinance = () => {
 
   return {
     transactions,
-    addTransaction,
+    handleSaveTransaction,
     deleteTransaction,
     updateTransaction,
     setTransactions

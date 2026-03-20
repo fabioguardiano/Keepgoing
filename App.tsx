@@ -179,15 +179,15 @@ const App: React.FC = () => {
     }
   };
 
-  // 4. Hooks de Domínio (Dependem de logActivity)
-  const { sales, handleSaveSale: saveSaleBase, setSales } = useSales(logActivity);
+  // 4. Hooks de Domínio (Dependem de company_id e logActivity)
+  const { sales, handleSaveSale: saveSaleBase, setSales } = useSales(user?.company_id, logActivity);
   const { clients, loadingClients, handleSaveClient, handleImportClients, deleteClient, setClients } = useClients(user?.company_id, logActivity);
-  const { materials, handleSaveMaterial, setMaterials } = useMaterials(logActivity);
-  const { deliveries, addDelivery, updateDeliveryStatus, updateDelivery, deleteDelivery, setDeliveries } = useDeliveries(logActivity);
-  const { products, handleSaveProduct } = useProducts();
-  const { architects, handleSaveArchitect, deleteArchitect } = useArchitects();
-  const { transactions, addTransaction } = useFinance();
-  const { suppliers, handleSaveSupplier, deleteSupplier } = useSuppliers();
+  const { materials, handleSaveMaterial, setMaterials } = useMaterials(user?.company_id, logActivity);
+  const { deliveries, addDelivery, updateDeliveryStatus, updateDelivery, deleteDelivery, setDeliveries } = useDeliveries(user?.company_id, logActivity);
+  const { transactions, handleSaveTransaction, deleteTransaction, setTransactions } = useFinance(user?.company_id, logActivity);
+  const { suppliers, handleSaveSupplier, deleteSupplier, setSuppliers } = useSuppliers(user?.company_id, logActivity);
+  const { architects, handleSaveArchitect, deleteArchitect, setArchitects } = useArchitects(user?.company_id, logActivity);
+  const { products, handleSaveProduct } = useProducts(user?.company_id, logActivity);
 
   // 5. Configurações Globais (Depende de setOrders e setSales para renomeação de fases)
   const { 
@@ -425,7 +425,7 @@ const App: React.FC = () => {
           />
         );
       case 'Financeiro':
-        return <FinanceView transactions={transactions} onAddTransaction={addTransaction} />;
+        return <FinanceView transactions={transactions} onAddTransaction={handleSaveTransaction} />;
       case 'Fornecedores':
         return <SuppliersView suppliers={suppliers} onSaveSupplier={handleSaveSupplier} onDeleteSupplier={deleteSupplier} />;
       case 'Arquitetos':

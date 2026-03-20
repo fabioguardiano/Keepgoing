@@ -2,16 +2,18 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { ProductService } from '../types';
 
-export const useProducts = () => {
+export const useProducts = (companyId?: string, logActivity?: any) => {
   const [products, setProducts] = useState<ProductService[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
 
   const fetchProducts = async () => {
+    if (!companyId) return;
     setLoadingProducts(true);
     try {
       const { data, error } = await supabase
         .from('products')
         .select('*')
+        .eq('company_id', companyId)
         .order('name');
       
       if (error) throw error;
@@ -24,11 +26,11 @@ export const useProducts = () => {
           imageUrl: p.image_url
         }));
         setProducts(mapped as ProductService[]);
-        localStorage.setItem('keepgoing_products', JSON.stringify(mapped));
+        localStorage.setItem(`marmo_products_${companyId}`, JSON.stringify(mapped));
       }
     } catch (err) {
       console.error('Erro ao carregar produtos do Supabase:', err);
-      const saved = localStorage.getItem('keepgoing_products');
+      const saved = localStorage.getItem(`marmo_products_${companyId}`);
       if (saved) setProducts(JSON.parse(saved));
     } finally {
       setLoadingProducts(false);
@@ -37,21 +39,25 @@ export const useProducts = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [companyId]);
 
   const handleSaveProduct = async (p: ProductService) => {
+    if (!companyId) return;
     try {
+      const payload = {
+        id: p.id.length > 20 ? p.id : undefined,
+        company_id: companyId,
+        name: p.description,
+        category: p.type,
+        status: p.status,
+        base_price: p.sellingPrice,
+        description: p.description,
+        image_url: p.imageUrl
+      };
+
       const { data, error } = await supabase
         .from('products')
-        .upsert({
-          id: p.id.length > 20 ? p.id : undefined,
-          name: p.description,
-          category: p.type,
-          status: p.status,
-          base_price: p.sellingPrice,
-          description: p.description,
-          image_url: p.imageUrl
-        })
+        .upsert(payload)
         .select()
         .single();
       
@@ -65,15 +71,17 @@ export const useProducts = () => {
       } as ProductService;
       
       setProducts(prev => {
-        const exists = prev.find(x => x.id === p.id || x.id === saved.id);
-        if (exists) return prev.map(x => (x.id === p.id || x.id === saved.id) ? saved : x);
-        return [saved, ...prev];
+        const next = prev.find(x => x.id === p.id || x.id === saved.id)
+          ? prev.map(x => (x.id === p.id || x.id === saved.id) ? saved : x)
+          : [saved, ...prev];
+        localStorage.setItem(`marmo_products_${companyId}`, JSON.stringify(next));
+        return next;
       });
 
       return saved;
     } catch (err) {
       console.error('Erro ao salvar produto:', err);
-      alert('Erro ao salvar produto no banco de dados.');
+      alert('Erro ao salvar produto no banco de dados. Verifique permissões.');
       throw err;
     }
   };

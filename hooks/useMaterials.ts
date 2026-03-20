@@ -2,16 +2,18 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Material } from '../types';
 
-export const useMaterials = (logActivity?: (action: any, details: string, referenceId?: string, orderNumber?: string) => Promise<void>) => {
+export const useMaterials = (companyId?: string, logActivity?: (action: any, details: string, referenceId?: string, orderNumber?: string) => Promise<void>) => {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [loadingMaterials, setLoadingMaterials] = useState(true);
 
   const fetchMaterials = async () => {
+    if (!companyId) return;
     setLoadingMaterials(true);
     try {
       const { data: materialsData, error: materialsError } = await supabase
         .from('materials')
         .select('*')
+        .eq('company_id', companyId)
         .order('name');
       
       if (materialsError) throw materialsError;
@@ -38,11 +40,11 @@ export const useMaterials = (logActivity?: (action: any, details: string, refere
           m2PerUnit: m.m2_per_unit
         }));
         setMaterials(mappedMaterials as Material[]);
-        localStorage.setItem('marmo_materials', JSON.stringify(mappedMaterials));
+        localStorage.setItem(`marmo_materials_${companyId}`, JSON.stringify(mappedMaterials));
       }
     } catch (err) {
       console.error('Erro ao carregar materiais do Supabase:', err);
-      const saved = localStorage.getItem('marmo_materials');
+      const saved = localStorage.getItem(`marmo_materials_${companyId}`);
       if (saved) setMaterials(JSON.parse(saved));
     } finally {
       setLoadingMaterials(false);
@@ -51,12 +53,14 @@ export const useMaterials = (logActivity?: (action: any, details: string, refere
 
   useEffect(() => {
     fetchMaterials();
-  }, []);
+  }, [companyId]);
 
   const handleSaveMaterial = async (m: Material) => {
+    if (!companyId) return;
     try {
       const payload = {
         id: m.id.length > 20 ? m.id : undefined,
+        company_id: companyId,
         code: m.code,
         name: m.name,
         type: m.type,
@@ -123,9 +127,11 @@ export const useMaterials = (logActivity?: (action: any, details: string, refere
       const isUpdate = materials.some(x => x.id === m.id || x.id === savedMaterial.id);
       
       setMaterials(prev => {
-        const exists = prev.find(x => x.id === m.id || x.id === savedMaterial.id);
-        if (exists) return prev.map(x => (x.id === m.id || x.id === savedMaterial.id) ? savedMaterial : x);
-        return [savedMaterial, ...prev];
+        const next = prev.find(x => x.id === m.id || x.id === savedMaterial.id)
+          ? prev.map(x => (x.id === m.id || x.id === savedMaterial.id) ? savedMaterial : x)
+          : [savedMaterial, ...prev];
+        localStorage.setItem(`marmo_materials_${companyId}`, JSON.stringify(next));
+        return next;
       });
       
       if (logActivity) {
@@ -140,10 +146,11 @@ export const useMaterials = (logActivity?: (action: any, details: string, refere
       return savedMaterial;
     } catch (err) {
       console.error('Erro ao salvar material:', err);
-      alert('Erro ao salvar no banco de dados. Verifique sua conexão.');
+      alert('Erro ao salvar no banco de dados. Verifique sua conexão e permissões.');
       throw err;
     }
   };
+
 
   const deleteMaterial = async (id: string) => {
     const { error } = await supabase.from('materials').delete().eq('id', id);

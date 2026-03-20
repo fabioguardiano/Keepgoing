@@ -2,16 +2,18 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { SalesOrder } from '../types';
 
-export const useSales = (logActivity?: (action: any, details: string, referenceId?: string, orderNumber?: string) => Promise<void>) => {
+export const useSales = (companyId?: string, logActivity?: (action: any, details: string, referenceId?: string, orderNumber?: string) => Promise<void>) => {
   const [sales, setSales] = useState<SalesOrder[]>([]);
   const [loadingSales, setLoadingSales] = useState(true);
 
   const fetchSales = async () => {
+    if (!companyId) return;
     setLoadingSales(true);
     try {
       const { data, error } = await supabase
         .from('sales')
         .select('*')
+        .eq('company_id', companyId)
         .order('order_number', { ascending: false });
       
       if (error) throw error;
@@ -33,11 +35,11 @@ export const useSales = (logActivity?: (action: any, details: string, referenceI
           }
         }));
         setSales(mapped as SalesOrder[]);
-        localStorage.setItem('keepgoing_sales', JSON.stringify(mapped));
+        localStorage.setItem(`marmo_sales_${companyId}`, JSON.stringify(mapped));
       }
     } catch (err) {
       console.error('Erro ao carregar vendas do Supabase:', err);
-      const saved = localStorage.getItem('keepgoing_sales');
+      const saved = localStorage.getItem(`marmo_sales_${companyId}`);
       if (saved) setSales(JSON.parse(saved));
     } finally {
       setLoadingSales(false);
@@ -46,12 +48,14 @@ export const useSales = (logActivity?: (action: any, details: string, referenceI
 
   useEffect(() => {
     fetchSales();
-  }, []);
+  }, [companyId]);
 
   const handleSaveSale = async (s: SalesOrder) => {
+    if (!companyId) return;
     try {
       const payload = {
         id: s.id.length > 20 ? s.id : undefined,
+        company_id: companyId,
         order_number: s.orderNumber,
         client_name: s.clientName,
         status: s.status,
@@ -94,9 +98,11 @@ export const useSales = (logActivity?: (action: any, details: string, referenceI
       const isUpdate = sales.some(x => x.id === s.id || x.id === savedSale.id);
       
       setSales(prev => {
-        const exists = prev.find(x => x.id === s.id || x.id === savedSale.id);
-        if (exists) return prev.map(x => (x.id === s.id || x.id === savedSale.id) ? savedSale : x);
-        return [savedSale, ...prev];
+        const next = prev.find(x => x.id === s.id || x.id === savedSale.id)
+          ? prev.map(x => (x.id === s.id || x.id === savedSale.id) ? savedSale : x)
+          : [savedSale, ...prev];
+        localStorage.setItem(`marmo_sales_${companyId}`, JSON.stringify(next));
+        return next;
       });
 
       if (logActivity) {
@@ -111,7 +117,7 @@ export const useSales = (logActivity?: (action: any, details: string, referenceI
       return savedSale;
     } catch (err) {
       console.error('Erro ao salvar venda:', err);
-      alert('Erro ao salvar venda no banco de dados.');
+      alert('Erro ao salvar venda no banco de dados. Verifique permissões.');
       throw err;
     }
   };

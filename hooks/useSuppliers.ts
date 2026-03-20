@@ -2,16 +2,18 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Supplier } from '../types';
 
-export const useSuppliers = () => {
+export const useSuppliers = (companyId?: string, logActivity?: any) => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loadingSuppliers, setLoadingSuppliers] = useState(true);
 
   const fetchSuppliers = async () => {
+    if (!companyId) return;
     setLoadingSuppliers(true);
     try {
       const { data, error } = await supabase
         .from('suppliers')
         .select('*')
+        .eq('company_id', companyId)
         .order('trading_name');
       
       if (error) throw error;
@@ -28,11 +30,11 @@ export const useSuppliers = () => {
           createdAt: s.created_at
         }));
         setSuppliers(mapped as Supplier[]);
-        localStorage.setItem('keepgoing_suppliers', JSON.stringify(mapped));
+        localStorage.setItem(`marmo_suppliers_${companyId}`, JSON.stringify(mapped));
       }
     } catch (err) {
       console.error('Erro ao carregar fornecedores do Supabase:', err);
-      const saved = localStorage.getItem('keepgoing_suppliers');
+      const saved = localStorage.getItem(`marmo_suppliers_${companyId}`);
       if (saved) setSuppliers(JSON.parse(saved));
     } finally {
       setLoadingSuppliers(false);
@@ -41,14 +43,16 @@ export const useSuppliers = () => {
 
   useEffect(() => {
     fetchSuppliers();
-  }, []);
+  }, [companyId]);
 
   const handleSaveSupplier = async (s: Supplier) => {
+    if (!companyId) return;
     try {
       const { data, error } = await supabase
         .from('suppliers')
         .upsert({
           id: s.id.length > 20 ? s.id : undefined,
+          company_id: companyId,
           type: s.type,
           document: s.document,
           legal_name: s.legalName,
@@ -80,15 +84,17 @@ export const useSuppliers = () => {
       } as Supplier;
       
       setSuppliers(prev => {
-        const exists = prev.find(x => x.id === s.id || x.id === saved.id);
-        if (exists) return prev.map(x => (x.id === s.id || x.id === saved.id) ? saved : x);
-        return [saved, ...prev];
+        const next = prev.find(x => x.id === s.id || x.id === saved.id)
+          ? prev.map(x => (x.id === s.id || x.id === saved.id) ? saved : x)
+          : [saved, ...prev];
+        localStorage.setItem(`marmo_suppliers_${companyId}`, JSON.stringify(next));
+        return next;
       });
 
       return saved;
     } catch (err) {
       console.error('Erro ao salvar fornecedor:', err);
-      alert('Erro ao salvar fornecedor no banco de dados.');
+      alert('Erro ao salvar fornecedor no banco de dados. Verifique permissões.');
       throw err;
     }
   };

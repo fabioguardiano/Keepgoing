@@ -2,16 +2,18 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Architect } from '../types';
 
-export const useArchitects = () => {
+export const useArchitects = (companyId?: string, logActivity?: any) => {
   const [architects, setArchitects] = useState<Architect[]>([]);
   const [loadingArchitects, setLoadingArchitects] = useState(true);
 
   const fetchArchitects = async () => {
+    if (!companyId) return;
     setLoadingArchitects(true);
     try {
       const { data, error } = await supabase
         .from('architects')
         .select('*')
+        .eq('company_id', companyId)
         .order('trading_name');
       
       if (error) throw error;
@@ -28,11 +30,11 @@ export const useArchitects = () => {
           createdAt: a.created_at
         }));
         setArchitects(mapped as Architect[]);
-        localStorage.setItem('keepgoing_architects', JSON.stringify(mapped));
+        localStorage.setItem(`marmo_architects_${companyId}`, JSON.stringify(mapped));
       }
     } catch (err) {
       console.error('Erro ao carregar arquitetos do Supabase:', err);
-      const saved = localStorage.getItem('keepgoing_architects');
+      const saved = localStorage.getItem(`marmo_architects_${companyId}`);
       if (saved) setArchitects(JSON.parse(saved));
     } finally {
       setLoadingArchitects(false);
@@ -41,14 +43,16 @@ export const useArchitects = () => {
 
   useEffect(() => {
     fetchArchitects();
-  }, []);
+  }, [companyId]);
 
   const handleSaveArchitect = async (a: Architect) => {
+    if (!companyId) return;
     try {
       const { data, error } = await supabase
         .from('architects')
         .upsert({
           id: a.id.length > 20 ? a.id : undefined,
+          company_id: companyId,
           type: a.type,
           document: a.document,
           legal_name: a.legalName,
@@ -79,15 +83,17 @@ export const useArchitects = () => {
       } as Architect;
       
       setArchitects(prev => {
-        const exists = prev.find(x => x.id === a.id || x.id === saved.id);
-        if (exists) return prev.map(x => (x.id === a.id || x.id === saved.id) ? saved : x);
-        return [saved, ...prev];
+        const next = prev.find(x => x.id === a.id || x.id === saved.id)
+          ? prev.map(x => (x.id === a.id || x.id === saved.id) ? saved : x)
+          : [saved, ...prev];
+        localStorage.setItem(`marmo_architects_${companyId}`, JSON.stringify(next));
+        return next;
       });
 
       return saved;
     } catch (err) {
       console.error('Erro ao salvar arquiteto:', err);
-      alert('Erro ao salvar arquiteto no banco de dados.');
+      alert('Erro ao salvar arquiteto no banco de dados. Verifique permissões.');
       throw err;
     }
   };
