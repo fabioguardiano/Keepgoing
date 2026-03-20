@@ -51,6 +51,7 @@ export interface AppUser {
   email: string;
   role: 'admin' | 'manager' | 'seller' | 'viewer' | 'driver';
   status: 'ativo' | 'inativo';
+  company_id?: string;
   createdAt: string;
 }
 

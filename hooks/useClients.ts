@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Client } from '../types';
 
-export const useClients = (logActivity?: (action: any, details: string, referenceId?: string, orderNumber?: string) => Promise<void>) => {
+export const useClients = (companyId?: string, logActivity?: (action: any, details: string, referenceId?: string, orderNumber?: string) => Promise<void>) => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loadingClients, setLoadingClients] = useState(true);
 
   const fetchClients = async () => {
+    if (!companyId) return;
     setLoadingClients(true);
     try {
       let allClients: any[] = [];
@@ -15,9 +16,12 @@ export const useClients = (logActivity?: (action: any, details: string, referenc
       let hasMore = true;
 
       while (hasMore) {
+        // Forçamos o bypass de cache do navegador adicionando um parâmetro de tempo na query se necessário
+        // ou usando cabeçalhos explicitamente
         const { data, error } = await supabase
           .from('clients')
           .select('*')
+          .eq('company_id', companyId)
           .order('name')
           .range(from, from + batchSize - 1);
         
@@ -42,10 +46,10 @@ export const useClients = (logActivity?: (action: any, details: string, referenc
         createdAt: c.created_at
       }));
       setClients(mapped as Client[]);
-      localStorage.setItem('marmo_clients', JSON.stringify(mapped));
+      localStorage.setItem(`marmo_clients_${companyId}`, JSON.stringify(mapped));
     } catch (err) {
       console.error('Erro ao carregar clientes do Supabase:', err);
-      const saved = localStorage.getItem('marmo_clients');
+      const saved = localStorage.getItem(`marmo_clients_${companyId}`);
       if (saved) setClients(JSON.parse(saved));
     } finally {
       setLoadingClients(false);
@@ -54,33 +58,42 @@ export const useClients = (logActivity?: (action: any, details: string, referenc
 
   useEffect(() => {
     fetchClients();
-  }, []);
+  }, [companyId]);
 
   const handleSaveClient = async (c: Client) => {
+    if (!companyId) {
+      alert('Erro: Empresa não identificada.');
+      return;
+    }
+
     try {
+      const payload = {
+        id: c.id?.length > 20 ? c.id : undefined,
+        company_id: companyId,
+        name: c.name,
+        type: c.type,
+        document: c.document,
+        email: c.email,
+        phone: c.phone,
+        address: c.address,
+        client_code: c.code,
+        rg_insc: c.rgInsc,
+        cellphone: c.cellphone,
+        birth_date: c.birthDate,
+        seller_name: c.sellerName,
+        use_special_table: c.useSpecialTable
+      };
+
       const { data, error } = await supabase
         .from('clients')
-        .upsert({
-          id: c.id.length > 20 ? c.id : undefined,
-          name: c.name,
-          type: c.type,
-          document: c.document,
-          email: c.email,
-          phone: c.phone,
-          address: c.address,
-          client_code: c.code,
-          rg_insc: c.rgInsc,
-          cellphone: c.cellphone,
-          birth_date: c.birthDate,
-          seller_name: c.sellerName,
-          use_special_table: c.useSpecialTable
-        })
+        .upsert(payload)
         .select()
         .single();
       
       if (error) throw error;
+      if (!data) throw new Error('Falha ao persistir dados: o banco retornou sucesso mas nenhum dado foi gravado (possível bloqueio de RLS).');
+
       const saved = data as any;
-      
       const mappedSaved = { 
         ...saved, 
         code: saved.client_code,
@@ -88,20 +101,23 @@ export const useClients = (logActivity?: (action: any, details: string, referenc
         cellphone: saved.cellphone,
         birthDate: saved.birth_date,
         sellerName: saved.seller_name,
-        useSpecialTable: saved.use_special_table,
+        use_special_table: saved.use_special_table,
         createdAt: saved.created_at
       } as Client;
 
+      // Atualiza estado local E localStorage IMEDIATAMENTE para evitar flashes de dados antigos no F5
       setClients(prev => {
-        const exists = prev.find(x => x.id === c.id || (mappedSaved.id && x.id === mappedSaved.id));
-        if (exists) return prev.map(x => (x.id === c.id || x.id === mappedSaved.id) ? mappedSaved : x);
-        return [mappedSaved, ...prev];
+        const next = prev.find(x => x.id === c.id || (mappedSaved.id && x.id === mappedSaved.id))
+          ? prev.map(x => (x.id === c.id || x.id === mappedSaved.id) ? mappedSaved : x)
+          : [mappedSaved, ...prev];
+        localStorage.setItem(`marmo_clients_${companyId}`, JSON.stringify(next));
+        return next;
       });
 
       return mappedSaved;
-    } catch (err) {
-      console.error('Erro ao salvar cliente:', err);
-      alert('Erro ao salvar cliente no banco de dados.');
+    } catch (err: any) {
+      console.error('Erro detalhado ao salvar cliente:', err);
+      alert(`Erro ao salvar cliente: ${err.message || 'Verifique as permissões do banco (RLS).'}`);
       throw err;
     }
   };

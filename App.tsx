@@ -181,7 +181,7 @@ const App: React.FC = () => {
 
   // 4. Hooks de Domínio (Dependem de logActivity)
   const { sales, handleSaveSale: saveSaleBase, setSales } = useSales(logActivity);
-  const { clients, handleSaveClient, handleImportClients, deleteClient } = useClients(logActivity);
+  const { clients, loadingClients, handleSaveClient, handleImportClients, deleteClient, setClients } = useClients(user?.company_id, logActivity);
   const { materials, handleSaveMaterial, setMaterials } = useMaterials(logActivity);
   const { deliveries, addDelivery, updateDeliveryStatus, updateDelivery, deleteDelivery, setDeliveries } = useDeliveries(logActivity);
   const { products, handleSaveProduct } = useProducts();
