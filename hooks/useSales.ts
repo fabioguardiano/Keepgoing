@@ -7,14 +7,17 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
   const [loadingSales, setLoadingSales] = useState(true);
 
   const fetchSales = async () => {
-    if (!companyId) return;
     setLoadingSales(true);
     try {
-      const { data, error } = await supabase
-        .from('sales')
-        .select('*')
-        .eq('company_id', companyId)
-        .order('order_number', { ascending: false });
+      let query = supabase.from('sales').select('*');
+      
+      if (companyId) {
+        query = query.or(`company_id.eq.${companyId},company_id.is.null`);
+      } else {
+        query = query.is('company_id', null);
+      }
+
+      const { data, error } = await query.order('order_number', { ascending: false });
       
       if (error) throw error;
       if (data) {
@@ -35,11 +38,11 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
           }
         }));
         setSales(mapped as SalesOrder[]);
-        localStorage.setItem(`marmo_sales_${companyId}`, JSON.stringify(mapped));
+        localStorage.setItem(`marmo_sales_${companyId || 'legacy'}`, JSON.stringify(mapped));
       }
     } catch (err) {
       console.error('Erro ao carregar vendas do Supabase:', err);
-      const saved = localStorage.getItem(`marmo_sales_${companyId}`);
+      const saved = localStorage.getItem(`marmo_sales_${companyId || 'legacy'}`);
       if (saved) setSales(JSON.parse(saved));
     } finally {
       setLoadingSales(false);
@@ -51,11 +54,11 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
   }, [companyId]);
 
   const handleSaveSale = async (s: SalesOrder) => {
-    if (!companyId) return;
+    const finalCompanyId = companyId || '123';
     try {
       const payload = {
-        id: s.id.length > 20 ? s.id : undefined,
-        company_id: companyId,
+        id: (s.id && s.id.length > 20) ? s.id : undefined,
+        company_id: finalCompanyId,
         order_number: s.orderNumber,
         client_name: s.clientName,
         status: s.status,
@@ -101,7 +104,7 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
         const next = prev.find(x => x.id === s.id || x.id === savedSale.id)
           ? prev.map(x => (x.id === s.id || x.id === savedSale.id) ? savedSale : x)
           : [savedSale, ...prev];
-        localStorage.setItem(`marmo_sales_${companyId}`, JSON.stringify(next));
+        localStorage.setItem(`marmo_sales_${finalCompanyId}`, JSON.stringify(next));
         return next;
       });
 
@@ -115,9 +118,9 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
       }
 
       return savedSale;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao salvar venda:', err);
-      alert('Erro ao salvar venda no banco de dados. Verifique permissões.');
+      alert(`Erro ao salvar no banco de dados: ${err.message || 'Verifique sua conexão e permissões RLS.'}`);
       throw err;
     }
   };

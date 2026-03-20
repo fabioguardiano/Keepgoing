@@ -34,7 +34,8 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
     return clients
       .filter(c => 
         String(c.code).includes(searchTerm) ||
-        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (c.tradingName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (c.legalName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.document.includes(searchTerm) ||
         c.phone.includes(searchTerm) ||
         c.cellphone.includes(searchTerm) ||
@@ -42,7 +43,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
       )
       .sort((a, b) => {
         let comparison = 0;
-        if (sortField === 'name') comparison = a.name.localeCompare(b.name);
+        if (sortField === 'name') comparison = (a.tradingName || a.legalName || '').localeCompare(b.tradingName || b.legalName || '');
         if (sortField === 'code') comparison = (a.code || 0) - (b.code || 0);
         if (sortField === 'createdAt') comparison = (a.createdAt || '').localeCompare(b.createdAt || '');
         if (sortField === 'city') comparison = a.address.city.localeCompare(b.address.city);
@@ -159,7 +160,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
                       </div>
                       <div>
                         <div className="text-base font-black text-slate-800 leading-tight flex items-center gap-2">
-                          {client.name}
+                          {client.tradingName || client.legalName}
                           {client.useSpecialTable && (
                             <span className="text-[10px] bg-primary/20 text-primary px-2 py-1 rounded-lg font-black uppercase tracking-tight shadow-sm">ESPECIAL</span>
                           )}

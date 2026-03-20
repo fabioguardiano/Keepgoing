@@ -126,7 +126,8 @@ export interface ProductService {
 
 export interface Client {
   id: string;
-  name: string;
+  legalName: string;
+  tradingName: string;
   type: 'Pessoa Física' | 'Pessoa Jurídica';
   document: string;
   rgInsc?: string;
@@ -136,6 +137,7 @@ export interface Client {
   birthDate?: string;
   sellerName?: string;
   useSpecialTable: boolean;
+  observations?: string;
   address: {
     street: string;
     number: string;
@@ -162,6 +164,7 @@ export interface Client {
   };
   code?: number;
   createdAt: string;
+  company_id?: string;
 }
 
 

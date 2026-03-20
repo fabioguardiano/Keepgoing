@@ -7,14 +7,17 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
   const [loadingMaterials, setLoadingMaterials] = useState(true);
 
   const fetchMaterials = async () => {
-    if (!companyId) return;
     setLoadingMaterials(true);
     try {
-      const { data: materialsData, error: materialsError } = await supabase
-        .from('materials')
-        .select('*')
-        .eq('company_id', companyId)
-        .order('name');
+      let query = supabase.from('materials').select('*');
+      
+      if (companyId) {
+        query = query.or(`company_id.eq.${companyId},company_id.is.null`);
+      } else {
+        query = query.is('company_id', null);
+      }
+
+      const { data: materialsData, error: materialsError } = await query.order('name');
       
       if (materialsError) throw materialsError;
       if (materialsData) {
@@ -40,11 +43,11 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
           m2PerUnit: m.m2_per_unit
         }));
         setMaterials(mappedMaterials as Material[]);
-        localStorage.setItem(`marmo_materials_${companyId}`, JSON.stringify(mappedMaterials));
+        localStorage.setItem(`marmo_materials_${companyId || 'legacy'}`, JSON.stringify(mappedMaterials));
       }
     } catch (err) {
       console.error('Erro ao carregar materiais do Supabase:', err);
-      const saved = localStorage.getItem(`marmo_materials_${companyId}`);
+      const saved = localStorage.getItem(`marmo_materials_${companyId || 'legacy'}`);
       if (saved) setMaterials(JSON.parse(saved));
     } finally {
       setLoadingMaterials(false);
@@ -56,11 +59,11 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
   }, [companyId]);
 
   const handleSaveMaterial = async (m: Material) => {
-    if (!companyId) return;
+    const finalCompanyId = companyId || '123';
     try {
       const payload = {
-        id: m.id.length > 20 ? m.id : undefined,
-        company_id: companyId,
+        id: (m.id && m.id.length > 20) ? m.id : undefined,
+        company_id: finalCompanyId,
         code: m.code,
         name: m.name,
         type: m.type,
@@ -130,7 +133,7 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
         const next = prev.find(x => x.id === m.id || x.id === savedMaterial.id)
           ? prev.map(x => (x.id === m.id || x.id === savedMaterial.id) ? savedMaterial : x)
           : [savedMaterial, ...prev];
-        localStorage.setItem(`marmo_materials_${companyId}`, JSON.stringify(next));
+        localStorage.setItem(`marmo_materials_${finalCompanyId}`, JSON.stringify(next));
         return next;
       });
       
@@ -144,12 +147,13 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
       }
 
       return savedMaterial;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao salvar material:', err);
-      alert('Erro ao salvar no banco de dados. Verifique sua conexão e permissões.');
+      alert(`Erro ao salvar no banco de dados: ${err.message || 'Verifique sua conexão e permissões RLS.'}`);
       throw err;
     }
   };
+;
 
 
   const deleteMaterial = async (id: string) => {

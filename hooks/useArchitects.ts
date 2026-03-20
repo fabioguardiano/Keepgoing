@@ -7,14 +7,17 @@ export const useArchitects = (companyId?: string, logActivity?: any) => {
   const [loadingArchitects, setLoadingArchitects] = useState(true);
 
   const fetchArchitects = async () => {
-    if (!companyId) return;
     setLoadingArchitects(true);
     try {
-      const { data, error } = await supabase
-        .from('architects')
-        .select('*')
-        .eq('company_id', companyId)
-        .order('trading_name');
+      let query = supabase.from('architects').select('*');
+      
+      if (companyId) {
+        query = query.or(`company_id.eq.${companyId},company_id.is.null`);
+      } else {
+        query = query.is('company_id', null);
+      }
+
+      const { data, error } = await query.order('trading_name');
       
       if (error) throw error;
       if (data) {
@@ -30,11 +33,11 @@ export const useArchitects = (companyId?: string, logActivity?: any) => {
           createdAt: a.created_at
         }));
         setArchitects(mapped as Architect[]);
-        localStorage.setItem(`marmo_architects_${companyId}`, JSON.stringify(mapped));
+        localStorage.setItem(`marmo_architects_${companyId || 'legacy'}`, JSON.stringify(mapped));
       }
     } catch (err) {
       console.error('Erro ao carregar arquitetos do Supabase:', err);
-      const saved = localStorage.getItem(`marmo_architects_${companyId}`);
+      const saved = localStorage.getItem(`marmo_architects_${companyId || 'legacy'}`);
       if (saved) setArchitects(JSON.parse(saved));
     } finally {
       setLoadingArchitects(false);
@@ -46,30 +49,33 @@ export const useArchitects = (companyId?: string, logActivity?: any) => {
   }, [companyId]);
 
   const handleSaveArchitect = async (a: Architect) => {
-    if (!companyId) return;
+    const finalCompanyId = companyId || '123';
     try {
+      const payload = {
+        id: (a.id && a.id.length > 20) ? a.id : undefined,
+        company_id: finalCompanyId,
+        type: a.type,
+        document: a.document,
+        legal_name: a.legalName,
+        trading_name: a.tradingName,
+        contact_name: a.contactName,
+        email: a.email,
+        phone: a.phone,
+        cellphone: a.cellphone,
+        address: a.address,
+        observations: a.observations,
+        rg_insc: a.rgInsc,
+        architect_code: a.code
+      };
+
       const { data, error } = await supabase
         .from('architects')
-        .upsert({
-          id: a.id.length > 20 ? a.id : undefined,
-          company_id: companyId,
-          type: a.type,
-          document: a.document,
-          legal_name: a.legalName,
-          trading_name: a.tradingName,
-          contact_name: a.contactName,
-          email: a.email,
-          phone: a.phone,
-          cellphone: a.cellphone,
-          address: a.address,
-          observations: a.observations,
-          rg_insc: a.rgInsc,
-          architect_code: a.code
-        })
+        .upsert(payload)
         .select()
         .single();
       
       if (error) throw error;
+      
       const saved = { 
         ...data, 
         legalName: data.legal_name, 
@@ -86,14 +92,14 @@ export const useArchitects = (companyId?: string, logActivity?: any) => {
         const next = prev.find(x => x.id === a.id || x.id === saved.id)
           ? prev.map(x => (x.id === a.id || x.id === saved.id) ? saved : x)
           : [saved, ...prev];
-        localStorage.setItem(`marmo_architects_${companyId}`, JSON.stringify(next));
+        localStorage.setItem(`marmo_architects_${finalCompanyId}`, JSON.stringify(next));
         return next;
       });
 
       return saved;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao salvar arquiteto:', err);
-      alert('Erro ao salvar arquiteto no banco de dados. Verifique permissões.');
+      alert(`Erro ao salvar no banco de dados: ${err.message || 'Verifique sua conexão e permissões RLS.'}`);
       throw err;
     }
   };

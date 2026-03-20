@@ -32,7 +32,8 @@ interface NewClientModalProps {
 
 export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose, onSave, editingClient }) => {
   const [formData, setFormData] = useState<Omit<Client, 'id' | 'createdAt'>>({
-    name: '',
+    legalName: '',
+    tradingName: '',
     type: 'Pessoa Física',
     document: '',
     rgInsc: '',
@@ -63,7 +64,8 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
       setFormData(rest);
     } else {
       setFormData({
-        name: '',
+        legalName: '',
+        tradingName: '',
         type: 'Pessoa Física',
         document: '',
         rgInsc: '',
@@ -187,7 +189,8 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
       setFormData(prev => {
         const updatedData = {
           ...prev,
-          name: data.razao_social || data.nome_fantasia || prev.name,
+          legalName: data.razao_social || data.nome_fantasia || prev.legalName,
+          tradingName: data.nome_fantasia || data.razao_social || prev.tradingName,
           email: data.email || prev.email,
           birthDate: data.data_inicio_atividade || prev.birthDate,
           phone: data.ddd_telefone_1 ? `(${data.ddd_telefone_1.substring(0,2)}) ${data.ddd_telefone_1.substring(2)}` : prev.phone,
@@ -364,14 +367,23 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                     <option value="Pessoa Jurídica">Pessoa Jurídica</option>
                   </select>
                 </div>
-                <div className="lg:col-span-2">
+                <div className="lg:col-span-1">
                   <label className={labelClass}><User size={14} /> Nome Completo / Razão Social</label>
                   <input 
                     required
                     className={inputClass}
-                    value={formData.name}
-                    onChange={e => setFormData({...formData, name: e.target.value})}
+                    value={formData.legalName}
+                    onChange={e => setFormData({...formData, legalName: e.target.value})}
                     placeholder="João da Silva ou Marmoraria XYZ LTDA"
+                  />
+                </div>
+                <div className="lg:col-span-1">
+                  <label className={labelClass}><Building2 size={14} /> Nome Fantasia</label>
+                  <input 
+                    className={inputClass}
+                    value={formData.tradingName}
+                    onChange={e => setFormData({...formData, tradingName: e.target.value})}
+                    placeholder="Opcional para PF, comum para PJ"
                   />
                 </div>
                 <div>

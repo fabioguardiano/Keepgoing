@@ -7,14 +7,17 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
   const [loadingDeliveries, setLoadingDeliveries] = useState(true);
 
   const fetchDeliveries = async () => {
-    if (!companyId) return;
     setLoadingDeliveries(true);
     try {
-      const { data, error } = await supabase
-        .from('deliveries')
-        .select('*')
-        .eq('company_id', companyId)
-        .order('date');
+      let query = supabase.from('deliveries').select('*');
+      
+      if (companyId) {
+        query = query.or(`company_id.eq.${companyId},company_id.is.null`);
+      } else {
+        query = query.is('company_id', null);
+      }
+
+      const { data, error } = await query.order('date');
       
       if (error) throw error;
       if (data) {
@@ -29,11 +32,11 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
           status: d.status as any
         }));
         setDeliveries(mapped as Delivery[]);
-        localStorage.setItem(`marmo_deliveries_${companyId}`, JSON.stringify(mapped));
+        localStorage.setItem(`marmo_deliveries_${companyId || 'legacy'}`, JSON.stringify(mapped));
       }
     } catch (err) {
       console.error('Erro ao carregar entregas do Supabase:', err);
-      const saved = localStorage.getItem(`marmo_deliveries_${companyId}`);
+      const saved = localStorage.getItem(`marmo_deliveries_${companyId || 'legacy'}`);
       if (saved) setDeliveries(JSON.parse(saved));
     } finally {
       setLoadingDeliveries(false);
@@ -45,10 +48,10 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
   }, [companyId]);
 
   const addDelivery = async (delivery: Omit<Delivery, 'id'>) => {
-    if (!companyId) return;
+    const finalCompanyId = companyId || '123';
     try {
       const payload = {
-        company_id: companyId,
+        company_id: finalCompanyId,
         order_id: delivery.orderId,
         os_number: delivery.osNumber,
         client_name: delivery.clientName,
@@ -76,7 +79,7 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
 
       setDeliveries(prev => {
         const next = [newDelivery, ...prev];
-        localStorage.setItem(`marmo_deliveries_${companyId}`, JSON.stringify(next));
+        localStorage.setItem(`marmo_deliveries_${finalCompanyId}`, JSON.stringify(next));
         return next;
       });
       
@@ -90,25 +93,26 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
       }
       
       return newDelivery;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao adicionar entrega:', err);
+      alert(`Erro ao adicionar entrega: ${err.message}`);
       throw err;
     }
   };
 
   const updateDeliveryStatus = async (id: string, status: Delivery['status']) => {
-    if (!companyId) return;
+    const finalCompanyId = companyId || '123';
     try {
       const { error } = await supabase
         .from('deliveries')
         .update({ status })
         .eq('id', id)
-        .eq('company_id', companyId);
+        .eq('company_id', finalCompanyId);
       
       if (error) throw error;
       setDeliveries(prev => {
         const next = prev.map(d => d.id === id ? { ...d, status } : d);
-        localStorage.setItem(`marmo_deliveries_${companyId}`, JSON.stringify(next));
+        localStorage.setItem(`marmo_deliveries_${finalCompanyId}`, JSON.stringify(next));
         return next;
       });
 
@@ -118,14 +122,15 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
           await logActivity('update', `Atualizou status da entrega da O.S. ${delivery.osNumber} para ${status}`, delivery.orderId, delivery.osNumber);
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao atualizar status da entrega:', err);
+      alert(`Erro ao atualizar status: ${err.message}`);
       throw err;
     }
   };
 
   const deleteDelivery = async (id: string) => {
-    if (!companyId) return;
+    const finalCompanyId = companyId || '123';
     const delivery = deliveries.find(d => d.id === id);
     if (!delivery) return;
 
@@ -134,12 +139,12 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
         .from('deliveries')
         .delete()
         .eq('id', id)
-        .eq('company_id', companyId);
+        .eq('company_id', finalCompanyId);
       
       if (error) throw error;
       setDeliveries(prev => {
         const next = prev.filter(d => d.id !== id);
-        localStorage.setItem(`marmo_deliveries_${companyId}`, JSON.stringify(next));
+        localStorage.setItem(`marmo_deliveries_${finalCompanyId}`, JSON.stringify(next));
         return next;
       });
       
@@ -151,14 +156,15 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
           delivery.osNumber
         );
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao deletar entrega:', err);
+      alert(`Erro ao deletar entrega: ${err.message}`);
       throw err;
     }
   };
 
   const updateDelivery = async (id: string, updates: Partial<Delivery>) => {
-    if (!companyId) return;
+    const finalCompanyId = companyId || '123';
     try {
       const payload: any = { ...updates };
       if (updates.orderId) payload.order_id = updates.orderId;
@@ -173,12 +179,12 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
         .from('deliveries')
         .update(payload)
         .eq('id', id)
-        .eq('company_id', companyId);
+        .eq('company_id', finalCompanyId);
       
       if (error) throw error;
       setDeliveries(prev => {
         const next = prev.map(d => d.id === id ? { ...d, ...updates } : d);
-        localStorage.setItem(`marmo_deliveries_${companyId}`, JSON.stringify(next));
+        localStorage.setItem(`marmo_deliveries_${finalCompanyId}`, JSON.stringify(next));
         return next;
       });
 
@@ -188,8 +194,9 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
           await logActivity('update', `Atualizou agendamento da O.S. ${delivery.osNumber}`, delivery.orderId, delivery.osNumber);
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao atualizar entrega:', err);
+      alert(`Erro ao atualizar entrega: ${err.message}`);
       throw err;
     }
   };

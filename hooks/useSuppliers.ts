@@ -7,14 +7,17 @@ export const useSuppliers = (companyId?: string, logActivity?: any) => {
   const [loadingSuppliers, setLoadingSuppliers] = useState(true);
 
   const fetchSuppliers = async () => {
-    if (!companyId) return;
     setLoadingSuppliers(true);
     try {
-      const { data, error } = await supabase
-        .from('suppliers')
-        .select('*')
-        .eq('company_id', companyId)
-        .order('trading_name');
+      let query = supabase.from('suppliers').select('*');
+      
+      if (companyId) {
+        query = query.or(`company_id.eq.${companyId},company_id.is.null`);
+      } else {
+        query = query.is('company_id', null);
+      }
+
+      const { data, error } = await query.order('trading_name');
       
       if (error) throw error;
       if (data) {
@@ -30,11 +33,11 @@ export const useSuppliers = (companyId?: string, logActivity?: any) => {
           createdAt: s.created_at
         }));
         setSuppliers(mapped as Supplier[]);
-        localStorage.setItem(`marmo_suppliers_${companyId}`, JSON.stringify(mapped));
+        localStorage.setItem(`marmo_suppliers_${companyId || 'legacy'}`, JSON.stringify(mapped));
       }
     } catch (err) {
       console.error('Erro ao carregar fornecedores do Supabase:', err);
-      const saved = localStorage.getItem(`marmo_suppliers_${companyId}`);
+      const saved = localStorage.getItem(`marmo_suppliers_${companyId || 'legacy'}`);
       if (saved) setSuppliers(JSON.parse(saved));
     } finally {
       setLoadingSuppliers(false);
@@ -46,31 +49,34 @@ export const useSuppliers = (companyId?: string, logActivity?: any) => {
   }, [companyId]);
 
   const handleSaveSupplier = async (s: Supplier) => {
-    if (!companyId) return;
+    const finalCompanyId = companyId || '123';
     try {
+      const payload = {
+        id: (s.id && s.id.length > 20) ? s.id : undefined,
+        company_id: finalCompanyId,
+        type: s.type,
+        document: s.document,
+        legal_name: s.legalName,
+        trading_name: s.tradingName,
+        contact_name: s.contactName,
+        email: s.email,
+        phone: s.phone,
+        website: s.website,
+        address: s.address,
+        rg_insc: s.rgInsc,
+        cellphone: s.cellphone,
+        observations: s.observations,
+        supplier_code: s.code
+      };
+
       const { data, error } = await supabase
         .from('suppliers')
-        .upsert({
-          id: s.id.length > 20 ? s.id : undefined,
-          company_id: companyId,
-          type: s.type,
-          document: s.document,
-          legal_name: s.legalName,
-          trading_name: s.tradingName,
-          contact_name: s.contactName,
-          email: s.email,
-          phone: s.phone,
-          website: s.website,
-          address: s.address,
-          rg_insc: s.rgInsc,
-          cellphone: s.cellphone,
-          observations: s.observations,
-          supplier_code: s.code
-        })
+        .upsert(payload)
         .select()
         .single();
       
       if (error) throw error;
+      
       const saved = { 
         ...data, 
         legalName: data.legal_name, 
@@ -87,14 +93,14 @@ export const useSuppliers = (companyId?: string, logActivity?: any) => {
         const next = prev.find(x => x.id === s.id || x.id === saved.id)
           ? prev.map(x => (x.id === s.id || x.id === saved.id) ? saved : x)
           : [saved, ...prev];
-        localStorage.setItem(`marmo_suppliers_${companyId}`, JSON.stringify(next));
+        localStorage.setItem(`marmo_suppliers_${finalCompanyId}`, JSON.stringify(next));
         return next;
       });
 
       return saved;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao salvar fornecedor:', err);
-      alert('Erro ao salvar fornecedor no banco de dados. Verifique permissões.');
+      alert(`Erro ao salvar no banco de dados: ${err.message || 'Verifique sua conexão e permissões RLS.'}`);
       throw err;
     }
   };

@@ -267,10 +267,22 @@ const App: React.FC = () => {
     }
   };
 
-  // Persistência inicial de login
+  // Persistência inicial de login com migração de multi-tenant
   useEffect(() => {
     const savedUser = localStorage.getItem('marmo_user');
-    if (savedUser) setUser(JSON.parse(savedUser));
+    if (savedUser) {
+      try {
+        const u = JSON.parse(savedUser);
+        // Migração: se o usuário antigo não tem company_id, atribuímos o padrão '123'
+        if (u && !u.company_id) {
+          u.company_id = '123';
+          localStorage.setItem('marmo_user', JSON.stringify(u));
+        }
+        setUser(u);
+      } catch (e) {
+        console.error('Erro ao recuperar usuário:', e);
+      }
+    }
   }, []);
 
   // 8. Lógica de Renderização
