@@ -12,9 +12,9 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
       let query = supabase.from('sales').select('*');
       
       if (companyId) {
-        query = query.or(`company_id.eq.${companyId},company_id.is.null`);
+        query = query.eq('company_id', companyId);
       } else {
-        query = query.is('company_id', null);
+        query = query.eq('company_id', '00000000-0000-0000-0000-000000000000');
       }
 
       const { data, error } = await query.order('order_number', { ascending: false });
@@ -54,7 +54,7 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
   }, [companyId]);
 
   const handleSaveSale = async (s: SalesOrder) => {
-    const finalCompanyId = companyId || '123';
+    const finalCompanyId = companyId || '00000000-0000-0000-0000-000000000000';
     try {
       const payload = {
         id: (s.id && s.id.length > 20) ? s.id : undefined,

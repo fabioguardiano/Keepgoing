@@ -7,11 +7,13 @@ export const useActivities = (user: User | null) => {
   const [loadingActivities, setLoadingActivities] = useState(true);
 
   const fetchActivities = async () => {
+    if (!user?.company_id) return;
     setLoadingActivities(true);
     try {
       const { data, error } = await supabase
         .from('activity_logs')
         .select('*')
+        .eq('company_id', user.company_id)
         .order('created_at', { ascending: false })
         .limit(100);
       
@@ -38,7 +40,7 @@ export const useActivities = (user: User | null) => {
 
   useEffect(() => {
     fetchActivities();
-  }, []);
+  }, [user?.company_id]);
 
   const logActivity = async (action: ActivityLog['action'], details: string, referenceId?: string, orderNumber?: string) => {
     if (!user) return;
@@ -49,6 +51,7 @@ export const useActivities = (user: User | null) => {
       const { data, error } = await supabase
         .from('activity_logs')
         .insert({
+          company_id: user.company_id || '00000000-0000-0000-0000-000000000000',
           type: action,
           message: message,
           reference_id: referenceId,

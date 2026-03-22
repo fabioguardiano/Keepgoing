@@ -12,9 +12,9 @@ export const useSuppliers = (companyId?: string, logActivity?: any) => {
       let query = supabase.from('suppliers').select('*');
       
       if (companyId) {
-        query = query.or(`company_id.eq.${companyId},company_id.is.null`);
+        query = query.eq('company_id', companyId);
       } else {
-        query = query.is('company_id', null);
+        query = query.eq('company_id', '00000000-0000-0000-0000-000000000000');
       }
 
       const { data, error } = await query.order('trading_name');
@@ -49,7 +49,7 @@ export const useSuppliers = (companyId?: string, logActivity?: any) => {
   }, [companyId]);
 
   const handleSaveSupplier = async (s: Supplier) => {
-    const finalCompanyId = companyId || '123';
+    const finalCompanyId = companyId || '00000000-0000-0000-0000-000000000000';
     try {
       const payload = {
         id: (s.id && s.id.length > 20) ? s.id : undefined,

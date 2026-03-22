@@ -12,9 +12,9 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
       let query = supabase.from('deliveries').select('*');
       
       if (companyId) {
-        query = query.or(`company_id.eq.${companyId},company_id.is.null`);
+        query = query.eq('company_id', companyId);
       } else {
-        query = query.is('company_id', null);
+        query = query.eq('company_id', '00000000-0000-0000-0000-000000000000');
       }
 
       const { data, error } = await query.order('date');
@@ -48,7 +48,7 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
   }, [companyId]);
 
   const addDelivery = async (delivery: Omit<Delivery, 'id'>) => {
-    const finalCompanyId = companyId || '123';
+    const finalCompanyId = companyId || '00000000-0000-0000-0000-000000000000';
     try {
       const payload = {
         company_id: finalCompanyId,
@@ -101,7 +101,7 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
   };
 
   const updateDeliveryStatus = async (id: string, status: Delivery['status']) => {
-    const finalCompanyId = companyId || '123';
+    const finalCompanyId = companyId || '00000000-0000-0000-0000-000000000000';
     try {
       const { error } = await supabase
         .from('deliveries')
@@ -130,7 +130,7 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
   };
 
   const deleteDelivery = async (id: string) => {
-    const finalCompanyId = companyId || '123';
+    const finalCompanyId = companyId || '00000000-0000-0000-0000-000000000000';
     const delivery = deliveries.find(d => d.id === id);
     if (!delivery) return;
 
@@ -164,7 +164,7 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
   };
 
   const updateDelivery = async (id: string, updates: Partial<Delivery>) => {
-    const finalCompanyId = companyId || '123';
+    const finalCompanyId = companyId || '00000000-0000-0000-0000-000000000000';
     try {
       const payload: any = { ...updates };
       if (updates.orderId) payload.order_id = updates.orderId;

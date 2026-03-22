@@ -13,11 +13,9 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
       let query = supabase.from('clients').select('*');
       
       if (companyId) {
-        // Busca os da empresa específica OU os legados (sem empresa) para não sumir dados existentes
-        query = query.or(`company_id.eq.${companyId},company_id.is.null`);
+        query = query.eq('company_id', companyId);
       } else {
-        // Se realmente não tiver empresa identificada, pegamos apenas os legados por segurança
-        query = query.is('company_id', null);
+        query = query.eq('company_id', '00000000-0000-0000-0000-000000000000');
       }
 
       const { data, error } = await query.order('trading_name');
@@ -52,13 +50,14 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
   }, [companyId]);
 
   const handleSaveClient = async (c: Client) => {
-    // Se o usuário não tem empresa identificada no momento, usamos um fallback temporário para evitar erros de bloqueio
-    const finalCompanyId = companyId || '123';
+    // Se o usuário não tem empresa identificada no momento, usamos um fallback temporário (UUID zero)
+    const finalCompanyId = companyId || '00000000-0000-0000-0000-000000000000';
     
     try {
       const payload = {
         id: (c.id && c.id.length > 20) ? c.id : undefined,
         company_id: finalCompanyId,
+        name: c.tradingName || c.legalName || 'Sem Nome', // Coluna obrigatória no banco
         type: c.type || 'Pessoa Física',
         document: c.document || '',
         legal_name: c.legalName || c.tradingName || '',
@@ -120,7 +119,7 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
   };
 
   const handleImportClients = async (data: any[]) => {
-    const finalCompanyId = companyId || '123';
+    const finalCompanyId = companyId || '00000000-0000-0000-0000-000000000000';
     try {
       const clientsToInsert = data.map(row => ({
         company_id: finalCompanyId,
@@ -160,7 +159,7 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
       
       setClients(prev => {
         const next = prev.filter(x => x.id !== id);
-        localStorage.setItem(`marmo_clients_${companyId || '123'}`, JSON.stringify(next));
+        localStorage.setItem(`marmo_clients_${companyId || '00000000-0000-0000-0000-000000000000'}`, JSON.stringify(next));
         return next;
       });
     } catch (err: any) {

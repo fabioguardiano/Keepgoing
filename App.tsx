@@ -53,14 +53,16 @@ const App: React.FC = () => {
   const [orders, setOrders] = useState<OrderService[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
 
-  // Efeito de busca de ordens
+  // Efeito de busca de ordens — depende do company_id para evitar vazar dados entre empresas
   useEffect(() => {
+    if (!user?.company_id) return;
     const fetchOrders = async () => {
       setLoadingOrders(true);
       try {
         const { data, error } = await supabase
           .from('orders_service')
           .select('*')
+          .or(`company_id.eq.${user.company_id},company_id.is.null`)
           .order('os_number', { ascending: false });
         
         if (error) throw error;
@@ -100,12 +102,13 @@ const App: React.FC = () => {
       }
     };
     fetchOrders();
-  }, []);
+  }, [user?.company_id]);
 
   const handleSaveOrder = async (o: OrderService) => {
     try {
       const payload = {
         id: o.id.length > 20 ? o.id : undefined,
+        company_id: user?.company_id || '00000000-0000-0000-0000-000000000000',
         os_number: o.osNumber,
         order_number: o.orderNumber,
         client_name: o.clientName,
@@ -216,7 +219,11 @@ const App: React.FC = () => {
             lastUpdate: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
           });
         }
-      } catch (error) { console.error('Erro cotações:', error); }
+      } catch (error) {
+        console.error('Erro cotações:', error);
+        // Mantém as taxas anteriores se já carregadas; evita cálculos com zero
+        setExchangeRates(prev => prev.usd > 0 ? prev : { usd: 5.70, eur: 6.10, lastUpdate: 'Offline' });
+      }
     };
     fetchRates();
     const inv = setInterval(fetchRates, 300000);
@@ -248,7 +255,8 @@ const App: React.FC = () => {
     if (u.role === 'driver') setCurrentView('Agenda de Entregas');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
     localStorage.removeItem('marmo_user');
   };
@@ -267,31 +275,74 @@ const App: React.FC = () => {
     }
   };
 
-  // Persistência inicial de login com migração de multi-tenant
+  // Persistência inicial de login via Supabase Auth
   useEffect(() => {
-    const savedUser = localStorage.getItem('marmo_user');
-    if (savedUser) {
-      try {
-        const u = JSON.parse(savedUser);
-        // Migração: se o usuário antigo não tem company_id, atribuímos o padrão '123'
-        if (u && !u.company_id) {
-          u.company_id = '123';
-          localStorage.setItem('marmo_user', JSON.stringify(u));
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const userMetadata = session.user.user_metadata;
+        const mappedUser = {
+          id: session.user.id,
+          email: session.user.email,
+          name: userMetadata.full_name || userMetadata.name || session.user.email?.split('@')[0],
+          role: userMetadata.role || 'viewer',
+          company_id: userMetadata.company_id || '00000000-0000-0000-0000-000000000000',
+          status: 'ativo',
+          createdAt: session.user.created_at
+        } as User;
+        
+        setUser(mappedUser);
+        localStorage.setItem('marmo_user', JSON.stringify(mappedUser));
+      } else {
+        // Fallback for legacy local storage users if any (optional)
+        const savedUser = localStorage.getItem('marmo_user');
+        if (savedUser) {
+          try {
+            const u = JSON.parse(savedUser);
+            if (u && !u.company_id) {
+              u.company_id = '00000000-0000-0000-0000-000000000000';
+              localStorage.setItem('marmo_user', JSON.stringify(u));
+            }
+            setUser(u);
+          } catch (e) {
+            console.error('Erro ao recuperar usuário local:', e);
+          }
         }
-        setUser(u);
-      } catch (e) {
-        console.error('Erro ao recuperar usuário:', e);
       }
-    }
+    };
+
+    checkSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        const userMetadata = session.user.user_metadata;
+        const mappedUser = {
+          id: session.user.id,
+          email: session.user.email,
+          name: userMetadata.full_name || userMetadata.name || session.user.email?.split('@')[0],
+          role: userMetadata.role || 'viewer',
+          company_id: userMetadata.company_id || '00000000-0000-0000-0000-000000000000',
+          status: 'ativo',
+          createdAt: session.user.created_at
+        } as User;
+        setUser(mappedUser);
+        localStorage.setItem('marmo_user', JSON.stringify(mappedUser));
+      } else {
+        setUser(null);
+        localStorage.removeItem('marmo_user');
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   // 8. Lógica de Renderização
   if (!user) return <Login onLogin={handleLogin} />;
 
   const filteredOrders = orders.filter(o =>
-    o.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    o.osNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    o.orderNumber.toLowerCase().includes(searchQuery.toLowerCase())
+    (o.clientName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (o.osNumber || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (o.orderNumber || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const renderContent = () => {

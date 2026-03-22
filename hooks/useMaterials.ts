@@ -12,9 +12,9 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
       let query = supabase.from('materials').select('*');
       
       if (companyId) {
-        query = query.or(`company_id.eq.${companyId},company_id.is.null`);
+        query = query.eq('company_id', companyId);
       } else {
-        query = query.is('company_id', null);
+        query = query.eq('company_id', '00000000-0000-0000-0000-000000000000');
       }
 
       const { data: materialsData, error: materialsError } = await query.order('name');
@@ -59,7 +59,7 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
   }, [companyId]);
 
   const handleSaveMaterial = async (m: Material) => {
-    const finalCompanyId = companyId || '123';
+    const finalCompanyId = companyId || '00000000-0000-0000-0000-000000000000';
     try {
       const payload = {
         id: (m.id && m.id.length > 20) ? m.id : undefined,
@@ -153,8 +153,6 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
       throw err;
     }
   };
-;
-
 
   const deleteMaterial = async (id: string) => {
     const { error } = await supabase.from('materials').delete().eq('id', id);
