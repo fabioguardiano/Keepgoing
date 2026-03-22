@@ -236,16 +236,16 @@ export const useSettings = (
   };
 
   const handleSaveBrand = (b: Brand) => setBrands(prev => prev.find(x => x.id === b.id) ? prev.map(x => x.id === b.id ? b : x) : [b, ...prev]);
-  const handleDeleteBrand = (id: string) => setBrands(prev => prev.filter(x => x.id !== id));
+  const handleDeleteBrand = (id: string) => setBrands(prev => prev.map(x => x.id === id ? { ...x, status: 'inativo' as const } : x));
 
   const handleSaveProductGroup = (g: ProductGroup) => setProductGroups(prev => prev.find(x => x.id === g.id) ? prev.map(x => x.id === g.id ? g : x) : [g, ...prev]);
   const handleDeleteProductGroup = (id: string) => setProductGroups(prev => prev.filter(x => x.id !== id));
 
   const handleSaveServiceGroup = (g: ServiceGroup) => setServiceGroups(prev => prev.find(x => x.id === g.id) ? prev.map(x => x.id === g.id ? g : x) : [g, ...prev]);
-  const handleDeleteServiceGroup = (id: string) => setServiceGroups(prev => prev.filter(x => x.id !== id));
+  const handleDeleteServiceGroup = (id: string) => setServiceGroups(prev => prev.map(x => x.id === id ? { ...x, status: 'inativo' as const } : x));
 
   const handleSaveSalesChannel = (c: SalesChannel) => setSalesChannels(prev => prev.find(x => x.id === c.id) ? prev.map(x => x.id === c.id ? c : x) : [...prev, c]);
-  const handleDeleteSalesChannel = (id: string) => setSalesChannels(prev => prev.filter(x => x.id !== id));
+  const handleDeleteSalesChannel = (id: string) => setSalesChannels(prev => prev.map(x => x.id === id ? { ...x, status: 'inativo' as const } : x));
 
   return {
     appUsers, handleSaveUser, handleDeleteUser,

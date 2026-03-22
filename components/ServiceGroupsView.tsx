@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Wrench, Plus, Search, Filter, Edit2, Trash2, X } from 'lucide-react';
+import { Wrench, Plus, Search, Filter, Edit2, Trash2, X, RotateCcw } from 'lucide-react';
 import { ServiceGroup } from '../types';
 
 interface ServiceGroupsViewProps {
@@ -12,6 +12,7 @@ export const ServiceGroupsView: React.FC<ServiceGroupsViewProps> = ({ groups, on
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<ServiceGroup | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showInactive, setShowInactive] = useState(false);
   const [formData, setFormData] = useState<Omit<ServiceGroup, 'id' | 'createdAt'>>({
     code: '',
     description: '',
@@ -51,10 +52,12 @@ export const ServiceGroupsView: React.FC<ServiceGroupsViewProps> = ({ groups, on
     });
   };
 
-  const filteredGroups = groups.filter(g => 
-    g.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    g.code.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredGroups = groups.filter(g => {
+    const matchesSearch = g.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      g.code.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = showInactive ? g.status === 'inativo' : (g.status === 'ativo' || !g.status);
+    return matchesSearch && matchesStatus;
+  });
 
   const inputClass = "w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/20 focus:border-[var(--primary-color)] transition-all text-sm";
   const labelClass = "block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1 ml-1 uppercase tracking-wider";
@@ -69,23 +72,31 @@ export const ServiceGroupsView: React.FC<ServiceGroupsViewProps> = ({ groups, on
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm">Configuração técnica de grupos de serviços e acabamentos</p>
         </div>
-        <button
-          onClick={() => {
-            const nextCode = groups.length > 0
-              ? String(Math.max(...groups.map(g => parseInt(g.code) || 0)) + 1).padStart(2, '0')
-              : '01';
-            setEditingGroup(null);
-            setFormData({
-              code: nextCode, description: '', altMin: 0, altMax: 0, un: '', indice: 0,
-              bnto: '', descFrete: '', perda: 0, ifp: 0, tpMin: 0, qtFun: 0, es: ''
-            });
-            setIsModalOpen(true);
-          }}
-          className="bg-[var(--primary-color)] hover:opacity-90 text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-[var(--primary-color)]/20 active:scale-95"
-        >
-          <Plus size={20} />
-          Novo Grupo
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowInactive(!showInactive)}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${showInactive ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+          >
+            {showInactive ? 'Ocultar Inativos' : 'Mostrar Inativos'}
+          </button>
+          <button
+            onClick={() => {
+              const nextCode = groups.length > 0
+                ? String(Math.max(...groups.map(g => parseInt(g.code) || 0)) + 1).padStart(2, '0')
+                : '01';
+              setEditingGroup(null);
+              setFormData({
+                code: nextCode, description: '', altMin: 0, altMax: 0, un: '', indice: 0,
+                bnto: '', descFrete: '', perda: 0, ifp: 0, tpMin: 0, qtFun: 0, es: ''
+              });
+              setIsModalOpen(true);
+            }}
+            className="bg-[var(--primary-color)] hover:opacity-90 text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-[var(--primary-color)]/20 active:scale-95"
+          >
+            <Plus size={20} />
+            Novo Grupo
+          </button>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
@@ -117,14 +128,19 @@ export const ServiceGroupsView: React.FC<ServiceGroupsViewProps> = ({ groups, on
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filteredGroups.map((group) => (
-                <tr key={group.id} className="hover:bg-slate-50/50 transition-colors group">
+                <tr key={group.id} className={`hover:bg-slate-50/50 transition-colors group ${group.status === 'inativo' ? 'opacity-60' : ''}`}>
                   <td className="px-6 py-5">
                     <span className="text-sm font-black text-primary bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20 shadow-sm">
                       #{group.code}
                     </span>
                   </td>
                   <td className="px-6 py-5">
-                    <span className="text-base font-black text-slate-800">{group.description}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-base font-black text-slate-800">{group.description}</span>
+                      {group.status === 'inativo' && (
+                        <span className="text-[10px] font-bold bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full uppercase tracking-wider">Inativo</span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-5 text-sm font-bold text-center text-slate-500 uppercase">{group.un}</td>
                   <td className="px-6 py-5 text-sm font-bold text-center text-slate-500">
@@ -141,13 +157,23 @@ export const ServiceGroupsView: React.FC<ServiceGroupsViewProps> = ({ groups, on
                       >
                         <Edit2 size={16} />
                       </button>
-                      <button
-                        onClick={() => onDeleteGroup(group.id)}
-                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
-                        title="Excluir"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      {group.status === 'inativo' ? (
+                        <button
+                          onClick={() => onSaveGroup({ ...group, status: 'ativo' })}
+                          className="p-2 text-green-500 hover:bg-green-50 rounded-xl transition-all border border-transparent hover:border-green-100"
+                          title="Ativar"
+                        >
+                          <RotateCcw size={16} />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => onDeleteGroup(group.id)}
+                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
+                          title="Inativar"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

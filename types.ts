@@ -172,6 +172,7 @@ export interface Client {
 export interface SalesChannel {
   id: string;
   name: string;
+  status?: 'ativo' | 'inativo';
   createdAt: string;
 }
 
@@ -428,6 +429,7 @@ export interface Brand {
   id: string;
   code: string;
   description: string;
+  status?: 'ativo' | 'inativo';
   createdAt: string;
 }
 
@@ -442,6 +444,7 @@ export interface ServiceGroup {
   id: string;
   code: string;
   description: string;
+  status?: 'ativo' | 'inativo';
   altMin?: number;
   altMax?: number;
   un?: string;

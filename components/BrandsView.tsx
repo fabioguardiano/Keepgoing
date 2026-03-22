@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Diamond, Plus, Search, Filter, MoreVertical, Edit2, Trash2, X } from 'lucide-react';
+import { Diamond, Plus, Search, Filter, Edit2, Trash2, X, RotateCcw } from 'lucide-react';
 import { Brand } from '../types';
 
 interface BrandsViewProps {
@@ -12,6 +12,7 @@ export const BrandsView: React.FC<BrandsViewProps> = ({ brands, onSaveBrand, onD
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showInactive, setShowInactive] = useState(false);
   const [formData, setFormData] = useState<Omit<Brand, 'id' | 'createdAt'>>({
     code: '',
     description: ''
@@ -39,10 +40,12 @@ export const BrandsView: React.FC<BrandsViewProps> = ({ brands, onSaveBrand, onD
     setFormData({ code: '', description: '' });
   };
 
-  const filteredBrands = brands.filter(b => 
-    b.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    b.code.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredBrands = brands.filter(b => {
+    const matchesSearch = b.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.code.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = showInactive ? b.status === 'inativo' : (b.status === 'ativo' || !b.status);
+    return matchesSearch && matchesStatus;
+  });
 
   const inputClass = "w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/20 focus:border-[var(--primary-color)] transition-all";
   const labelClass = "block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 ml-1";
@@ -57,20 +60,28 @@ export const BrandsView: React.FC<BrandsViewProps> = ({ brands, onSaveBrand, onD
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm">Gerencie as marcas disponíveis no sistema</p>
         </div>
-        <button
-          onClick={() => {
-            const nextCode = brands.length > 0 
-              ? String(Math.max(...brands.map(b => parseInt(b.code) || 0)) + 1).padStart(2, '0')
-              : '01';
-            setEditingBrand(null);
-            setFormData({ code: nextCode, description: '' });
-            setIsModalOpen(true);
-          }}
-          className="bg-[var(--primary-color)] hover:opacity-90 text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-[var(--primary-color)]/20 active:scale-95"
-        >
-          <Plus size={20} />
-          Nova Marca
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowInactive(!showInactive)}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${showInactive ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+          >
+            {showInactive ? 'Ocultar Inativos' : 'Mostrar Inativos'}
+          </button>
+          <button
+            onClick={() => {
+              const nextCode = brands.filter(b => !b.status || b.status === 'ativo').length > 0
+                ? String(Math.max(...brands.map(b => parseInt(b.code) || 0)) + 1).padStart(2, '0')
+                : '01';
+              setEditingBrand(null);
+              setFormData({ code: nextCode, description: '' });
+              setIsModalOpen(true);
+            }}
+            className="bg-[var(--primary-color)] hover:opacity-90 text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-[var(--primary-color)]/20 active:scale-95"
+          >
+            <Plus size={20} />
+            Nova Marca
+          </button>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
@@ -103,14 +114,19 @@ export const BrandsView: React.FC<BrandsViewProps> = ({ brands, onSaveBrand, onD
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filteredBrands.map((brand) => (
-                <tr key={brand.id} className="hover:bg-slate-50/50 transition-colors group">
+                <tr key={brand.id} className={`hover:bg-slate-50/50 transition-colors group ${brand.status === 'inativo' ? 'opacity-60' : ''}`}>
                   <td className="px-6 py-5">
                     <span className="text-sm font-black text-primary bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20 shadow-sm">
                       #{brand.code}
                     </span>
                   </td>
                   <td className="px-6 py-5">
-                    <span className="text-base font-black text-slate-800">{brand.description}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-base font-black text-slate-800">{brand.description}</span>
+                      {brand.status === 'inativo' && (
+                        <span className="text-[10px] font-bold bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full uppercase tracking-wider">Inativo</span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-5 text-sm font-bold text-slate-500">
                     {new Date(brand.createdAt).toLocaleDateString('pt-BR')}
@@ -124,13 +140,23 @@ export const BrandsView: React.FC<BrandsViewProps> = ({ brands, onSaveBrand, onD
                       >
                         <Edit2 size={16} />
                       </button>
-                      <button
-                        onClick={() => onDeleteBrand(brand.id)}
-                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
-                        title="Excluir"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      {brand.status === 'inativo' ? (
+                        <button
+                          onClick={() => onSaveBrand({ ...brand, status: 'ativo' })}
+                          className="p-2 text-green-500 hover:bg-green-50 rounded-xl transition-all border border-transparent hover:border-green-100"
+                          title="Ativar"
+                        >
+                          <RotateCcw size={16} />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => onDeleteBrand(brand.id)}
+                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
+                          title="Inativar"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
