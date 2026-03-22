@@ -172,7 +172,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
     }
   };
 
-  const inputClass = "w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ec5b13]/20 font-bold text-slate-700 transition-all text-xs";
+  const inputClass = "w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/20 font-bold text-slate-700 transition-all text-xs";
   const labelClass = "block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1";
 
   return (
@@ -186,11 +186,11 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                 <input 
                   type="radio" 
                   name="materialType" 
-                  className="w-4 h-4 accent-[#ec5b13]"
+                  className="w-4 h-4 accent-[var(--primary-color)]"
                   checked={formData.type === type}
                   onChange={() => setFormData({...formData, type})}
                 />
-                <span className={`text-xs font-black uppercase tracking-wider ${formData.type === type ? 'text-[#ec5b13]' : 'text-slate-400 group-hover:text-slate-600'}`}>
+                <span className={`text-xs font-black uppercase tracking-wider ${formData.type === type ? 'text-[var(--primary-color)]' : 'text-slate-400 group-hover:text-slate-600'}`}>
                   {type}
                 </span>
               </label>
@@ -200,7 +200,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
              <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200">
                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status:</span>
                <select 
-                 className="text-[10px] font-black uppercase text-[#ec5b13] bg-transparent focus:outline-none"
+                 className="text-[10px] font-black uppercase text-[var(--primary-color)] bg-transparent focus:outline-none"
                  value={formData.status}
                  onChange={e => setFormData({...formData, status: e.target.value as 'ativo' | 'inativo'})}
                >
@@ -223,19 +223,19 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
         <div className="px-8 flex bg-white border-b border-slate-100">
           <button 
             onClick={() => setActiveTab('geral')}
-            className={`py-3 px-6 text-xs font-black uppercase tracking-widest border-b-2 transition-all ${activeTab === 'geral' ? 'border-[#ec5b13] text-[#ec5b13]' : 'border-transparent text-slate-400'}`}
+            className={`py-3 px-6 text-xs font-black uppercase tracking-widest border-b-2 transition-all ${activeTab === 'geral' ? 'border-[var(--primary-color)] text-[var(--primary-color)]' : 'border-transparent text-slate-400'}`}
           >
             Dados Básicos
           </button>
           <button 
             onClick={() => setActiveTab('historico')}
-            className={`py-3 px-6 text-xs font-black uppercase tracking-widest border-b-2 transition-all ${activeTab === 'historico' ? 'border-[#ec5b13] text-[#ec5b13]' : 'border-transparent text-slate-400'}`}
+            className={`py-3 px-6 text-xs font-black uppercase tracking-widest border-b-2 transition-all ${activeTab === 'historico' ? 'border-[var(--primary-color)] text-[var(--primary-color)]' : 'border-transparent text-slate-400'}`}
           >
             Histórico de Preços
           </button>
           <button 
             onClick={() => setActiveTab('nfe')}
-            className={`py-3 px-6 text-xs font-black uppercase tracking-widest border-b-2 transition-all ${activeTab === 'nfe' ? 'border-[#ec5b13] text-[#ec5b13]' : 'border-transparent text-slate-400'}`}
+            className={`py-3 px-6 text-xs font-black uppercase tracking-widest border-b-2 transition-all ${activeTab === 'nfe' ? 'border-[var(--primary-color)] text-[var(--primary-color)]' : 'border-transparent text-slate-400'}`}
           >
             Dados NFe
           </button>
@@ -367,7 +367,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                         type="button" 
                         title="Sincronizar com cotação atual"
                         onClick={() => setFormData(prev => ({...prev, dolarRate: exchangeRates.usd}))} 
-                        className={`absolute right-2 top-6 p-1 rounded-md transition-all ${exchangeRates.usd > 0 ? 'text-[#ec5b13] hover:bg-orange-50 bg-white shadow-sm border border-slate-100' : 'text-slate-300 opacity-50 cursor-not-allowed'}`}
+                        className={`absolute right-2 top-6 p-1 rounded-md transition-all ${exchangeRates.usd > 0 ? 'text-[var(--primary-color)] hover:bg-orange-50 bg-white shadow-sm border border-slate-100' : 'text-slate-300 opacity-50 cursor-not-allowed'}`}
                       >
                         <TrendingUp size={12} />
                       </button>
@@ -387,7 +387,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                         type="button" 
                         title="Sincronizar com cotação atual"
                         onClick={() => setFormData(prev => ({...prev, euroRate: exchangeRates.eur}))} 
-                        className={`absolute right-2 top-6 p-1 rounded-md transition-all ${exchangeRates.eur > 0 ? 'text-[#ec5b13] hover:bg-orange-50 bg-white shadow-sm border border-slate-100' : 'text-slate-300 opacity-50 cursor-not-allowed'}`}
+                        className={`absolute right-2 top-6 p-1 rounded-md transition-all ${exchangeRates.eur > 0 ? 'text-[var(--primary-color)] hover:bg-orange-50 bg-white shadow-sm border border-slate-100' : 'text-slate-300 opacity-50 cursor-not-allowed'}`}
                       >
                         <TrendingUp size={12} />
                       </button>
@@ -403,7 +403,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                      
                      <div className="mt-4 pt-4 border-t border-orange-200">
                         <span className="text-[10px] font-black text-orange-400 uppercase tracking-widest block mb-1">Vlr. Venda Sugerido</span>
-                        <div className="text-2xl font-black text-[#ec5b13]">R$ {formData.suggestedPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                        <div className="text-2xl font-black text-[var(--primary-color)]">R$ {formData.suggestedPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
                      </div>
                   </div>
 
@@ -433,7 +433,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                        <input 
                          type="number" 
                          step="0.01" 
-                         className="bg-transparent border-b-2 border-slate-700 w-full text-3xl font-black focus:outline-none focus:border-[#ec5b13] transition-colors" 
+                         className="bg-transparent border-b-2 border-slate-700 w-full text-3xl font-black focus:outline-none focus:border-[var(--primary-color)] transition-colors" 
                          value={formData.sellingPrice} 
                          onChange={e => setFormData({...formData, sellingPrice: Number(e.target.value)})} 
                        />
@@ -441,7 +441,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                      <button 
                        type="button" 
                        onClick={() => setFormData(prev => ({ ...prev, sellingPrice: prev.suggestedPrice }))}
-                       className="w-full mt-4 bg-[#ec5b13] py-3 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#d84a0d] transition-all transform active:scale-95"
+                       className="w-full mt-4 bg-[var(--primary-color)] py-3 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[var(--secondary-color)] transition-all transform active:scale-95"
                      >
                        <TrendingUp size={14}/> Compor Preço de Venda
                      </button>
@@ -453,7 +453,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                          <label key={curr} className="flex items-center gap-1 cursor-pointer">
                            <input 
                              type="radio" 
-                             className="accent-[#ec5b13]" 
+                             className="accent-[var(--primary-color)]" 
                              checked={formData.currency === curr} 
                              onChange={() => setFormData({...formData, currency: curr})}
                            />
@@ -587,7 +587,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
          <div className="p-8 bg-slate-50 border-t border-slate-100 flex items-center justify-end">
            <div className="flex gap-3">
              <button onClick={onClose} type="button" className="px-6 py-3 rounded-2xl font-bold text-slate-400 hover:text-slate-600 transition-all">Cancela</button>
-             <button onClick={handleSubmit} className="px-10 py-3 bg-[#ec5b13] text-white rounded-2xl font-black shadow-lg shadow-[#ec5b13]/20 hover:bg-[#d84a0d] transition-all transform hover:scale-[1.02] active:scale-95">Grava Registro</button>
+             <button onClick={handleSubmit} className="px-10 py-3 bg-[var(--primary-color)] text-white rounded-2xl font-black shadow-lg shadow-[var(--primary-color)]/20 hover:bg-[var(--secondary-color)] transition-all transform hover:scale-[1.02] active:scale-95">Grava Registro</button>
            </div>
         </div>
       </div>

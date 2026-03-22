@@ -380,7 +380,7 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
             <h2 className="text-xl font-bold text-gray-900">Agenda de Entregas</h2>
             <button 
               onClick={() => setIsModalOpen(true)}
-              className="p-2 bg-[#ec5b13] text-white rounded-lg hover:bg-[#d84a0d] transition-colors"
+              className="p-2 bg-[var(--primary-color)] text-white rounded-lg hover:bg-[var(--secondary-color)] transition-colors"
             >
               <Plus size={20} />
             </button>
@@ -390,7 +390,7 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
             <input
               type="text"
               placeholder="Buscar por O.S. ou Cliente..."
-              className="w-full pl-10 pr-4 py-2 bg-gray-100 border-none rounded-xl text-sm focus:ring-2 focus:ring-[#ec5b13]/20 transition-all font-medium"
+              className="w-full pl-10 pr-4 py-2 bg-gray-100 border-none rounded-xl text-sm focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all font-medium"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -400,7 +400,7 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           <div className="flex items-center justify-between px-2 mb-2">
             <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Entregas do Dia</span>
-            <span className="text-xs font-bold text-[#ec5b13] bg-orange-50 px-2 py-1 rounded-full">
+            <span className="text-xs font-bold text-[var(--primary-color)] bg-orange-50 px-2 py-1 rounded-full">
               {deliveries.length} total
             </span>
           </div>
@@ -415,11 +415,11 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
                 <div 
                   key={delivery.id} 
                   onClick={() => setSelectedDeliveryId(delivery.id)}
-                  className={`p-4 rounded-2xl border transition-all group cursor-pointer shadow-sm ${selectedDeliveryId === delivery.id ? 'border-[#ec5b13] bg-orange-50/50' : 'border-gray-100 bg-white hover:border-[#ec5b13]/30 hover:bg-orange-50/20'}`}
+                  className={`p-4 rounded-2xl border transition-all group cursor-pointer shadow-sm ${selectedDeliveryId === delivery.id ? 'border-[var(--primary-color)] bg-orange-50/50' : 'border-gray-100 bg-white hover:border-[var(--primary-color)]/30 hover:bg-orange-50/20'}`}
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h3 className="font-bold text-gray-900 group-hover:text-[#ec5b13] transition-colors">{delivery.clientName}</h3>
+                      <h3 className="font-bold text-gray-900 group-hover:text-[var(--primary-color)] transition-colors">{delivery.clientName}</h3>
                       <span className="text-xs font-bold text-gray-400">O.S. {delivery.osNumber}</span>
                     </div>
                     <div className="flex items-center gap-1">
@@ -440,14 +440,14 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
                       <div className="h-4 w-[1px] bg-gray-200 mx-1" />
                       <button 
                         onClick={(e) => { e.stopPropagation(); moveDelivery(delivery.id, 'up'); }}
-                        className="p-1 text-gray-400 hover:text-[#ec5b13] hover:bg-orange-50 rounded transition-colors"
+                        className="p-1 text-gray-400 hover:text-[var(--primary-color)] hover:bg-orange-50 rounded transition-colors"
                         title="Subir posição na rota"
                       >
                         <ChevronRight className="-rotate-90 w-4 h-4" />
                       </button>
                       <button 
                         onClick={(e) => { e.stopPropagation(); moveDelivery(delivery.id, 'down'); }}
-                        className="p-1 text-gray-400 hover:text-[#ec5b13] hover:bg-orange-50 rounded transition-colors"
+                        className="p-1 text-gray-400 hover:text-[var(--primary-color)] hover:bg-orange-50 rounded transition-colors"
                         title="Descer posição na rota"
                       >
                         <ChevronRight className="rotate-90 w-4 h-4" />
@@ -455,7 +455,7 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
                       <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${
                         delivery.status === 'entregue' ? 'bg-green-100 text-green-600' :
                         delivery.status === 'em_rota' ? 'bg-blue-100 text-blue-600' :
-                        'bg-orange-100 text-[#ec5b13]'
+                        'bg-orange-100 text-[var(--primary-color)]'
                       }`}>
                         {delivery.status === 'pendente' ? 'Pendente' : delivery.status === 'em_rota' ? 'Em Rota' : 'Entregue'}
                       </span>
@@ -499,7 +499,7 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
           <div className="p-4 bg-white/80 backdrop-blur-md border-b flex items-center justify-between z-[1000] absolute top-0 left-0 right-0">
             <div className="flex items-center gap-4">
                <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border shadow-sm text-sm font-bold text-gray-700">
-                 <Truck size={16} className="text-[#ec5b13]" /> Rota de hoje: {deliveries.length} paradas
+                 <Truck size={16} className="text-[var(--primary-color)]" /> Rota de hoje: {deliveries.length} paradas
                </div>
                <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border shadow-sm text-sm font-bold text-gray-700">
                  <Navigation size={16} className="text-blue-500" /> Estimativa: 4h 20min
@@ -560,14 +560,14 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
                   <Marker 
                     key={d.id} 
                     position={coords[d.address] as L.LatLngTuple} 
-                    icon={createNumberedIcon(i + 1, d.id === selectedDeliveryId ? '#2563eb' : '#ec5b13')}
+                    icon={createNumberedIcon(i + 1, d.id === selectedDeliveryId ? '#2563eb' : 'var(--primary-color)')}
                     eventHandlers={{ click: () => setSelectedDeliveryId(d.id) }}
                   >
                     <Popup>
                       <div className="p-1">
                         <p className="font-black text-[10px] uppercase text-gray-400 mb-1">Entrega {i + 1}</p>
                         <p className="font-bold text-sm text-gray-900">{d.clientName}</p>
-                        <p className="text-[11px] font-bold text-[#ec5b13] mb-1">O.S. {d.osNumber}</p>
+                        <p className="text-[11px] font-bold text-[var(--primary-color)] mb-1">O.S. {d.osNumber}</p>
                         <p className="text-xs text-gray-500 line-clamp-2">{d.address}</p>
                         <div className="mt-2 text-[10px] font-black uppercase text-gray-400 flex items-center gap-1">
                           <Clock size={10} /> {d.time}
@@ -580,7 +580,7 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
 
               {/* Route Lines by Group */}
               {Array.from(new Set(deliveries.map(d => d.routeGroup || 'Manhã'))).map((group, idx) => {
-                const colors = ['#ec5b13', '#2563eb', '#10b981', '#f59e0b', '#8b5cf6'];
+                const colors = ['var(--primary-color)', '#2563eb', '#10b981', '#f59e0b', '#8b5cf6'];
                 const groupColor = colors[idx % colors.length];
                 const groupDeliveries = deliveries.filter(d => (d.routeGroup || 'Manhã') === group);
                 const positions: [number, number][] = [];
@@ -626,7 +626,7 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
                   <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b pb-2">Legenda das Rotas</h4>
                   
                   {Array.from(new Set(deliveries.map(d => d.routeGroup || 'Manhã'))).map((group, groupIdx) => {
-                    const colors = ['#ec5b13', '#2563eb', '#10b981', '#f59e0b', '#8b5cf6'];
+                    const colors = ['var(--primary-color)', '#2563eb', '#10b981', '#f59e0b', '#8b5cf6'];
                     const groupColor = colors[groupIdx % colors.length];
                     
                     return (
@@ -693,7 +693,7 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Selecionar O.S.</label>
                 <select 
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-medium focus:ring-2 focus:ring-[#ec5b13]/20 transition-all outline-none"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-medium focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all outline-none"
                   value={newDelivery.orderId}
                   onChange={e => {
                     const order = orders.find(o => o.id === e.target.value);
@@ -719,7 +719,7 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
                 <input 
                   type="text" 
                   placeholder="Rua, número, bairro..."
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-medium focus:ring-2 focus:ring-[#ec5b13]/20 transition-all outline-none"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-medium focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all outline-none"
                   value={newDelivery.address}
                   onChange={e => setNewDelivery({...newDelivery, address: e.target.value})}
                   required
@@ -731,7 +731,7 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
                   <input 
                     type="text"
                     placeholder="Ex: Rota 1, Manhã, Expressa..."
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-medium focus:ring-2 focus:ring-[#ec5b13]/20 transition-all outline-none"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-medium focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all outline-none"
                     value={newDelivery.routeGroup}
                     onChange={e => setNewDelivery({...newDelivery, routeGroup: e.target.value})}
                     required
@@ -743,7 +743,7 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Data</label>
                   <input 
                     type="date" 
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-medium focus:ring-2 focus:ring-[#ec5b13]/20 transition-all outline-none"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-medium focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all outline-none"
                     value={newDelivery.date}
                     onChange={e => setNewDelivery({...newDelivery, date: e.target.value})}
                     required
@@ -753,7 +753,7 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Horário Estimado</label>
                   <input 
                     type="time" 
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-medium focus:ring-2 focus:ring-[#ec5b13]/20 transition-all outline-none"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-medium focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all outline-none"
                     value={newDelivery.time}
                     onChange={e => setNewDelivery({...newDelivery, time: e.target.value})}
                     required
@@ -763,7 +763,7 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
 
               <button 
                 type="submit"
-                className="w-full bg-[#ec5b13] text-white font-bold py-4 rounded-2xl shadow-lg shadow-[#ec5b13]/20 hover:bg-[#d84a0d] transition-all transform hover:scale-[1.02] active:scale-95 mt-4"
+                className="w-full bg-[var(--primary-color)] text-white font-bold py-4 rounded-2xl shadow-lg shadow-[var(--primary-color)]/20 hover:bg-[var(--secondary-color)] transition-all transform hover:scale-[1.02] active:scale-95 mt-4"
               >
                 {editingDeliveryId ? 'Salvar Alterações' : 'Confirmar Agendamento'}
               </button>

@@ -95,7 +95,7 @@ export const ServiceGroupsView: React.FC<ServiceGroupsViewProps> = ({ groups, on
             <input
               type="text"
               placeholder="Buscar por código ou descrição..."
-              className="w-full pl-12 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl text-sm focus:ring-2 focus:ring-[#ec5b13]/20 transition-all"
+              className="w-full pl-12 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl text-sm focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />

@@ -182,7 +182,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                                                 onChange={(e) => setTempName(e.target.value)}
                                                                                 onBlur={() => handleRename(phase.name)}
                                                                                 onKeyDown={(e) => e.key === 'Enter' && handleRename(phase.name)}
-                                                                                className="w-full bg-white border border-[#ec5b13] rounded-lg px-2 py-1 text-sm font-bold focus:outline-none"
+                                                                                className="w-full bg-white border border-[var(--primary-color)] rounded-lg px-2 py-1 text-sm font-bold focus:outline-none"
                                                                             />
                                                                         </div>
                                                                     ) : (
@@ -303,7 +303,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                                                         setEditingPhase(null);
                                                                                     }
                                                                                 }}
-                                                                                className="w-full bg-white border border-[#ec5b13] rounded-lg px-2 py-1 text-sm font-bold focus:outline-none"
+                                                                                className="w-full bg-white border border-[var(--primary-color)] rounded-lg px-2 py-1 text-sm font-bold focus:outline-none"
                                                                             />
                                                                         </div>
                                                                     ) : (

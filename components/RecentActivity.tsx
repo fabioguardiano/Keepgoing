@@ -45,7 +45,7 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities, isOp
                 <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                     <div>
                         <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                            <Clock size={18} className="text-[#ec5b13]" />
+                            <Clock size={18} className="text-[var(--primary-color)]" />
                             Atividade Recente
                         </h2>
                         <p className="text-xs text-slate-500 font-medium">{activities.length} ações registradas</p>
@@ -75,7 +75,7 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities, isOp
                                     <React.Fragment key={activity.id}>
                                         {showDate && (
                                             <div className="sticky top-0 bg-white/90 backdrop-blur py-2">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-[#ec5b13] bg-orange-50 px-2 py-0.5 rounded-full">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--primary-color)] bg-orange-50 px-2 py-0.5 rounded-full">
                                                     {getRelativeDate(activity.timestamp)}
                                                 </span>
                                             </div>

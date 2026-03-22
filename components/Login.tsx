@@ -54,16 +54,16 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
       {/* Decorative Elements */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none opacity-20 dark:opacity-10">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#ec5b13] rounded-full blur-[120px]"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-[#ec5b13] rounded-full blur-[100px]"></div>
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[var(--primary-color)] rounded-full blur-[120px]"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-[var(--primary-color)] rounded-full blur-[100px]"></div>
         <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(236, 91, 19, 0.1) 1px, transparent 0)', backgroundSize: '40px 40px' }}></div>
       </div>
 
-      <div className="w-full max-w-md bg-white dark:bg-[#221610]/50 rounded-xl shadow-xl overflow-hidden border border-[#ec5b13]/10">
+      <div className="w-full max-w-md bg-white dark:bg-[#221610]/50 rounded-xl shadow-xl overflow-hidden border border-[var(--primary-color)]/10">
 
         {/* Header / Logo Section */}
         <div className="pt-10 pb-6 px-8 flex flex-col items-center">
-          <div className="w-16 h-16 bg-[#ec5b13] rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-[#ec5b13]/20">
+          <div className="w-16 h-16 bg-[var(--primary-color)] rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-[var(--primary-color)]/20">
             <Layers className="text-white w-8 h-8" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">KeepGoing</h1>
@@ -90,7 +90,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-[#221610] border border-slate-200 dark:border-[#ec5b13]/20 rounded-lg focus:ring-2 focus:ring-[#ec5b13]/50 focus:border-[#ec5b13] outline-none transition-all dark:text-white placeholder:text-slate-400"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-[#221610] border border-slate-200 dark:border-[var(--primary-color)]/20 rounded-lg focus:ring-2 focus:ring-[var(--primary-color)]/50 focus:border-[var(--primary-color)] outline-none transition-all dark:text-white placeholder:text-slate-400"
                   placeholder="seu@email.com"
                   required
                   disabled={loading}
@@ -102,7 +102,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
                 <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Senha</label>
-                <a href="#" className="text-xs font-semibold text-[#ec5b13] hover:underline">Esqueceu a senha?</a>
+                <a href="#" className="text-xs font-semibold text-[var(--primary-color)] hover:underline">Esqueceu a senha?</a>
               </div>
               <div className="relative flex items-center">
                 <Lock className="absolute left-3 text-slate-400 w-5 h-5" />
@@ -110,7 +110,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 bg-slate-50 dark:bg-[#221610] border border-slate-200 dark:border-[#ec5b13]/20 rounded-lg focus:ring-2 focus:ring-[#ec5b13]/50 focus:border-[#ec5b13] outline-none transition-all dark:text-white placeholder:text-slate-400"
+                  className="w-full pl-10 pr-12 py-3 bg-slate-50 dark:bg-[#221610] border border-slate-200 dark:border-[var(--primary-color)]/20 rounded-lg focus:ring-2 focus:ring-[var(--primary-color)]/50 focus:border-[var(--primary-color)] outline-none transition-all dark:text-white placeholder:text-slate-400"
                   placeholder="••••••••"
                   required
                   disabled={loading}
@@ -118,7 +118,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 text-slate-400 hover:text-[#ec5b13] transition-colors"
+                  className="absolute right-3 text-slate-400 hover:text-[var(--primary-color)] transition-colors"
                   disabled={loading}
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -131,7 +131,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <input 
                 type="checkbox" 
                 id="remember" 
-                className="w-4 h-4 rounded border-slate-300 text-[#ec5b13] focus:ring-[#ec5b13]" 
+                className="w-4 h-4 rounded border-slate-300 text-[var(--primary-color)] focus:ring-[var(--primary-color)]" 
                 disabled={loading}
               />
               <label htmlFor="remember" className="text-sm text-slate-600 dark:text-slate-400">Lembrar de mim</label>
@@ -140,7 +140,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
             {/* Submit Button */}
             <button
               type="submit"
-              className={`w-full bg-[#ec5b13] hover:bg-[#ec5b13]/90 text-white font-bold py-3.5 rounded-lg shadow-lg shadow-[#ec5b13]/25 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+              className={`w-full bg-[var(--primary-color)] hover:bg-[var(--primary-color)]/90 text-white font-bold py-3.5 rounded-lg shadow-lg shadow-[var(--primary-color)]/25 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
               disabled={loading}
             >
               {loading ? (
@@ -152,12 +152,12 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </form>
 
           {/* Footer Links */}
-          <div className="mt-8 pt-6 border-t border-slate-100 dark:border-[#ec5b13]/10 flex flex-col items-center gap-3">
+          <div className="mt-8 pt-6 border-t border-slate-100 dark:border-[var(--primary-color)]/10 flex flex-col items-center gap-3">
             <p className="text-sm text-slate-500 dark:text-slate-400">
               Ainda não tem uma conta?
-              <a href="#" className="text-[#ec5b13] font-semibold hover:underline ml-1">Criar conta</a>
+              <a href="#" className="text-[var(--primary-color)] font-semibold hover:underline ml-1">Criar conta</a>
             </p>
-            <a href="#" className="text-xs text-slate-400 dark:text-slate-500 hover:text-[#ec5b13] transition-colors flex items-center gap-1">
+            <a href="#" className="text-xs text-slate-400 dark:text-slate-500 hover:text-[var(--primary-color)] transition-colors flex items-center gap-1">
               <Headset className="w-4 h-4" />
               Suporte técnico
             </a>

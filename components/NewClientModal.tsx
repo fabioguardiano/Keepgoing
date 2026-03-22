@@ -505,9 +505,9 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                   <div className="grid grid-cols-6 gap-4">
                     {/* Linha 1 - CEP */}
                     <div className="col-span-6">
-                      <label className={labelClass}>CEP {isLoadingCEP && <span className="text-[#ec5b13] animate-pulse font-normal lowercase">(Busca...)</span>}</label>
+                      <label className={labelClass}>CEP {isLoadingCEP && <span className="text-[var(--primary-color)] animate-pulse font-normal lowercase">(Busca...)</span>}</label>
                       <input 
-                        className="w-full md:w-1/3 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#ec5b13]/20 transition-all disabled:opacity-50"
+                        className="w-full md:w-1/3 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all disabled:opacity-50"
                         placeholder="00000-000"
                         maxLength={9}
                         value={formData.address.zipCode}
@@ -647,7 +647,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                           setFormData({...formData, deliveryAddress: undefined});
                         }
                       }}
-                      className="text-[#ec5b13] text-sm font-black hover:underline"
+                      className="text-[var(--primary-color)] text-sm font-black hover:underline"
                     >
                       {formData.deliveryAddress ? 'Limpar/Remover' : 'Copiar Principal'}
                     </button>
@@ -658,7 +658,7 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                     <div className="col-span-6">
                       <label className={labelClass}>CEP Entrega</label>
                       <input 
-                        className="w-full md:w-1/3 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#ec5b13]/20 transition-all disabled:opacity-50"
+                        className="w-full md:w-1/3 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all disabled:opacity-50"
                         placeholder="00000-000"
                         maxLength={9}
                         value={formData.deliveryAddress?.zipCode || ''}

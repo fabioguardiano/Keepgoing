@@ -47,7 +47,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[#ec5b13] p-1.5 bg-orange-50 rounded-xl">
+            <span className="text-[var(--primary-color)] p-1.5 bg-orange-50 rounded-xl">
                <Package size={20} />
             </span>
             <h1 className="text-2xl font-black text-slate-800 tracking-tight">Matéria Prima</h1>
@@ -63,7 +63,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           </button>
           <button 
             onClick={handleAddNew}
-            className="bg-[#ec5b13] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[#ec5b13]/20 hover:bg-[#d84a0d] transition-all transform hover:scale-[1.02] active:scale-95"
+            className="bg-[var(--primary-color)] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[var(--primary-color)]/20 hover:bg-[var(--secondary-color)] transition-all transform hover:scale-[1.02] active:scale-95"
           >
             <Plus size={20} /> Novo Registro
           </button>
@@ -82,7 +82,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
         </div>
         <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
           <div className="flex items-center gap-4 mb-2">
-            <div className="p-3 bg-orange-50 text-[#ec5b13] rounded-2xl">
+            <div className="p-3 bg-orange-50 text-[var(--primary-color)] rounded-2xl">
               <TrendingUp size={24} />
             </div>
             <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">Valor em Estoque</span>
@@ -106,7 +106,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           <input 
             type="text"
             placeholder="Buscar por código ou descrição..."
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ec5b13]/20 font-medium"
+            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/20 font-medium"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -158,7 +158,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                   <td className="px-6 py-4 font-bold text-slate-400 text-sm">
                     R$ {material.suggestedPrice?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </td>
-                  <td className="px-6 py-4 font-black text-[#ec5b13]">
+                  <td className="px-6 py-4 font-black text-[var(--primary-color)]">
                     R$ {material.sellingPrice?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </td>
                   <td className="px-6 py-4 text-right">

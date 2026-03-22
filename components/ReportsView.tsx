@@ -57,7 +57,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ orders, deliveries }) 
         { label: 'Cortado', value: cut, color: '#3b82f6' },
         { label: 'Acabamento', value: finished, color: '#8b5cf6' },
         { label: 'Entregue', value: delivered, color: '#10b981' },
-        { label: 'Concluído', value: concludedArea, color: '#ec5b13' },
+        { label: 'Concluído', value: concludedArea, color: 'var(--primary-color)' },
       ],
       hasOrdersInTotal: orders.length > 0
     };
@@ -79,7 +79,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ orders, deliveries }) 
               key={f}
               onClick={() => setTimeFilter(f)}
               className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${timeFilter === f 
-                ? 'bg-white dark:bg-slate-700 text-[#ec5b13] shadow-sm' 
+                ? 'bg-white dark:bg-slate-700 text-[var(--primary-color)] shadow-sm' 
                 : 'text-slate-500 hover:text-slate-700'}`}
             >
               {f === 'day' ? 'Hoje' : f === 'week' ? 'Semana' : f === 'month' ? 'Mês' : 'Ano'}
@@ -120,7 +120,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ orders, deliveries }) 
 
         <div className="p-5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
           <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 bg-orange-100 dark:bg-orange-900/30 text-[#ec5b13] rounded-lg"><Calendar size={18} /></div>
+            <div className="p-2 bg-orange-100 dark:bg-orange-900/30 text-[var(--primary-color)] rounded-lg"><Calendar size={18} /></div>
             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total M²</h3>
           </div>
           <p className="text-3xl font-black text-slate-900 dark:text-white">{filteredData.totalArea.toFixed(1)}</p>
@@ -145,7 +145,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ orders, deliveries }) 
             <h3 className="font-bold text-slate-800 dark:text-white">Produtividade por Material (m²)</h3>
             <p className="text-xs text-slate-500">Volume processado em cada etapa da produção</p>
           </div>
-          <BarChart3 className="text-[#ec5b13] opacity-20" size={32} />
+          <BarChart3 className="text-[var(--primary-color)] opacity-20" size={32} />
         </div>
 
         <div className="flex-1 flex items-end justify-around gap-4 pb-4 px-4">

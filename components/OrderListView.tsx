@@ -50,7 +50,7 @@ export const OrderListView: React.FC<OrderListViewProps> = ({ orders }) => {
                 <td className="p-4 text-xs text-gray-500">{order.material}</td>
                 <td className="p-4 text-xs font-semibold text-gray-700">{order.materialArea} m²</td>
                 <td className="p-4 text-right">
-                  <button className="text-gray-400 hover:text-[#ec5b13] p-1">
+                  <button className="text-gray-400 hover:text-[var(--primary-color)] p-1">
                     <MoreHorizontal size={18} />
                   </button>
                 </td>

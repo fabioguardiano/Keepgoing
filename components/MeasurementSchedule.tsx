@@ -768,7 +768,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                     return (
                       <div key={i} className={`min-h-[120px] p-2 border-b border-r transition-all group hover:bg-orange-50/10 ${!isCurrentMonth ? 'opacity-30' : ''}`}>
                         <div className="flex justify-between items-start mb-2">
-                          <span className={`text-sm font-black w-7 h-7 flex items-center justify-center rounded-full ${isToday ? 'bg-[#ec5b13] text-white shadow-lg' : 'text-gray-400'}`}>
+                          <span className={`text-sm font-black w-7 h-7 flex items-center justify-center rounded-full ${isToday ? 'bg-[var(--primary-color)] text-white shadow-lg' : 'text-gray-400'}`}>
                             {day.getDate()}
                           </span>
                         </div>
@@ -866,7 +866,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Selecionar O.S.</label>
                 <select 
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-medium focus:ring-2 focus:ring-[#ec5b13]/20 transition-all outline-none"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-medium focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all outline-none"
                   value={newMeasurement.orderId}
                   onChange={e => {
                     const order = orders.find(o => o.id === e.target.value);
@@ -898,7 +898,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                 <input 
                   type="text" 
                   placeholder="Rua, número, bairro..."
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-medium focus:ring-2 focus:ring-[#ec5b13]/20 transition-all outline-none"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-medium focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all outline-none"
                   value={newMeasurement.address}
                   onChange={e => setNewMeasurement({...newMeasurement, address: e.target.value})}
                   required
@@ -910,7 +910,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                   <input 
                     type="text"
                     placeholder="Ex: Rota 1, Manhã, Expressa..."
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-medium focus:ring-2 focus:ring-[#ec5b13]/20 transition-all outline-none"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-medium focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all outline-none"
                     value={newMeasurement.routeGroup}
                     onChange={e => setNewMeasurement({...newMeasurement, routeGroup: e.target.value})}
                     required
@@ -922,7 +922,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Data</label>
                   <input 
                     type="date" 
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-medium focus:ring-2 focus:ring-[#ec5b13]/20 transition-all outline-none"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-medium focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all outline-none"
                     value={newMeasurement.date}
                     onChange={e => setNewMeasurement({...newMeasurement, date: e.target.value})}
                     required
@@ -932,7 +932,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Horário Estimado</label>
                   <input 
                     type="time" 
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-medium focus:ring-2 focus:ring-[#ec5b13]/20 transition-all outline-none"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-medium focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all outline-none"
                     value={newMeasurement.time}
                     onChange={e => setNewMeasurement({...newMeasurement, time: e.target.value})}
                     required
@@ -942,7 +942,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
 
               <button 
                 type="submit"
-                className="w-full bg-[#ec5b13] text-white font-bold py-4 rounded-2xl shadow-lg shadow-[#ec5b13]/20 hover:bg-[#d84a0d] transition-all transform hover:scale-[1.02] active:scale-95 mt-4"
+                className="w-full bg-[var(--primary-color)] text-white font-bold py-4 rounded-2xl shadow-lg shadow-[var(--primary-color)]/20 hover:bg-[var(--secondary-color)] transition-all transform hover:scale-[1.02] active:scale-95 mt-4"
               >
                 {editingMeasurementId ? 'Salvar Alterações' : 'Confirmar Agendamento'}
               </button>

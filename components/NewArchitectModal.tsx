@@ -144,7 +144,7 @@ export const NewArchitectModal: React.FC<NewArchitectModalProps> = ({ isOpen, on
     onClose();
   };
 
-  const inputClass = "w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ec5b13]/20 font-medium text-slate-700 transition-all disabled:opacity-50";
+  const inputClass = "w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/20 font-medium text-slate-700 transition-all disabled:opacity-50";
   const labelClass = "block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1 flex items-center gap-2";
 
   const mapCenter: [number, number] = (formData.address.lat && formData.address.lng) 
@@ -154,7 +154,7 @@ export const NewArchitectModal: React.FC<NewArchitectModalProps> = ({ isOpen, on
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
       <div className="bg-white w-full max-w-4xl rounded-[32px] shadow-2xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
-        <div className="bg-[#ec5b13] p-6 text-white flex justify-between items-center">
+        <div className="bg-[var(--primary-color)] p-6 text-white flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
               <Briefcase size={24} />
@@ -179,7 +179,7 @@ export const NewArchitectModal: React.FC<NewArchitectModalProps> = ({ isOpen, on
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
               className={`py-4 text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
-                activeTab === tab.id ? 'border-[#ec5b13] text-[#ec5b13]' : 'border-transparent text-slate-400 hover:text-slate-600'
+                activeTab === tab.id ? 'border-[var(--primary-color)] text-[var(--primary-color)]' : 'border-transparent text-slate-400 hover:text-slate-600'
               }`}
             >
               <tab.icon size={16} />
@@ -198,7 +198,7 @@ export const NewArchitectModal: React.FC<NewArchitectModalProps> = ({ isOpen, on
                     type="button"
                     onClick={() => setFormData({...formData, type})}
                     className={`py-2 px-4 rounded-xl text-sm font-black transition-all ${
-                      formData.type === type ? 'bg-white text-[#ec5b13] shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                      formData.type === type ? 'bg-white text-[var(--primary-color)] shadow-sm' : 'text-slate-400 hover:text-slate-600'
                     }`}
                   >
                     {type}
@@ -252,7 +252,7 @@ export const NewArchitectModal: React.FC<NewArchitectModalProps> = ({ isOpen, on
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="md:col-span-1 min-w-[140px]">
-                    <label className={labelClass}>CEP {isLoadingCEP && <span className="text-[#ec5b13] animate-pulse lowercase font-normal">(Busca...)</span>}</label>
+                    <label className={labelClass}>CEP {isLoadingCEP && <span className="text-[var(--primary-color)] animate-pulse lowercase font-normal">(Busca...)</span>}</label>
                     <input 
                       required
                       className={inputClass}
@@ -333,7 +333,7 @@ export const NewArchitectModal: React.FC<NewArchitectModalProps> = ({ isOpen, on
                   {isGeocoding && (
                     <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] z-[1000] flex items-center justify-center">
                       <div className="bg-white p-3 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-100">
-                        <div className="w-5 h-5 border-2 border-[#ec5b13] border-t-transparent animate-spin rounded-full" />
+                        <div className="w-5 h-5 border-2 border-[var(--primary-color)] border-t-transparent animate-spin rounded-full" />
                         <span className="text-xs font-bold text-slate-600 tracking-tight uppercase">Mapeando...</span>
                       </div>
                     </div>
@@ -403,7 +403,7 @@ export const NewArchitectModal: React.FC<NewArchitectModalProps> = ({ isOpen, on
           <button type="button" onClick={onClose} className="px-6 py-3 rounded-2xl font-bold text-slate-500 hover:bg-slate-200 transition-all">
             Cancelar
           </button>
-          <button onClick={handleSubmit} className="px-8 py-3 bg-[#ec5b13] text-white rounded-2xl font-black shadow-lg shadow-[#ec5b13]/20 hover:bg-[#d84a0d] transition-all transform hover:scale-[1.02] active:scale-95">
+          <button onClick={handleSubmit} className="px-8 py-3 bg-[var(--primary-color)] text-white rounded-2xl font-black shadow-lg shadow-[var(--primary-color)]/20 hover:bg-[var(--secondary-color)] transition-all transform hover:scale-[1.02] active:scale-95">
             Salvar Profissional
           </button>
         </div>

@@ -106,13 +106,13 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
     onClose();
   };
 
-  const inputClass = "w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ec5b13]/20 font-bold text-slate-700 transition-all text-sm";
+  const inputClass = "w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/20 font-bold text-slate-700 transition-all text-sm";
   const labelClass = "block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1";
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
       <div className="bg-white w-full max-w-3xl rounded-[32px] shadow-2xl overflow-hidden border border-slate-100">
-        <div className="bg-[#ec5b13] p-6 text-white flex justify-between items-center">
+        <div className="bg-[var(--primary-color)] p-6 text-white flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
               <Calculator size={24} />
@@ -150,7 +150,7 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
               className={`py-4 px-4 text-xs font-black flex items-center gap-2 border-b-2 transition-all uppercase tracking-widest ${
-                activeTab === tab.id ? 'border-[#ec5b13] text-[#ec5b13]' : 'border-transparent text-slate-400 hover:text-slate-600'
+                activeTab === tab.id ? 'border-[var(--primary-color)] text-[var(--primary-color)]' : 'border-transparent text-slate-400 hover:text-slate-600'
               }`}
             >
               <tab.icon size={16} />
@@ -303,7 +303,7 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
                         <div className="flex justify-between items-end">
                           <div>
                             <div className="text-[10px] font-bold text-slate-400 uppercase">Sugerido</div>
-                            <div className="text-xl font-black text-[#ec5b13]">R$ {formData.suggestedPrice.toFixed(2)}</div>
+                            <div className="text-xl font-black text-[var(--primary-color)]">R$ {formData.suggestedPrice.toFixed(2)}</div>
                           </div>
                           <div className="text-right">
                             <label className={labelClass}>Preço Praticado</label>
@@ -355,7 +355,7 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
 
         <div className="p-8 bg-slate-50 flex justify-end gap-4 border-t border-slate-100">
           <button type="button" onClick={onClose} className="px-6 py-3 rounded-2xl font-bold text-slate-500 hover:bg-slate-200 transition-all">Cancelar</button>
-          <button onClick={handleSubmit} className="px-8 py-3 bg-[#ec5b13] text-white rounded-2xl font-black shadow-lg shadow-[#ec5b13]/20 hover:bg-[#d84a0d] transition-all transform hover:scale-[1.02] active:scale-95">Salvar Cadastro Técnico</button>
+          <button onClick={handleSubmit} className="px-8 py-3 bg-[var(--primary-color)] text-white rounded-2xl font-black shadow-lg shadow-[var(--primary-color)]/20 hover:bg-[var(--secondary-color)] transition-all transform hover:scale-[1.02] active:scale-95">Salvar Cadastro Técnico</button>
         </div>
       </div>
     </div>
