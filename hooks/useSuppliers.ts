@@ -117,6 +117,7 @@ export const useSuppliers = (companyId?: string, logActivity?: any) => {
         localStorage.setItem(`marmo_suppliers_${companyId || '00000000-0000-0000-0000-000000000000'}`, JSON.stringify(next));
         return next;
       });
+      fetchSuppliers();
     } catch (err: any) {
       console.error('Erro ao inativar fornecedor:', err);
       alert('Erro ao inativar fornecedor: ' + err.message);

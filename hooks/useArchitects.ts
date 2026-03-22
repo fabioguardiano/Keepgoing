@@ -116,6 +116,7 @@ export const useArchitects = (companyId?: string, logActivity?: any) => {
         localStorage.setItem(`marmo_architects_${companyId || '00000000-0000-0000-0000-000000000000'}`, JSON.stringify(next));
         return next;
       });
+      fetchArchitects();
     } catch (err: any) {
       console.error('Erro ao inativar arquiteto:', err);
       alert('Erro ao inativar arquiteto: ' + err.message);
