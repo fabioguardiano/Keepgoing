@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Wrench, Plus, Search, Filter, Edit2, Trash2, X, RotateCcw } from 'lucide-react';
+import { Wrench, Plus, Search, Filter, Edit2, PowerOff, X } from 'lucide-react';
 import { ServiceGroup } from '../types';
 
 interface ServiceGroupsViewProps {
@@ -74,9 +74,10 @@ export const ServiceGroupsView: React.FC<ServiceGroupsViewProps> = ({ groups, on
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setShowInactive(!showInactive)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${showInactive ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+            onClick={() => setShowInactive(v => !v)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-xs font-bold uppercase tracking-widest transition-all ${showInactive ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-200'}`}
           >
+            <PowerOff size={14} />
             {showInactive ? 'Ocultar Inativos' : 'Mostrar Inativos'}
           </button>
           <button
@@ -157,23 +158,13 @@ export const ServiceGroupsView: React.FC<ServiceGroupsViewProps> = ({ groups, on
                       >
                         <Edit2 size={16} />
                       </button>
-                      {group.status === 'inativo' ? (
-                        <button
-                          onClick={() => onSaveGroup({ ...group, status: 'ativo' })}
-                          className="p-2 text-green-500 hover:bg-green-50 rounded-xl transition-all border border-transparent hover:border-green-100"
-                          title="Ativar"
-                        >
-                          <RotateCcw size={16} />
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => onDeleteGroup(group.id)}
-                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
-                          title="Inativar"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      )}
+                      <button
+                        onClick={() => group.status === 'inativo' ? onSaveGroup({ ...group, status: 'ativo' }) : onDeleteGroup(group.id)}
+                        className={`p-2 rounded-xl transition-all border border-transparent ${group.status === 'inativo' ? 'text-green-500 hover:bg-green-50 hover:border-green-100' : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-100'}`}
+                        title={group.status === 'inativo' ? 'Reativar' : 'Inativar'}
+                      >
+                        <PowerOff size={16} />
+                      </button>
                     </div>
                   </td>
                 </tr>

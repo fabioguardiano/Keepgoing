@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Plus, Search, Filter, Edit2, Trash2, X, RotateCcw } from 'lucide-react';
+import { ShoppingBag, Plus, Search, Filter, Edit2, PowerOff, X } from 'lucide-react';
 import { SalesChannel } from '../types';
 
 interface SalesChannelsViewProps {
@@ -59,9 +59,10 @@ export const SalesChannelsView: React.FC<SalesChannelsViewProps> = ({ channels, 
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setShowInactive(!showInactive)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${showInactive ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+            onClick={() => setShowInactive(v => !v)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-xs font-bold uppercase tracking-widest transition-all ${showInactive ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-200'}`}
           >
+            <PowerOff size={14} />
             {showInactive ? 'Ocultar Inativos' : 'Mostrar Inativos'}
           </button>
           <button
@@ -134,23 +135,13 @@ export const SalesChannelsView: React.FC<SalesChannelsViewProps> = ({ channels, 
                       >
                         <Edit2 size={16} />
                       </button>
-                      {channel.status === 'inativo' ? (
-                        <button
-                          onClick={() => onSaveChannel({ ...channel, status: 'ativo' })}
-                          className="p-2 text-green-500 hover:bg-green-50 rounded-xl transition-all border border-transparent hover:border-green-100"
-                          title="Ativar"
-                        >
-                          <RotateCcw size={16} />
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => onDeleteChannel(channel.id)}
-                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
-                          title="Inativar"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      )}
+                      <button
+                        onClick={() => channel.status === 'inativo' ? onSaveChannel({ ...channel, status: 'ativo' }) : onDeleteChannel(channel.id)}
+                        className={`p-2 rounded-xl transition-all border border-transparent ${channel.status === 'inativo' ? 'text-green-500 hover:bg-green-50 hover:border-green-100' : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-100'}`}
+                        title={channel.status === 'inativo' ? 'Reativar' : 'Inativar'}
+                      >
+                        <PowerOff size={16} />
+                      </button>
                     </div>
                   </td>
                 </tr>
