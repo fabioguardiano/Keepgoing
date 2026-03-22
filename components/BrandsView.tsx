@@ -97,10 +97,10 @@ export const BrandsView: React.FC<BrandsViewProps> = ({ brands, onSaveBrand, onD
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-2xl border border-green-100 text-green-600 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
+          <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-green-600 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
             {brands.filter(b => !b.status || b.status === 'ativo').length} Ativos
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-2xl border border-amber-100 text-amber-500 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
+          <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-amber-500 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
             {brands.filter(b => b.status === 'inativo').length} Inativos
           </div>
         </div>

@@ -112,10 +112,10 @@ export const ServiceGroupsView: React.FC<ServiceGroupsViewProps> = ({ groups, on
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-2xl border border-green-100 text-green-600 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
+          <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-green-600 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
             {groups.filter(g => !g.status || g.status === 'ativo').length} Ativos
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-2xl border border-amber-100 text-amber-500 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
+          <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-amber-500 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
             {groups.filter(g => g.status === 'inativo').length} Inativos
           </div>
         </div>

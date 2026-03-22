@@ -107,9 +107,13 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-widest">
+        <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-green-600 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
           <Users size={16} />
-          {filteredAndSortedClients.length} Clientes
+          {clients.filter(c => !c.status || c.status === 'ativo').length} Ativos
+        </div>
+        <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-amber-500 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
+          <PowerOff size={14} />
+          {clients.filter(c => c.status === 'inativo').length} Inativos
         </div>
         <button
           onClick={() => setShowInactive(v => !v)}
