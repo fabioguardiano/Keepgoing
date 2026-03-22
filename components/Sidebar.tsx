@@ -20,7 +20,7 @@ interface NavItem {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, onViewChange, companyInfo, userRole, exchangeRates }) => {
-  const [expandedMenus, setExpandedMenus] = useState<string[]>(['Cadastros']);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
 
   const toggleMenu = (label: string) => {
     setExpandedMenus(prev => 
@@ -29,8 +29,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
   };
 
   const navItems: NavItem[] = [
-    { 
-      icon: PlusCircle, 
+    {
+      icon: PlusCircle,
       label: 'Cadastros',
       subItems: [
         { icon: Users, label: 'Clientes', view: 'Clientes' as View },
@@ -39,26 +39,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
         { icon: Users, label: 'Equipe', view: 'Equipe' as View },
       ]
     },
-    { icon: ShoppingBag, label: 'Vendas', view: 'Vendas' as View },
-    { icon: LayoutDashboard, label: 'Produção', view: 'Produção' as View },
-    { icon: Kanban, label: 'Ordens de Serviço', view: 'Ordens de Serviço' as View },
-    { icon: MapPin, label: 'Agenda de Entregas', view: 'Agenda de Entregas' as View },
-    { 
-      icon: Box, 
-      label: 'Estoque / Acabamentos', 
-      subItems: [
-        { icon: Package, label: 'Matéria Prima', view: 'Matéria Prima' as View },
-        { icon: Diamond, label: 'Acabamentos', view: 'Acabamentos' as View },
-        { icon: ShoppingBag, label: 'Produtos Revenda', view: 'Produtos Revenda' as View },
-        { icon: Wrench, label: 'Mão de obra (Instalação)', view: 'Mão de obra (Instalação)' as View },
-      ]
-    },
-    { icon: Wallet, label: 'Financeiro', view: 'Financeiro' as View },
-    { icon: BarChart3, label: 'Relatórios', view: 'Relatórios' as View },
-    { 
-      icon: Package, 
+    {
+      icon: Package,
       label: 'Grupo/Coleções',
-      view: 'Marcas' as View,
       subItems: [
         { icon: Diamond, label: 'Marcas', view: 'Marcas' as View },
         { icon: ShoppingBag, label: 'Canais de Vendas', view: 'Canais de Vendas' as View },
@@ -66,6 +49,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
         { icon: Wrench, label: 'Serviços', view: 'Grupos de Serviços' as View },
       ]
     },
+    {
+      icon: Box,
+      label: 'Estoque / Acabamentos',
+      subItems: [
+        { icon: Package, label: 'Matéria Prima', view: 'Matéria Prima' as View },
+        { icon: Diamond, label: 'Acabamentos', view: 'Acabamentos' as View },
+        { icon: ShoppingBag, label: 'Produtos Revenda', view: 'Produtos Revenda' as View },
+        { icon: Wrench, label: 'Mão de obra (Instalação)', view: 'Mão de obra (Instalação)' as View },
+      ]
+    },
+    { icon: ShoppingBag, label: 'Vendas', view: 'Vendas' as View },
+    { icon: LayoutDashboard, label: 'Produção', view: 'Produção' as View },
+    { icon: Kanban, label: 'Ordens de Serviço', view: 'Ordens de Serviço' as View },
+    { icon: MapPin, label: 'Agenda de Entregas', view: 'Agenda de Entregas' as View },
+    { icon: Wallet, label: 'Financeiro', view: 'Financeiro' as View },
+    { icon: BarChart3, label: 'Relatórios', view: 'Relatórios' as View },
     { icon: Settings, label: 'Configurações', view: 'Configurações' as View }
   ].filter(item => {
     if (userRole === 'driver') {
