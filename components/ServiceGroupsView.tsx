@@ -105,40 +105,46 @@ export const ServiceGroupsView: React.FC<ServiceGroupsViewProps> = ({ groups, on
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/50 dark:bg-slate-800/50 whitespace-nowrap">
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Código</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Descrição</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">UN</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Alt. Min/Max</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">Perda %</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center">T.P.(Min)</th>
-                <th className="px-6 py-4 text-right">Ações</th>
+              <tr className="bg-slate-50/50 border-b border-slate-100 whitespace-nowrap">
+                <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest">Cód</th>
+                <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest">Descrição</th>
+                <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest text-center">UN</th>
+                <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest text-center">Alt. Min/Max</th>
+                <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest text-center">Perda %</th>
+                <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest text-center">T.P.(Min)</th>
+                <th className="px-6 py-5 text-right text-sm font-bold text-slate-400 uppercase tracking-widest">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            <tbody className="divide-y divide-slate-50">
               {filteredGroups.map((group) => (
-                <tr key={group.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
-                  <td className="px-6 py-4 font-mono text-sm text-[#ec5b13] font-bold">{group.code}</td>
-                  <td className="px-6 py-4">
-                    <span className="text-slate-900 dark:text-white font-medium">{group.description}</span>
+                <tr key={group.id} className="hover:bg-slate-50/50 transition-colors group">
+                  <td className="px-6 py-5">
+                    <span className="text-sm font-black text-primary bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20 shadow-sm">
+                      #{group.code}
+                    </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-center text-slate-500 uppercase">{group.un}</td>
-                  <td className="px-6 py-4 text-sm text-center text-slate-500">
+                  <td className="px-6 py-5">
+                    <span className="text-base font-black text-slate-800">{group.description}</span>
+                  </td>
+                  <td className="px-6 py-5 text-sm font-bold text-center text-slate-500 uppercase">{group.un}</td>
+                  <td className="px-6 py-5 text-sm font-bold text-center text-slate-500">
                     {group.altMin} - {group.altMax}
                   </td>
-                  <td className="px-6 py-4 text-sm text-center text-slate-500">{group.perda}%</td>
-                  <td className="px-6 py-4 text-sm text-center text-slate-500">{group.tpMin} min</td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <td className="px-6 py-5 text-sm font-bold text-center text-slate-500">{group.perda}%</td>
+                  <td className="px-6 py-5 text-sm font-bold text-center text-slate-500">{group.tpMin} min</td>
+                  <td className="px-6 py-5 text-right">
+                    <div className="flex justify-end gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => handleEdit(group)}
-                        className="p-2 text-slate-400 hover:text-[#ec5b13] hover:bg-[#ec5b13]/10 rounded-lg transition-all"
+                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all border border-transparent hover:border-blue-100"
+                        title="Editar"
                       >
                         <Edit2 size={16} />
                       </button>
                       <button
                         onClick={() => onDeleteGroup(group.id)}
-                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 px-2 dark:hover:bg-red-900/20 rounded-lg transition-all"
+                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
+                        title="Excluir"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -149,9 +155,9 @@ export const ServiceGroupsView: React.FC<ServiceGroupsViewProps> = ({ groups, on
               {filteredGroups.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center gap-2 text-slate-400">
-                      <Search size={48} className="opacity-20" />
-                      <p>Nenhum grupo de serviço encontrado</p>
+                    <div className="flex flex-col items-center gap-2 opacity-30">
+                      <Search size={48} />
+                      <p className="font-bold text-slate-400">Nenhum grupo de serviço encontrado</p>
                     </div>
                   </td>
                 </tr>
