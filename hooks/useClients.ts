@@ -173,6 +173,7 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
         localStorage.setItem(`marmo_clients_${companyId || '00000000-0000-0000-0000-000000000000'}`, JSON.stringify(next));
         return next;
       });
+      fetchClients();
     } catch (err: any) {
       console.error('Erro ao inativar cliente:', err);
       alert('Erro ao inativar: ' + err.message);

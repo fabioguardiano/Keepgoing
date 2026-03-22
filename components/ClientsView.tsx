@@ -39,9 +39,9 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
         (c.tradingName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (c.legalName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.document.includes(searchTerm) ||
-        c.phone.includes(searchTerm) ||
-        c.cellphone.includes(searchTerm) ||
-        c.address.city.toLowerCase().includes(searchTerm.toLowerCase())
+        (c.phone || '').includes(searchTerm) ||
+        (c.cellphone || '').includes(searchTerm) ||
+        (c.address?.city || '').toLowerCase().includes(searchTerm.toLowerCase())
       )
       .sort((a, b) => {
         let comparison = 0;
@@ -54,10 +54,10 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
       });
   }, [clients, searchTerm, sortField, sortDirection]);
 
-  // Reset to first page when searching
+  // Reset to first page when searching or toggling inactive
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [searchTerm, showInactive]);
 
   const totalPages = Math.ceil(filteredAndSortedClients.length / itemsPerPage);
   const paginatedClients = useMemo(() => {

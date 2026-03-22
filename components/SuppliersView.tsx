@@ -53,10 +53,10 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
       });
   }, [suppliers, searchTerm, sortField, sortDirection]);
 
-  // Reset to first page when searching
+  // Reset to first page when searching or toggling inactive
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [searchTerm, showInactive]);
 
   const totalPages = Math.ceil(filteredAndSortedSuppliers.length / itemsPerPage);
   const paginatedSuppliers = useMemo(() => {

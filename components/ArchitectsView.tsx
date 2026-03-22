@@ -53,10 +53,10 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
       });
   }, [architects, searchTerm, sortField, sortDirection]);
 
-  // Reset to first page when searching
+  // Reset to first page when searching or toggling inactive
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [searchTerm, showInactive]);
 
   const totalPages = Math.ceil(filteredAndSortedArchitects.length / itemsPerPage);
   const paginatedArchitects = useMemo(() => {
