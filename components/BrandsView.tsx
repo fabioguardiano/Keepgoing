@@ -44,7 +44,7 @@ export const BrandsView: React.FC<BrandsViewProps> = ({ brands, onSaveBrand, onD
     b.code.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const inputClass = "w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#ec5b13]/20 focus:border-[#ec5b13] transition-all";
+  const inputClass = "w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/20 focus:border-[var(--primary-color)] transition-all";
   const labelClass = "block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 ml-1";
 
   return (
@@ -52,7 +52,7 @@ export const BrandsView: React.FC<BrandsViewProps> = ({ brands, onSaveBrand, onD
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-            <Diamond className="text-[#ec5b13]" />
+            <Diamond className="text-[var(--primary-color)]" />
             Cadastro de Marcas
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm">Gerencie as marcas disponíveis no sistema</p>
@@ -66,7 +66,7 @@ export const BrandsView: React.FC<BrandsViewProps> = ({ brands, onSaveBrand, onD
             setFormData({ code: nextCode, description: '' });
             setIsModalOpen(true);
           }}
-          className="bg-[#ec5b13] hover:bg-[#d84a0d] text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#ec5b13]/20 active:scale-95"
+          className="bg-[var(--primary-color)] hover:opacity-90 text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-[var(--primary-color)]/20 active:scale-95"
         >
           <Plus size={20} />
           Nova Marca
@@ -80,7 +80,7 @@ export const BrandsView: React.FC<BrandsViewProps> = ({ brands, onSaveBrand, onD
             <input
               type="text"
               placeholder="Buscar por código ou descrição..."
-              className="w-full pl-12 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl text-sm focus:ring-2 focus:ring-[#ec5b13]/20 transition-all"
+              className="w-full pl-12 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl text-sm focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -201,7 +201,7 @@ export const BrandsView: React.FC<BrandsViewProps> = ({ brands, onSaveBrand, onD
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-3 bg-[#ec5b13] hover:bg-[#d84a0d] text-white rounded-xl font-bold shadow-lg shadow-[#ec5b13]/20 transition-all active:scale-95"
+                  className="flex-1 px-6 py-3 bg-[var(--primary-color)] hover:opacity-90 text-white rounded-xl font-bold shadow-lg shadow-[var(--primary-color)]/20 transition-all active:scale-95"
                 >
                   Salvar Marca
                 </button>
