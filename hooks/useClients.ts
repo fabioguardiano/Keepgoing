@@ -28,6 +28,7 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
           tradingName: c.trading_name || c.name,
           rgInsc: c.rg_insc,
           address: c.address,
+          deliveryAddress: c.delivery_address || undefined,
           observations: c.observations,
           code: c.client_code,
           createdAt: c.created_at
@@ -65,6 +66,7 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
         email: c.email || '',
         phone: c.phone || '',
         address: c.address || {},
+        delivery_address: c.deliveryAddress || null,
         rg_insc: c.rgInsc || '',
         observations: c.observations || '',
         client_code: c.code
@@ -79,12 +81,13 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
       if (error) throw error;
       if (!data) throw new Error('O banco de dados não retornou o registro salvo.');
       
-      const saved = { 
-        ...data, 
-        legalName: data.legal_name, 
-        tradingName: data.trading_name, 
+      const saved = {
+        ...data,
+        legalName: data.legal_name,
+        tradingName: data.trading_name,
         rgInsc: data.rg_insc,
         address: data.address,
+        deliveryAddress: data.delivery_address || undefined,
         observations: data.observations,
         code: data.client_code,
         createdAt: data.created_at
