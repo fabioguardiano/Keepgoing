@@ -154,17 +154,19 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
 
   const deleteClient = async (id: string) => {
     try {
-      const { error } = await supabase.from('clients').delete().eq('id', id);
+      const client = clients.find(x => x.id === id);
+      const newStatus: 'ativo' | 'inativo' = client?.status === 'inativo' ? 'ativo' : 'inativo';
+      const { error } = await supabase.from('clients').update({ status: newStatus }).eq('id', id);
       if (error) throw error;
-      
+
       setClients(prev => {
-        const next = prev.filter(x => x.id !== id);
+        const next = prev.map(x => x.id === id ? { ...x, status: newStatus } : x);
         localStorage.setItem(`marmo_clients_${companyId || '00000000-0000-0000-0000-000000000000'}`, JSON.stringify(next));
         return next;
       });
     } catch (err: any) {
-      console.error('Erro ao deletar cliente:', err);
-      alert('Erro ao deletar: ' + err.message);
+      console.error('Erro ao inativar cliente:', err);
+      alert('Erro ao inativar: ' + err.message);
     }
   };
 

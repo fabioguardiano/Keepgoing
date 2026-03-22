@@ -105,13 +105,21 @@ export const useArchitects = (companyId?: string, logActivity?: any) => {
   };
 
   const deleteArchitect = async (id: string) => {
-    const { error } = await supabase.from('architects').delete().eq('id', id);
-    if (error) {
-      console.error('Erro ao deletar arquiteto:', error);
-      alert('Erro ao deletar arquiteto no banco de dados.');
-      throw error;
+    try {
+      const architect = architects.find(x => x.id === id);
+      const newStatus: 'ativo' | 'inativo' = architect?.status === 'inativo' ? 'ativo' : 'inativo';
+      const { error } = await supabase.from('architects').update({ status: newStatus }).eq('id', id);
+      if (error) throw error;
+
+      setArchitects(prev => {
+        const next = prev.map(x => x.id === id ? { ...x, status: newStatus } : x);
+        localStorage.setItem(`marmo_architects_${companyId || '00000000-0000-0000-0000-000000000000'}`, JSON.stringify(next));
+        return next;
+      });
+    } catch (err: any) {
+      console.error('Erro ao inativar arquiteto:', err);
+      alert('Erro ao inativar arquiteto: ' + err.message);
     }
-    setArchitects(prev => prev.filter(x => x.id !== id));
   };
 
   return { 

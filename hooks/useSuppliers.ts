@@ -106,13 +106,21 @@ export const useSuppliers = (companyId?: string, logActivity?: any) => {
   };
 
   const deleteSupplier = async (id: string) => {
-    const { error } = await supabase.from('suppliers').delete().eq('id', id);
-    if (error) {
-      console.error('Erro ao deletar fornecedor:', error);
-      alert('Erro ao deletar fornecedor no banco de dados.');
-      throw error;
+    try {
+      const supplier = suppliers.find(x => x.id === id);
+      const newStatus: 'ativo' | 'inativo' = supplier?.status === 'inativo' ? 'ativo' : 'inativo';
+      const { error } = await supabase.from('suppliers').update({ status: newStatus }).eq('id', id);
+      if (error) throw error;
+
+      setSuppliers(prev => {
+        const next = prev.map(x => x.id === id ? { ...x, status: newStatus } : x);
+        localStorage.setItem(`marmo_suppliers_${companyId || '00000000-0000-0000-0000-000000000000'}`, JSON.stringify(next));
+        return next;
+      });
+    } catch (err: any) {
+      console.error('Erro ao inativar fornecedor:', err);
+      alert('Erro ao inativar fornecedor: ' + err.message);
     }
-    setSuppliers(prev => prev.filter(x => x.id !== id));
   };
 
   return { 

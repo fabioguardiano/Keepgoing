@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Briefcase, Plus, Search, Mail, Phone, MapPin, Trash2, Edit2, ShieldCheck, ExternalLink, ArrowUpDown, ChevronUp, ChevronDown, Globe, User } from 'lucide-react';
+import { Briefcase, Plus, Search, Mail, Phone, MapPin, PowerOff, Edit2, ShieldCheck, ExternalLink, ArrowUpDown, ChevronUp, ChevronDown, Globe, User } from 'lucide-react';
 import { Architect } from '../types';
 import { NewArchitectModal } from './NewArchitectModal';
 
@@ -18,6 +18,7 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
   const [editingArchitect, setEditingArchitect] = useState<Architect | null>(null);
   const [sortField, setSortField] = useState<SortField>('tradingName');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [showInactive, setShowInactive] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 25;
 
@@ -32,7 +33,8 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
 
   const filteredAndSortedArchitects = useMemo(() => {
     return architects
-      .filter(a => 
+      .filter(a => showInactive ? true : (a.status || 'ativo') === 'ativo')
+      .filter(a =>
         a.tradingName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         a.legalName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         a.document.includes(searchTerm) ||
@@ -108,6 +110,13 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
           <Briefcase size={16} />
           {filteredAndSortedArchitects.length} Arquitetos
         </div>
+        <button
+          onClick={() => setShowInactive(v => !v)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-xs font-bold uppercase tracking-widest transition-all ${showInactive ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-200'}`}
+        >
+          <PowerOff size={14} />
+          {showInactive ? 'Ocultar Inativos' : 'Mostrar Inativos'}
+        </button>
       </div>
 
       {/* Table Container */}
@@ -191,20 +200,23 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
                     <div className="text-[11px] text-slate-500 font-bold">{new Date(architect.createdAt).toLocaleDateString('pt-BR')}</div>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
-                      <button 
+                    <div className="flex justify-end items-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
+                      {architect.status === 'inativo' && (
+                        <span className="text-[10px] font-black uppercase tracking-widest bg-slate-100 text-slate-400 px-2 py-1 rounded-lg">Inativo</span>
+                      )}
+                      <button
                         onClick={() => handleEdit(architect)}
                         className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all border border-transparent hover:border-blue-100"
-                        title="Ver Ficha / Editar"
+                        title="Editar"
                       >
                         <Edit2 size={16} />
                       </button>
-                      <button 
+                      <button
                         onClick={() => onDeleteArchitect(architect.id)}
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
-                        title="Excluir"
+                        className={`p-2 rounded-xl transition-all border border-transparent ${architect.status === 'inativo' ? 'text-green-500 hover:bg-green-50 hover:border-green-100' : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-100'}`}
+                        title={architect.status === 'inativo' ? 'Reativar' : 'Inativar'}
                       >
-                        <Trash2 size={16} />
+                        <PowerOff size={16} />
                       </button>
                     </div>
                   </td>

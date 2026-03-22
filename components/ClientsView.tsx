@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Users, Plus, Search, Mail, Phone, MapPin, Trash2, Edit2, ShieldCheck, CreditCard, Globe, ExternalLink, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
+import { Users, Plus, Search, Mail, Phone, MapPin, PowerOff, Edit2, ShieldCheck, CreditCard, Globe, ExternalLink, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import { Client } from '../types';
 import { NewClientModal } from './NewClientModal';
 
@@ -18,6 +18,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [sortField, setSortField] = useState<SortField>('code');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [showInactive, setShowInactive] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 25;
 
@@ -32,7 +33,8 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
 
   const filteredAndSortedClients = useMemo(() => {
     return clients
-      .filter(c => 
+      .filter(c => showInactive ? true : (c.status || 'ativo') === 'ativo')
+      .filter(c =>
         String(c.code).includes(searchTerm) ||
         (c.tradingName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (c.legalName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -109,6 +111,13 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
           <Users size={16} />
           {filteredAndSortedClients.length} Clientes
         </div>
+        <button
+          onClick={() => setShowInactive(v => !v)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-xs font-bold uppercase tracking-widest transition-all ${showInactive ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-200'}`}
+        >
+          <PowerOff size={14} />
+          {showInactive ? 'Ocultar Inativos' : 'Mostrar Inativos'}
+        </button>
       </div>
 
       {/* Table Container */}
@@ -192,20 +201,23 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
                     <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Data de Ref.</div>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
-                      <button 
+                    <div className="flex justify-end items-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
+                      {client.status === 'inativo' && (
+                        <span className="text-[10px] font-black uppercase tracking-widest bg-slate-100 text-slate-400 px-2 py-1 rounded-lg">Inativo</span>
+                      )}
+                      <button
                         onClick={() => handleEdit(client)}
                         className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all border border-transparent hover:border-blue-100"
-                        title="Ver Ficha / Editar"
+                        title="Editar"
                       >
                         <Edit2 size={16} />
                       </button>
-                      <button 
+                      <button
                         onClick={() => onDeleteClient(client.id)}
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
-                        title="Excluir"
+                        className={`p-2 rounded-xl transition-all border border-transparent ${client.status === 'inativo' ? 'text-green-500 hover:bg-green-50 hover:border-green-100' : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-100'}`}
+                        title={client.status === 'inativo' ? 'Reativar' : 'Inativar'}
                       >
-                        <Trash2 size={16} />
+                        <PowerOff size={16} />
                       </button>
                     </div>
                   </td>

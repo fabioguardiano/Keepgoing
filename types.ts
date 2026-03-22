@@ -165,6 +165,7 @@ export interface Client {
   code?: number;
   createdAt: string;
   company_id?: string;
+  status?: 'ativo' | 'inativo';
 }
 
 
@@ -189,6 +190,7 @@ export interface Supplier {
   observations?: string;
   code?: number;
   createdAt: string;
+  status?: 'ativo' | 'inativo';
   address: {
     street: string;
     number?: string;
@@ -216,6 +218,7 @@ export interface Architect {
   createdAt: string;
   observations?: string;
   code?: number;
+  status?: 'ativo' | 'inativo';
   address: {
     street: string;
     number?: string;

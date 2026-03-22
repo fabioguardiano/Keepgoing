@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Truck, Plus, Search, Mail, Phone, MapPin, Trash2, Edit2, ShieldCheck, ExternalLink, ArrowUpDown, ChevronUp, ChevronDown, Globe, User } from 'lucide-react';
+import { Truck, Plus, Search, Mail, Phone, MapPin, PowerOff, Edit2, ShieldCheck, ExternalLink, ArrowUpDown, ChevronUp, ChevronDown, Globe, User } from 'lucide-react';
 import { Supplier } from '../types';
 import { NewSupplierModal } from './NewSupplierModal';
 
@@ -18,6 +18,7 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [sortField, setSortField] = useState<SortField>('tradingName');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [showInactive, setShowInactive] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 25;
 
@@ -32,7 +33,8 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
 
   const filteredAndSortedSuppliers = useMemo(() => {
     return suppliers
-      .filter(s => 
+      .filter(s => showInactive ? true : (s.status || 'ativo') === 'ativo')
+      .filter(s =>
         s.tradingName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.legalName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.document.includes(searchTerm) ||
@@ -108,6 +110,13 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
           <Truck size={16} />
           {filteredAndSortedSuppliers.length} Fornecedores
         </div>
+        <button
+          onClick={() => setShowInactive(v => !v)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-xs font-bold uppercase tracking-widest transition-all ${showInactive ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-200'}`}
+        >
+          <PowerOff size={14} />
+          {showInactive ? 'Ocultar Inativos' : 'Mostrar Inativos'}
+        </button>
       </div>
 
       {/* Table Container */}
@@ -194,20 +203,23 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
                     <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Data de Ref.</div>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
-                      <button 
+                    <div className="flex justify-end items-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
+                      {supplier.status === 'inativo' && (
+                        <span className="text-[10px] font-black uppercase tracking-widest bg-slate-100 text-slate-400 px-2 py-1 rounded-lg">Inativo</span>
+                      )}
+                      <button
                         onClick={() => handleEdit(supplier)}
                         className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all border border-transparent hover:border-blue-100"
-                        title="Ver Ficha / Editar"
+                        title="Editar"
                       >
                         <Edit2 size={16} />
                       </button>
-                      <button 
+                      <button
                         onClick={() => onDeleteSupplier(supplier.id)}
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
-                        title="Excluir"
+                        className={`p-2 rounded-xl transition-all border border-transparent ${supplier.status === 'inativo' ? 'text-green-500 hover:bg-green-50 hover:border-green-100' : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-100'}`}
+                        title={supplier.status === 'inativo' ? 'Reativar' : 'Inativar'}
                       >
-                        <Trash2 size={16} />
+                        <PowerOff size={16} />
                       </button>
                     </div>
                   </td>
