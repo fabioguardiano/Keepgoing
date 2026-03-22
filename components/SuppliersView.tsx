@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Truck, Plus, Search, Mail, Phone, MapPin, PowerOff, Edit2, ShieldCheck, ExternalLink, ArrowUpDown, ChevronUp, ChevronDown, Globe, User } from 'lucide-react';
+import { Truck, Plus, Search, Phone, PowerOff, Edit2, ShieldCheck, ArrowUpDown, ChevronUp, ChevronDown, User } from 'lucide-react';
 import { Supplier } from '../types';
 import { NewSupplierModal } from './NewSupplierModal';
 
@@ -16,8 +16,8 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
-  const [sortField, setSortField] = useState<SortField>('tradingName');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [sortField, setSortField] = useState<SortField>('code');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [showInactive, setShowInactive] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 25;
@@ -35,25 +35,24 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
     return suppliers
       .filter(s => showInactive ? true : (s.status || 'ativo') === 'ativo')
       .filter(s =>
-        s.tradingName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.legalName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.document.includes(searchTerm) ||
-        s.contactName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.address.city.toLowerCase().includes(searchTerm.toLowerCase())
+        String(s.code).includes(searchTerm) ||
+        (s.tradingName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (s.legalName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (s.document || '').includes(searchTerm) ||
+        (s.phone || '').includes(searchTerm) ||
+        (s.address?.city || '').toLowerCase().includes(searchTerm.toLowerCase())
       )
       .sort((a, b) => {
         let comparison = 0;
         if (sortField === 'tradingName') comparison = a.tradingName.localeCompare(b.tradingName);
         if (sortField === 'legalName') comparison = a.legalName.localeCompare(b.legalName);
-        if (sortField === 'city') comparison = a.address.city.localeCompare(b.address.city);
+        if (sortField === 'city') comparison = (a.address?.city || '').localeCompare(b.address?.city || '');
         if (sortField === 'createdAt') comparison = (a.createdAt || '').localeCompare(b.createdAt || '');
         if (sortField === 'code') comparison = (a.code || 0) - (b.code || 0);
-        
         return sortDirection === 'asc' ? comparison : -comparison;
       });
   }, [suppliers, searchTerm, sortField, sortDirection, showInactive]);
 
-  // Reset to first page when searching or toggling inactive
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, showInactive]);
@@ -76,7 +75,7 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return <ArrowUpDown size={14} className="opacity-30 group-hover:opacity-100 transition-opacity" />;
-    return sortDirection === 'asc' ? <ChevronUp size={14} className="text-[#ec5b13]" /> : <ChevronDown size={14} className="text-[#ec5b13]" />;
+    return sortDirection === 'asc' ? <ChevronUp size={14} className="text-primary" /> : <ChevronDown size={14} className="text-primary" />;
   };
 
   return (
@@ -86,9 +85,9 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
           <h1 className="text-2xl font-black text-slate-800 tracking-tight">Gestão de Fornecedores</h1>
           <p className="text-slate-500 font-medium">Controle técnico de parceiros e insumos</p>
         </div>
-        <button 
+        <button
           onClick={handleAddNew}
-          className="bg-[#ec5b13] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[#ec5b13]/20 hover:bg-[#d84a0d] transition-all transform hover:scale-[1.02] active:scale-95"
+          className="bg-primary text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-secondary transition-all transform hover:scale-[1.02] active:scale-95"
         >
           <Plus size={20} /> Novo Fornecedor
         </button>
@@ -98,10 +97,10 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
       <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input 
+          <input
             type="text"
-            placeholder="Nome fantasia, razão social, documento, contato ou cidade..."
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ec5b13]/20 font-medium text-sm"
+            placeholder="Nome, documento, telefone ou cidade..."
+            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -132,16 +131,11 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
                 </th>
                 <th onClick={() => handleSort('tradingName')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
                   <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">
-                    Fornecedor / Fantasia <SortIcon field="tradingName" />
-                  </div>
-                </th>
-                <th onClick={() => handleSort('legalName')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
-                  <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">
-                    Razão Social <SortIcon field="legalName" />
+                    Fornecedor / Razão Social <SortIcon field="tradingName" />
                   </div>
                 </th>
                 <th className="px-6 py-5">
-                  <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">Contato / Doc</div>
+                  <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">Contato</div>
                 </th>
                 <th onClick={() => handleSort('city')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
                   <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">
@@ -162,23 +156,22 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
               {paginatedSuppliers.map(supplier => (
                 <tr key={supplier.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-6 py-6">
-                    <span className="text-sm font-black text-[#ec5b13] bg-[#ec5b13]/10 px-3 py-1.5 rounded-xl border border-[#ec5b13]/20 shadow-sm">
-                      #{String(supplier.code || 0).padStart(3, '0')}
+                    <span className="text-sm font-black text-primary bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20 shadow-sm">
+                      #{supplier.code || '---'}
                     </span>
                   </td>
                   <td className="px-6 py-6">
                     <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border ${supplier.type === 'Pessoa Jurídica' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-orange-50 text-[#ec5b13] border-orange-100'}`}>
-                        <Truck size={20} />
+                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border ${supplier.type === 'Pessoa Jurídica' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-primary/10 text-primary border-primary/10'}`}>
+                        {supplier.type === 'Pessoa Jurídica' ? <ShieldCheck size={20} /> : <Truck size={20} />}
                       </div>
                       <div>
-                        <div className="text-base font-black text-slate-800 leading-tight">{supplier.tradingName}</div>
+                        <div className="text-base font-black text-slate-800 leading-tight flex items-center gap-2">
+                          {supplier.tradingName}
+                        </div>
+                        <div className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">{supplier.document}</div>
                       </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-6">
-                    <div className="text-sm text-slate-700 font-black">{supplier.legalName}</div>
-                    <div className="text-xs text-slate-400 font-bold uppercase tracking-widest">{supplier.document}</div>
                   </td>
                   <td className="px-6 py-6">
                     <div className="space-y-1">
@@ -188,13 +181,13 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
                       </div>
                       <div className="flex items-center gap-2 text-sm text-slate-600 font-bold">
                         <Phone size={14} className="text-slate-300" />
-                        {supplier.phone}
+                        {supplier.phone || '---'}
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-6">
-                    <div className="text-sm text-slate-700 font-black uppercase tracking-tight">{supplier.address.city}</div>
-                    <div className="text-xs text-slate-400 font-bold uppercase tracking-widest">{supplier.address.state}</div>
+                    <div className="text-sm text-slate-700 font-black uppercase tracking-tight">{supplier.address?.city}</div>
+                    <div className="text-xs text-slate-400 font-bold uppercase tracking-widest">{supplier.address?.state}</div>
                   </td>
                   <td className="px-6 py-6">
                     <div className="text-sm text-slate-600 font-black">
@@ -227,7 +220,7 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
               ))}
               {filteredAndSortedSuppliers.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center">
+                  <td colSpan={6} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center opacity-30">
                       <Search size={48} className="mb-2" />
                       <p className="font-bold text-slate-400">Nenhum fornecedor encontrado para sua busca</p>
@@ -238,7 +231,7 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
             </tbody>
           </table>
         </div>
-        
+
         {/* Pagination UI */}
         {totalPages > 1 && (
           <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-4">
@@ -262,7 +255,7 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`w-10 h-10 rounded-xl text-sm font-bold transition-all shrink-0 ${currentPage === page ? 'bg-[#ec5b13] text-white shadow-lg shadow-[#ec5b13]/20' : 'bg-white border border-slate-200 text-slate-600 hover:border-[#ec5b13]/30 hover:text-[#ec5b13]'}`}
+                        className={`w-10 h-10 rounded-xl text-sm font-bold transition-all shrink-0 ${currentPage === page ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary/30 hover:text-primary'}`}
                         type="button"
                       >
                         {page}
@@ -288,7 +281,7 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
         )}
       </div>
 
-      <NewSupplierModal 
+      <NewSupplierModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={onSaveSupplier}

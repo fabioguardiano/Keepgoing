@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Briefcase, Plus, Search, Mail, Phone, MapPin, PowerOff, Edit2, ShieldCheck, ExternalLink, ArrowUpDown, ChevronUp, ChevronDown, Globe, User } from 'lucide-react';
+import { Briefcase, Plus, Search, Phone, PowerOff, Edit2, ShieldCheck, ArrowUpDown, ChevronUp, ChevronDown, User } from 'lucide-react';
 import { Architect } from '../types';
 import { NewArchitectModal } from './NewArchitectModal';
 
@@ -16,8 +16,8 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingArchitect, setEditingArchitect] = useState<Architect | null>(null);
-  const [sortField, setSortField] = useState<SortField>('tradingName');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [sortField, setSortField] = useState<SortField>('code');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [showInactive, setShowInactive] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 25;
@@ -35,25 +35,24 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
     return architects
       .filter(a => showInactive ? true : (a.status || 'ativo') === 'ativo')
       .filter(a =>
-        a.tradingName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        a.legalName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        a.document.includes(searchTerm) ||
-        a.contactName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        a.address.city.toLowerCase().includes(searchTerm.toLowerCase())
+        String(a.code).includes(searchTerm) ||
+        (a.tradingName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (a.legalName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (a.document || '').includes(searchTerm) ||
+        (a.contactName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (a.address?.city || '').toLowerCase().includes(searchTerm.toLowerCase())
       )
       .sort((a, b) => {
         let comparison = 0;
         if (sortField === 'tradingName') comparison = a.tradingName.localeCompare(b.tradingName);
         if (sortField === 'legalName') comparison = a.legalName.localeCompare(b.legalName);
-        if (sortField === 'city') comparison = a.address.city.localeCompare(b.address.city);
+        if (sortField === 'city') comparison = (a.address?.city || '').localeCompare(b.address?.city || '');
         if (sortField === 'createdAt') comparison = (a.createdAt || '').localeCompare(b.createdAt || '');
         if (sortField === 'code') comparison = (a.code || 0) - (b.code || 0);
-        
         return sortDirection === 'asc' ? comparison : -comparison;
       });
   }, [architects, searchTerm, sortField, sortDirection, showInactive]);
 
-  // Reset to first page when searching or toggling inactive
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, showInactive]);
@@ -76,7 +75,7 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return <ArrowUpDown size={14} className="opacity-30 group-hover:opacity-100 transition-opacity" />;
-    return sortDirection === 'asc' ? <ChevronUp size={14} className="text-[#ec5b13]" /> : <ChevronDown size={14} className="text-[#ec5b13]" />;
+    return sortDirection === 'asc' ? <ChevronUp size={14} className="text-primary" /> : <ChevronDown size={14} className="text-primary" />;
   };
 
   return (
@@ -86,9 +85,9 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
           <h1 className="text-2xl font-black text-slate-800 tracking-tight">Gestão de Arquitetos</h1>
           <p className="text-slate-500 font-medium">Controle técnico de parcerias e especificações</p>
         </div>
-        <button 
+        <button
           onClick={handleAddNew}
-          className="bg-[#ec5b13] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[#ec5b13]/20 hover:bg-[#d84a0d] transition-all transform hover:scale-[1.02] active:scale-95"
+          className="bg-primary text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-secondary transition-all transform hover:scale-[1.02] active:scale-95"
         >
           <Plus size={20} /> Novo Arquiteto
         </button>
@@ -98,10 +97,10 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
       <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input 
+          <input
             type="text"
-            placeholder="Escritório, profissional, documento, contato ou cidade..."
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ec5b13]/20 font-medium text-sm"
+            placeholder="Nome, documento, contato ou cidade..."
+            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -125,79 +124,76 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th onClick={() => handleSort('code')} className="px-6 py-4 cursor-pointer group hover:bg-slate-100/50 transition-colors">
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                <th onClick={() => handleSort('code')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                  <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">
                     Cód <SortIcon field="code" />
                   </div>
                 </th>
-                <th onClick={() => handleSort('tradingName')} className="px-6 py-4 cursor-pointer group hover:bg-slate-100/50 transition-colors">
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
-                    Escritório / Fantasia <SortIcon field="tradingName" />
+                <th onClick={() => handleSort('tradingName')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                  <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">
+                    Arquiteto / Escritório <SortIcon field="tradingName" />
                   </div>
                 </th>
-                <th onClick={() => handleSort('legalName')} className="px-6 py-4 cursor-pointer group hover:bg-slate-100/50 transition-colors">
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
-                    Profissional / Razão <SortIcon field="legalName" />
-                  </div>
+                <th className="px-6 py-5">
+                  <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">Contato</div>
                 </th>
-                <th className="px-6 py-4">
-                  <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Contato / Doc</div>
-                </th>
-                <th onClick={() => handleSort('city')} className="px-6 py-4 cursor-pointer group hover:bg-slate-100/50 transition-colors">
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                <th onClick={() => handleSort('city')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                  <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">
                     Localização <SortIcon field="city" />
                   </div>
                 </th>
-                <th onClick={() => handleSort('createdAt')} className="px-6 py-4 cursor-pointer group hover:bg-slate-100/50 transition-colors">
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                <th onClick={() => handleSort('createdAt')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                  <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">
                     Cadastro <SortIcon field="createdAt" />
                   </div>
                 </th>
-                <th className="px-6 py-4 text-right">
-                  <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Ações</div>
+                <th className="px-6 py-5 text-right">
+                  <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">Ações</div>
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {paginatedArchitects.map(architect => (
                 <tr key={architect.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-6 py-4">
-                    <span className="text-sm font-black text-[#ec5b13] bg-[#ec5b13]/10 px-3 py-1.5 rounded-xl border border-[#ec5b13]/20 shadow-sm">
-                      #{String(architect.code || 0).padStart(3, '0')}
+                  <td className="px-6 py-6">
+                    <span className="text-sm font-black text-primary bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20 shadow-sm">
+                      #{architect.code || '---'}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${architect.type === 'Pessoa Jurídica' ? 'bg-indigo-50 text-indigo-600' : 'bg-orange-50 text-[#ec5b13]'}`}>
-                        <Briefcase size={16} />
+                  <td className="px-6 py-6">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border ${architect.type === 'Pessoa Jurídica' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-primary/10 text-primary border-primary/10'}`}>
+                        {architect.type === 'Pessoa Jurídica' ? <ShieldCheck size={20} /> : <Briefcase size={20} />}
                       </div>
                       <div>
-                        <div className="font-bold text-slate-700 leading-tight">{architect.tradingName}</div>
+                        <div className="text-base font-black text-slate-800 leading-tight">
+                          {architect.tradingName}
+                        </div>
+                        <div className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">{architect.document}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="text-xs text-slate-600 font-semibold">{architect.legalName}</div>
-                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{architect.document}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-1.5 text-xs text-slate-600 font-semibold">
-                        <User size={12} className="text-slate-300" />
-                        {architect.contactName || 'N/A'}
+                  <td className="px-6 py-6">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-sm text-slate-600 font-bold">
+                        <User size={14} className="text-slate-300" />
+                        {architect.contactName || '---'}
                       </div>
-                      <div className="flex items-center gap-1.5 text-xs text-slate-600 font-semibold">
-                        <Phone size={12} className="text-slate-300" />
-                        {architect.phone}
+                      <div className="flex items-center gap-2 text-sm text-slate-600 font-bold">
+                        <Phone size={14} className="text-slate-300" />
+                        {architect.phone || '---'}
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="text-xs text-slate-600 font-bold">{architect.address.city}</div>
-                    <div className="text-[10px] text-slate-400 font-medium">{architect.address.state}</div>
+                  <td className="px-6 py-6">
+                    <div className="text-sm text-slate-700 font-black uppercase tracking-tight">{architect.address?.city}</div>
+                    <div className="text-xs text-slate-400 font-bold uppercase tracking-widest">{architect.address?.state}</div>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="text-[11px] text-slate-500 font-bold">{new Date(architect.createdAt).toLocaleDateString('pt-BR')}</div>
+                  <td className="px-6 py-6">
+                    <div className="text-sm text-slate-600 font-black">
+                      {architect.createdAt ? new Date(architect.createdAt).toLocaleDateString('pt-BR') : '---'}
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Data de Ref.</div>
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end items-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
@@ -224,7 +220,7 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
               ))}
               {filteredAndSortedArchitects.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center">
+                  <td colSpan={6} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center opacity-30">
                       <Search size={48} className="mb-2" />
                       <p className="font-bold text-slate-400">Nenhum arquiteto encontrado para sua busca</p>
@@ -235,7 +231,7 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
             </tbody>
           </table>
         </div>
-        
+
         {/* Pagination UI */}
         {totalPages > 1 && (
           <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-4">
@@ -259,7 +255,7 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`w-10 h-10 rounded-xl text-sm font-bold transition-all shrink-0 ${currentPage === page ? 'bg-[#ec5b13] text-white shadow-lg shadow-[#ec5b13]/20' : 'bg-white border border-slate-200 text-slate-600 hover:border-[#ec5b13]/30 hover:text-[#ec5b13]'}`}
+                        className={`w-10 h-10 rounded-xl text-sm font-bold transition-all shrink-0 ${currentPage === page ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white border border-slate-200 text-slate-600 hover:border-primary/30 hover:text-primary'}`}
                         type="button"
                       >
                         {page}
@@ -285,7 +281,7 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
         )}
       </div>
 
-      <NewArchitectModal 
+      <NewArchitectModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={onSaveArchitect}
