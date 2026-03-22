@@ -52,7 +52,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
         
         return sortDirection === 'asc' ? comparison : -comparison;
       });
-  }, [clients, searchTerm, sortField, sortDirection]);
+  }, [clients, searchTerm, sortField, sortDirection, showInactive]);
 
   // Reset to first page when searching or toggling inactive
   useEffect(() => {

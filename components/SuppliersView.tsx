@@ -51,7 +51,7 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
         
         return sortDirection === 'asc' ? comparison : -comparison;
       });
-  }, [suppliers, searchTerm, sortField, sortDirection]);
+  }, [suppliers, searchTerm, sortField, sortDirection, showInactive]);
 
   // Reset to first page when searching or toggling inactive
   useEffect(() => {

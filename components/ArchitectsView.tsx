@@ -51,7 +51,7 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
         
         return sortDirection === 'asc' ? comparison : -comparison;
       });
-  }, [architects, searchTerm, sortField, sortDirection]);
+  }, [architects, searchTerm, sortField, sortDirection, showInactive]);
 
   // Reset to first page when searching or toggling inactive
   useEffect(() => {
