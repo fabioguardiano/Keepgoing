@@ -40,7 +40,8 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
           priceHistory: m.price_history,
           imageUrl: m.image_url,
           stockLocation: m.inventory_location,
-          m2PerUnit: m.m2_per_unit
+          m2PerUnit: m.m2_per_unit,
+          supplier: m.supplier || ''
         }));
         setMaterials(mappedMaterials as Material[]);
         localStorage.setItem(`marmo_materials_${companyId || 'legacy'}`, JSON.stringify(mappedMaterials));
@@ -124,7 +125,8 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
         priceHistory: savedRow.price_history,
         imageUrl: savedRow.image_url,
         stockLocation: savedRow.inventory_location,
-        m2PerUnit: savedRow.m2_per_unit
+        m2PerUnit: savedRow.m2_per_unit,
+        supplier: savedRow.supplier || ''
       } as Material;
 
       const isUpdate = materials.some(x => x.id === m.id || x.id === savedMaterial.id);
