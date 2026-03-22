@@ -239,7 +239,7 @@ export const useSettings = (
   const handleDeleteBrand = (id: string) => setBrands(prev => prev.map(x => x.id === id ? { ...x, status: 'inativo' as const } : x));
 
   const handleSaveProductGroup = (g: ProductGroup) => setProductGroups(prev => prev.find(x => x.id === g.id) ? prev.map(x => x.id === g.id ? g : x) : [g, ...prev]);
-  const handleDeleteProductGroup = (id: string) => setProductGroups(prev => prev.filter(x => x.id !== id));
+  const handleDeleteProductGroup = (id: string) => setProductGroups(prev => prev.map(x => x.id === id ? { ...x, status: 'inativo' as const } : x));
 
   const handleSaveServiceGroup = (g: ServiceGroup) => setServiceGroups(prev => prev.find(x => x.id === g.id) ? prev.map(x => x.id === g.id ? g : x) : [g, ...prev]);
   const handleDeleteServiceGroup = (id: string) => setServiceGroups(prev => prev.map(x => x.id === id ? { ...x, status: 'inativo' as const } : x));

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Plus, Search, Filter, Edit2, Trash2, X } from 'lucide-react';
+import { Box, Plus, Search, Filter, Edit2, PowerOff, X } from 'lucide-react';
 import { ProductGroup } from '../types';
 
 interface ProductGroupsViewProps {
@@ -12,6 +12,7 @@ export const ProductGroupsView: React.FC<ProductGroupsViewProps> = ({ groups, on
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<ProductGroup | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showInactive, setShowInactive] = useState(false);
   const [formData, setFormData] = useState<Omit<ProductGroup, 'id' | 'createdAt'>>({
     code: '',
     description: ''
@@ -39,10 +40,12 @@ export const ProductGroupsView: React.FC<ProductGroupsViewProps> = ({ groups, on
     setFormData({ code: '', description: '' });
   };
 
-  const filteredGroups = groups.filter(g => 
-    g.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    g.code.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredGroups = groups.filter(g => {
+    const matchesSearch = g.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      g.code.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = showInactive ? g.status === 'inativo' : (g.status === 'ativo' || !g.status);
+    return matchesSearch && matchesStatus;
+  });
 
   const inputClass = "w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/20 focus:border-[var(--primary-color)] transition-all";
   const labelClass = "block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 ml-1";
@@ -57,20 +60,29 @@ export const ProductGroupsView: React.FC<ProductGroupsViewProps> = ({ groups, on
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm">Categorize seus produtos em grupos específicos</p>
         </div>
-        <button
-          onClick={() => {
-            const nextCode = groups.length > 0
-              ? String(Math.max(...groups.map(g => parseInt(g.code) || 0)) + 1).padStart(2, '0')
-              : '01';
-            setEditingGroup(null);
-            setFormData({ code: nextCode, description: '' });
-            setIsModalOpen(true);
-          }}
-          className="bg-[var(--primary-color)] hover:opacity-90 text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-[var(--primary-color)]/20 active:scale-95"
-        >
-          <Plus size={20} />
-          Novo Grupo
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowInactive(v => !v)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-xs font-bold uppercase tracking-widest transition-all ${showInactive ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-200'}`}
+          >
+            <PowerOff size={14} />
+            {showInactive ? 'Ocultar Inativos' : 'Mostrar Inativos'}
+          </button>
+          <button
+            onClick={() => {
+              const nextCode = groups.length > 0
+                ? String(Math.max(...groups.map(g => parseInt(g.code) || 0)) + 1).padStart(2, '0')
+                : '01';
+              setEditingGroup(null);
+              setFormData({ code: nextCode, description: '' });
+              setIsModalOpen(true);
+            }}
+            className="bg-[var(--primary-color)] hover:opacity-90 text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-[var(--primary-color)]/20 active:scale-95"
+          >
+            <Plus size={20} />
+            Novo Grupo
+          </button>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
@@ -103,14 +115,19 @@ export const ProductGroupsView: React.FC<ProductGroupsViewProps> = ({ groups, on
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filteredGroups.map((group) => (
-                <tr key={group.id} className="hover:bg-slate-50/50 transition-colors group">
+                <tr key={group.id} className={`hover:bg-slate-50/50 transition-colors group ${group.status === 'inativo' ? 'opacity-60' : ''}`}>
                   <td className="px-6 py-5">
                     <span className="text-sm font-black text-primary bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20 shadow-sm">
                       #{group.code}
                     </span>
                   </td>
                   <td className="px-6 py-5">
-                    <span className="text-base font-black text-slate-800">{group.description}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-base font-black text-slate-800">{group.description}</span>
+                      {group.status === 'inativo' && (
+                        <span className="text-[10px] font-bold bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full uppercase tracking-wider">Inativo</span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-5 text-sm font-bold text-slate-500">
                     {new Date(group.createdAt).toLocaleDateString('pt-BR')}
@@ -125,11 +142,11 @@ export const ProductGroupsView: React.FC<ProductGroupsViewProps> = ({ groups, on
                         <Edit2 size={16} />
                       </button>
                       <button
-                        onClick={() => onDeleteGroup(group.id)}
-                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
-                        title="Excluir"
+                        onClick={() => group.status === 'inativo' ? onSaveGroup({ ...group, status: 'ativo' }) : onDeleteGroup(group.id)}
+                        className={`p-2 rounded-xl transition-all border border-transparent ${group.status === 'inativo' ? 'text-green-500 hover:bg-green-50 hover:border-green-100' : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-100'}`}
+                        title={group.status === 'inativo' ? 'Reativar' : 'Inativar'}
                       >
-                        <Trash2 size={16} />
+                        <PowerOff size={16} />
                       </button>
                     </div>
                   </td>

@@ -437,6 +437,7 @@ export interface ProductGroup {
   id: string;
   code: string;
   description: string;
+  status?: 'ativo' | 'inativo';
   createdAt: string;
 }
 
