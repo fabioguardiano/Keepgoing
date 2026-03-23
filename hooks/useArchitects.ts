@@ -7,15 +7,11 @@ export const useArchitects = (companyId?: string, logActivity?: any) => {
   const [loadingArchitects, setLoadingArchitects] = useState(true);
 
   const fetchArchitects = async () => {
+    if (!companyId) { setLoadingArchitects(false); return; }
     setLoadingArchitects(true);
     try {
       let query = supabase.from('architects').select('*');
-      
-      if (companyId) {
-        query = query.eq('company_id', companyId);
-      } else {
-        query = query.eq('company_id', '00000000-0000-0000-0000-000000000000');
-      }
+      query = query.eq('company_id', companyId);
 
       const { data, error } = await query.order('trading_name');
       

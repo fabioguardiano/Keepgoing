@@ -41,6 +41,7 @@ import 'leaflet/dist/leaflet.css';
 const App: React.FC = () => {
   // 1. Estados de Autenticação e UI de topo
   const [user, setUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [currentView, setCurrentView] = useState<View>('Produção');
   const [searchQuery, setSearchQuery] = useState('');
@@ -183,14 +184,16 @@ const App: React.FC = () => {
   };
 
   // 4. Hooks de Domínio (Dependem de company_id e logActivity)
-  const { sales, handleSaveSale: saveSaleBase, setSales } = useSales(user?.company_id, logActivity);
-  const { clients, loadingClients, handleSaveClient, handleImportClients, deleteClient, setClients } = useClients(user?.company_id, logActivity);
-  const { materials, handleSaveMaterial, setMaterials } = useMaterials(user?.company_id, logActivity);
-  const { deliveries, addDelivery, updateDeliveryStatus, updateDelivery, deleteDelivery, setDeliveries } = useDeliveries(user?.company_id, logActivity);
-  const { transactions, handleSaveTransaction, deleteTransaction, setTransactions } = useFinance(user?.company_id, logActivity);
-  const { suppliers, handleSaveSupplier, deleteSupplier, setSuppliers } = useSuppliers(user?.company_id, logActivity);
-  const { architects, handleSaveArchitect, deleteArchitect, setArchitects } = useArchitects(user?.company_id, logActivity);
-  const { products, handleSaveProduct } = useProducts(user?.company_id, logActivity);
+  // Só passamos o companyId quando authReady=true para evitar busca prematura com UUID errado
+  const activeCompanyId = authReady ? user?.company_id : undefined;
+  const { sales, handleSaveSale: saveSaleBase, setSales } = useSales(activeCompanyId, logActivity);
+  const { clients, loadingClients, handleSaveClient, handleImportClients, deleteClient, setClients } = useClients(activeCompanyId, logActivity);
+  const { materials, handleSaveMaterial, setMaterials } = useMaterials(activeCompanyId, logActivity);
+  const { deliveries, addDelivery, updateDeliveryStatus, updateDelivery, deleteDelivery, setDeliveries } = useDeliveries(activeCompanyId, logActivity);
+  const { transactions, handleSaveTransaction, deleteTransaction, setTransactions } = useFinance(activeCompanyId, logActivity);
+  const { suppliers, handleSaveSupplier, deleteSupplier, setSuppliers } = useSuppliers(activeCompanyId, logActivity);
+  const { architects, handleSaveArchitect, deleteArchitect, setArchitects } = useArchitects(activeCompanyId, logActivity);
+  const { products, handleSaveProduct } = useProducts(activeCompanyId, logActivity);
 
   // 5. Configurações Globais (Depende de setOrders e setSales para renomeação de fases)
   const { 
@@ -290,7 +293,7 @@ const App: React.FC = () => {
           status: 'ativo',
           createdAt: session.user.created_at
         } as User;
-        
+
         setUser(mappedUser);
         localStorage.setItem('marmo_user', JSON.stringify(mappedUser));
       } else {
@@ -309,6 +312,7 @@ const App: React.FC = () => {
           }
         }
       }
+      setAuthReady(true);
     };
 
     checkSession();

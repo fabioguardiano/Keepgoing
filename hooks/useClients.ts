@@ -7,16 +7,11 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
   const [loadingClients, setLoadingClients] = useState(true);
 
   const fetchClients = async () => {
+    if (!companyId) { setLoadingClients(false); return; }
     setLoadingClients(true);
     try {
-      // Se não há companyId, carregamos apenas legados ou nada conforme política do banco
       let query = supabase.from('clients').select('*');
-      
-      if (companyId) {
-        query = query.eq('company_id', companyId);
-      } else {
-        query = query.eq('company_id', '00000000-0000-0000-0000-000000000000');
-      }
+      query = query.eq('company_id', companyId);
 
       const { data, error } = await query.order('trading_name');
       

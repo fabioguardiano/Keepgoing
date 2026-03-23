@@ -7,15 +7,11 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
   const [loadingSales, setLoadingSales] = useState(true);
 
   const fetchSales = async () => {
+    if (!companyId) { setLoadingSales(false); return; }
     setLoadingSales(true);
     try {
       let query = supabase.from('sales').select('*');
-      
-      if (companyId) {
-        query = query.eq('company_id', companyId);
-      } else {
-        query = query.eq('company_id', '00000000-0000-0000-0000-000000000000');
-      }
+      query = query.eq('company_id', companyId);
 
       const { data, error } = await query.order('order_number', { ascending: false });
       

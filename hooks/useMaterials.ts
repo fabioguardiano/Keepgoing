@@ -7,15 +7,11 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
   const [loadingMaterials, setLoadingMaterials] = useState(true);
 
   const fetchMaterials = async () => {
+    if (!companyId) { setLoadingMaterials(false); return; }
     setLoadingMaterials(true);
     try {
       let query = supabase.from('materials').select('*');
-      
-      if (companyId) {
-        query = query.eq('company_id', companyId);
-      } else {
-        query = query.eq('company_id', '00000000-0000-0000-0000-000000000000');
-      }
+      query = query.eq('company_id', companyId);
 
       const { data: materialsData, error: materialsError } = await query.order('name');
       

@@ -7,15 +7,11 @@ export const useProducts = (companyId?: string, logActivity?: any) => {
   const [loadingProducts, setLoadingProducts] = useState(true);
 
   const fetchProducts = async () => {
+    if (!companyId) { setLoadingProducts(false); return; }
     setLoadingProducts(true);
     try {
       let query = supabase.from('products').select('*');
-      
-      if (companyId) {
-        query = query.eq('company_id', companyId);
-      } else {
-        query = query.eq('company_id', '00000000-0000-0000-0000-000000000000');
-      }
+      query = query.eq('company_id', companyId);
 
       const { data, error } = await query.order('name');
 

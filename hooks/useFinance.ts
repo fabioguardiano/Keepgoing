@@ -7,15 +7,11 @@ export const useFinance = (companyId?: string, logActivity?: (action: any, detai
   const [loadingFinance, setLoadingFinance] = useState(true);
 
   const fetchTransactions = async () => {
+    if (!companyId) { setLoadingFinance(false); return; }
     setLoadingFinance(true);
     try {
       let query = supabase.from('finance_transactions').select('*');
-
-      if (companyId) {
-        query = query.or(`company_id.eq.${companyId},company_id.is.null`);
-      } else {
-        query = query.is('company_id', null);
-      }
+      query = query.or(`company_id.eq.${companyId},company_id.is.null`);
 
       const { data, error } = await query.order('date', { ascending: false });
 

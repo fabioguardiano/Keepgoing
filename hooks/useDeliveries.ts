@@ -7,15 +7,11 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
   const [loadingDeliveries, setLoadingDeliveries] = useState(true);
 
   const fetchDeliveries = async () => {
+    if (!companyId) { setLoadingDeliveries(false); return; }
     setLoadingDeliveries(true);
     try {
       let query = supabase.from('deliveries').select('*');
-      
-      if (companyId) {
-        query = query.eq('company_id', companyId);
-      } else {
-        query = query.eq('company_id', '00000000-0000-0000-0000-000000000000');
-      }
+      query = query.eq('company_id', companyId);
 
       const { data, error } = await query.order('date');
       

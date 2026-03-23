@@ -7,15 +7,11 @@ export const useSuppliers = (companyId?: string, logActivity?: any) => {
   const [loadingSuppliers, setLoadingSuppliers] = useState(true);
 
   const fetchSuppliers = async () => {
+    if (!companyId) { setLoadingSuppliers(false); return; }
     setLoadingSuppliers(true);
     try {
       let query = supabase.from('suppliers').select('*');
-      
-      if (companyId) {
-        query = query.eq('company_id', companyId);
-      } else {
-        query = query.eq('company_id', '00000000-0000-0000-0000-000000000000');
-      }
+      query = query.eq('company_id', companyId);
 
       const { data, error } = await query.order('trading_name');
       
