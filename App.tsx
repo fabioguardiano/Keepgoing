@@ -14,6 +14,8 @@ import { ClientsView } from './components/ClientsView.tsx';
 import { SalesView } from './components/SalesView.tsx';
 import { InventoryView } from './components/InventoryView.tsx';
 import { FinanceView } from './components/FinanceView.tsx';
+import { AccountsView } from './components/AccountsView.tsx';
+import { PaymentMethodsView } from './components/PaymentMethodsView.tsx';
 import { SuppliersView } from './components/SuppliersView.tsx';
 import { ArchitectsView } from './components/ArchitectsView.tsx';
 import { SalesChannelsView } from './components/SalesChannelsView.tsx';
@@ -35,6 +37,9 @@ import { useSuppliers } from './hooks/useSuppliers';
 import { useDeliveries } from './hooks/useDeliveries';
 import { useProducts } from './hooks/useProducts';
 import { useSettings } from './hooks/useSettings';
+import { useAccountsReceivable } from './hooks/useAccountsReceivable';
+import { useAccountsPayable } from './hooks/useAccountsPayable';
+import { usePaymentMethods } from './hooks/usePaymentMethods';
 import 'leaflet/dist/leaflet.css';
 
 
@@ -186,7 +191,7 @@ const App: React.FC = () => {
   // 4. Hooks de Domínio (Dependem de company_id e logActivity)
   // Só passamos o companyId quando authReady=true para evitar busca prematura com UUID errado
   const activeCompanyId = authReady ? user?.company_id : undefined;
-  const { sales, handleSaveSale: saveSaleBase, setSales } = useSales(activeCompanyId, logActivity);
+  const { sales, handleSaveSale: saveSaleBase, setSales, refreshSales } = useSales(activeCompanyId, logActivity);
   const { clients, loadingClients, handleSaveClient, handleImportClients, deleteClient, setClients } = useClients(activeCompanyId, logActivity);
   const { materials, handleSaveMaterial, setMaterials } = useMaterials(activeCompanyId, logActivity);
   const { deliveries, addDelivery, updateDeliveryStatus, updateDelivery, deleteDelivery, setDeliveries } = useDeliveries(activeCompanyId, logActivity);
@@ -194,6 +199,9 @@ const App: React.FC = () => {
   const { suppliers, handleSaveSupplier, deleteSupplier, setSuppliers } = useSuppliers(activeCompanyId, logActivity);
   const { architects, handleSaveArchitect, deleteArchitect, setArchitects } = useArchitects(activeCompanyId, logActivity);
   const { products, handleSaveProduct } = useProducts(activeCompanyId, logActivity);
+  const { receivables, handleSaveReceivable, deleteReceivable, payInstallment: payReceivableInstallment } = useAccountsReceivable(activeCompanyId);
+  const { payables, handleSavePayable, deletePayable, payInstallment: payPayableInstallment } = useAccountsPayable(activeCompanyId);
+  const { paymentMethods, handleSavePaymentMethod, deletePaymentMethod, toggleActive } = usePaymentMethods(activeCompanyId);
 
   // 5. Configurações Globais (Depende de setOrders e setSales para renomeação de fases)
   const { 
@@ -235,16 +243,78 @@ const App: React.FC = () => {
 
   // 7. Handlers de Negócio Orquestrados
   const handleSaveSale = async (s: SalesOrder) => {
+    // ── Retorno Pedido → Orçamento: protege o financeiro ──────────────────────
+    if (s.status === 'Orçamento' && s.id) {
+      const previousSale = sales.find(x => x.id === s.id);
+      if (previousSale?.status === 'Pedido') {
+        const linkedAR = receivables.find(r => r.saleId === s.id && r.status !== 'cancelado');
+        if (linkedAR) {
+          const hasPaid = linkedAR.installments.some(i => i.status === 'pago');
+          if (hasPaid) {
+            throw new Error(
+              'Este pedido possui pagamentos registrados no Contas a Receber. ' +
+              'Estorne os pagamentos antes de retornar para Orçamento.'
+            );
+          }
+          // Nenhum pagamento recebido — cancela o AR (mantém histórico)
+          await handleSaveReceivable({ ...linkedAR, status: 'cancelado' });
+        }
+      }
+    }
+    // ──────────────────────────────────────────────────────────────────────────
+
     try {
       const savedSale = await saveSaleBase(s);
+      const saleId = (savedSale as any)?.id || s.id;
+
+      // Auto-cria Conta a Receber quando venda vira Pedido com forma de pagamento
+      if (s.status === 'Pedido' && s.paymentMethodId && s.firstDueDate) {
+        // Ignora ARs cancelados para permitir recriação após retorno de orçamento
+        const existingAR = receivables.find(r => r.saleId === saleId && r.status !== 'cancelado');
+        if (!existingAR) {
+          const pm = paymentMethods.find(p => p.id === s.paymentMethodId);
+          const total = s.totals?.geral ?? s.totalValue ?? 0;
+          const n = s.paymentInstallments || 1;
+          const firstDate = new Date(s.firstDueDate + 'T12:00:00');
+          const baseValue = Math.floor((total / n) * 100) / 100;
+          const diff = Math.round((total - baseValue * n) * 100) / 100;
+          const installments = Array.from({ length: n }, (_, i) => ({
+            id: Math.random().toString(36).slice(2, 11),
+            number: i + 1,
+            dueDate: new Date(firstDate.getFullYear(), firstDate.getMonth() + i, firstDate.getDate()).toISOString().split('T')[0],
+            value: i === 0 ? baseValue + diff : baseValue,
+            status: 'pendente' as const,
+          }));
+          await handleSaveReceivable({
+            id: undefined as any,
+            description: `Venda ${s.orderNumber} — ${s.clientName}`,
+            clientId: s.clientId,
+            clientName: s.clientName || '',
+            saleId,
+            orderNumber: s.orderNumber || '',
+            totalValue: total,
+            paidValue: 0,
+            installments,
+            paymentMethodId: s.paymentMethodId,
+            paymentMethodName: pm?.name || s.paymentMethodName || '',
+            category: 'Venda',
+            dueDate: s.firstDueDate,
+            notes: s.paymentConditions || '',
+            status: 'pendente',
+            companyId: activeCompanyId || '',
+            createdAt: new Date().toISOString(),
+          } as any);
+        }
+      }
+
       if (s.isOsGenerated) {
         const osExists = orders.some(o => o.orderNumber === s.orderNumber || o.id === s.id);
         if (!osExists) {
           const newOrder: OrderService = {
             ...s,
-            id: crypto.randomUUID(), 
+            id: crypto.randomUUID(),
             osNumber: `OS-${new Date().getFullYear()}-${s.orderNumber}`,
-            phase: 'Serviço Lançado' as ProductionPhase, 
+            phase: 'Serviço Lançado' as ProductionPhase,
           };
           await handleSaveOrder(newOrder);
         }
@@ -329,7 +399,10 @@ const App: React.FC = () => {
           status: 'ativo',
           createdAt: session.user.created_at
         } as User;
-        setUser(mappedUser);
+        setUser(prev => {
+          if (prev?.id === mappedUser.id && prev?.company_id === mappedUser.company_id) return prev;
+          return mappedUser;
+        });
         localStorage.setItem('marmo_user', JSON.stringify(mappedUser));
       } else {
         setUser(null);
@@ -446,11 +519,11 @@ const App: React.FC = () => {
             nextOrderNumber={String(nextOrderNumber)}
             salesPhases={salesPhases}
             services={serviceGroups}
-            onAddSalesPhase={addSalesPhase}
+            paymentMethods={paymentMethods}
             onRenameSalesPhase={renameSalesPhase}
             onDeleteSalesPhase={deleteSalesPhase}
             onReorderSalesPhases={reorderSalesPhases}
-            onSaveSale={handleSaveSale} 
+            onSaveSale={handleSaveSale}
           />
         );
       case 'Matéria Prima':
@@ -493,6 +566,39 @@ const App: React.FC = () => {
         );
       case 'Financeiro':
         return <FinanceView transactions={transactions} onAddTransaction={handleSaveTransaction} />;
+      case 'Contas a Receber':
+        return (
+          <AccountsView
+            mode="receber"
+            accounts={receivables}
+            paymentMethods={paymentMethods}
+            clients={clients}
+            onSave={handleSaveReceivable}
+            onDelete={deleteReceivable}
+            onPayInstallment={payReceivableInstallment}
+          />
+        );
+      case 'Contas a Pagar':
+        return (
+          <AccountsView
+            mode="pagar"
+            accounts={payables}
+            paymentMethods={paymentMethods}
+            suppliers={suppliers}
+            onSave={handleSavePayable}
+            onDelete={deletePayable}
+            onPayInstallment={payPayableInstallment}
+          />
+        );
+      case 'Formas de Pagamento':
+        return (
+          <PaymentMethodsView
+            paymentMethods={paymentMethods}
+            onSave={handleSavePaymentMethod}
+            onDelete={deletePaymentMethod}
+            onToggle={toggleActive}
+          />
+        );
       case 'Fornecedores':
         return <SuppliersView suppliers={suppliers} onSaveSupplier={handleSaveSupplier} onDeleteSupplier={deleteSupplier} />;
       case 'Arquitetos':

@@ -289,16 +289,68 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
         {/* Observações + condições */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           {/* Condições de pagamento */}
-          {sale.paymentConditions && (
-            <div style={{ border: '1px solid #000', padding: '6px 8px' }}>
-              <div style={{ fontWeight: 900, fontSize: '9px', textTransform: 'uppercase', marginBottom: '2px', color: '#334155' }}>
-                Condições de Pagamento
+          {(sale.paymentMethodName || sale.paymentConditions) && (() => {
+            const n = sale.paymentInstallments || 1;
+            const total = sale.totals?.geral ?? sale.totalValue ?? 0;
+            const baseValue = Math.floor((total / n) * 100) / 100;
+            const diff = Math.round((total - baseValue * n) * 100) / 100;
+            const fmtR = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const rows = n > 1
+              ? Array.from({ length: n }, (_, i) => ({
+                  num: i + 1,
+                  value: i === 0 ? baseValue + diff : baseValue,
+                  due: sale.firstDueDate ? (() => {
+                    const d = new Date(sale.firstDueDate + 'T12:00:00');
+                    return new Date(d.getFullYear(), d.getMonth() + i, d.getDate()).toLocaleDateString('pt-BR');
+                  })() : null,
+                }))
+              : null;
+            return (
+              <div style={{ border: '1px solid #000', padding: '6px 8px' }}>
+                <div style={{ fontWeight: 900, fontSize: '9px', textTransform: 'uppercase', marginBottom: '4px', color: '#334155' }}>
+                  Condições de Pagamento
+                </div>
+                {sale.paymentMethodName && (
+                  <div style={{ fontWeight: 700, fontSize: '10px', marginBottom: rows ? '5px' : '0' }}>
+                    {sale.paymentMethodName}
+                    {n > 1 && (
+                      <span style={{ marginLeft: '6px', fontWeight: 900, color: '#1e293b' }}>
+                        — {n}x de R$ {fmtR(baseValue + (n === 1 ? diff : 0))}
+                      </span>
+                    )}
+                    {n === 1 && (
+                      <span style={{ marginLeft: '6px', fontWeight: 900, color: '#1e293b' }}>— à vista</span>
+                    )}
+                  </div>
+                )}
+                {rows && (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#f1f5f9' }}>
+                        <th style={{ padding: '2px 4px', textAlign: 'left', fontWeight: 700 }}>Parcela</th>
+                        {rows[0].due && <th style={{ padding: '2px 4px', textAlign: 'left', fontWeight: 700 }}>Vencimento</th>}
+                        <th style={{ padding: '2px 4px', textAlign: 'right', fontWeight: 700 }}>Valor</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map(r => (
+                        <tr key={r.num} style={{ borderTop: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '2px 4px', fontWeight: 600 }}>{r.num}ª</td>
+                          {r.due && <td style={{ padding: '2px 4px' }}>{r.due}</td>}
+                          <td style={{ padding: '2px 4px', textAlign: 'right', fontWeight: 700 }}>R$ {fmtR(r.value)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+                {sale.paymentConditions && (
+                  <div style={{ marginTop: '4px', fontSize: '9px', color: '#475569', fontStyle: 'italic' }}>
+                    {sale.paymentConditions}
+                  </div>
+                )}
               </div>
-              <div style={{ textTransform: 'uppercase', fontSize: '10px', fontWeight: 700 }}>
-                {sale.paymentConditions}
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Observações */}
           <div style={{ border: '1px solid #000', padding: '6px 8px', flex: 1 }}>

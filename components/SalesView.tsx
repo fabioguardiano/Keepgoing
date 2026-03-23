@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { ShoppingBag, Plus, Search, FileText, CheckCircle2, Clock, XCircle, MoreVertical, ExternalLink, Printer, LayoutGrid, List, ArrowRight, X, Edit2, GripVertical, Trash2, Check, DollarSign, Calendar, MoreHorizontal, User, AlertTriangle, Lock } from 'lucide-react';
-import { SalesOrder, Client, Material, AppUser, Architect, ProductService, SalesChannel, CompanyInfo, SalesPhaseConfig, ServiceGroup } from '../types';
+import { SalesOrder, Client, Material, AppUser, Architect, ProductService, SalesChannel, CompanyInfo, SalesPhaseConfig, ServiceGroup, PaymentMethod } from '../types';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { NewSaleModal } from './NewSaleModal';
 import { PrintBudget } from './PrintBudget';
@@ -16,19 +16,19 @@ interface SalesViewProps {
   architects: Architect[];
   products: ProductService[];
   salesChannels: SalesChannel[];
+  paymentMethods: PaymentMethod[];
   companyInfo: CompanyInfo;
   nextOrderNumber: string;
   salesPhases: SalesPhaseConfig[];
   services: ServiceGroup[];
-  onAddSalesPhase: (name: string) => void;
   onRenameSalesPhase: (oldName: string, newName: string) => void;
   onDeleteSalesPhase: (name: string) => void;
   onReorderSalesPhases: (startIndex: number, endIndex: number) => void;
 }
 
-export const SalesView: React.FC<SalesViewProps> = ({ 
-  sales, clients, materials, onSaveSale, appUsers, architects, products, salesChannels, companyInfo, nextOrderNumber,
-  salesPhases, services, onAddSalesPhase, onRenameSalesPhase, onDeleteSalesPhase, onReorderSalesPhases
+export const SalesView: React.FC<SalesViewProps> = ({
+  sales, clients, materials, onSaveSale, appUsers, architects, products, salesChannels, paymentMethods, companyInfo, nextOrderNumber,
+  salesPhases, services, onRenameSalesPhase, onDeleteSalesPhase, onReorderSalesPhases
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('kanban');
@@ -41,8 +41,6 @@ export const SalesView: React.FC<SalesViewProps> = ({
   const [isNewSaleModalOpen, setIsNewSaleModalOpen] = useState(false);
   const [editingPhase, setEditingPhase] = useState<string | null>(null);
   const [tempPhaseName, setTempPhaseName] = useState('');
-  const [showNewPhaseInput, setShowNewPhaseInput] = useState(false);
-  const [newPhaseName, setNewPhaseName] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [lostSaleDetails, setLostSaleDetails] = useState<{ saleId: string; reason: string; details: string } | null>(null);
   const [revertPending, setRevertPending] = useState<{ sale: SalesOrder; targetPhase: string } | null>(null);
@@ -129,9 +127,9 @@ export const SalesView: React.FC<SalesViewProps> = ({
       if (!user?.email) throw new Error('Usuário não identificado.');
       const { error } = await supabase.auth.signInWithPassword({ email: user.email, password: revertPassword });
       if (error) throw new Error('Senha incorreta.');
-      onSaveSale({
+      await (onSaveSale as (sale: SalesOrder) => Promise<any>)({
         ...revertPending.sale,
-        salesPhase: revertPending.targetPhase,
+        salesPhase: 'Negociação',
         status: 'Orçamento',
         observations: `[RETORNO] ${revertJustification}${revertPending.sale.observations ? '\n' + revertPending.sale.observations : ''}`
       });
@@ -455,7 +453,8 @@ export const SalesView: React.FC<SalesViewProps> = ({
                   const isEditing = editingPhase === phase;
                   const isFirstPhase = index === 0;
                   const phaseSales = sales.filter(s =>
-                    s.salesPhase === phase || (isFirstPhase && !s.salesPhase)
+                    s.salesPhase === phase ||
+                    (isFirstPhase && (!s.salesPhase || !salesPhases.some(p => p.name === s.salesPhase)))
                   );
                   const phaseTotal = phaseSales.reduce((acc, s) => acc + (s.totals?.geral || 0), 0);
 
@@ -642,60 +641,6 @@ export const SalesView: React.FC<SalesViewProps> = ({
 
                 {/* New Column Column */}
                 {provided.placeholder}
-                <div className="flex-shrink-0 w-80 pt-12">
-                  {showNewPhaseInput ? (
-                    <div className="bg-white dark:bg-slate-900 border border-[var(--primary-color)]/30 rounded-3xl p-6 shadow-xl animate-in fade-in zoom-in duration-200 ring-4 ring-orange-50 dark:ring-slate-800/50">
-                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                        <Plus size={14} className="text-[var(--primary-color)]" /> Nova Etapa
-                      </h4>
-                      <input
-                        autoFocus
-                        value={newPhaseName}
-                        onChange={(e) => setNewPhaseName(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && newPhaseName.trim()) {
-                            onAddSalesPhase(newPhaseName.trim());
-                            setNewPhaseName('');
-                            setShowNewPhaseInput(false);
-                          }
-                          if (e.key === 'Escape') setShowNewPhaseInput(false);
-                        }}
-                        placeholder="Nome da fase..."
-                        className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl px-4 py-3 text-sm font-bold mb-4 focus:ring-1 focus:ring-[var(--primary-color)] outline-none transition-all"
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            if (newPhaseName.trim()) {
-                              onAddSalesPhase(newPhaseName.trim());
-                              setNewPhaseName('');
-                              setShowNewPhaseInput(false);
-                            }
-                          }}
-                          className="flex-1 bg-[var(--primary-color)] text-white text-[10px] font-black uppercase py-3 rounded-xl hover:opacity-90 transition-all shadow-lg shadow-[var(--primary-color)]/20"
-                        >
-                          Adicionar
-                        </button>
-                        <button
-                          onClick={() => setShowNewPhaseInput(false)}
-                          className="px-4 py-3 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                        >
-                          <X size={18} />
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setShowNewPhaseInput(true)}
-                      className="w-full py-16 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[2.5rem] flex flex-col items-center justify-center gap-4 text-slate-400 hover:border-[var(--primary-color)] hover:text-[var(--primary-color)] hover:bg-orange-50/30 transition-all bg-white/30 dark:bg-slate-900/10 group"
-                    >
-                      <div className="p-4 rounded-full bg-white dark:bg-slate-800 group-hover:bg-[var(--primary-color)] group-hover:text-white transition-all shadow-sm">
-                        <Plus size={24} />
-                      </div>
-                      <span className="text-[10px] font-black uppercase tracking-widest">Nova Etapa de Venda</span>
-                    </button>
-                  )}
-                </div>
               </div>
             )}
           </Droppable>
@@ -703,7 +648,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
       )}
 
       {isNewSaleModalOpen && (
-        <NewSaleModal 
+        <NewSaleModal
           clients={clients}
           architects={architects}
           appUsers={appUsers}
@@ -711,6 +656,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
           products={products}
           services={services}
           salesChannels={salesChannels}
+          paymentMethods={paymentMethods}
           companyInfo={companyInfo}
           nextOrderNumber={nextOrderNumber}
           salesPhases={salesPhases}
@@ -829,7 +775,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
 
             <div className="p-5 space-y-4">
               <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-3 text-xs text-slate-600 dark:text-slate-300 font-medium">
-                O pedido <span className="font-black text-slate-800 dark:text-white">#{revertPending.sale.orderNumber}</span> de <span className="font-black text-slate-800 dark:text-white">{revertPending.sale.clientName}</span> voltará ao status <span className="font-black text-amber-600">Orçamento</span> na coluna <span className="font-black text-[var(--primary-color)]">{revertPending.targetPhase}</span>.
+                O pedido <span className="font-black text-slate-800 dark:text-white">#{revertPending.sale.orderNumber}</span> de <span className="font-black text-slate-800 dark:text-white">{revertPending.sale.clientName}</span> voltará ao status <span className="font-black text-amber-600">Orçamento</span> na coluna <span className="font-black text-[var(--primary-color)]">Negociação</span>.
               </div>
 
               <div>

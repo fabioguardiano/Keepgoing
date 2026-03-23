@@ -268,6 +268,10 @@ export interface OrderService {
   discountValue?: number;
   discountPercentage?: number;
   paymentConditions?: string;
+  paymentMethodId?: string;
+  paymentMethodName?: string;
+  paymentInstallments?: number;
+  firstDueDate?: string;
   deliveryDeadline?: string;
   totals?: {
     vendas: number;
@@ -425,6 +429,83 @@ export interface FinanceTransaction {
   description: string;
 }
 
+export type PaymentCategory =
+  | 'dinheiro'
+  | 'pix'
+  | 'transferencia'
+  | 'cartao_debito'
+  | 'cartao_credito_avista'
+  | 'cartao_credito_prazo'
+  | 'boleto'
+  | 'cheque'
+  | 'outro';
+
+export interface PaymentMethod {
+  id: string;
+  name: string;
+  category: PaymentCategory;
+  type: 'avista' | 'aprazo';
+  installments?: number;          // nº máximo de parcelas (a prazo)
+  installmentFee?: number;        // taxa por parcela em % (cartão parcelado)
+  anticipationDiscount?: number;  // desconto p/ antecipação em %
+  active: boolean;
+  companyId?: string;
+  createdAt: string;
+}
+
+export interface AccountInstallment {
+  id: string;
+  number: number;
+  dueDate: string;
+  value: number;
+  status: 'pendente' | 'pago' | 'atrasado';
+  paidDate?: string;
+  paidValue?: number;
+  paymentMethodId?: string;
+  paymentMethodName?: string;
+  notes?: string;
+}
+
+export interface AccountReceivable {
+  id: string;
+  description: string;
+  clientId?: string;
+  clientName?: string;
+  saleId?: string;
+  orderNumber?: string;
+  totalValue: number;
+  paidValue: number;
+  remainingValue: number;
+  installments: AccountInstallment[];
+  paymentMethodId?: string;
+  paymentMethodName?: string;
+  category: string;
+  dueDate: string;
+  notes?: string;
+  status: 'pendente' | 'parcial' | 'quitado' | 'cancelado';
+  companyId?: string;
+  createdAt: string;
+}
+
+export interface AccountPayable {
+  id: string;
+  description: string;
+  supplierId?: string;
+  supplierName?: string;
+  totalValue: number;
+  paidValue: number;
+  remainingValue: number;
+  installments: AccountInstallment[];
+  paymentMethodId?: string;
+  paymentMethodName?: string;
+  category: string;
+  dueDate: string;
+  notes?: string;
+  status: 'pendente' | 'parcial' | 'quitado' | 'cancelado';
+  companyId?: string;
+  createdAt: string;
+}
+
 export interface Brand {
   id: string;
   code: string;
@@ -483,6 +564,9 @@ export type View =
   | 'Marcas'
   | 'Canais de Vendas'
   | 'Grupos de Produtos'
-  | 'Grupos de Serviços';
+  | 'Grupos de Serviços'
+  | 'Contas a Receber'
+  | 'Contas a Pagar'
+  | 'Formas de Pagamento';
 
 export type User = AppUser;

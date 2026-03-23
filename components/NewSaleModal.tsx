@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, User, ShoppingBag, Plus, Trash2, Calculator, Save, FileText, Search, Tag, Users, Printer, Edit2, RotateCcw, Check, GripVertical, PlusCircle, Copy, Pencil, Lock, AlertTriangle, Eye } from 'lucide-react';
-import { SalesOrder, OrderItem, Client, Architect, AppUser, SalesChannel, Material, ProductService, CompanyInfo, SalesPhaseConfig, ServiceGroup } from '../types';
+import { SalesOrder, OrderItem, Client, Architect, AppUser, SalesChannel, Material, ProductService, CompanyInfo, SalesPhaseConfig, ServiceGroup, PaymentMethod } from '../types';
 import { ClientSelectModal } from './ClientSelectModal';
 import { PrintBudget } from './PrintBudget';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
@@ -16,6 +16,7 @@ interface NewSaleModalProps {
   materials: Material[];
   products: ProductService[];
   salesChannels: SalesChannel[];
+  paymentMethods: PaymentMethod[];
   initialData?: SalesOrder;
   companyInfo: CompanyInfo;
   nextOrderNumber: string;
@@ -25,7 +26,7 @@ interface NewSaleModalProps {
 }
 
 export const NewSaleModal: React.FC<NewSaleModalProps> = ({
-  onClose, onSave, clients, architects, appUsers, materials, products, services, salesChannels, initialData, companyInfo, nextOrderNumber, salesPhases, readOnly = false
+  onClose, onSave, clients, architects, appUsers, materials, products, services, salesChannels, paymentMethods, initialData, companyInfo, nextOrderNumber, salesPhases, readOnly = false
 }) => {
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [printingSale, setPrintingSale] = useState<SalesOrder | null>(null);
@@ -105,6 +106,9 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const [architect, setArchitect] = useState(initialData?.architectName || '');
   const [items, setItems] = useState<OrderItem[]>(initialData?.items || []);
   const [paymentConditions, setPaymentConditions] = useState(initialData?.paymentConditions || '');
+  const [paymentMethodId, setPaymentMethodId] = useState(initialData?.paymentMethodId || '');
+  const [paymentInstallments, setPaymentInstallments] = useState(initialData?.paymentInstallments || 1);
+  const [firstDueDate, setFirstDueDate] = useState(initialData?.firstDueDate || '');
   const [deliveryDeadline, setDeliveryDeadline] = useState(initialData?.deliveryDeadline || '');
   const [discountValue, setDiscountValue] = useState(initialData?.discountValue || 0);
   const [discountPercentage, setDiscountPercentage] = useState(initialData?.discountPercentage || 0);
@@ -409,6 +413,16 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
       alert('Informe o Prazo de Entrega em dias úteis antes de salvar.');
       return;
     }
+    if (saleType === 'Pedido' && !paymentMethodId) {
+      alert('Informe a Forma de Pagamento para confirmar o Pedido.');
+      return;
+    }
+    if (saleType === 'Pedido' && !firstDueDate) {
+      alert('Informe a Data do 1º Vencimento para confirmar o Pedido.');
+      return;
+    }
+
+    const selectedPm = paymentMethods.find(p => p.id === paymentMethodId);
 
     const newSale: SalesOrder = {
       ...initialData,
@@ -418,7 +432,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
       clientName: selectedClient.name,
       clientId: selectedClient.id,
       projectDescription: items.map(i => i.description).join(', '),
-      material: items[0]?.description || '', // Simplified for header
+      material: items[0]?.description || '',
       materialArea: items.reduce((acc, i) => acc + (i.m2 || 0), 0),
       phase: saleType === 'Pedido' ? 'Serviço Lançado' : (initialData?.phase || 'Aprovação' as any),
       seller,
@@ -430,6 +444,10 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
       architectName: architect,
       items,
       paymentConditions,
+      paymentMethodId: paymentMethodId || undefined,
+      paymentMethodName: selectedPm?.name || '',
+      paymentInstallments: paymentInstallments || undefined,
+      firstDueDate: firstDueDate || undefined,
       deliveryDeadline,
       discountValue: calculatedDiscount,
       discountPercentage,
@@ -438,7 +456,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
         desconto: calculatedDiscount,
         geral: totalGeral
       },
-      salesPhase: initialData?.salesPhase || salesPhases[0]?.name || 'Orçamento',
+      salesPhase,
       isOsGenerated: initialData?.isOsGenerated || false,
       imageUrls: initialData?.imageUrls || []
     };
@@ -457,18 +475,18 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
       if (!user?.email) throw new Error('Usuário não identificado.');
       const { error } = await supabase.auth.signInWithPassword({ email: user.email, password: revertPassword });
       if (error) throw new Error('Senha incorreta.');
-      // Unlock the form
-      setSaleType('Orçamento');
-      setIsLocked(false);
-      setShowRevert(false);
-      // Persist the revert immediately so it's saved even if user just closes
+      // Persist the revert BEFORE unlocking — if App.tsx blocks (e.g. paid installments), error appears here
       if (initialData) {
-        onSave({
+        await (onSave as (sale: SalesOrder) => Promise<any>)({
           ...initialData,
           status: 'Orçamento',
           observations: `[RETORNO] ${revertJustification}${initialData.observations ? '\n' + initialData.observations : ''}`
         });
       }
+      // Only unlock after a successful save
+      setSaleType('Orçamento');
+      setIsLocked(false);
+      setShowRevert(false);
     } catch (err: any) {
       setRevertError(err.message || 'Erro ao validar senha.');
     } finally {
@@ -762,7 +780,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                     >
                                       <td className="px-4 py-3 text-[11px] font-bold text-slate-800 dark:text-white">{item.description}</td>
                                       <td className="px-4 py-3 text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                                        {materials.find(m => m.id === item.materialId)?.name || '-'}
+                                        {materials.find(m => m.id === item.materialId)?.name || products.find(p => p.id === item.materialId)?.description || item.materialName || '-'}
                                       </td>
                                       <td className="px-4 py-3 text-center text-[11px] font-bold text-slate-600 dark:text-slate-300">{Number(item.quantity || 0).toFixed(2)}</td>
                                       {(() => {
@@ -918,13 +936,90 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-3">
+              {/* Bloco de Pagamento */}
+              <div className={`rounded-2xl p-4 space-y-3 border-2 ${saleType === 'Pedido' ? 'border-[var(--primary-color)]/30 bg-orange-50/40 dark:bg-slate-800/60' : 'border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30'}`}>
+                <p className={`text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5 ${saleType === 'Pedido' ? 'text-[var(--primary-color)]' : 'text-slate-400'}`}>
+                  Condições de Pagamento {saleType === 'Pedido' && <span className="text-red-400">*</span>}
+                </p>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Forma de Pagamento</label>
+                  <select
+                    value={paymentMethodId}
+                    onChange={e => {
+                      const pm = paymentMethods.find(p => p.id === e.target.value);
+                      setPaymentMethodId(e.target.value);
+                      setPaymentInstallments(pm?.type === 'aprazo' ? (pm.installments ?? 1) : 1);
+                    }}
+                    className={`w-full p-2.5 bg-white dark:bg-slate-700 rounded-xl border-2 outline-none font-bold text-sm text-slate-800 dark:text-white appearance-none transition-all ${saleType === 'Pedido' && !paymentMethodId ? 'border-red-300' : 'border-transparent focus:border-[var(--primary-color)]'}`}
+                  >
+                    <option value="">-- Selecione --</option>
+                    {paymentMethods.filter(p => p.active).map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+                {paymentMethods.find(p => p.id === paymentMethodId)?.type === 'aprazo' && (
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Parcelas</label>
+                    <select
+                      value={paymentInstallments}
+                      onChange={e => setPaymentInstallments(parseInt(e.target.value))}
+                      className="w-full p-2.5 bg-white dark:bg-slate-700 rounded-xl border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-sm text-slate-800 dark:text-white appearance-none"
+                    >
+                      {Array.from({ length: paymentMethods.find(p => p.id === paymentMethodId)?.installments ?? 1 }, (_, i) => i + 1).map(n => (
+                        <option key={n} value={n}>{n === 1 ? '1x (à vista)' : `${n}x`}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <div>
+                  <label className={`text-[10px] font-bold uppercase tracking-widest block mb-1 ${saleType === 'Pedido' && !firstDueDate ? 'text-red-400' : 'text-slate-400'}`}>
+                    Data do 1º Vencimento {saleType === 'Pedido' && <span className="text-red-400">*</span>}
+                  </label>
+                  <input
+                    type="date"
+                    value={firstDueDate}
+                    onChange={e => setFirstDueDate(e.target.value)}
+                    className={`w-full p-2.5 bg-white dark:bg-slate-700 rounded-xl border-2 outline-none font-bold text-sm text-slate-800 dark:text-white transition-all ${saleType === 'Pedido' && !firstDueDate ? 'border-red-300' : 'border-transparent focus:border-[var(--primary-color)]'}`}
+                  />
+                </div>
+                {/* ── Preview de parcelas ao vivo ── */}
+                {paymentMethodId && totalGeral > 0 && (() => {
+                  const pm = paymentMethods.find(p => p.id === paymentMethodId);
+                  if (!pm) return null;
+                  const n = pm.type === 'aprazo' ? paymentInstallments : 1;
+                  const baseValue = Math.floor((totalGeral / n) * 100) / 100;
+                  const diff = Math.round((totalGeral - baseValue * n) * 100) / 100;
+                  const fmtR = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                  const hasInstallmentFee = pm.installmentFee && pm.installmentFee > 0 && n > 1;
+                  const feeTotal = hasInstallmentFee ? totalGeral * (1 + (pm.installmentFee! * (n - 1)) / 100) : totalGeral;
+                  const installmentValue = n > 1 ? feeTotal / n : baseValue + diff;
+                  return (
+                    <div className="bg-[var(--primary-color)] rounded-xl p-3 text-white">
+                      <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-1">{pm.name}</p>
+                      {n === 1 ? (
+                        <p className="text-2xl font-black">R$ {fmtR(totalGeral)} <span className="text-sm font-bold opacity-80">à vista</span></p>
+                      ) : (
+                        <>
+                          <p className="text-2xl font-black">{n}x de R$ {fmtR(installmentValue)}</p>
+                          {hasInstallmentFee ? (
+                            <p className="text-[11px] opacity-80 font-bold mt-0.5">Total com taxas: R$ {fmtR(feeTotal)}</p>
+                          ) : (
+                            <p className="text-[11px] opacity-80 font-bold mt-0.5">Total: R$ {fmtR(totalGeral)}</p>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">Observações / Condições de Pagamento</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">Observações</label>
                 <textarea
                   value={paymentConditions}
                   onChange={e => setPaymentConditions(e.target.value)}
-                  placeholder="Ex: 50% de entrada e o restante em 3x no cartão..."
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-2xl outline-none font-bold text-sm text-slate-800 dark:text-white transition-all h-20 resize-none"
+                  placeholder="Observações adicionais sobre o pagamento..."
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-2xl outline-none font-bold text-sm text-slate-800 dark:text-white transition-all h-16 resize-none"
                 />
               </div>
               <div>

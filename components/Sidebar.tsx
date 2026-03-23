@@ -63,7 +63,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
     { icon: LayoutDashboard, label: 'Produção', view: 'Produção' as View },
     { icon: Kanban, label: 'Ordens de Serviço', view: 'Ordens de Serviço' as View },
     { icon: MapPin, label: 'Agenda de Entregas', view: 'Agenda de Entregas' as View },
-    { icon: Wallet, label: 'Financeiro', view: 'Financeiro' as View },
+    {
+      icon: Wallet,
+      label: 'Financeiro',
+      subItems: [
+        { icon: TrendingUp, label: 'Contas a Receber', view: 'Contas a Receber' as View },
+        { icon: Wallet, label: 'Contas a Pagar', view: 'Contas a Pagar' as View },
+        { icon: ShoppingBag, label: 'Formas de Pagamento', view: 'Formas de Pagamento' as View },
+      ]
+    },
     { icon: BarChart3, label: 'Relatórios', view: 'Relatórios' as View },
     { icon: Settings, label: 'Configurações', view: 'Configurações' as View }
   ].filter(item => {

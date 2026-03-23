@@ -33,6 +33,10 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
           salesChannel: s.sales_channel,
           architectName: s.architect_name,
           paymentConditions: s.payment_conditions,
+          paymentMethodId: s.payment_method_id || undefined,
+          paymentMethodName: s.payment_method_name || undefined,
+          paymentInstallments: s.payment_installments || undefined,
+          firstDueDate: s.first_due_date || undefined,
           discountValue: Number(s.discount_value || s.discount || 0),
           discountPercentage: Number(s.discount_percentage || 0),
           totals: {
@@ -82,6 +86,10 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
         sales_channel: s.salesChannel || null,
         architect_name: s.architectName || null,
         payment_conditions: s.paymentConditions || null,
+        payment_method_id: s.paymentMethodId || null,
+        payment_method_name: s.paymentMethodName || null,
+        payment_installments: s.paymentInstallments || null,
+        first_due_date: s.firstDueDate || null,
       };
 
       const { data, error } = await supabase
@@ -109,6 +117,10 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
         salesChannel: savedRow.sales_channel,
         architectName: savedRow.architect_name,
         paymentConditions: savedRow.payment_conditions,
+        paymentMethodId: savedRow.payment_method_id,
+        paymentMethodName: savedRow.payment_method_name,
+        paymentInstallments: savedRow.payment_installments,
+        firstDueDate: savedRow.first_due_date,
         discountValue: Number(savedRow.discount_value || savedRow.discount || 0),
         discountPercentage: Number(savedRow.discount_percentage || 0),
         totals: {

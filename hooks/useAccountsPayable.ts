@@ -1,0 +1,103 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import { AccountPayable } from '../types';
+
+const map = (r: any): AccountPayable => ({
+  id: r.id,
+  description: r.description,
+  supplierId: r.supplier_id,
+  supplierName: r.supplier_name,
+  totalValue: Number(r.total_value),
+  paidValue: Number(r.paid_value),
+  remainingValue: Number(r.remaining_value ?? (r.total_value - r.paid_value)),
+  installments: r.installments || [],
+  paymentMethodId: r.payment_method_id,
+  paymentMethodName: r.payment_method_name,
+  category: r.category,
+  dueDate: r.due_date,
+  notes: r.notes,
+  status: r.status,
+  companyId: r.company_id,
+  createdAt: r.created_at,
+});
+
+export const useAccountsPayable = (companyId?: string) => {
+  const [payables, setPayables] = useState<AccountPayable[]>([]);
+  const [loadingAP, setLoadingAP] = useState(true);
+
+  const fetchPayables = async () => {
+    if (!companyId) { setLoadingAP(false); return; }
+    setLoadingAP(true);
+    try {
+      const { data, error } = await supabase
+        .from('accounts_payable')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('due_date', { ascending: true });
+      if (error) throw error;
+      if (data) setPayables(data.map(map));
+    } catch (err) {
+      console.error('Erro ao carregar contas a pagar:', err);
+    } finally {
+      setLoadingAP(false);
+    }
+  };
+
+  useEffect(() => { fetchPayables(); }, [companyId]);
+
+  const handleSavePayable = async (ap: Omit<AccountPayable, 'remainingValue'> & { id?: string }) => {
+    if (!companyId) return;
+    const paidValue = ap.paidValue ?? 0;
+    const payload: any = {
+      id: ap.id && ap.id.length > 20 ? ap.id : undefined,
+      company_id: companyId,
+      description: ap.description,
+      supplier_id: ap.supplierId || null,
+      supplier_name: ap.supplierName || '',
+      total_value: ap.totalValue,
+      paid_value: paidValue,
+      installments: ap.installments,
+      payment_method_id: ap.paymentMethodId || null,
+      payment_method_name: ap.paymentMethodName || '',
+      category: ap.category || 'Fornecedor',
+      due_date: ap.dueDate,
+      notes: ap.notes || '',
+      status: ap.status,
+    };
+    const { data, error } = await supabase.from('accounts_payable').upsert(payload).select().single();
+    if (error) { alert('Erro ao salvar conta a pagar: ' + error.message); throw error; }
+    const saved = map(data);
+    setPayables(prev =>
+      prev.find(x => x.id === saved.id)
+        ? prev.map(x => x.id === saved.id ? saved : x)
+        : [saved, ...prev]
+    );
+    return saved;
+  };
+
+  const deletePayable = async (id: string) => {
+    const { error } = await supabase.from('accounts_payable').delete().eq('id', id);
+    if (error) throw error;
+    setPayables(prev => prev.filter(x => x.id !== id));
+  };
+
+  const payInstallment = async (apId: string, installmentId: string, paidValue: number, paidDate: string) => {
+    const ap = payables.find(x => x.id === apId);
+    if (!ap) return;
+    const updatedInstallments = ap.installments.map(i =>
+      i.id === installmentId
+        ? { ...i, status: 'pago' as const, paidValue, paidDate }
+        : i
+    );
+    const totalPaid = updatedInstallments
+      .filter(i => i.status === 'pago')
+      .reduce((acc, i) => acc + (i.paidValue ?? i.value), 0);
+    const newStatus: AccountPayable['status'] =
+      totalPaid >= ap.totalValue ? 'quitado'
+      : totalPaid > 0 ? 'parcial'
+      : 'pendente';
+    await handleSavePayable({ ...ap, installments: updatedInstallments, paidValue: totalPaid, status: newStatus });
+  };
+
+  return { payables, loadingAP, handleSavePayable, deletePayable, payInstallment, refreshAP: fetchPayables };
+};
