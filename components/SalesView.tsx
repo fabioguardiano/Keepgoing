@@ -32,6 +32,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('kanban');
+  const [statusFilter, setStatusFilter] = useState<'todos' | 'Orçamento' | 'Pedido' | 'Cancelado'>('todos');
   const [editingSale, setEditingSale] = useState<SalesOrder | null>(null);
   const [printingSale, setPrintingSale] = useState<SalesOrder | null>(null);
   const [isNewSaleModalOpen, setIsNewSaleModalOpen] = useState(false);
@@ -213,6 +214,35 @@ export const SalesView: React.FC<SalesViewProps> = ({
 
       {viewMode === 'list' ? (
         <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+          {/* Abas de filtro */}
+          <div className="flex items-center gap-1 px-4 pt-4 pb-0 border-b border-slate-100 dark:border-slate-800">
+            {([
+              { key: 'todos',      label: 'Todos',       count: sales.length },
+              { key: 'Orçamento', label: 'Orçamentos',  count: sales.filter(s => s.status === 'Orçamento').length },
+              { key: 'Pedido',    label: 'Ganhos',       count: sales.filter(s => s.status === 'Pedido').length },
+              { key: 'Cancelado', label: 'Perdidos',     count: sales.filter(s => s.status === 'Cancelado').length },
+            ] as { key: typeof statusFilter; label: string; count: number }[]).map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setStatusFilter(tab.key)}
+                className={`px-4 py-2.5 text-xs font-black uppercase tracking-widest rounded-t-xl border-b-2 transition-all flex items-center gap-2 ${
+                  statusFilter === tab.key
+                    ? tab.key === 'Cancelado' ? 'border-red-500 text-red-600 bg-red-50 dark:bg-red-900/10'
+                    : tab.key === 'Pedido'    ? 'border-green-500 text-green-600 bg-green-50 dark:bg-green-900/10'
+                    : 'border-[var(--primary-color)] text-[var(--primary-color)] bg-orange-50 dark:bg-orange-900/10'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                {tab.label}
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
+                  statusFilter === tab.key ? 'bg-current/10' : 'bg-slate-100 dark:bg-slate-700'
+                }`}>
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
+
           {sales.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -229,17 +259,19 @@ export const SalesView: React.FC<SalesViewProps> = ({
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {sales
+                    .filter(s => statusFilter === 'todos' || s.status === statusFilter)
                     .filter(s => (s.clientName || '').toLowerCase().includes(searchTerm.toLowerCase()) || (s.orderNumber || '').includes(searchTerm))
                     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                     .map(sale => (
                       <tr key={sale.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                            sale.status === 'Orçamento' ? 'bg-blue-100 text-blue-600' : 
-                            sale.status === 'Pedido' ? 'bg-green-100 text-green-600' : 
+                            sale.status === 'Orçamento'  ? 'bg-blue-100 text-blue-600' :
+                            sale.status === 'Pedido'     ? 'bg-green-100 text-green-700' :
+                            sale.status === 'Cancelado'  ? 'bg-red-100 text-red-600' :
                             'bg-slate-100 text-slate-600'
                           }`}>
-                            {sale.status}
+                            {sale.status === 'Pedido' ? 'Ganho' : sale.status === 'Cancelado' ? 'Perdido' : sale.status}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm font-bold text-slate-500">{new Date(sale.createdAt).toLocaleDateString('pt-BR')}</td>

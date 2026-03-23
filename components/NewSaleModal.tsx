@@ -641,7 +641,11 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">Fase do Orçamento</label>
                 {isLocked ? (
                   <div className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl font-bold text-sm text-green-700 dark:text-green-400">
-                    Pedido / Ganho
+                    Ganho ✓
+                  </div>
+                ) : initialData?.status === 'Cancelado' ? (
+                  <div className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl font-bold text-sm text-red-600 dark:text-red-400">
+                    Perdido
                   </div>
                 ) : (
                   <select
