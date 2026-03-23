@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { SalesOrder, CompanyInfo, Client, Material } from '../types';
 
 interface PrintBudgetProps {
@@ -9,226 +10,388 @@ interface PrintBudgetProps {
   blurMeasurements?: boolean;
 }
 
-export const PrintBudget: React.FC<PrintBudgetProps> = ({ sale, companyInfo, client, materials, blurMeasurements = false }) => {
+const fmt = (v: number) =>
+  v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const fmtDim = (v?: number) =>
+  v && v > 0 ? Number(v).toFixed(3) : null;
+
+export const PrintBudget: React.FC<PrintBudgetProps> = ({
+  sale,
+  companyInfo,
+  client,
+  materials,
+  blurMeasurements = false,
+}) => {
   const today = new Date().toLocaleDateString('pt-BR');
   const currentTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const isPedido = sale.status === 'Pedido';
+  const docTitle = isPedido ? 'PEDIDO DE COMPRA' : 'ORÇAMENTO';
 
-  return (
-    <>
-      <div className="print-only bg-white text-black pt-0 pb-12 text-[12px] leading-tight w-full mx-auto relative" style={{ fontFamily: 'Calibri, "Inter", sans-serif' }}>
-      {/* Header */}
-      <div className="border-b-2 border-black flex justify-between items-start pt-2 pb-0">
-        <div className="w-1/2 -mb-10">
+  const environments = Array.from(
+    new Set((sale.items || []).map(i => i.environment || 'Sem Ambiente'))
+  );
+
+  const deliveryDays = sale.deliveryDeadline ? parseInt(sale.deliveryDeadline as string) : null;
+
+  const subtotal = sale.totals?.vendas || (sale.items || []).reduce((a, i) => a + (i.totalPrice || 0), 0);
+  const discount = (subtotal > (sale.totals?.geral || 0)) ? subtotal - (sale.totals?.geral || 0) : 0;
+  const total = sale.totals?.geral || subtotal;
+
+  const addr = client?.address;
+  const del = client?.deliveryAddress;
+
+  const useDeliveryAddr = del?.street && del.street !== addr?.street;
+
+  const content = (
+    <div
+      className="print-only bg-white text-black w-full"
+      style={{ fontFamily: '"Calibri", "Arial", sans-serif', fontSize: '11px', lineHeight: '1.35' }}
+    >
+      {/* ── CABEÇALHO ────────────────────────────────────────── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #000', paddingBottom: '8px', marginBottom: '8px' }}>
+        {/* Logo / Nome */}
+        <div style={{ width: '55%' }}>
           {companyInfo.logoUrl ? (
-            <img src={companyInfo.logoUrl} alt="Logo" className="max-h-48 w-auto object-contain object-top" />
+            <img src={companyInfo.logoUrl} alt="Logo" style={{ maxHeight: '80px', width: 'auto', objectFit: 'contain' }} />
           ) : (
-            <div className="text-6xl font-black tracking-tighter text-slate-800">
-              <span className="text-[var(--primary-color)]">TOK</span> <span className="text-slate-400">DE</span> ART
-              <div className="text-[12px] font-normal uppercase tracking-[0.3em] mt-[-4px] text-slate-500">marmoraria</div>
+            <div style={{ fontSize: '28px', fontWeight: 900, letterSpacing: '-1px', color: '#1e293b' }}>
+              {companyInfo.name}
+            </div>
+          )}
+          <div style={{ fontSize: '9px', marginTop: '4px', color: '#475569' }}>
+            {companyInfo.document && <span>CNPJ: {companyInfo.document} &nbsp;|&nbsp; </span>}
+            {companyInfo.address && <span>{companyInfo.address} &nbsp;|&nbsp; </span>}
+            {companyInfo.phone && <span>Fone: {companyInfo.phone} &nbsp;|&nbsp; </span>}
+            {companyInfo.email && <span>{companyInfo.email}</span>}
+          </div>
+        </div>
+
+        {/* Bloco doc info */}
+        <div style={{ width: '38%', border: '1px solid #000', padding: '6px 8px', backgroundColor: '#f8fafc' }}>
+          <div style={{ fontWeight: 900, fontSize: '14px', textAlign: 'center', borderBottom: '1px solid #000', paddingBottom: '4px', marginBottom: '4px', letterSpacing: '1px' }}>
+            {docTitle}
+          </div>
+          <table style={{ width: '100%', fontSize: '9px', borderCollapse: 'collapse' }}>
+            <tbody>
+              <tr>
+                <td style={{ fontWeight: 700, paddingRight: '4px' }}>Número:</td>
+                <td style={{ fontWeight: 900 }}>#{sale.orderNumber}</td>
+                <td style={{ fontWeight: 700, paddingLeft: '8px' }}>Data:</td>
+                <td>{sale.createdAt ? sale.createdAt.split('T')[0].split('-').reverse().join('/') : today}</td>
+              </tr>
+              <tr>
+                <td style={{ fontWeight: 700 }}>Vendedor:</td>
+                <td style={{ textTransform: 'uppercase' }}>{sale.seller || '-'}</td>
+                <td style={{ fontWeight: 700, paddingLeft: '8px' }}>Impressão:</td>
+                <td>{today} {currentTime}</td>
+              </tr>
+              {sale.architectName && (
+                <tr>
+                  <td style={{ fontWeight: 700 }}>Arquiteto:</td>
+                  <td colSpan={3} style={{ textTransform: 'uppercase' }}>{sale.architectName}</td>
+                </tr>
+              )}
+              {sale.salesChannel && (
+                <tr>
+                  <td style={{ fontWeight: 700 }}>Canal:</td>
+                  <td colSpan={3} style={{ textTransform: 'uppercase' }}>{sale.salesChannel}</td>
+                </tr>
+              )}
+              {!isPedido && (
+                <tr>
+                  <td style={{ fontWeight: 700 }}>Validade:</td>
+                  <td colSpan={3}>30 dias</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ── DADOS DO CLIENTE ─────────────────────────────────── */}
+      <div style={{ border: '1px solid #000', marginBottom: '6px' }}>
+        <div style={{ backgroundColor: '#1e293b', color: '#fff', fontWeight: 900, fontSize: '9px', padding: '2px 6px', letterSpacing: '1px', textTransform: 'uppercase' }}>
+          Dados do Cliente
+        </div>
+        <div style={{ padding: '5px 7px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0 12px', marginBottom: '3px' }}>
+            <div>
+              <span style={{ fontWeight: 700 }}>Nome / Razão Social: </span>
+              <span style={{ textTransform: 'uppercase', fontWeight: 900 }}>{client?.tradingName || client?.legalName || sale.clientName}</span>
+            </div>
+            <div>
+              <span style={{ fontWeight: 700 }}>CPF / CNPJ: </span>
+              <span>{client?.document || '-'}</span>
+            </div>
+            <div>
+              <span style={{ fontWeight: 700 }}>RG / Insc.: </span>
+              <span>{client?.rgInsc || '-'}</span>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 12px', marginBottom: '3px' }}>
+            <div>
+              <span style={{ fontWeight: 700 }}>Telefone: </span>
+              <span>{client?.phone || '-'}</span>
+            </div>
+            <div>
+              <span style={{ fontWeight: 700 }}>Celular: </span>
+              <span>{client?.cellphone || '-'}</span>
+            </div>
+            <div>
+              <span style={{ fontWeight: 700 }}>E-mail: </span>
+              <span style={{ textTransform: 'lowercase' }}>{client?.email || '-'}</span>
+            </div>
+          </div>
+          {addr && (
+            <div style={{ marginBottom: '3px' }}>
+              <span style={{ fontWeight: 700 }}>Endereço: </span>
+              <span style={{ textTransform: 'uppercase' }}>
+                {addr.street}, {addr.number}{addr.complement ? ` - ${addr.complement}` : ''} — {addr.neighborhood} — {addr.city}/{addr.state} — CEP: {addr.zipCode}
+              </span>
             </div>
           )}
         </div>
-        <div className="w-1/3 border border-black p-2 bg-slate-50">
-          <div className="grid grid-cols-2 gap-x-2 text-[10px]">
-            <span className="font-bold">Digitador:</span> <span>{(sale.seller || '').toUpperCase()}</span>
-            <span className="font-bold">ORÇAMENTO</span> <span></span>
-            <span className="font-bold">Número:</span> <span>{sale.orderNumber}</span>
-            <span className="font-bold">Validade.:</span> <span>{sale.deadline || '15 dias'}</span>
-            
-            <span className="font-bold">Data:</span> <span>{sale.createdAt ? sale.createdAt.split('T')[0].split('-').reverse().join('/') : ''}</span>
-            <span className="font-bold">Dt. Imp.:</span> <span>{today}</span>
-            <span className="font-bold">Hora:</span> <span>{currentTime}</span>
-            <span className="font-bold text-right col-span-2">Pag.: 1</span>
-          </div>
+      </div>
+
+      {/* ── ENDEREÇO DE ENTREGA ───────────────────────────────── */}
+      <div style={{ border: '1px solid #000', marginBottom: '10px' }}>
+        <div style={{ backgroundColor: '#334155', color: '#fff', fontWeight: 900, fontSize: '9px', padding: '2px 6px', letterSpacing: '1px', textTransform: 'uppercase' }}>
+          Endereço de Entrega
+        </div>
+        <div style={{ padding: '5px 7px' }}>
+          {useDeliveryAddr ? (
+            <>
+              <div style={{ marginBottom: '3px' }}>
+                <span style={{ fontWeight: 700 }}>Logradouro: </span>
+                <span style={{ textTransform: 'uppercase' }}>
+                  {del!.street}, {del!.number}{del!.complement ? ` - ${del!.complement}` : ''}
+                </span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0 12px' }}>
+                <div><span style={{ fontWeight: 700 }}>Bairro: </span><span style={{ textTransform: 'uppercase' }}>{del!.neighborhood}</span></div>
+                <div><span style={{ fontWeight: 700 }}>Cidade: </span><span style={{ textTransform: 'uppercase' }}>{del!.city}</span></div>
+                <div><span style={{ fontWeight: 700 }}>UF: </span><span>{del!.state}</span></div>
+                <div><span style={{ fontWeight: 700 }}>CEP: </span><span>{del!.zipCode}</span></div>
+              </div>
+              {del!.referencePoint && (
+                <div style={{ marginTop: '3px' }}>
+                  <span style={{ fontWeight: 700 }}>Referência: </span>
+                  <span style={{ textTransform: 'uppercase' }}>{del!.referencePoint}</span>
+                </div>
+              )}
+            </>
+          ) : addr ? (
+            <div style={{ fontStyle: 'italic', color: '#475569' }}>
+              Mesmo endereço do cliente:{' '}
+              <span style={{ textTransform: 'uppercase', fontStyle: 'normal', color: '#000' }}>
+                {addr.street}, {addr.number} — {addr.neighborhood} — {addr.city}/{addr.state} — CEP: {addr.zipCode}
+              </span>
+            </div>
+          ) : (
+            <span style={{ color: '#94a3b8' }}>Endereço de entrega não informado.</span>
+          )}
         </div>
       </div>
 
-      {/* Client Info */}
-      <div className="space-y-1 mb-2">
-        <div className="flex gap-2">
-          <span className="font-bold">Cliente......:</span>
-          <span className="flex-1 uppercase">{sale.clientName}</span>
-        </div>
-        <div className="flex gap-4">
-          <div className="flex gap-2 flex-[0.8]">
-            <span className="font-bold">CPF/CNPJ.:</span>
-            <span className="flex-1">{client?.document || ''}</span>
-          </div>
-          <div className="flex gap-2 flex-[0.8]">
-            <span className="font-bold">RG/Inscrição:</span>
-            <span className="flex-1">{client?.rgInsc || ''}</span>
-          </div>
-          <div className="flex gap-2 flex-[0.6]">
-            <span className="font-bold">Telefone:</span>
-            <span className="flex-1">{client?.phone || ''}</span>
-          </div>
-           <div className="flex gap-2 flex-1">
-            <span className="font-bold">E-mail:</span>
-            <span className="flex-1 lowercase truncate">{client?.email || ''}</span>
-          </div>
-        </div>
-        <div className="flex gap-2 text-[10px]">
-          <span className="font-bold">Endereço...:</span>
-          <span className="flex-1 uppercase">
-            {client?.address.street}, {client?.address.number} - {client?.address.neighborhood} - {client?.address.city}/{client?.address.state} - CEP: {client?.address.zipCode}
-          </span>
-        </div>
-      </div>
-
-      {/* Delivery Address */}
-      <div className="grid grid-cols-1 gap-y-1 mb-6 text-[10px]">
-        <div className="flex gap-2">
-          <span className="font-bold w-32">Endereço de Entrega:</span> 
-          <span className="uppercase">
-            {client?.deliveryAddress?.street || client?.address.street || '-'}, {client?.deliveryAddress?.number || client?.address.number || ''} {client?.deliveryAddress?.complement || ''}
-          </span>
-        </div>
-        <div className="grid grid-cols-3 gap-2">
-          <div className="flex gap-2">
-            <span className="font-bold w-32">Bairro:</span> 
-            <span className="uppercase truncate">{client?.deliveryAddress?.neighborhood || client?.address.neighborhood || '-'}</span>
-          </div>
-          <div className="flex gap-2">
-            <span className="font-bold">Cidade:</span> 
-            <span className="uppercase truncate">{client?.deliveryAddress?.city || client?.address.city || '-'}</span>
-          </div>
-          <div className="grid grid-cols-2">
-             <div className="flex gap-2">
-               <span className="font-bold">CEP:</span> 
-               <span>{client?.deliveryAddress?.zipCode || client?.address.zipCode || '-'}</span>
-             </div>
-             <div className="flex gap-2">
-               <span className="font-bold">UF:</span> 
-               <span className="uppercase">{client?.deliveryAddress?.state || client?.address.state || '-'}</span>
-             </div>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <span className="font-bold w-32">Ponto de Referência:</span> 
-          <span className="uppercase">{client?.deliveryAddress?.referencePoint || '-'}</span>
-        </div>
-      </div>
-
-      {/* Items Grouped by Environment */}
-      {Array.from(new Set(sale.items?.map(i => i.environment || 'Sem Ambiente'))).map((env, envIdx) => {
-        const envItems = sale.items?.filter(i => (i.environment || 'Sem Ambiente') === env) || [];
-        const envTotal = envItems.reduce((acc, i) => acc + i.totalPrice, 0);
+      {/* ── ITENS POR AMBIENTE ───────────────────────────────── */}
+      {environments.map((env) => {
+        const envItems = (sale.items || []).filter(i => (i.environment || 'Sem Ambiente') === env);
+        const envTotal = envItems.reduce((a, i) => a + (i.totalPrice || 0), 0);
 
         return (
-          <div key={env} className="mb-6">
-            <div className="border-b border-black mb-1 flex justify-between items-end">
-              <h3 className="font-black text-[11px] uppercase tracking-wider">{env}</h3>
-              <span className="text-[9px] font-bold">Sub-Total Ambiente: R$ {(envTotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <div key={env} style={{ marginBottom: '10px', pageBreakInside: 'avoid' }}>
+            {/* Cabeçalho do ambiente */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#0f172a', color: '#fff', padding: '3px 8px', marginBottom: '0' }}>
+              <span style={{ fontWeight: 900, fontSize: '10px', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                {env}
+              </span>
+              <span style={{ fontSize: '9px', fontWeight: 700 }}>
+                Sub-Total: R$ {fmt(envTotal)}
+              </span>
             </div>
-            
-            <table className="w-full mb-2 border-collapse">
-              <thead className="border-b border-black">
-                <tr className="font-bold text-left text-[10px]">
-                  <th className="w-12 py-1">Qtde.:</th>
-                  <th className="py-1 pr-4">Descrição:</th>
-                  <th className="w-64 py-1 pr-2">Matéria Prima:</th>
-                  <th className="w-12 py-1 text-center">Comp.:</th>
-                  <th className="w-8 py-1 text-center"></th>
-                  <th className="w-12 py-1 text-center">Larg.:</th>
-                  <th className="w-24 py-1 text-right">Total:</th>
+
+            {/* Tabela de itens */}
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #000', borderTop: 'none' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f1f5f9', fontSize: '8.5px', fontWeight: 700, borderBottom: '1px solid #000' }}>
+                  <th style={{ padding: '3px 4px', textAlign: 'left', width: '5%' }}>Qtde.</th>
+                  <th style={{ padding: '3px 4px', textAlign: 'left', width: '28%' }}>Descrição</th>
+                  <th style={{ padding: '3px 4px', textAlign: 'left', width: '25%' }}>Matéria Prima / Material</th>
+                  <th style={{ padding: '3px 4px', textAlign: 'center', width: '10%' }}>Comp. (m)</th>
+                  <th style={{ padding: '3px 4px', textAlign: 'center', width: '10%' }}>Larg. (m)</th>
+                  <th style={{ padding: '3px 4px', textAlign: 'center', width: '8%' }}>M²</th>
+                  <th style={{ padding: '3px 4px', textAlign: 'right', width: '14%' }}>Total (R$)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {envItems.map((item) => (
-                  <tr key={item.id} className="align-top text-[11px]">
-                    <td className="py-1.5 text-center font-bold">{Number(item.quantity || 0).toFixed(2)}</td>
-                    <td className="py-1.5 uppercase font-bold pr-4">
-                      {item.description}
-                    </td>
-                    <td className="py-1.5 text-[10px] uppercase font-bold pr-2 text-slate-700">
-                      {materials.find(m => m.id === item.materialId)?.name || item.materialName || '-'}
-                    </td>
-                    <td className="py-1.5 text-center font-mono text-[10px]">
-                      {blurMeasurements ? (
-                        <span className="blur-sm select-none opacity-50">0.000</span>
-                      ) : (
-                        Number(item.length || 0).toFixed(3) || '0.000'
-                      )}
-                    </td>
-                    <td className="py-1.5 text-center font-bold text-[12px]" style={{ filter: blurMeasurements ? 'none' : 'auto' }}>
-                      X
-                    </td>
-                    <td className="py-1.5 text-center font-mono text-[10px]">
-                      {blurMeasurements ? (
-                        <span className="blur-sm select-none opacity-50">0.000</span>
-                      ) : (
-                        Number(item.width || 0).toFixed(3) || '0.000'
-                      )}
-                    </td>
-                    <td className="py-2 text-right border-b border-gray-100 font-bold">R$ {(item.totalPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                  </tr>
-                ))}
+              <tbody>
+                {envItems.map((item, idx) => {
+                  const hasDimensions = fmtDim(item.length) !== null || fmtDim(item.width) !== null;
+                  const m2 = item.m2 || (item.length && item.width ? item.length * item.width * (item.quantity || 1) : null);
+                  const matName = materials.find(m => m.id === item.materialId)?.name || item.materialName || '-';
+                  const isOdd = idx % 2 === 0;
+
+                  return (
+                    <tr key={item.id} style={{ backgroundColor: isOdd ? '#fff' : '#f8fafc', fontSize: '10px', borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '3px 4px', textAlign: 'center', fontWeight: 700 }}>
+                        {Number(item.quantity || 0).toFixed(2)}
+                      </td>
+                      <td style={{ padding: '3px 4px', fontWeight: 700, textTransform: 'uppercase' }}>
+                        {item.description}
+                      </td>
+                      <td style={{ padding: '3px 4px', fontSize: '9px', textTransform: 'uppercase', color: '#334155' }}>
+                        {matName}
+                      </td>
+                      <td style={{ padding: '3px 4px', textAlign: 'center', fontFamily: 'monospace', fontSize: '9px' }}>
+                        {hasDimensions ? (
+                          blurMeasurements
+                            ? <span style={{ filter: 'blur(4px)', userSelect: 'none' }}>0.000</span>
+                            : fmtDim(item.length) || '—'
+                        ) : '—'}
+                      </td>
+                      <td style={{ padding: '3px 4px', textAlign: 'center', fontFamily: 'monospace', fontSize: '9px' }}>
+                        {hasDimensions ? (
+                          blurMeasurements
+                            ? <span style={{ filter: 'blur(4px)', userSelect: 'none' }}>0.000</span>
+                            : fmtDim(item.width) || '—'
+                        ) : '—'}
+                      </td>
+                      <td style={{ padding: '3px 4px', textAlign: 'center', fontFamily: 'monospace', fontSize: '9px' }}>
+                        {hasDimensions && m2 && !blurMeasurements
+                          ? Number(m2).toFixed(3)
+                          : '—'}
+                      </td>
+                      <td style={{ padding: '3px 4px', textAlign: 'right', fontWeight: 900 }}>
+                        {fmt(item.totalPrice || 0)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
+              {/* Sub-rodapé do ambiente */}
+              <tfoot>
+                <tr style={{ backgroundColor: '#e2e8f0', borderTop: '1px solid #000' }}>
+                  <td colSpan={6} style={{ padding: '3px 8px', fontWeight: 700, fontSize: '9px', textAlign: 'right' }}>
+                    Sub-Total — {env}:
+                  </td>
+                  <td style={{ padding: '3px 8px', fontWeight: 900, fontSize: '10px', textAlign: 'right' }}>
+                    {fmt(envTotal)}
+                  </td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         );
       })}
 
-      {/* Totals Section */}
-      <div className="flex justify-between items-start gap-4 mb-4">
-        <div className="flex-1 p-2 border border-black text-[9px] space-y-1">
-          <p>Mármores e granitos por sua natureza, estão sujeitos a variação de tonalidades, veios, buracos, fissuras e/ou manchas não podendo ser recusado ou devolvidos por essa natureza.</p>
-          <p>Serviços em obra só serão executados se estiverem inclusos no orçamento, como: colagem, calafate, polimento etc.</p>
-          <p>Não fazemos instalações.</p>
-        </div>
-        <div className="w-[300px] border border-black">
-          <div className="flex justify-between border-b border-black p-2 bg-slate-50 font-bold">
-            <span>Sub Total...:</span>
-            <span className="font-black">{(sale.totals?.vendas || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-          </div>
-          {((sale.totals?.vendas || 0) > (sale.totals?.geral || 0)) && (
-            <div className="flex justify-between p-2 font-bold text-red-700">
-              <span>Desconto...:</span>
-              <span className="font-black">- {((sale.totals?.vendas || 0) - (sale.totals?.geral || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+      {/* ── TOTAIS + OBSERVAÇÕES ─────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '12px', marginBottom: '10px', pageBreakInside: 'avoid' }}>
+        {/* Observações + condições */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {/* Condições de pagamento */}
+          {sale.paymentConditions && (
+            <div style={{ border: '1px solid #000', padding: '6px 8px' }}>
+              <div style={{ fontWeight: 900, fontSize: '9px', textTransform: 'uppercase', marginBottom: '2px', color: '#334155' }}>
+                Condições de Pagamento
+              </div>
+              <div style={{ textTransform: 'uppercase', fontSize: '10px', fontWeight: 700 }}>
+                {sale.paymentConditions}
+              </div>
             </div>
           )}
-          <div className="flex justify-between border-t border-black p-2 bg-slate-50 font-black text-sm">
-            <span>Valor Total..........R$:</span>
-            <span className="">{(sale.totals?.geral || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+
+          {/* Observações */}
+          <div style={{ border: '1px solid #000', padding: '6px 8px', flex: 1 }}>
+            <div style={{ fontWeight: 900, fontSize: '9px', textTransform: 'uppercase', marginBottom: '4px', color: '#334155' }}>
+              Observações
+            </div>
+            <div style={{ fontSize: '10px', minHeight: '36px', whiteSpace: 'pre-wrap' }}>
+              {sale.observations || ''}
+            </div>
+          </div>
+
+          {/* Nota legal */}
+          <div style={{ border: '1px solid #000', padding: '6px 8px', fontSize: '8.5px', color: '#475569' }}>
+            <p style={{ margin: '0 0 3px 0' }}>
+              Mármores e granitos, por sua natureza, estão sujeitos a variações de tonalidade, veios, buracos, fissuras e/ou manchas, não podendo ser recusados ou devolvidos por essa razão.
+            </p>
+            <p style={{ margin: '0' }}>
+              Serviços em obra (colagem, calafetagem, polimento etc.) só serão executados se explicitamente inclusos neste orçamento.
+            </p>
+          </div>
+        </div>
+
+        {/* Resumo financeiro */}
+        <div style={{ border: '2px solid #000', alignSelf: 'start' }}>
+          <div style={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid #000', padding: '5px 10px', display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ fontWeight: 700 }}>Sub-Total Geral</span>
+            <span style={{ fontWeight: 700 }}>R$ {fmt(subtotal)}</span>
+          </div>
+          {discount > 0 && (
+            <div style={{ padding: '5px 10px', display: 'flex', justifyContent: 'space-between', color: '#b91c1c', borderBottom: '1px solid #e2e8f0' }}>
+              <span style={{ fontWeight: 700 }}>Desconto</span>
+              <span style={{ fontWeight: 700 }}>- R$ {fmt(discount)}</span>
+            </div>
+          )}
+          <div style={{ backgroundColor: '#0f172a', color: '#fff', padding: '8px 10px', display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ fontWeight: 900, fontSize: '12px' }}>VALOR TOTAL</span>
+            <span style={{ fontWeight: 900, fontSize: '13px' }}>R$ {fmt(total)}</span>
+          </div>
+          {/* Prazo de entrega */}
+          <div style={{ padding: '6px 10px', borderTop: '1px solid #000' }}>
+            <div style={{ fontWeight: 900, fontSize: '9px', textTransform: 'uppercase', marginBottom: '2px' }}>
+              Prazo de Entrega
+            </div>
+            <div style={{ fontWeight: 700, fontSize: '12px' }}>
+              {deliveryDays && deliveryDays > 0 ? (
+                <>{deliveryDays} <span style={{ fontWeight: 400, fontSize: '10px' }}>dias úteis</span></>
+              ) : (
+                <span style={{ fontStyle: 'italic', color: '#94a3b8', fontSize: '10px' }}>A combinar</span>
+              )}
+            </div>
+            <div style={{ fontSize: '8px', color: '#64748b', marginTop: '1px' }}>
+              Prazo conta a partir da confirmação e medição aprovada.
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Delivery / Extra Info */}
-      <div className="border border-black flex mb-8">
-        <div className="border-r border-black p-2 w-1/4 font-bold bg-slate-50">
-          Previsão de entrega:
-          <div className="uppercase">COMBINAR Dias Úteis</div>
-        </div>
-        <div className="p-2 flex-1 uppercase font-bold">
-          ENTREGA NÃO INCLUSA NO ORÇAMENTO.
-        </div>
-      </div>
-
-      {/* Signatures */}
-      <div className="grid grid-cols-2 gap-12 mt-20 px-8 pb-10 break-inside-avoid">
-        <div className="text-center">
-          <div className="border-t border-black pt-2">
-            <div className="font-black uppercase">{sale.seller}</div>
-            <div className="text-[10px]">Departamento Comercial</div>
-            <div className="text-[10px] lowercase">E-Mail: {companyInfo.email}</div>
-            <div className="text-[10px]">Cel.: {companyInfo.phone}</div>
+      {/* ── ASSINATURAS ──────────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', marginTop: '36px', pageBreakInside: 'avoid' }}>
+        {/* Vendedor */}
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ borderTop: '1px solid #000', paddingTop: '8px' }}>
+            <div style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: '11px' }}>{sale.seller || companyInfo.name}</div>
+            <div style={{ fontSize: '9px', color: '#475569' }}>Departamento Comercial</div>
+            {companyInfo.email && <div style={{ fontSize: '9px', color: '#475569' }}>{companyInfo.email}</div>}
+            {companyInfo.phone && <div style={{ fontSize: '9px', color: '#475569' }}>{companyInfo.phone}</div>}
           </div>
         </div>
-        <div className="text-center">
-          <div className="border-t border-black pt-2">
-            <div className="font-black uppercase">{sale.clientName}</div>
-            <div className="text-[10px] uppercase">CNPJ - {client?.document}</div>
+        {/* Cliente */}
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ borderTop: '1px solid #000', paddingTop: '8px' }}>
+            <div style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: '11px' }}>
+              {client?.tradingName || client?.legalName || sale.clientName}
+            </div>
+            {client?.document && (
+              <div style={{ fontSize: '9px', color: '#475569' }}>
+                {client.type === 'Pessoa Jurídica' ? 'CNPJ' : 'CPF'}: {client.document}
+              </div>
+            )}
+            <div style={{ fontSize: '9px', color: '#475569' }}>Cliente</div>
           </div>
         </div>
       </div>
 
-      {/* Company Contact Bottom */}
-      <div className="fixed bottom-0 left-0 right-0 text-center text-[9px] uppercase font-bold text-slate-500 bg-white py-2 z-50">
-        {companyInfo.address} - Fone: {companyInfo.phone} - CEP: 14015-050 - RIBEIRÃO PRETO-SP -
+      {/* ── RODAPÉ ───────────────────────────────────────────── */}
+      <div style={{ borderTop: '1px solid #cbd5e1', marginTop: '16px', paddingTop: '6px', textAlign: 'center', fontSize: '8px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        {companyInfo.name}
+        {companyInfo.address ? ` — ${companyInfo.address}` : ''}
+        {companyInfo.phone ? ` — Tel: ${companyInfo.phone}` : ''}
+        {companyInfo.email ? ` — ${companyInfo.email}` : ''}
       </div>
-
     </div>
-    </>
   );
+
+  return createPortal(content, document.body);
 };
