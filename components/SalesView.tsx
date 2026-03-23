@@ -453,8 +453,10 @@ export const SalesView: React.FC<SalesViewProps> = ({
                   const isEditing = editingPhase === phase;
                   const isFirstPhase = index === 0;
                   const phaseSales = sales.filter(s =>
-                    s.salesPhase === phase ||
-                    (isFirstPhase && (!s.salesPhase || !salesPhases.some(p => p.name === s.salesPhase)))
+                    s.status !== 'Pedido' && s.status !== 'Cancelado' && (
+                      s.salesPhase === phase ||
+                      (isFirstPhase && (!s.salesPhase || !salesPhases.some(p => p.name === s.salesPhase)))
+                    )
                   );
                   const phaseTotal = phaseSales.reduce((acc, s) => acc + (s.totals?.geral || 0), 0);
 
