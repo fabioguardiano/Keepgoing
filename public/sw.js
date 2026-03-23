@@ -1,4 +1,4 @@
-const CACHE_NAME = 'keepgoing-v3';
+const CACHE_NAME = 'keepgoing-v4';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -39,6 +39,10 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // Ignorar requisições que não sejam GET
   if (event.request.method !== 'GET') return;
+
+  // Não cachear requisições externas (Supabase API, cotações, etc.)
+  // Apenas cachear recursos da própria origem (JS, CSS, imagens do app)
+  if (!event.request.url.startsWith(self.location.origin)) return;
 
   const isHtml = event.request.mode === 'navigate' || 
                  (event.request.headers.get('accept')?.includes('text/html'));
