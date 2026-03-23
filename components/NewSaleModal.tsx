@@ -639,15 +639,21 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">Fase do Orçamento</label>
-                <select
-                  value={salesPhase}
-                  onChange={(e) => setSalesPhase(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-slate-800 dark:text-white transition-all appearance-none"
-                >
-                  {salesPhases.map(phase => (
-                    <option key={phase.name} value={phase.name}>{phase.name}</option>
-                  ))}
-                </select>
+                {isLocked ? (
+                  <div className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl font-bold text-sm text-green-700 dark:text-green-400">
+                    Pedido / Ganho
+                  </div>
+                ) : (
+                  <select
+                    value={salesPhase}
+                    onChange={(e) => setSalesPhase(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-slate-800 dark:text-white transition-all appearance-none"
+                  >
+                    {salesPhases.map(phase => (
+                      <option key={phase.name} value={phase.name}>{phase.name}</option>
+                    ))}
+                  </select>
+                )}
               </div>
             </div>
           </div>
