@@ -18,15 +18,31 @@ export const useProducts = (companyId?: string, logActivity?: any) => {
       }
 
       const { data, error } = await query.order('name');
-      
+
       if (error) throw error;
       if (data) {
         const mapped = data.map(p => ({
           ...p,
-          description: p.name,
+          description: p.name || '',
           type: p.category,
-          sellingPrice: p.base_price,
-          imageUrl: p.image_url
+          code: p.code || '',
+          group: p.product_group || '',
+          unit: p.unit || 'UN',
+          stockBalance: p.stock_balance ?? 0,
+          minStock: p.min_stock ?? 0,
+          unitCost: p.unit_cost ?? 0,
+          freight: p.freight ?? 0,
+          lossPercentage: p.loss_percentage ?? 0,
+          taxPercentage: p.tax_percentage ?? 0,
+          profitMargin: p.profit_margin ?? 0,
+          commissionPercentage: p.commission_percentage ?? 0,
+          discountPercentage: p.discount_percentage ?? 0,
+          suggestedPrice: p.suggested_price ?? 0,
+          sellingPrice: p.base_price ?? 0,
+          brand: p.brand || '',
+          manufacturerNumber: p.manufacturer_number || '',
+          nfeData: p.nfe_data || null,
+          imageUrl: p.image_url || '',
         }));
         setProducts(mapped as ProductService[]);
         localStorage.setItem(`marmo_products_${companyId || 'legacy'}`, JSON.stringify(mapped));
@@ -53,7 +69,23 @@ export const useProducts = (companyId?: string, logActivity?: any) => {
         name: p.description,
         category: p.type,
         status: p.status,
+        code: p.code,
+        product_group: p.group,
+        unit: p.unit,
+        stock_balance: p.stockBalance,
+        min_stock: p.minStock,
+        unit_cost: p.unitCost,
+        freight: p.freight,
+        loss_percentage: p.lossPercentage,
+        tax_percentage: p.taxPercentage,
+        profit_margin: p.profitMargin,
+        commission_percentage: p.commissionPercentage,
+        discount_percentage: p.discountPercentage,
+        suggested_price: p.suggestedPrice,
         base_price: p.sellingPrice,
+        brand: p.brand,
+        manufacturer_number: p.manufacturerNumber,
+        nfe_data: p.nfeData,
         description: p.description,
         image_url: p.imageUrl
       };
@@ -66,12 +98,28 @@ export const useProducts = (companyId?: string, logActivity?: any) => {
       
       if (error) throw error;
       
-      const saved = { 
-        ...data, 
-        description: data.name, 
-        type: data.category, 
-        sellingPrice: data.base_price, 
-        imageUrl: data.image_url 
+      const saved = {
+        ...data,
+        description: data.name || '',
+        type: data.category,
+        code: data.code || '',
+        group: data.product_group || '',
+        unit: data.unit || 'UN',
+        stockBalance: data.stock_balance ?? 0,
+        minStock: data.min_stock ?? 0,
+        unitCost: data.unit_cost ?? 0,
+        freight: data.freight ?? 0,
+        lossPercentage: data.loss_percentage ?? 0,
+        taxPercentage: data.tax_percentage ?? 0,
+        profitMargin: data.profit_margin ?? 0,
+        commissionPercentage: data.commission_percentage ?? 0,
+        discountPercentage: data.discount_percentage ?? 0,
+        suggestedPrice: data.suggested_price ?? 0,
+        sellingPrice: data.base_price ?? 0,
+        brand: data.brand || '',
+        manufacturerNumber: data.manufacturer_number || '',
+        nfeData: data.nfe_data || null,
+        imageUrl: data.image_url || '',
       } as ProductService;
       
       setProducts(prev => {

@@ -24,16 +24,24 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
         const mapped = data.map(s => ({
           ...s,
           orderNumber: s.order_number,
+          osNumber: s.os_number,
+          clientId: s.client_id,
           clientName: s.client_name,
           totalValue: s.total,
           createdAt: s.created_at,
-          deliveryDeadline: s.delivery_date,
+          deliveryDeadline: s.delivery_deadline || s.delivery_date,
           seller: s.seller_name,
           isOsGenerated: s.is_os_generated,
           observations: s.notes,
+          salesPhase: s.sales_phase,
+          salesChannel: s.sales_channel,
+          architectName: s.architect_name,
+          paymentConditions: s.payment_conditions,
+          discountValue: Number(s.discount_value || s.discount || 0),
+          discountPercentage: Number(s.discount_percentage || 0),
           totals: {
             vendas: Number(s.subtotal),
-            desconto: Number(s.discount),
+            desconto: Number(s.discount_value || s.discount || 0),
             geral: Number(s.total)
           }
         }));
@@ -60,16 +68,25 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
         id: (s.id && s.id.length > 20) ? s.id : undefined,
         company_id: finalCompanyId,
         order_number: s.orderNumber,
+        os_number: s.osNumber,
+        client_id: s.clientId || null,
         client_name: s.clientName,
         status: s.status,
         items: s.items,
         subtotal: s.totals?.vendas || 0,
         discount: s.totals?.desconto || 0,
+        discount_value: s.totals?.desconto || s.discountValue || 0,
+        discount_percentage: s.discountPercentage || 0,
         total: s.totals?.geral || s.totalValue || 0,
-        delivery_date: s.deliveryDeadline,
+        delivery_date: s.deliveryDeadline || null,
+        delivery_deadline: s.deliveryDeadline || null,
         seller_name: s.seller,
         notes: s.observations,
-        is_os_generated: s.isOsGenerated
+        is_os_generated: s.isOsGenerated,
+        sales_phase: s.salesPhase || null,
+        sales_channel: s.salesChannel || null,
+        architect_name: s.architectName || null,
+        payment_conditions: s.paymentConditions || null,
       };
 
       const { data, error } = await supabase
@@ -84,16 +101,24 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
       const savedSale = {
         ...savedRow,
         orderNumber: savedRow.order_number,
+        osNumber: savedRow.os_number,
+        clientId: savedRow.client_id,
         clientName: savedRow.client_name,
         totalValue: savedRow.total,
-        deliveryDeadline: savedRow.delivery_date,
+        deliveryDeadline: savedRow.delivery_deadline || savedRow.delivery_date,
         seller: savedRow.seller_name,
         observations: savedRow.notes,
         isOsGenerated: savedRow.is_os_generated,
         createdAt: savedRow.created_at,
+        salesPhase: savedRow.sales_phase,
+        salesChannel: savedRow.sales_channel,
+        architectName: savedRow.architect_name,
+        paymentConditions: savedRow.payment_conditions,
+        discountValue: Number(savedRow.discount_value || savedRow.discount || 0),
+        discountPercentage: Number(savedRow.discount_percentage || 0),
         totals: {
           vendas: Number(savedRow.subtotal),
-          desconto: Number(savedRow.discount),
+          desconto: Number(savedRow.discount_value || savedRow.discount || 0),
           geral: Number(savedRow.total)
         }
       } as SalesOrder;

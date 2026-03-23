@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { ShoppingBag, Plus, Search, FileText, CheckCircle2, Clock, XCircle, MoreVertical, ExternalLink, Printer, LayoutGrid, List, ArrowRight, X, Edit2, GripVertical, Trash2, Check, DollarSign, Calendar, MoreHorizontal, User } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+import confetti from 'canvas-confetti';
+import { ShoppingBag, Plus, Search, FileText, CheckCircle2, Clock, XCircle, MoreVertical, ExternalLink, Printer, LayoutGrid, List, ArrowRight, X, Edit2, GripVertical, Trash2, Check, DollarSign, Calendar, MoreHorizontal, User, AlertTriangle, Lock } from 'lucide-react';
 import { SalesOrder, Client, Material, AppUser, Architect, ProductService, SalesChannel, CompanyInfo, SalesPhaseConfig, ServiceGroup } from '../types';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { NewSaleModal } from './NewSaleModal';
 import { PrintBudget } from './PrintBudget';
+import { supabase } from '../lib/supabase';
 
 interface SalesViewProps {
   sales: SalesOrder[];
@@ -39,6 +41,23 @@ export const SalesView: React.FC<SalesViewProps> = ({
   const [newPhaseName, setNewPhaseName] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [lostSaleDetails, setLostSaleDetails] = useState<{ saleId: string; reason: string; details: string } | null>(null);
+  const [revertPending, setRevertPending] = useState<{ sale: SalesOrder; targetPhase: string } | null>(null);
+  const [revertPassword, setRevertPassword] = useState('');
+  const [revertJustification, setRevertJustification] = useState('');
+  const [revertError, setRevertError] = useState('');
+  const [revertLoading, setRevertLoading] = useState(false);
+
+  const fireConfetti = useCallback((intense = false) => {
+    if (intense) {
+      // Big burst for win-zone
+      confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 }, colors: ['#f97316', '#22c55e', '#3b82f6', '#fbbf24', '#a855f7'] });
+      setTimeout(() => confetti({ particleCount: 80, angle: 60, spread: 55, origin: { x: 0, y: 0.65 } }), 150);
+      setTimeout(() => confetti({ particleCount: 80, angle: 120, spread: 55, origin: { x: 1, y: 0.65 } }), 300);
+    } else {
+      // Light burst for regular phase moves
+      confetti({ particleCount: 40, spread: 50, origin: { y: 0.65 }, colors: ['#f97316', '#fbbf24', '#fb923c'] });
+    }
+  }, []);
 
   const onDragStart = () => {
     setIsDragging(true);
@@ -56,7 +75,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
     } else {
       const saleId = draggableId;
       const targetPhase = destination.droppableId;
-      
+
       if (targetPhase === 'lost-zone') {
         const sale = sales.find(s => s.id === saleId);
         if (sale) {
@@ -69,14 +88,54 @@ export const SalesView: React.FC<SalesViewProps> = ({
         const sale = sales.find(s => s.id === saleId);
         if (sale) {
           onSaveSale({ ...sale, salesPhase: 'Pedido/Ganho', status: 'Pedido' });
+          fireConfetti(true);
         }
         return;
       }
 
       const sale = sales.find(s => s.id === saleId);
       if (sale) {
+        // Block Pedido from returning to regular columns without auth
+        if (sale.status === 'Pedido') {
+          setRevertPending({ sale, targetPhase });
+          setRevertPassword('');
+          setRevertJustification('');
+          setRevertError('');
+          return;
+        }
         onSaveSale({ ...sale, salesPhase: targetPhase });
       }
+    }
+  };
+
+  const handleRevertConfirm = async () => {
+    if (!revertPending) return;
+    if (!revertJustification.trim()) {
+      setRevertError('A justificativa é obrigatória.');
+      return;
+    }
+    if (!revertPassword) {
+      setRevertError('Informe sua senha.');
+      return;
+    }
+    setRevertLoading(true);
+    setRevertError('');
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) throw new Error('Usuário não identificado.');
+      const { error } = await supabase.auth.signInWithPassword({ email: user.email, password: revertPassword });
+      if (error) throw new Error('Senha incorreta.');
+      onSaveSale({
+        ...revertPending.sale,
+        salesPhase: revertPending.targetPhase,
+        status: 'Orçamento',
+        observations: `[RETORNO] ${revertJustification}${revertPending.sale.observations ? '\n' + revertPending.sale.observations : ''}`
+      });
+      setRevertPending(null);
+    } catch (err: any) {
+      setRevertError(err.message || 'Erro ao validar senha.');
+    } finally {
+      setRevertLoading(false);
     }
   };
 
@@ -281,7 +340,10 @@ export const SalesView: React.FC<SalesViewProps> = ({
                 {salesPhases.map((phaseConfig, index) => {
                   const phase = phaseConfig.name;
                   const isEditing = editingPhase === phase;
-                  const phaseSales = sales.filter(s => s.salesPhase === phase);
+                  const isFirstPhase = index === 0;
+                  const phaseSales = sales.filter(s =>
+                    s.salesPhase === phase || (isFirstPhase && !s.salesPhase)
+                  );
                   const phaseTotal = phaseSales.reduce((acc, s) => acc + (s.totals?.geral || 0), 0);
 
                   return (
@@ -389,15 +451,20 @@ export const SalesView: React.FC<SalesViewProps> = ({
                                         {...provided.draggableProps}
                                         {...provided.dragHandleProps}
                                         ref={provided.innerRef}
-                                        className={`bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl shadow-sm transition-all cursor-grab active:cursor-grabbing group ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-[var(--primary-color)] scale-[1.02] z-50' : 'hover:shadow-md hover:border-slate-200'}`}
+                                        className={`bg-white dark:bg-slate-900 border p-4 rounded-2xl shadow-sm transition-all cursor-grab active:cursor-grabbing group ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-[var(--primary-color)] scale-[1.02] z-50' : 'hover:shadow-md'} ${sale.status === 'Pedido' ? 'border-green-200 dark:border-green-900/50 bg-green-50/30 dark:bg-green-900/10' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200'}`}
                                         onClick={() => handleEdit(sale)}
                                       >
                                         <div className="flex justify-between items-start mb-2">
-                                          <div className="flex items-center gap-2">
+                                          <div className="flex items-center gap-2 flex-wrap">
                                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">#{sale.orderNumber}</span>
                                             {sale.isOsGenerated && (
                                               <span className="bg-green-100 text-green-600 text-[8px] font-black px-1.5 py-0.5 rounded uppercase flex items-center gap-1">
                                                 <CheckCircle2 size={8} /> OS Gerada
+                                              </span>
+                                            )}
+                                            {sale.status === 'Pedido' && (
+                                              <span className="bg-green-100 text-green-700 text-[8px] font-black px-1.5 py-0.5 rounded uppercase flex items-center gap-1" title="Pedido confirmado — bloqueado para edição">
+                                                <Lock size={8} /> Bloqueado
                                               </span>
                                             )}
                                           </div>
@@ -535,6 +602,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
           nextOrderNumber={nextOrderNumber}
           salesPhases={salesPhases}
           initialData={editingSale || undefined}
+          readOnly={editingSale?.status === 'Pedido'}
           onSave={(sale) => {
             onSaveSale(sale);
             setIsNewSaleModalOpen(false);
@@ -627,6 +695,76 @@ export const SalesView: React.FC<SalesViewProps> = ({
                   Confirmar Perda
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Revert Pedido Modal */}
+      {revertPending && (
+        <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 bg-amber-50 dark:bg-amber-900/20">
+              <div className="p-2 bg-amber-100 dark:bg-amber-900/40 rounded-xl">
+                <AlertTriangle size={20} className="text-amber-600" />
+              </div>
+              <div>
+                <h2 className="text-base font-black text-slate-800 dark:text-white">Retornar Pedido para Orçamento</h2>
+                <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">Esta ação requer autenticação e justificativa</p>
+              </div>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-3 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                O pedido <span className="font-black text-slate-800 dark:text-white">#{revertPending.sale.orderNumber}</span> de <span className="font-black text-slate-800 dark:text-white">{revertPending.sale.clientName}</span> voltará ao status <span className="font-black text-amber-600">Orçamento</span> na coluna <span className="font-black text-[var(--primary-color)]">{revertPending.targetPhase}</span>.
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 block">Justificativa obrigatória</label>
+                <textarea
+                  autoFocus
+                  value={revertJustification}
+                  onChange={e => setRevertJustification(e.target.value)}
+                  placeholder="Descreva o motivo do retorno deste pedido..."
+                  className="w-full p-3 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-amber-400 rounded-2xl outline-none font-medium text-sm text-slate-800 dark:text-white resize-none h-24 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1.5">
+                  <Lock size={11} /> Sua senha do sistema
+                </label>
+                <input
+                  type="password"
+                  value={revertPassword}
+                  onChange={e => setRevertPassword(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleRevertConfirm()}
+                  placeholder="••••••••"
+                  className="w-full p-3 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-amber-400 rounded-2xl outline-none font-bold text-slate-800 dark:text-white transition-all"
+                />
+              </div>
+
+              {revertError && (
+                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl text-red-600 text-xs font-bold">
+                  <XCircle size={14} /> {revertError}
+                </div>
+              )}
+            </div>
+
+            <div className="p-5 pt-0 flex gap-3">
+              <button
+                onClick={() => setRevertPending(null)}
+                className="flex-1 py-3 px-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleRevertConfirm}
+                disabled={revertLoading || !revertJustification.trim() || !revertPassword}
+                className="flex-1 py-3 px-4 bg-amber-500 text-white rounded-2xl font-black text-sm shadow-lg shadow-amber-500/20 hover:opacity-90 transition-all disabled:opacity-50"
+              >
+                {revertLoading ? 'Validando...' : 'Confirmar Retorno'}
+              </button>
             </div>
           </div>
         </div>

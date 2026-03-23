@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, ShoppingBag, Plus, Trash2, Calculator, Save, FileText, Search, Tag, Users, Printer, Edit2, RotateCcw, Check, GripVertical, PlusCircle, Copy, Pencil } from 'lucide-react';
+import { X, User, ShoppingBag, Plus, Trash2, Calculator, Save, FileText, Search, Tag, Users, Printer, Edit2, RotateCcw, Check, GripVertical, PlusCircle, Copy, Pencil, Lock, AlertTriangle, Eye } from 'lucide-react';
 import { SalesOrder, OrderItem, Client, Architect, AppUser, SalesChannel, Material, ProductService, CompanyInfo, SalesPhaseConfig, ServiceGroup } from '../types';
 import { ClientSelectModal } from './ClientSelectModal';
 import { PrintBudget } from './PrintBudget';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { createPortal } from 'react-dom';
+import { supabase } from '../lib/supabase';
 
 interface NewSaleModalProps {
   onClose: () => void;
@@ -20,14 +21,22 @@ interface NewSaleModalProps {
   nextOrderNumber: string;
   salesPhases: SalesPhaseConfig[];
   services: ServiceGroup[];
+  readOnly?: boolean;
 }
 
-export const NewSaleModal: React.FC<NewSaleModalProps> = ({ 
-  onClose, onSave, clients, architects, appUsers, materials, products, services, salesChannels, initialData, companyInfo, nextOrderNumber, salesPhases
+export const NewSaleModal: React.FC<NewSaleModalProps> = ({
+  onClose, onSave, clients, architects, appUsers, materials, products, services, salesChannels, initialData, companyInfo, nextOrderNumber, salesPhases, readOnly = false
 }) => {
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [printingSale, setPrintingSale] = useState<SalesOrder | null>(null);
   const [blurMeasurements, setBlurMeasurements] = useState(false);
+  // Revert-to-Orçamento flow (only when readOnly=true)
+  const [isLocked, setIsLocked] = useState(readOnly);
+  const [showRevert, setShowRevert] = useState(false);
+  const [revertPassword, setRevertPassword] = useState('');
+  const [revertJustification, setRevertJustification] = useState('');
+  const [revertError, setRevertError] = useState('');
+  const [revertLoading, setRevertLoading] = useState(false);
 
   const handlePrint = () => {
     // Generate a temporary sale object to print if current form is valid
@@ -78,7 +87,12 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   // Initialize states with initialData if present
   const [selectedClient, setSelectedClient] = useState<Client | null>(() => {
     if (initialData) {
-      return clients.find(c => c.id === initialData.clientId) || null;
+      return (
+        clients.find(c => c.id === initialData.clientId) ||
+        clients.find(c => c.id === (initialData as any).client_id) ||
+        clients.find(c => c.name === initialData.clientName) ||
+        null
+      );
     }
     return null;
   });
@@ -107,8 +121,17 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [activeEnvironment, setActiveEnvironment] = useState<string>('');
   const [newEnvironmentName, setNewEnvironmentName] = useState('');
+  const [productPickerOpen, setProductPickerOpen] = useState(false);
+  const [materialPickerOpen, setMaterialPickerOpen] = useState(false);
+  const [productSearch, setProductSearch] = useState('');
+  const [materialSearch, setMaterialSearch] = useState('');
 
   const environments = Array.from(new Set([...items.map(i => i.environment || 'Sem Ambiente'), activeEnvironment, newEnvironmentName].filter(Boolean)));
+
+  // True when the selected material is an Acabamento or Produto de Revenda (no dimensions needed)
+  const isProductMaterial = products.some(
+    p => (p.type === 'Acabamentos' || p.type === 'Produtos de Revenda') && p.description === itemMaterialId
+  );
 
   const calculateM2 = (l: number, w: number, q: number) => {
     if (l > 0 && w > 0) {
@@ -130,22 +153,28 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
     const m2 = calculateM2(itemLength, itemWidth, itemQty);
     const total = calculateItemTotal();
 
-    // Validate that description exists in services or products
-    const isValidDesc = services.some(s => s.description === itemDesc) || products.some(p => p.description === itemDesc);
+    // Validate that description exists in services
+    const isValidDesc = services.some(s => s.description === itemDesc);
     if (!isValidDesc) {
-      alert('Por favor, selecione um Produto/Serviço válido da lista.');
+      alert('Por favor, selecione um Serviço válido da lista.');
       return;
     }
 
-    // Validate that material exists
-    const selectedMaterial = materials.find(m => m.name === itemMaterialId || m.id === itemMaterialId);
-    if (!selectedMaterial) {
+    // Find material in materials table OR in products (Acabamentos / Produtos de Revenda)
+    const matFromMaterials = materials.find(m => m.name === itemMaterialId || m.id === itemMaterialId);
+    const matFromProducts = products.find(p =>
+      (p.type === 'Acabamentos' || p.type === 'Produtos de Revenda') && p.description === itemMaterialId
+    );
+    const resolvedMaterialId = matFromMaterials?.id || matFromProducts?.id || '';
+    const resolvedMaterialName = matFromMaterials?.name || matFromProducts?.description || '';
+
+    if (!resolvedMaterialId) {
       alert('Por favor, selecione uma Matéria Prima válida da lista.');
       return;
     }
 
-    // Validate dimensions
-    if (itemLength <= 0 || itemWidth <= 0) {
+    // Validate dimensions (only for materials that require m²)
+    if (!isProductMaterial && (itemLength <= 0 || itemWidth <= 0)) {
       alert('Por favor, preencha o Comprimento e a Largura do item antes de adicionar.');
       return;
     }
@@ -165,8 +194,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
             m2: m2,
             servicePercentage: itemService,
             environment: activeEnvironment,
-            materialId: selectedMaterial.id,
-            materialName: selectedMaterial.name
+            materialId: resolvedMaterialId,
+            materialName: resolvedMaterialName
           };
         }
         return item;
@@ -186,8 +215,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
         m2: m2,
         servicePercentage: itemService,
         environment: activeEnvironment,
-        materialId: selectedMaterial.id,
-        materialName: selectedMaterial.name
+        materialId: resolvedMaterialId,
+        materialName: resolvedMaterialName
       };
       setItems([...items, newItem]);
     }
@@ -317,20 +346,26 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   };
 
   const updateEnvironmentMaterial = (envName: string, materialName: string) => {
-    const selectedMaterial = materials.find(m => m.name === materialName);
-    if (!selectedMaterial) return;
+    const matFromMaterials = materials.find(m => m.name === materialName);
+    const matFromProducts = products.find(p =>
+      (p.type === 'Acabamentos' || p.type === 'Produtos de Revenda') && p.description === materialName
+    );
+    const resolvedId = matFromMaterials?.id || matFromProducts?.id;
+    const resolvedName = matFromMaterials?.name || matFromProducts?.description;
+    const resolvedPrice = matFromMaterials?.sellingPrice || matFromProducts?.sellingPrice || 0;
+    if (!resolvedId) return;
 
     setItems(prevItems => prevItems.map(item => {
       if ((item.environment || 'Sem Ambiente') === envName) {
         const m2 = item.m2 || 0;
-        const newUnitPrice = selectedMaterial.sellingPrice || 0;
+        const newUnitPrice = resolvedPrice;
         const baseTotal = m2 > 0 ? (m2 * newUnitPrice) : (item.quantity * newUnitPrice);
         const serviceBonus = baseTotal * ((item.servicePercentage || 0) / 100);
-        
+
         return {
           ...item,
-          materialId: selectedMaterial.id,
-          materialName: selectedMaterial.name,
+          materialId: resolvedId,
+          materialName: resolvedName,
           unitPrice: newUnitPrice,
           totalPrice: baseTotal + serviceBonus
         };
@@ -368,6 +403,10 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const handleSave = () => {
     if (!selectedClient) {
       alert('Selecione um cliente');
+      return;
+    }
+    if (!deliveryDeadline || parseInt(deliveryDeadline) <= 0) {
+      alert('Informe o Prazo de Entrega em dias úteis antes de salvar.');
       return;
     }
 
@@ -408,38 +447,86 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
     onClose();
   };
 
+  const handleRevertConfirm = async () => {
+    if (!revertJustification.trim()) { setRevertError('A justificativa é obrigatória.'); return; }
+    if (!revertPassword) { setRevertError('Informe sua senha.'); return; }
+    setRevertLoading(true);
+    setRevertError('');
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) throw new Error('Usuário não identificado.');
+      const { error } = await supabase.auth.signInWithPassword({ email: user.email, password: revertPassword });
+      if (error) throw new Error('Senha incorreta.');
+      // Unlock the form
+      setSaleType('Orçamento');
+      setIsLocked(false);
+      setShowRevert(false);
+      // Persist the revert immediately so it's saved even if user just closes
+      if (initialData) {
+        onSave({
+          ...initialData,
+          status: 'Orçamento',
+          observations: `[RETORNO] ${revertJustification}${initialData.observations ? '\n' + initialData.observations : ''}`
+        });
+      }
+    } catch (err: any) {
+      setRevertError(err.message || 'Erro ao validar senha.');
+    } finally {
+      setRevertLoading(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[250] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-6xl h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
         
         {/* Header */}
-        <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
-          <div className="flex items-center gap-4">
-            <div className={`p-3 rounded-2xl ${saleType === 'Orçamento' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
-              <ShoppingBag size={24} />
+        <div className="px-6 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-xl ${saleType === 'Orçamento' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
+              <ShoppingBag size={18} />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">Manutenção de Venda</h2>
-              <div className="flex gap-4 mt-1">
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <input 
-                    type="radio" 
-                    name="saleType" 
-                    className="w-4 h-4 text-[var(--primary-color)]" 
-                    checked={saleType === 'Orçamento'} 
-                    onChange={() => setSaleType('Orçamento')}
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-black text-slate-800 dark:text-white tracking-tight">Manutenção de Venda</h2>
+                {isLocked && (
+                  <span className="flex items-center gap-1 bg-green-100 text-green-700 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    <Lock size={9} /> Somente Leitura
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-4 mt-0.5">
+                <label className={`flex items-center gap-1.5 ${isLocked ? 'cursor-pointer' : 'cursor-pointer group'}`}>
+                  <input
+                    type="radio"
+                    name="saleType"
+                    className="w-3.5 h-3.5 text-[var(--primary-color)]"
+                    checked={saleType === 'Orçamento'}
+                    onChange={() => {
+                      if (isLocked) {
+                        setRevertPassword('');
+                        setRevertJustification('');
+                        setRevertError('');
+                        setShowRevert(true);
+                      } else {
+                        setSaleType('Orçamento');
+                      }
+                    }}
                   />
-                  <span className={`text-sm font-bold ${saleType === 'Orçamento' ? 'text-blue-600' : 'text-slate-400'}`}>Orçamento</span>
+                  <span className={`text-xs font-bold ${saleType === 'Orçamento' ? 'text-blue-600' : isLocked ? 'text-amber-500 hover:text-amber-600' : 'text-slate-400'}`}>
+                    {isLocked ? '⚠ Reverter para Orçamento' : 'Orçamento'}
+                  </span>
                 </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input 
-                    type="radio" 
-                    name="saleType" 
-                    className="w-4 h-4 text-[var(--primary-color)]" 
-                    checked={saleType === 'Pedido'} 
-                    onChange={() => setSaleType('Pedido')}
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="saleType"
+                    className="w-3.5 h-3.5 text-[var(--primary-color)]"
+                    checked={saleType === 'Pedido'}
+                    onChange={() => !isLocked && setSaleType('Pedido')}
+                    disabled={isLocked}
                   />
-                  <span className={`text-sm font-bold ${saleType === 'Pedido' ? 'text-green-600' : 'text-slate-400'}`}>Pedido</span>
+                  <span className={`text-xs font-bold ${saleType === 'Pedido' ? 'text-green-600' : 'text-slate-400'}`}>Pedido</span>
                 </label>
               </div>
             </div>
@@ -482,44 +569,44 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
-          
+        <div className={`flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar ${isLocked ? 'pointer-events-none select-none opacity-80' : ''}`}>
+
           {/* Section 1: Header Info */}
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div className="md:col-span-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">
                   {saleType === 'Orçamento' ? 'Nº Orçamento' : 'Nº Pedido'}
                 </label>
-                <div className="w-full p-4 bg-slate-100 dark:bg-slate-800/50 border-2 border-transparent rounded-2xl font-black text-slate-800 dark:text-white transition-all text-xl flex items-center">
+                <div className="w-full p-2.5 bg-slate-100 dark:bg-slate-800/50 border-2 border-transparent rounded-xl font-black text-slate-800 dark:text-white transition-all text-base flex items-center">
                   {orderNumber}
                 </div>
               </div>
 
               <div className="md:col-span-3">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block">Cliente</label>
-                <div 
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">Cliente</label>
+                <div
                   onClick={() => setIsClientModalOpen(true)}
-                  className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 border-2 border-transparent hover:border-[var(--primary-color)] rounded-2xl cursor-pointer transition-all group"
+                  className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent hover:border-[var(--primary-color)] rounded-xl cursor-pointer transition-all group"
                 >
-                  <div className="flex items-center gap-3">
-                    <User size={20} className="text-slate-400 group-hover:text-[var(--primary-color)]" />
-                    <span className={`font-bold ${selectedClient ? 'text-slate-800 dark:text-white' : 'text-slate-400'}`}>
+                  <div className="flex items-center gap-2">
+                    <User size={16} className="text-slate-400 group-hover:text-[var(--primary-color)]" />
+                    <span className={`font-bold text-sm ${selectedClient ? 'text-slate-800 dark:text-white' : 'text-slate-400'}`}>
                       {selectedClient ? selectedClient.name : 'Selecionar Cliente...'}
                     </span>
                   </div>
-                  <Search size={18} className="text-slate-400" />
+                  <Search size={16} className="text-slate-400" />
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block">Canal de Venda</label>
-                <select 
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">Canal de Venda</label>
+                <select
                   value={salesChannel}
                   onChange={(e) => setSalesChannel(e.target.value)}
-                  className="w-full p-4 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-2xl outline-none font-bold text-slate-800 dark:text-white transition-all appearance-none"
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-slate-800 dark:text-white transition-all appearance-none"
                 >
                   <option value="">Selecione...</option>
                   {salesChannels.map(channel => (
@@ -529,33 +616,33 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
               </div>
 
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block">Vendedor</label>
-                <select 
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">Vendedor</label>
+                <select
                   value={seller}
                   onChange={(e) => setSeller(e.target.value)}
-                  className="w-full p-4 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-2xl outline-none font-bold text-slate-800 dark:text-white transition-all appearance-none"
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-slate-800 dark:text-white transition-all appearance-none"
                 >
                   {appUsers.map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block">Arquiteto / Parceiro</label>
-                <input 
-                  type="text" 
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">Arquiteto / Parceiro</label>
+                <input
+                  type="text"
                   value={architect}
                   onChange={(e) => setArchitect(e.target.value)}
                   placeholder="Nome do parceiro"
-                  className="w-full p-4 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-2xl outline-none font-bold text-slate-800 dark:text-white transition-all"
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-slate-800 dark:text-white transition-all"
                 />
               </div>
 
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block">Fase do Orçamento</label>
-                <select 
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">Fase do Orçamento</label>
+                <select
                   value={salesPhase}
                   onChange={(e) => setSalesPhase(e.target.value)}
-                  className="w-full p-4 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-2xl outline-none font-bold text-slate-800 dark:text-white transition-all appearance-none"
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-slate-800 dark:text-white transition-all appearance-none"
                 >
                   {salesPhases.map(phase => (
                     <option key={phase.name} value={phase.name}>{phase.name}</option>
@@ -567,19 +654,19 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
           {/* Section 2: Items Grouped by Environment */}
           <DragDropContext onDragEnd={onDragEnd}>
-            <div className="space-y-8">
+            <div className="space-y-4">
               {environments.map((env) => {
                 const envItems = items.filter(i => (i.environment || 'Sem Ambiente') === env);
                 const envTotal = envItems.reduce((acc, i) => acc + i.totalPrice, 0);
 
                 return (
-                  <div key={env} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-md transition-all">
-                    <div className="px-8 py-5 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 group/header">
-                      <div className="flex items-center gap-4">
-                        <div className="w-2 h-10 bg-[var(--primary-color)] rounded-full"></div>
+                  <div key={env} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all">
+                    <div className="px-4 py-3 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 group/header">
+                      <div className="flex items-center gap-3">
+                        <div className="w-1.5 h-7 bg-[var(--primary-color)] rounded-full"></div>
                         <div>
-                          <div className="flex items-center gap-3">
-                            <h3 className="text-sm font-black text-slate-700 dark:text-slate-200 uppercase tracking-widest">{env}</h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-widest">{env}</h3>
                             
                             {/* Material Selector for Environment */}
                             <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm ml-2">
@@ -626,8 +713,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                         </div>
                       </div>
                       <div className="text-right">
-                        <span className="text-[10px] font-black text-slate-400 uppercase block leading-none mb-1">Subtotal {env}</span>
-                        <span className="text-xl font-black text-slate-800 dark:text-white">R$ {(envTotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="text-[9px] font-black text-slate-400 uppercase block leading-none mb-0.5">Subtotal {env}</span>
+                        <span className="text-base font-black text-slate-800 dark:text-white">R$ {(envTotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                     </div>
 
@@ -668,8 +755,21 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                         {materials.find(m => m.id === item.materialId)?.name || '-'}
                                       </td>
                                       <td className="px-4 py-3 text-center text-[11px] font-bold text-slate-600 dark:text-slate-300">{Number(item.quantity || 0).toFixed(2)}</td>
-                                      <td className="px-4 py-3 text-center text-[11px] font-bold text-slate-600 dark:text-slate-300">{Number(item.length || 0).toFixed(3) || '0.000'}</td>
-                                      <td className="px-4 py-3 text-center text-[11px] font-bold text-slate-600 dark:text-slate-300">{Number(item.width || 0).toFixed(3) || '0.000'}</td>
+                                      {(() => {
+                                        const isMat = materials.some(m => m.id === item.materialId);
+                                        const missingLen = isMat && !(item.length > 0);
+                                        const missingWid = isMat && !(item.width > 0);
+                                        return (
+                                          <>
+                                            <td className={`px-4 py-3 text-center text-[11px] font-bold ${missingLen ? 'text-red-500 bg-red-50' : 'text-slate-600 dark:text-slate-300'}`}>
+                                              {missingLen ? <span title="Comprimento obrigatório">⚠ 0.000</span> : Number(item.length).toFixed(3)}
+                                            </td>
+                                            <td className={`px-4 py-3 text-center text-[11px] font-bold ${missingWid ? 'text-red-500 bg-red-50' : 'text-slate-600 dark:text-slate-300'}`}>
+                                              {missingWid ? <span title="Largura obrigatória">⚠ 0.000</span> : Number(item.width).toFixed(3)}
+                                            </td>
+                                          </>
+                                        );
+                                      })()}
                                       <td className="px-4 py-3 text-center text-[11px] font-bold text-slate-600 dark:text-slate-300">{Number(item.m2 || 0).toFixed(2) || '0.00'}</td>
                                       <td className="px-4 py-3 text-right text-[11px] font-bold text-slate-600 dark:text-slate-300">R$ {(item.unitPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                       <td className="px-4 py-3 text-center text-[11px] font-bold text-blue-500">{item.servicePercentage || 0}%</td>
@@ -707,42 +807,52 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                               {/* Add Item Row per Environment */}
                               <tr className="bg-slate-50/30 dark:bg-slate-800/20">
                                 <td className="p-1.5 pl-4">
-                                  <input 
-                                    list="products-list" 
-                                    type="text" 
-                                    placeholder="Descrição..." 
-                                    value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemDesc : ''} 
-                                    onFocus={() => setActiveEnvironment(env === 'Sem Ambiente' ? '' : env)}
-                                    onChange={e => setItemDesc(e.target.value)} 
-                                    onKeyDown={handleDescKeyDown}
-                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)]" 
-                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveEnvironment(env === 'Sem Ambiente' ? '' : env);
+                                      setProductSearch('');
+                                      setProductPickerOpen(true);
+                                    }}
+                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none hover:border-[var(--primary-color)] transition-colors text-left truncate"
+                                  >
+                                    {activeEnvironment === (env === 'Sem Ambiente' ? '' : env) && itemDesc
+                                      ? <span className="text-slate-800 dark:text-white">{itemDesc}</span>
+                                      : <span className="text-slate-400">Descrição...</span>
+                                    }
+                                  </button>
                                 </td>
                                 <td className="p-1.5">
-                                  <input 
-                                    list="materials-list" 
-                                    type="text" 
-                                    placeholder="Matéria Prima..." 
-                                    value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemMaterialId : ''} 
-                                    onFocus={() => setActiveEnvironment(env === 'Sem Ambiente' ? '' : env)}
-                                    onKeyDown={handleMaterialKeyDown}
-                                    onChange={e => {
-                                      const val = e.target.value;
-                                      setItemMaterialId(val);
-                                      const mat = materials.find(m => m.name === val);
-                                      if (mat) {
-                                        if (mat.sellingPrice) setItemPrice(mat.sellingPrice);
-                                        if (!itemDesc) setItemDesc(mat.name);
-                                      }
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveEnvironment(env === 'Sem Ambiente' ? '' : env);
+                                      setMaterialSearch('');
+                                      setMaterialPickerOpen(true);
                                     }}
-                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)]"
-                                  />
+                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none hover:border-[var(--primary-color)] transition-colors text-left truncate"
+                                  >
+                                    {activeEnvironment === (env === 'Sem Ambiente' ? '' : env) && itemMaterialId
+                                      ? <span className="text-slate-800 dark:text-white">{itemMaterialId}</span>
+                                      : <span className="text-slate-400">Matéria Prima...</span>
+                                    }
+                                  </button>
                                 </td>
                                 <td className="p-1.5"><input type="number" step="1" value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemQty : 1} onChange={e => setItemQty(parseFloat(e.target.value))} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" /></td>
-                                <td className="p-1.5"><input type="number" step="0.001" value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemLength : 0} onChange={e => setItemLength(parseFloat(e.target.value))} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" /></td>
-                                <td className="p-1.5"><input type="number" step="0.001" value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemWidth : 0} onChange={e => setItemWidth(parseFloat(e.target.value))} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" /></td>
+                                <td className="p-1.5">
+                                  {isProductMaterial && activeEnvironment === (env === 'Sem Ambiente' ? '' : env)
+                                    ? <div className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] text-slate-400 text-center">—</div>
+                                    : <input type="number" step="0.001" value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemLength : 0} onChange={e => setItemLength(parseFloat(e.target.value))} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" />
+                                  }
+                                </td>
+                                <td className="p-1.5">
+                                  {isProductMaterial && activeEnvironment === (env === 'Sem Ambiente' ? '' : env)
+                                    ? <div className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] text-slate-400 text-center">—</div>
+                                    : <input type="number" step="0.001" value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemWidth : 0} onChange={e => setItemWidth(parseFloat(e.target.value))} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" />
+                                  }
+                                </td>
                                 <td className="p-1.5 text-center text-[10px] font-black text-slate-400">
-                                  {activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? calculateM2(itemLength, itemWidth, itemQty).toFixed(2) : '0.00'}
+                                  {isProductMaterial && activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? '—' : activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? calculateM2(itemLength, itemWidth, itemQty).toFixed(2) : '0.00'}
                                 </td>
                                 <td className="p-1.5"><input type="number" step="0.01" value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemPrice : 0} onChange={e => setItemPrice(parseFloat(e.target.value))} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-right" /></td>
                                 <td className="p-1.5"><input type="number" step="0.1" value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemService : 0} onChange={e => setItemService(parseFloat(e.target.value))} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" /></td>
@@ -771,58 +881,64 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
               })}
 
               {/* Add New Environment */}
-              <div className="flex items-center gap-4 p-6 bg-slate-50 dark:bg-slate-800/30 rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/30 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700">
                 <div className="flex-1">
-                  <input 
-                    type="text" 
-                    placeholder="Nome do Novo Ambiente (ex: Lavanderia, Suíte Master...)" 
+                  <input
+                    type="text"
+                    placeholder="Nome do Novo Ambiente (ex: Lavanderia, Suíte Master...)"
                     value={newEnvironmentName}
                     onChange={e => setNewEnvironmentName(e.target.value)}
-                    className="w-full p-4 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl outline-none font-bold text-slate-800 dark:text-white focus:border-[var(--primary-color)] transition-all"
+                    className="w-full p-2.5 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-xl outline-none font-bold text-sm text-slate-800 dark:text-white focus:border-[var(--primary-color)] transition-all"
                   />
                 </div>
-                <button 
+                <button
                   onClick={() => {
                     if (newEnvironmentName.trim()) {
                       setActiveEnvironment(newEnvironmentName.trim());
                       setNewEnvironmentName('');
                     }
                   }}
-                  className="px-8 py-4 bg-white dark:bg-slate-800 text-[var(--primary-color)] border-2 border-orange-100 dark:border-slate-700 rounded-2xl font-black hover:bg-orange-50 transition-all flex items-center gap-2 shadow-sm"
+                  className="px-5 py-2.5 bg-white dark:bg-slate-800 text-[var(--primary-color)] border-2 border-orange-100 dark:border-slate-700 rounded-xl font-black text-sm hover:bg-orange-50 transition-all flex items-center gap-2 shadow-sm"
                 >
-                  <PlusCircle size={20} /> Criar Ambiente
+                  <PlusCircle size={16} /> Criar Ambiente
                 </button>
               </div>
             </div>
           </DragDropContext>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-3">
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block">Observações / Condições de Pagamento</label>
-                <textarea 
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">Observações / Condições de Pagamento</label>
+                <textarea
                   value={paymentConditions}
                   onChange={e => setPaymentConditions(e.target.value)}
                   placeholder="Ex: 50% de entrada e o restante em 3x no cartão..."
-                  className="w-full p-4 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-[2rem] outline-none font-bold text-slate-800 dark:text-white transition-all h-32 resize-none"
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-2xl outline-none font-bold text-sm text-slate-800 dark:text-white transition-all h-20 resize-none"
                 />
               </div>
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block">Prazo de Entrega</label>
-                <input 
-                  type="text" 
-                  value={deliveryDeadline}
-                  onChange={e => setDeliveryDeadline(e.target.value)}
-                  placeholder="Ex: 15 dias úteis após medição"
-                  className="w-full p-4 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-2xl outline-none font-bold text-slate-800 dark:text-white transition-all"
-                />
+                <label className={`text-[10px] font-black uppercase tracking-[0.2em] mb-1 block ${!(parseInt(deliveryDeadline) > 0) ? 'text-red-400' : 'text-slate-400'}`}>
+                  Prazo de Entrega {!(parseInt(deliveryDeadline) > 0) && <span className="normal-case font-bold">— obrigatório</span>}
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="1"
+                    value={deliveryDeadline}
+                    onChange={e => setDeliveryDeadline(e.target.value)}
+                    placeholder="0"
+                    className={`w-full p-2.5 pr-24 bg-slate-50 dark:bg-slate-800 border-2 focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-slate-800 dark:text-white transition-all ${!(parseInt(deliveryDeadline) > 0) ? 'border-red-300' : 'border-transparent'}`}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase tracking-wider pointer-events-none">dias úteis</span>
+                </div>
               </div>
             </div>
 
-            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] p-8 space-y-4">
+            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 space-y-3">
               <div className="flex justify-between items-center text-slate-500">
-                <span className="font-bold">Total dos Itens</span>
-                <span className="font-black">R$ {(subtotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="font-bold text-sm">Total dos Itens</span>
+                <span className="font-black text-sm">R$ {(subtotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div className="flex items-center justify-between gap-4">
                 <div className="flex-1">
@@ -854,17 +970,23 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   />
                 </div>
               </div>
-              <div className="pt-6 border-t border-slate-200 dark:border-slate-700 flex justify-between items-end">
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between items-end">
                 <div>
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Total Geral</span>
-                  <p className="text-4xl font-black text-[var(--primary-color)] tracking-tight">R$ {(totalGeral || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  <p className="text-2xl font-black text-[var(--primary-color)] tracking-tight">R$ {(totalGeral || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 </div>
-                <button 
-                  onClick={handleSave}
-                  className="px-8 py-4 bg-[var(--primary-color)] text-white rounded-2xl font-black shadow-xl shadow-[var(--primary-color)]/30 hover:opacity-90 transition-all flex items-center gap-2"
-                >
-                  <Save size={20} /> Gravar {saleType}
-                </button>
+                {isLocked ? (
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-green-50 border border-green-200 rounded-xl text-green-700 text-xs font-black">
+                    <Eye size={14} /> Somente leitura — use "Reverter para Orçamento" para editar
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleSave}
+                    className="px-6 py-3 bg-[var(--primary-color)] text-white rounded-xl font-black shadow-xl shadow-[var(--primary-color)]/30 hover:opacity-90 transition-all flex items-center gap-2 text-sm"
+                  >
+                    <Save size={16} /> Gravar {saleType}
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -889,15 +1011,192 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
         document.body
       )}
 
-      {/* Datalists for Item Search */}
-      <datalist id="products-list">
-        {services.map((s, i) => <option key={`s-${i}`} value={s.description} />)}
-        {products.map((p, i) => <option key={`p-${i}`} value={p.description} />)}
-      </datalist>
+      {/* Revert to Orçamento Modal */}
+      {showRevert && (
+        <div className="fixed inset-0 z-[350] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 bg-amber-50 dark:bg-amber-900/20">
+              <div className="p-2 bg-amber-100 dark:bg-amber-900/40 rounded-xl">
+                <AlertTriangle size={20} className="text-amber-600" />
+              </div>
+              <div>
+                <h2 className="text-base font-black text-slate-800 dark:text-white">Reverter Pedido para Orçamento</h2>
+                <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">Esta ação requer autenticação e justificativa</p>
+              </div>
+            </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 block">Justificativa obrigatória</label>
+                <textarea
+                  autoFocus
+                  value={revertJustification}
+                  onChange={e => setRevertJustification(e.target.value)}
+                  placeholder="Descreva o motivo do retorno deste pedido..."
+                  className="w-full p-3 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-amber-400 rounded-2xl outline-none font-medium text-sm text-slate-800 dark:text-white resize-none h-24 transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1.5">
+                  <Lock size={11} /> Sua senha do sistema
+                </label>
+                <input
+                  type="password"
+                  value={revertPassword}
+                  onChange={e => setRevertPassword(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleRevertConfirm()}
+                  placeholder="••••••••"
+                  className="w-full p-3 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-amber-400 rounded-2xl outline-none font-bold text-slate-800 dark:text-white transition-all"
+                />
+              </div>
+              {revertError && (
+                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl text-red-600 text-xs font-bold">
+                  <X size={14} /> {revertError}
+                </div>
+              )}
+            </div>
+            <div className="p-5 pt-0 flex gap-3">
+              <button onClick={() => setShowRevert(false)} className="flex-1 py-3 px-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all">
+                Cancelar
+              </button>
+              <button
+                onClick={handleRevertConfirm}
+                disabled={revertLoading || !revertJustification.trim() || !revertPassword}
+                className="flex-1 py-3 px-4 bg-amber-500 text-white rounded-2xl font-black text-sm shadow-lg shadow-amber-500/20 hover:opacity-90 transition-all disabled:opacity-50"
+              >
+                {revertLoading ? 'Validando...' : 'Confirmar Retorno'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-      <datalist id="materials-list">
-        {materials.map((m, i) => <option key={`m-${i}`} value={m.name} />)}
-      </datalist>
+      {/* Product/Service Picker Popup */}
+      {productPickerOpen && (
+        <div className="fixed inset-0 z-[350] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+              <div>
+                <h2 className="text-base font-black text-slate-800 dark:text-white tracking-tight">Selecionar Produto / Serviço</h2>
+                <p className="text-xs text-slate-500 font-medium">Pesquise e clique para selecionar</p>
+              </div>
+              <button onClick={() => setProductPickerOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 rounded-xl transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-4">
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="Buscar produto ou serviço..."
+                  value={productSearch}
+                  onChange={e => setProductSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none transition-all font-medium text-sm text-slate-800 dark:text-white"
+                />
+              </div>
+              <div className="max-h-[360px] overflow-y-auto custom-scrollbar space-y-1">
+                {(() => {
+                  const allItems = services
+                    .map(s => ({ label: s.description, type: 'Serviço', price: null as number | null }))
+                    .filter(item => item.label.toLowerCase().includes(productSearch.toLowerCase()));
+                  return allItems.length > 0 ? allItems.map((item, i) => (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        setItemDesc(item.label);
+                        setProductPickerOpen(false);
+                      }}
+                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-[var(--primary-color)] hover:bg-orange-50 dark:hover:bg-[var(--primary-color)]/5 transition-all text-left group"
+                    >
+                      <span className="font-bold text-sm text-slate-800 dark:text-white group-hover:text-[var(--primary-color)]">{item.label}</span>
+                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-400 group-hover:bg-[var(--primary-color)] group-hover:text-white transition-all">Serviço</span>
+                    </button>
+                  )) : (
+                    <div className="py-10 text-center text-slate-400">
+                      <p className="font-bold text-sm">Nenhum serviço encontrado</p>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Material Picker Popup */}
+      {materialPickerOpen && (
+        <div className="fixed inset-0 z-[350] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+              <div>
+                <h2 className="text-base font-black text-slate-800 dark:text-white tracking-tight">Selecionar Material</h2>
+                <p className="text-xs text-slate-500 font-medium">Matéria Prima, Acabamentos e Produtos de Revenda</p>
+              </div>
+              <button onClick={() => setMaterialPickerOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 rounded-xl transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-4">
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="Buscar material..."
+                  value={materialSearch}
+                  onChange={e => setMaterialSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none transition-all font-medium text-sm text-slate-800 dark:text-white"
+                />
+              </div>
+              <div className="max-h-[360px] overflow-y-auto custom-scrollbar space-y-1">
+                {(() => {
+                  const q = materialSearch.toLowerCase();
+                  const matItems = materials
+                    .filter(m => m.name.toLowerCase().includes(q))
+                    .map(m => ({ id: m.id, name: m.name, group: m.group || '', price: m.sellingPrice, badge: 'Matéria Prima' }));
+                  const prodItems = products
+                    .filter(p => (p.type === 'Acabamentos' || p.type === 'Produtos de Revenda') && p.description.toLowerCase().includes(q))
+                    .map(p => ({ id: p.id, name: p.description, group: p.group || '', price: p.sellingPrice, badge: p.type }));
+                  const allItems = [...matItems, ...prodItems];
+                  return allItems.length > 0 ? allItems.map(item => (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setItemMaterialId(item.name);
+                        if (item.price) setItemPrice(item.price);
+                        if (!itemDesc) setItemDesc(item.name);
+                        // Clear dimensions if selecting a product (no m² needed)
+                        if (item.badge === 'Acabamentos' || item.badge === 'Produtos de Revenda') {
+                          setItemLength(0);
+                          setItemWidth(0);
+                        }
+                        setMaterialPickerOpen(false);
+                      }}
+                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-[var(--primary-color)] hover:bg-orange-50 dark:hover:bg-[var(--primary-color)]/5 transition-all text-left group"
+                    >
+                      <div>
+                        <span className="font-bold text-sm text-slate-800 dark:text-white group-hover:text-[var(--primary-color)]">{item.name}</span>
+                        {item.group && <span className="ml-2 text-[10px] text-slate-400 font-medium">{item.group}</span>}
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-xs font-black text-[var(--primary-color)]">
+                          {item.price ? `R$ ${item.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
+                        </span>
+                        <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-md text-slate-400">{item.badge}</span>
+                      </div>
+                    </button>
+                  )) : (
+                    <div className="py-10 text-center text-slate-400">
+                      <p className="font-bold text-sm">Nenhum item encontrado</p>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

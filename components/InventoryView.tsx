@@ -120,6 +120,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               <tr className="bg-slate-50/50 border-b border-slate-100">
                 <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest w-24">Código</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Matéria Prima</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Espessura</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Estoque</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Sugerido</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Venda</th>
@@ -146,6 +147,9 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                         <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{material.brand || material.supplier || 'Geral'}</div>
                       </div>
                     </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-slate-500">
+                    {material.thickness ? `${material.thickness} cm` : <span className="text-slate-300">—</span>}
                   </td>
                   <td className="px-6 py-4">
                     <div className={`font-bold ${material.stockQuantity < material.minStock ? 'text-red-500' : 'text-slate-600'}`}>

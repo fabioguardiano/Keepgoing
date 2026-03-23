@@ -48,6 +48,7 @@ export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onCl
     },
     rgInsc: '',
     cellphone: '',
+    contactName: '',
     observations: ''
   });
 
@@ -80,6 +81,7 @@ export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onCl
         },
         rgInsc: '',
         cellphone: '',
+        contactName: '',
         observations: ''
       });
     }
@@ -484,6 +486,15 @@ export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onCl
           {activeTab === 'extras' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2">
+                  <label className={labelClass}>Nome do Contato</label>
+                  <input
+                    className={inputClass}
+                    value={formData.contactName || ''}
+                    onChange={e => setFormData({...formData, contactName: e.target.value})}
+                    placeholder="Nome da pessoa de contato"
+                  />
+                </div>
                 <div>
                   <label className={labelClass}>Telefone</label>
                   <input 

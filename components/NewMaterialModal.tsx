@@ -62,26 +62,62 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
   });
 
   const [activeTab, setActiveTab] = useState<'geral' | 'historico' | 'nfe'>('geral');
+  const [brlDisplay, setBrlDisplay] = useState({ unitCost: '0,00', freightCost: '0,00', sellingPrice: '0,00' });
+
+  const fmtBRL = (n: number) => (n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const parseBRL = (s: string) => parseFloat(s.replace(/\./g, '').replace(',', '.')) || 0;
 
   useEffect(() => {
     if (editingMaterial) {
       const { id, ...rest } = editingMaterial;
       setFormData(rest);
+      setBrlDisplay({
+        unitCost: fmtBRL(rest.unitCost),
+        freightCost: fmtBRL(rest.freightCost),
+        sellingPrice: fmtBRL(rest.sellingPrice),
+      });
     } else {
-      // Calculate next code
       const nextCode = materials.length > 0
         ? Math.max(...materials.map(m => parseInt(m.code) || 0)) + 1
         : 1;
 
-      setFormData(prev => ({ 
-        ...prev, 
+      setFormData({
+        name: '',
         type: defaultType,
         code: nextCode.toString(),
         registrationDate: new Date().toISOString().split('T')[0],
-        status: 'ativo',
+        group: '',
+        brand: '',
+        unit: 'M2',
+        stockQuantity: 0,
+        minStock: 0,
+        supplier: '',
+        stockLocation: '',
+        m2PerUnit: 0,
+        weight: 0,
+        unitCost: 0,
+        freightCost: 0,
+        lossPercentage: 20,
+        taxPercentage: 6,
+        profitMargin: 46.5,
+        commissionPercentage: 2.5,
+        discountPercentage: 5,
         dolarRate: exchangeRates.usd,
-        euroRate: exchangeRates.eur
-      }));
+        euroRate: exchangeRates.eur,
+        bcfp: 0,
+        suggestedPrice: 0,
+        sellingPrice: 0,
+        currency: 'BRL',
+        status: 'ativo',
+        imageUrl: '',
+        specialTableMargin: 0,
+        specialTableValue: 0,
+        specialTableCommission: 0,
+        thickness: 0,
+        difal: 0,
+        nfeData: { ncm: '', cfop: '', icms: 0, ipi: 0 }
+      });
+      setBrlDisplay({ unitCost: '0,00', freightCost: '0,00', sellingPrice: '0,00' });
     }
   }, [editingMaterial, isOpen, defaultType, materials, exchangeRates]);
 
@@ -180,21 +216,8 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
       <div className="bg-white w-full max-w-5xl rounded-[32px] shadow-2xl overflow-hidden border border-slate-100">
         {/* Type Selector Header */}
         <div className="bg-slate-100 px-8 py-3 border-b border-slate-200 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            {(['Matéria Prima', 'Produtos de Revenda', 'Serviços', 'Colocação'] as Category[]).map(type => (
-              <label key={type} className="flex items-center gap-2 cursor-pointer group">
-                <input 
-                  type="radio" 
-                  name="materialType" 
-                  className="w-4 h-4 accent-[var(--primary-color)]"
-                  checked={formData.type === type}
-                  onChange={() => setFormData({...formData, type})}
-                />
-                <span className={`text-xs font-black uppercase tracking-wider ${formData.type === type ? 'text-[var(--primary-color)]' : 'text-slate-400 group-hover:text-slate-600'}`}>
-                  {type}
-                </span>
-              </label>
-            ))}
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-black uppercase tracking-wider text-[var(--primary-color)]">Matéria Prima</span>
           </div>
           <div className="flex items-center gap-4">
              <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200">
@@ -321,7 +344,9 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                 <div className="col-span-4 space-y-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
                   <div className="flex items-center justify-between gap-2">
                      <label className={labelClass}>Custo Unitário (R$)</label>
-                     <input type="number" step="0.01" className={`${inputClass} !w-24 text-right`} value={formData.unitCost} onChange={e => setFormData({...formData, unitCost: Number(e.target.value)})} />
+                     <input type="text" inputMode="decimal" className={`${inputClass} !w-24 text-right`} value={brlDisplay.unitCost}
+                       onChange={e => { const r = e.target.value.replace(/[^0-9,]/g,''); setBrlDisplay(p=>({...p,unitCost:r})); setFormData(p=>({...p,unitCost:parseBRL(r)})); }}
+                       onBlur={() => setBrlDisplay(p=>({...p,unitCost:fmtBRL(formData.unitCost)}))} />
                   </div>
                   <div className="flex items-center justify-between gap-2">
                      <label className={labelClass}>DIFAL (%)</label>
@@ -329,7 +354,9 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                   </div>
                   <div className="flex items-center justify-between gap-2">
                      <label className={labelClass}>Frete (R$)</label>
-                     <input type="number" step="0.01" className={`${inputClass} !w-24 text-right`} value={formData.freightCost} onChange={e => setFormData({...formData, freightCost: Number(e.target.value)})} />
+                     <input type="text" inputMode="decimal" className={`${inputClass} !w-24 text-right`} value={brlDisplay.freightCost}
+                       onChange={e => { const r = e.target.value.replace(/[^0-9,]/g,''); setBrlDisplay(p=>({...p,freightCost:r})); setFormData(p=>({...p,freightCost:parseBRL(r)})); }}
+                       onBlur={() => setBrlDisplay(p=>({...p,freightCost:fmtBRL(formData.freightCost)}))} />
                   </div>
                   <div className="flex items-center justify-between gap-2">
                      <label className={labelClass}>Perdas (%)</label>
@@ -430,12 +457,13 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Preço de Venda Praticado</label>
                     <div className="flex items-center gap-3">
                        <span className="text-xl font-black text-slate-400">R$</span>
-                       <input 
-                         type="number" 
-                         step="0.01" 
-                         className="bg-transparent border-b-2 border-slate-700 w-full text-3xl font-black focus:outline-none focus:border-[var(--primary-color)] transition-colors" 
-                         value={formData.sellingPrice} 
-                         onChange={e => setFormData({...formData, sellingPrice: Number(e.target.value)})} 
+                       <input
+                         type="text"
+                         inputMode="decimal"
+                         className="bg-transparent border-b-2 border-slate-700 w-full text-3xl font-black focus:outline-none focus:border-[var(--primary-color)] transition-colors"
+                         value={brlDisplay.sellingPrice}
+                         onChange={e => { const r = e.target.value.replace(/[^0-9,]/g,''); setBrlDisplay(p=>({...p,sellingPrice:r})); setFormData(p=>({...p,sellingPrice:parseBRL(r)})); }}
+                         onBlur={() => setBrlDisplay(p=>({...p,sellingPrice:fmtBRL(formData.sellingPrice)}))}
                        />
                     </div>
                      <button 

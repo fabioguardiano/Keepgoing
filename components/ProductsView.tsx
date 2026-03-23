@@ -38,10 +38,10 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
   const filteredAndSortedProducts = products
     .filter(p => p.type === category)
     .filter(p => showInactive || p.status === 'ativo')
-    .filter(p => 
-      p.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.code.includes(searchTerm) ||
-      p.group.toLowerCase().includes(searchTerm.toLowerCase())
+    .filter(p =>
+      (p.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.code || '').includes(searchTerm) ||
+      (p.group || '').toLowerCase().includes(searchTerm.toLowerCase())
     )
     .sort((a, b) => {
       let comparison = 0;
@@ -162,7 +162,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                 <tr key={product.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-6 py-4">
                     <span className="text-xs font-black text-slate-400 bg-slate-100 px-2 py-1 rounded-lg">
-                      {product.code}
+                      {product.code || String(filteredAndSortedProducts.indexOf(product) + 1).padStart(2, '0')}
                     </span>
                   </td>
                   <td className="px-6 py-4">

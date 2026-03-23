@@ -39,23 +39,52 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
   });
 
   const [activeTab, setActiveTab] = useState<'geral' | 'precos' | 'nfe'>('geral');
+  const [brlDisplay, setBrlDisplay] = useState({ unitCost: '0,00', freight: '0,00', sellingPrice: '0,00' });
+
+  const fmtBRL = (n: number) => (n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const parseBRL = (s: string) => parseFloat(s.replace(/\./g, '').replace(',', '.')) || 0;
 
   useEffect(() => {
+    const categoryProducts = products.filter(p => p.type === defaultType);
+    const maxCode = categoryProducts.length > 0
+      ? Math.max(...categoryProducts.map(p => parseInt(p.code) || 0))
+      : 0;
+    const nextCode = String(maxCode + 1).padStart(2, '0');
+
     if (editingProduct) {
       const { id, createdAt, ...rest } = editingProduct;
-      setFormData(rest);
+      const normalizedCode = rest.code
+        ? String(parseInt(rest.code) || 0).padStart(2, '0')
+        : nextCode;
+      const data = { ...rest, code: normalizedCode };
+      setFormData(data);
+      setBrlDisplay({
+        unitCost: fmtBRL(data.unitCost),
+        freight: fmtBRL(data.freight),
+        sellingPrice: fmtBRL(data.sellingPrice),
+      });
     } else {
-      // Calculate next code based on all products (to ensure uniqueness across categories if needed)
-      const nextCode = products.length > 0
-        ? Math.max(...products.map(p => parseInt(p.code) || 0)) + 1
-        : 1;
-
-      setFormData(prev => ({ 
-        ...prev, 
+      setFormData({
         type: defaultType,
-        code: nextCode.toString(),
-        status: 'ativo'
-      }));
+        code: nextCode,
+        group: '',
+        description: '',
+        unit: 'UN',
+        stockBalance: 0,
+        minStock: 0,
+        unitCost: 0,
+        freight: 0,
+        lossPercentage: 0,
+        taxPercentage: 0,
+        profitMargin: 0,
+        commissionPercentage: 0,
+        discountPercentage: 0,
+        suggestedPrice: 0,
+        sellingPrice: 0,
+        imageUrl: '',
+        status: 'ativo',
+      });
+      setBrlDisplay({ unitCost: '0,00', freight: '0,00', sellingPrice: '0,00' });
     }
   }, [editingProduct, isOpen, defaultType, products]);
 
@@ -165,7 +194,7 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="md:col-span-1">
                   <label className={labelClass}>Código</label>
-                  <input required className={inputClass} value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})} />
+                  <input required readOnly className={`${inputClass} bg-slate-100 cursor-not-allowed`} value={formData.code} onChange={() => {}} />
                 </div>
                 <div className="md:col-span-2">
                   <label className={labelClass}>Grupo de Produto</label>
@@ -267,11 +296,15 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className={labelClass}>Custo Unitário (R$)</label>
-                      <input type="number" step="0.01" className={inputClass} value={formData.unitCost} onChange={e => setFormData({...formData, unitCost: Number(e.target.value)})} />
+                      <input type="text" inputMode="decimal" className={inputClass} value={brlDisplay.unitCost}
+                        onChange={e => { const r = e.target.value.replace(/[^0-9,]/g,''); setBrlDisplay(p=>({...p,unitCost:r})); setFormData(p=>({...p,unitCost:parseBRL(r)})); }}
+                        onBlur={() => setBrlDisplay(p=>({...p,unitCost:fmtBRL(formData.unitCost)}))} />
                     </div>
                     <div>
                       <label className={labelClass}>Frete (R$)</label>
-                      <input type="number" step="0.01" className={inputClass} value={formData.freight} onChange={e => setFormData({...formData, freight: Number(e.target.value)})} />
+                      <input type="text" inputMode="decimal" className={inputClass} value={brlDisplay.freight}
+                        onChange={e => { const r = e.target.value.replace(/[^0-9,]/g,''); setBrlDisplay(p=>({...p,freight:r})); setFormData(p=>({...p,freight:parseBRL(r)})); }}
+                        onBlur={() => setBrlDisplay(p=>({...p,freight:fmtBRL(formData.freight)}))} />
                     </div>
                     <div>
                       <label className={labelClass}>Perdas (%)</label>
@@ -307,12 +340,13 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
                           </div>
                           <div className="text-right">
                             <label className={labelClass}>Preço Praticado</label>
-                            <input 
-                              type="number" 
-                              step="0.01" 
-                              className="w-32 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-right font-black text-slate-800" 
-                              value={formData.sellingPrice} 
-                              onChange={e => setFormData({...formData, sellingPrice: Number(e.target.value)})} 
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              className="w-32 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-right font-black text-slate-800"
+                              value={brlDisplay.sellingPrice}
+                              onChange={e => { const r = e.target.value.replace(/[^0-9,]/g,''); setBrlDisplay(p=>({...p,sellingPrice:r})); setFormData(p=>({...p,sellingPrice:parseBRL(r)})); }}
+                              onBlur={() => setBrlDisplay(p=>({...p,sellingPrice:fmtBRL(formData.sellingPrice)}))}
                             />
                           </div>
                         </div>

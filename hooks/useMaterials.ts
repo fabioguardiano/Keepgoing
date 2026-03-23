@@ -23,6 +23,7 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
       if (materialsData) {
         const mappedMaterials = materialsData.map(m => ({
           ...m,
+          group: m.product_group || '',
           unitCost: m.unit_cost,
           minStock: m.min_stock,
           stockQuantity: m.stock_quantity,
@@ -41,7 +42,10 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
           imageUrl: m.image_url,
           stockLocation: m.inventory_location,
           m2PerUnit: m.m2_per_unit,
-          supplier: m.supplier || ''
+          supplier: m.supplier || '',
+          specialTableMargin: m.special_table_margin ?? 0,
+          specialTableValue: m.special_table_value ?? 0,
+          specialTableCommission: m.special_table_commission ?? 0,
         }));
         setMaterials(mappedMaterials as Material[]);
         localStorage.setItem(`marmo_materials_${companyId || 'legacy'}`, JSON.stringify(mappedMaterials));
@@ -69,6 +73,7 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
         name: m.name,
         type: m.type,
         status: m.status,
+        product_group: m.group,
         unit_cost: m.unitCost,
         unit: m.unit,
         min_stock: m.minStock,
@@ -78,6 +83,9 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
         supplier: m.supplier,
         difal: m.difal,
         freight_cost: m.freightCost,
+        special_table_margin: m.specialTableMargin,
+        special_table_value: m.specialTableValue,
+        special_table_commission: m.specialTableCommission,
         tax_percentage: m.taxPercentage,
         loss_percentage: m.lossPercentage,
         profit_margin: m.profitMargin,
@@ -108,6 +116,7 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
       const savedRow = data as any;
       const savedMaterial = {
         ...savedRow,
+        group: savedRow.product_group || '',
         unitCost: savedRow.unit_cost,
         minStock: savedRow.min_stock,
         stockQuantity: savedRow.stock_quantity,
@@ -126,7 +135,10 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
         imageUrl: savedRow.image_url,
         stockLocation: savedRow.inventory_location,
         m2PerUnit: savedRow.m2_per_unit,
-        supplier: savedRow.supplier || ''
+        supplier: savedRow.supplier || '',
+        specialTableMargin: savedRow.special_table_margin ?? 0,
+        specialTableValue: savedRow.special_table_value ?? 0,
+        specialTableCommission: savedRow.special_table_commission ?? 0,
       } as Material;
 
       const isUpdate = materials.some(x => x.id === m.id || x.id === savedMaterial.id);
