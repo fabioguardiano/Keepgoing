@@ -33,6 +33,9 @@ export const SalesView: React.FC<SalesViewProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('kanban');
   const [statusFilter, setStatusFilter] = useState<'todos' | 'Orçamento' | 'Pedido' | 'Cancelado'>('todos');
+  const [dateFilter, setDateFilter] = useState<'mes_atual' | 'mes_passado' | 'ano_atual' | 'personalizado'>('mes_atual');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [editingSale, setEditingSale] = useState<SalesOrder | null>(null);
   const [printingSale, setPrintingSale] = useState<SalesOrder | null>(null);
   const [isNewSaleModalOpen, setIsNewSaleModalOpen] = useState(false);
@@ -214,7 +217,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
 
       {viewMode === 'list' ? (
         <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
-          {/* Abas de filtro */}
+          {/* Abas de status */}
           <div className="flex items-center gap-1 px-4 pt-4 pb-0 border-b border-slate-100 dark:border-slate-800">
             {([
               { key: 'todos',      label: 'Todos',       count: sales.length },
@@ -243,8 +246,89 @@ export const SalesView: React.FC<SalesViewProps> = ({
             ))}
           </div>
 
-          {sales.length > 0 ? (
+          {/* Filtro de data */}
+          <div className="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">Período:</span>
+            {([
+              { key: 'mes_atual',    label: 'Mês Atual' },
+              { key: 'mes_passado',  label: 'Mês Passado' },
+              { key: 'ano_atual',    label: 'Ano Atual' },
+              { key: 'personalizado', label: 'Personalizado' },
+            ] as { key: typeof dateFilter; label: string }[]).map(opt => (
+              <button
+                key={opt.key}
+                onClick={() => setDateFilter(opt.key)}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
+                  dateFilter === opt.key
+                    ? 'bg-[var(--primary-color)] text-white shadow-sm'
+                    : 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:border-[var(--primary-color)] hover:text-[var(--primary-color)]'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+            {dateFilter === 'personalizado' && (
+              <div className="flex items-center gap-2 ml-1">
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={e => setDateFrom(e.target.value)}
+                  className="px-2 py-1.5 rounded-xl text-[11px] font-bold border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-white outline-none focus:border-[var(--primary-color)]"
+                />
+                <span className="text-slate-400 text-xs font-bold">até</span>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={e => setDateTo(e.target.value)}
+                  className="px-2 py-1.5 rounded-xl text-[11px] font-bold border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-white outline-none focus:border-[var(--primary-color)]"
+                />
+              </div>
+            )}
+          </div>
+
+          {(() => {
+            const now = new Date();
+            const filterByDate = (s: SalesOrder) => {
+              const d = new Date(s.createdAt);
+              if (dateFilter === 'mes_atual') {
+                return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+              }
+              if (dateFilter === 'mes_passado') {
+                const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                return d.getFullYear() === prev.getFullYear() && d.getMonth() === prev.getMonth();
+              }
+              if (dateFilter === 'ano_atual') {
+                return d.getFullYear() === now.getFullYear();
+              }
+              if (dateFilter === 'personalizado') {
+                const from = dateFrom ? new Date(dateFrom + 'T00:00:00') : null;
+                const to   = dateTo   ? new Date(dateTo   + 'T23:59:59') : null;
+                if (from && d < from) return false;
+                if (to   && d > to  ) return false;
+                return true;
+              }
+              return true;
+            };
+
+            const filtered = sales
+              .filter(s => statusFilter === 'todos' || s.status === statusFilter)
+              .filter(filterByDate)
+              .filter(s => (s.clientName || '').toLowerCase().includes(searchTerm.toLowerCase()) || (s.orderNumber || '').includes(searchTerm))
+              .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+            const totalFiltrado = filtered.reduce((acc, s) => acc + (s.totals?.geral || 0), 0);
+
+            return filtered.length > 0 ? (
             <div className="overflow-x-auto">
+              {/* Rodapé com total do período */}
+              <div className="px-6 py-2 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-400">
+                  {filtered.length} registro{filtered.length !== 1 ? 's' : ''} encontrado{filtered.length !== 1 ? 's' : ''}
+                </span>
+                <span className="text-[11px] font-black text-slate-700 dark:text-white">
+                  Total do período: <span className="text-[var(--primary-color)]">R$ {totalFiltrado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </span>
+              </div>
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-800/50 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
@@ -258,11 +342,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {sales
-                    .filter(s => statusFilter === 'todos' || s.status === statusFilter)
-                    .filter(s => (s.clientName || '').toLowerCase().includes(searchTerm.toLowerCase()) || (s.orderNumber || '').includes(searchTerm))
-                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                    .map(sale => (
+                  {filtered.map(sale => (
                       <tr key={sale.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
@@ -317,14 +397,15 @@ export const SalesView: React.FC<SalesViewProps> = ({
               </table>
             </div>
           ) : (
-            <div className="py-20 text-center">
-              <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FileText size={40} className="text-slate-200 dark:text-slate-700" />
+            <div className="py-16 text-center">
+              <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3">
+                <FileText size={32} className="text-slate-200 dark:text-slate-700" />
               </div>
-              <h3 className="font-bold text-slate-800 dark:text-white mb-1">Nenhuma venda registrada</h3>
-              <p className="text-slate-400 dark:text-slate-500 max-w-xs mx-auto text-sm">Comece criando um orçamento para ver as vendas aparecerem aqui.</p>
+              <h3 className="font-bold text-slate-700 dark:text-white mb-1">Nenhum registro encontrado</h3>
+              <p className="text-slate-400 dark:text-slate-500 max-w-xs mx-auto text-sm">Tente ajustar os filtros de status ou período.</p>
             </div>
-          )}
+          );
+          })()}
         </div>
       ) : (
         <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
