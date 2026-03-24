@@ -660,9 +660,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-slate-800 dark:text-white transition-all appearance-none"
                 >
                   <option value="">Nenhum parceiro</option>
-                  {architects
-                    .filter(a => a.status === 'ativo')
-                    .map(a => (
+                  {architects?.filter(a => a.status === 'ativo').map(a => (
                       <option key={a.id} value={a.tradingName || a.legalName}>
                         {a.tradingName || a.legalName}
                       </option>
@@ -958,7 +956,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   onChange={e => setPaymentConditions(e.target.value)}
                   placeholder="Observações adicionais sobre o pagamento..."
                   className="w-full p-2 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-xs text-slate-800 dark:text-white transition-all h-48 resize-none"
-                />
+                ></textarea>
               </div>
               <div>
                 <label className={`text-[9px] font-black uppercase tracking-[0.2em] mb-1 block ${!(parseInt(deliveryDeadline) > 0) ? 'text-red-400' : 'text-slate-400'}`}>
@@ -1156,7 +1154,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   onChange={e => setRevertJustification(e.target.value)}
                   placeholder="Descreva o motivo do retorno deste pedido..."
                   className="w-full p-3 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-amber-400 rounded-2xl outline-none font-medium text-sm text-slate-800 dark:text-white resize-none h-24 transition-all"
-                />
+                ></textarea>
               </div>
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1.5">
@@ -1220,7 +1218,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
               </div>
               <div className="max-h-[360px] overflow-y-auto custom-scrollbar space-y-1">
                 {(() => {
-                  const allItems = services
+                  const allItems = (services || [])
                     .map(s => ({ label: s.description, type: 'Serviço', price: null as number | null }))
                     .filter(item => item.label.toLowerCase().includes(productSearch.toLowerCase()));
                   return allItems.length > 0 ? allItems.map((item, i) => (
@@ -1275,10 +1273,10 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
               <div className="max-h-[360px] overflow-y-auto custom-scrollbar space-y-1">
                 {(() => {
                   const q = materialSearch.toLowerCase();
-                  const matItems = materials
+                  const matItems = (materials || [])
                     .filter(m => m.name.toLowerCase().includes(q))
                     .map(m => ({ id: m.id, name: m.name, group: m.group || '', price: m.sellingPrice, badge: 'Matéria Prima' }));
-                  const prodItems = products
+                  const prodItems = (products || [])
                     .filter(p => (p.type === 'Acabamentos' || p.type === 'Produtos de Revenda') && p.description.toLowerCase().includes(q))
                     .map(p => ({ id: p.id, name: p.description, group: p.group || '', price: p.sellingPrice, badge: p.type }));
                   const allItems = [...matItems, ...prodItems];
