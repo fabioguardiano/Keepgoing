@@ -951,6 +951,34 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-3">
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">Observações</label>
+                <textarea
+                  value={paymentConditions}
+                  onChange={e => setPaymentConditions(e.target.value)}
+                  placeholder="Observações adicionais sobre o pagamento..."
+                  className="w-full p-2 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-xs text-slate-800 dark:text-white transition-all h-14 resize-none"
+                />
+              </div>
+              <div>
+                <label className={`text-[9px] font-black uppercase tracking-[0.2em] mb-1 block ${!(parseInt(deliveryDeadline) > 0) ? 'text-red-400' : 'text-slate-400'}`}>
+                  Prazo de Entrega {!(parseInt(deliveryDeadline) > 0) && <span className="normal-case font-bold">— obrigatório</span>}
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="1"
+                    value={deliveryDeadline}
+                    onChange={e => setDeliveryDeadline(e.target.value)}
+                    placeholder="0"
+                    className={`w-full p-1.5 bg-slate-50 dark:bg-slate-800 border-2 focus:border-[var(--primary-color)] rounded-lg outline-none font-bold text-xs text-slate-800 dark:text-white transition-all ${!(parseInt(deliveryDeadline) > 0) ? 'border-red-300' : 'border-transparent'}`}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-400 uppercase tracking-wider pointer-events-none">dias úteis</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
               {/* Bloco de Pagamento */}
               <div className={`rounded-xl p-3 space-y-2 border-2 ${saleType === 'Pedido' ? 'border-[var(--primary-color)]/30 bg-orange-50/40 dark:bg-slate-800/60' : 'border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30'}`}>
                 <p className={`text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5 ${saleType === 'Pedido' ? 'text-[var(--primary-color)]' : 'text-slate-400'}`}>
@@ -1028,85 +1056,60 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   );
                 })()}
               </div>
-              <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">Observações</label>
-                <textarea
-                  value={paymentConditions}
-                  onChange={e => setPaymentConditions(e.target.value)}
-                  placeholder="Observações adicionais sobre o pagamento..."
-                  className="w-full p-2 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-xs text-slate-800 dark:text-white transition-all h-14 resize-none"
-                />
-              </div>
-              <div>
-                <label className={`text-[9px] font-black uppercase tracking-[0.2em] mb-1 block ${!(parseInt(deliveryDeadline) > 0) ? 'text-red-400' : 'text-slate-400'}`}>
-                  Prazo de Entrega {!(parseInt(deliveryDeadline) > 0) && <span className="normal-case font-bold">— obrigatório</span>}
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    min="1"
-                    value={deliveryDeadline}
-                    onChange={e => setDeliveryDeadline(e.target.value)}
-                    placeholder="0"
-                    className={`w-full p-1.5 bg-slate-50 dark:bg-slate-800 border-2 focus:border-[var(--primary-color)] rounded-lg outline-none font-bold text-xs text-slate-800 dark:text-white transition-all ${!(parseInt(deliveryDeadline) > 0) ? 'border-red-300' : 'border-transparent'}`}
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-400 uppercase tracking-wider pointer-events-none">dias úteis</span>
-                </div>
-              </div>
-            </div>
 
-            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 space-y-2">
-              <div className="flex justify-between items-center text-slate-500">
-                <span className="font-bold text-[10px]">Total dos Itens</span>
-                <span className="font-black text-[10px]">R$ {(subtotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex-1">
-                  <label className="text-[9px] font-black text-slate-400 uppercase mb-1 block">Desconto (%)</label>
-                  <input 
-                    type="number" 
-                    step="0.01"
-                    value={discountPercentage ? Number(discountPercentage).toFixed(2) : ''}
-                    onChange={e => {
-                      const perc = parseFloat(e.target.value) || 0;
-                      setDiscountPercentage(perc);
-                      setDiscountValue(subtotal * (perc / 100));
-                    }}
-                    className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-bold text-slate-800 dark:text-white"
-                  />
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 space-y-2">
+                <div className="flex justify-between items-center text-slate-500">
+                  <span className="font-bold text-[10px]">Total dos Itens</span>
+                  <span className="font-black text-[10px]">R$ {(subtotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
-                <div className="flex-1">
-                  <label className="text-[9px] font-black text-slate-400 uppercase mb-1 block">Valor Desconto (R$)</label>
-                  <input 
-                    type="number" 
-                    step="0.01"
-                    value={discountValue ? Number(discountValue).toFixed(2) : ''}
-                    onChange={e => {
-                      const val = parseFloat(e.target.value) || 0;
-                      setDiscountValue(val);
-                      setDiscountPercentage(subtotal > 0 ? (val / subtotal) * 100 : 0);
-                    }}
-                    className="w-full p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none font-bold text-xs text-slate-800 dark:text-white"
-                  />
-                </div>
-              </div>
-              <div className="pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between items-end">
-                <div>
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Total Geral</span>
-                  <p className="text-lg font-black text-[var(--primary-color)] tracking-tight">R$ {(totalGeral || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                </div>
-                {isLocked ? (
-                  <div className="flex items-center gap-2 px-4 py-2.5 bg-green-50 border border-green-200 rounded-xl text-green-700 text-xs font-black">
-                    <Eye size={14} /> Somente leitura — use "Reverter para Orçamento" para editar
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase mb-1 block">Desconto (%)</label>
+                    <input 
+                      type="number" 
+                      step="0.01"
+                      value={discountPercentage ? Number(discountPercentage).toFixed(2) : ''}
+                      onChange={e => {
+                        const perc = parseFloat(e.target.value) || 0;
+                        setDiscountPercentage(perc);
+                        setDiscountValue(subtotal * (perc / 100));
+                      }}
+                      className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-bold text-slate-800 dark:text-white"
+                    />
                   </div>
-                ) : (
-                  <button
-                    onClick={handleSave}
-                    className="px-4 py-2.5 bg-[var(--primary-color)] text-white rounded-xl font-black shadow-xl shadow-[var(--primary-color)]/30 hover:opacity-90 transition-all flex items-center gap-2 text-xs"
-                  >
-                    <Save size={16} /> Gravar {saleType}
-                  </button>
-                )}
+                  <div className="flex-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase mb-1 block">Valor Desconto (R$)</label>
+                    <input 
+                      type="number" 
+                      step="0.01"
+                      value={discountValue ? Number(discountValue).toFixed(2) : ''}
+                      onChange={e => {
+                        const val = parseFloat(e.target.value) || 0;
+                        setDiscountValue(val);
+                        setDiscountPercentage(subtotal > 0 ? (val / subtotal) * 100 : 0);
+                      }}
+                      className="w-full p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none font-bold text-xs text-slate-800 dark:text-white"
+                    />
+                  </div>
+                </div>
+                <div className="pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between items-end">
+                  <div>
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Total Geral</span>
+                    <p className="text-lg font-black text-[var(--primary-color)] tracking-tight">R$ {(totalGeral || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  </div>
+                  {isLocked ? (
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-green-50 border border-green-200 rounded-xl text-green-700 text-xs font-black">
+                      <Eye size={14} /> Somente leitura — use "Reverter para Orçamento" para editar
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleSave}
+                      className="px-4 py-2.5 bg-[var(--primary-color)] text-white rounded-xl font-black shadow-xl shadow-[var(--primary-color)]/30 hover:opacity-90 transition-all flex items-center gap-2 text-xs"
+                    >
+                      <Save size={16} /> Gravar {saleType}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
