@@ -952,12 +952,12 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-3">
               {/* Bloco de Pagamento */}
-              <div className={`rounded-2xl p-4 space-y-3 border-2 ${saleType === 'Pedido' ? 'border-[var(--primary-color)]/30 bg-orange-50/40 dark:bg-slate-800/60' : 'border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30'}`}>
-                <p className={`text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5 ${saleType === 'Pedido' ? 'text-[var(--primary-color)]' : 'text-slate-400'}`}>
+              <div className={`rounded-xl p-3 space-y-2 border-2 ${saleType === 'Pedido' ? 'border-[var(--primary-color)]/30 bg-orange-50/40 dark:bg-slate-800/60' : 'border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30'}`}>
+                <p className={`text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5 ${saleType === 'Pedido' ? 'text-[var(--primary-color)]' : 'text-slate-400'}`}>
                   Condições de Pagamento {saleType === 'Pedido' && <span className="text-red-400">*</span>}
                 </p>
                 <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Forma de Pagamento</label>
+                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Forma de Pagamento</label>
                   <select
                     value={paymentMethodId}
                     onChange={e => {
@@ -965,7 +965,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                       setPaymentMethodId(e.target.value);
                       setPaymentInstallments(pm?.type === 'aprazo' ? (pm.installments ?? 1) : 1);
                     }}
-                    className={`w-full p-2.5 bg-white dark:bg-slate-700 rounded-xl border-2 outline-none font-bold text-sm text-slate-800 dark:text-white appearance-none transition-all ${saleType === 'Pedido' && !paymentMethodId ? 'border-red-300' : 'border-transparent focus:border-[var(--primary-color)]'}`}
+                    className={`w-full p-1.5 bg-white dark:bg-slate-700 rounded-lg border-2 outline-none font-bold text-xs text-slate-800 dark:text-white appearance-none transition-all ${saleType === 'Pedido' && !paymentMethodId ? 'border-red-300' : 'border-transparent focus:border-[var(--primary-color)]'}`}
                   >
                     <option value="">-- Selecione --</option>
                     {paymentMethods.filter(p => p.active).map(p => (
@@ -975,11 +975,11 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 </div>
                 {paymentMethods.find(p => p.id === paymentMethodId)?.type === 'aprazo' && (
                   <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Parcelas</label>
+                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Parcelas</label>
                     <select
                       value={paymentInstallments}
                       onChange={e => setPaymentInstallments(parseInt(e.target.value))}
-                      className="w-full p-2.5 bg-white dark:bg-slate-700 rounded-xl border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-sm text-slate-800 dark:text-white appearance-none"
+                      className="w-full p-1.5 bg-white dark:bg-slate-700 rounded-lg border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-xs text-slate-800 dark:text-white appearance-none"
                     >
                       {Array.from({ length: paymentMethods.find(p => p.id === paymentMethodId)?.installments ?? 1 }, (_, i) => i + 1).map(n => (
                         <option key={n} value={n}>{n === 1 ? '1x (à vista)' : `${n}x`}</option>
@@ -988,14 +988,14 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   </div>
                 )}
                 <div>
-                  <label className={`text-[10px] font-bold uppercase tracking-widest block mb-1 ${saleType === 'Pedido' && !firstDueDate ? 'text-red-400' : 'text-slate-400'}`}>
+                  <label className={`text-[9px] font-bold uppercase tracking-widest block mb-1 ${saleType === 'Pedido' && !firstDueDate ? 'text-red-400' : 'text-slate-400'}`}>
                     Data do 1º Vencimento {saleType === 'Pedido' && <span className="text-red-400">*</span>}
                   </label>
                   <input
                     type="date"
                     value={firstDueDate}
                     onChange={e => setFirstDueDate(e.target.value)}
-                    className={`w-full p-2.5 bg-white dark:bg-slate-700 rounded-xl border-2 outline-none font-bold text-sm text-slate-800 dark:text-white transition-all ${saleType === 'Pedido' && !firstDueDate ? 'border-red-300' : 'border-transparent focus:border-[var(--primary-color)]'}`}
+                    className={`w-full p-1.5 bg-white dark:bg-slate-700 rounded-lg border-2 outline-none font-bold text-xs text-slate-800 dark:text-white transition-all ${saleType === 'Pedido' && !firstDueDate ? 'border-red-300' : 'border-transparent focus:border-[var(--primary-color)]'}`}
                   />
                 </div>
                 {/* ── Preview de parcelas ao vivo ── */}
@@ -1010,17 +1010,17 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   const feeTotal = hasInstallmentFee ? totalGeral * (1 + (pm.installmentFee! * (n - 1)) / 100) : totalGeral;
                   const installmentValue = n > 1 ? feeTotal / n : baseValue + diff;
                   return (
-                    <div className="bg-[var(--primary-color)] rounded-xl p-3 text-white">
-                      <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-1">{pm.name}</p>
+                    <div className="bg-[var(--primary-color)]/10 dark:bg-[var(--primary-color)]/20 rounded-lg p-2.5 border border-[var(--primary-color)]/20">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-[var(--primary-color)] mb-0.5">{pm.name}</p>
                       {n === 1 ? (
-                        <p className="text-2xl font-black">R$ {fmtR(totalGeral)} <span className="text-sm font-bold opacity-80">à vista</span></p>
+                        <p className="text-lg font-black text-[var(--primary-color)]">R$ {fmtR(totalGeral)} <span className="text-[10px] font-bold opacity-80 italic">à vista</span></p>
                       ) : (
                         <>
-                          <p className="text-2xl font-black">{n}x de R$ {fmtR(installmentValue)}</p>
+                          <p className="text-lg font-black text-[var(--primary-color)]">{n}x de R$ {fmtR(installmentValue)}</p>
                           {hasInstallmentFee ? (
-                            <p className="text-[11px] opacity-80 font-bold mt-0.5">Total com taxas: R$ {fmtR(feeTotal)}</p>
+                            <p className="text-[10px] text-[var(--primary-color)]/70 font-bold mt-0.5">Total com taxas: R$ {fmtR(feeTotal)}</p>
                           ) : (
-                            <p className="text-[11px] opacity-80 font-bold mt-0.5">Total: R$ {fmtR(totalGeral)}</p>
+                            <p className="text-[10px] text-[var(--primary-color)]/70 font-bold mt-0.5">Total: R$ {fmtR(totalGeral)}</p>
                           )}
                         </>
                       )}
@@ -1029,16 +1029,16 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 })()}
               </div>
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">Observações</label>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">Observações</label>
                 <textarea
                   value={paymentConditions}
                   onChange={e => setPaymentConditions(e.target.value)}
                   placeholder="Observações adicionais sobre o pagamento..."
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-2xl outline-none font-bold text-sm text-slate-800 dark:text-white transition-all h-16 resize-none"
+                  className="w-full p-2 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-xs text-slate-800 dark:text-white transition-all h-14 resize-none"
                 />
               </div>
               <div>
-                <label className={`text-[10px] font-black uppercase tracking-[0.2em] mb-1 block ${!(parseInt(deliveryDeadline) > 0) ? 'text-red-400' : 'text-slate-400'}`}>
+                <label className={`text-[9px] font-black uppercase tracking-[0.2em] mb-1 block ${!(parseInt(deliveryDeadline) > 0) ? 'text-red-400' : 'text-slate-400'}`}>
                   Prazo de Entrega {!(parseInt(deliveryDeadline) > 0) && <span className="normal-case font-bold">— obrigatório</span>}
                 </label>
                 <div className="relative">
@@ -1048,21 +1048,21 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     value={deliveryDeadline}
                     onChange={e => setDeliveryDeadline(e.target.value)}
                     placeholder="0"
-                    className={`w-full p-2.5 pr-24 bg-slate-50 dark:bg-slate-800 border-2 focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-slate-800 dark:text-white transition-all ${!(parseInt(deliveryDeadline) > 0) ? 'border-red-300' : 'border-transparent'}`}
+                    className={`w-full p-1.5 bg-slate-50 dark:bg-slate-800 border-2 focus:border-[var(--primary-color)] rounded-lg outline-none font-bold text-xs text-slate-800 dark:text-white transition-all ${!(parseInt(deliveryDeadline) > 0) ? 'border-red-300' : 'border-transparent'}`}
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase tracking-wider pointer-events-none">dias úteis</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-400 uppercase tracking-wider pointer-events-none">dias úteis</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 space-y-3">
+            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 space-y-2">
               <div className="flex justify-between items-center text-slate-500">
-                <span className="font-bold text-sm">Total dos Itens</span>
-                <span className="font-black text-sm">R$ {(subtotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="font-bold text-[10px]">Total dos Itens</span>
+                <span className="font-black text-[10px]">R$ {(subtotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center justify-between gap-3">
                 <div className="flex-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Desconto (%)</label>
+                  <label className="text-[9px] font-black text-slate-400 uppercase mb-1 block">Desconto (%)</label>
                   <input 
                     type="number" 
                     step="0.01"
@@ -1076,7 +1076,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Valor Desconto (R$)</label>
+                  <label className="text-[9px] font-black text-slate-400 uppercase mb-1 block">Valor Desconto (R$)</label>
                   <input 
                     type="number" 
                     step="0.01"
@@ -1086,14 +1086,14 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                       setDiscountValue(val);
                       setDiscountPercentage(subtotal > 0 ? (val / subtotal) * 100 : 0);
                     }}
-                    className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-bold text-slate-800 dark:text-white"
+                    className="w-full p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none font-bold text-xs text-slate-800 dark:text-white"
                   />
                 </div>
               </div>
               <div className="pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between items-end">
                 <div>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Total Geral</span>
-                  <p className="text-2xl font-black text-[var(--primary-color)] tracking-tight">R$ {(totalGeral || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Total Geral</span>
+                  <p className="text-lg font-black text-[var(--primary-color)] tracking-tight">R$ {(totalGeral || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 </div>
                 {isLocked ? (
                   <div className="flex items-center gap-2 px-4 py-2.5 bg-green-50 border border-green-200 rounded-xl text-green-700 text-xs font-black">
@@ -1102,7 +1102,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 ) : (
                   <button
                     onClick={handleSave}
-                    className="px-6 py-3 bg-[var(--primary-color)] text-white rounded-xl font-black shadow-xl shadow-[var(--primary-color)]/30 hover:opacity-90 transition-all flex items-center gap-2 text-sm"
+                    className="px-4 py-2.5 bg-[var(--primary-color)] text-white rounded-xl font-black shadow-xl shadow-[var(--primary-color)]/30 hover:opacity-90 transition-all flex items-center gap-2 text-xs"
                   >
                     <Save size={16} /> Gravar {saleType}
                   </button>
