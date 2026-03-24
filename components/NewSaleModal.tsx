@@ -131,6 +131,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const [materialPickerOpen, setMaterialPickerOpen] = useState(false);
   const [productSearch, setProductSearch] = useState('');
   const [materialSearch, setMaterialSearch] = useState('');
+  const [materialSwap, setMaterialSwap] = useState<{ env: string; newMaterialName: string; toReplace: string[] } | null>(null);
 
   const environments = Array.from(new Set([...items.map(i => i.environment || 'Sem Ambiente'), activeEnvironment, newEnvironmentName].filter(Boolean)));
 
@@ -359,7 +360,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
     }
   };
 
-  const updateEnvironmentMaterial = (envName: string, materialName: string) => {
+  const updateEnvironmentMaterial = (envName: string, materialName: string, onlyReplace?: string[]) => {
     const matFromMaterials = materials.find(m => m.name === materialName);
     const matFromProducts = products.find(p =>
       (p.type === 'Acabamentos' || p.type === 'Produtos de Revenda') && p.description === materialName
@@ -371,6 +372,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
     setItems(prevItems => prevItems.map(item => {
       if ((item.environment || 'Sem Ambiente') === envName) {
+        if (onlyReplace && !onlyReplace.includes(item.materialName || '')) return item;
         const m2 = item.m2 || 0;
         const newUnitPrice = resolvedPrice;
         const baseTotal = m2 > 0 ? (m2 * newUnitPrice) : (item.quantity * newUnitPrice);
@@ -388,8 +390,9 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
     }));
   };
 
-  const syncPricesWithMaterials = () => {
+  const syncPricesWithMaterials = (onlyEnv?: string) => {
     setItems(prevItems => prevItems.map(item => {
+      if (onlyEnv !== undefined && (item.environment || 'Sem Ambiente') !== onlyEnv) return item;
       if (item.materialId) {
         const material = materials.find(m => m.id === item.materialId);
         if (material) {
@@ -397,17 +400,12 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
           const newUnitPrice = material.sellingPrice || 0;
           const baseTotal = m2 > 0 ? (m2 * newUnitPrice) : (item.quantity * newUnitPrice);
           const serviceBonus = baseTotal * ((item.servicePercentage || 0) / 100);
-          
-          return {
-            ...item,
-            unitPrice: newUnitPrice,
-            totalPrice: baseTotal + serviceBonus
-          };
+          return { ...item, unitPrice: newUnitPrice, totalPrice: baseTotal + serviceBonus };
         }
       }
       return item;
     }));
-    alert('Preços sincronizados com o cadastro de materiais!');
+    alert(onlyEnv ? `Preços do ambiente "${onlyEnv}" sincronizados!` : 'Preços de todo o orçamento sincronizados!');
   };
 
   const subtotal = items.reduce((acc, item) => acc + (isFinite(item.totalPrice) ? item.totalPrice : 0), 0);
@@ -574,25 +572,25 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     onChange={(e) => setBlurMeasurements(e.target.checked)}
                     className="w-4 h-4 rounded text-[var(--primary-color)] focus:ring-[var(--primary-color)]"
                   />
-                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300 group-hover:text-slate-800 dark:group-hover:text-white transition-colors">
+                  <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 group-hover:text-slate-800 dark:group-hover:text-white transition-colors">
                     Ocultar Medidas
                   </span>
                 </label>
                 <div className="w-px h-6 bg-orange-200 dark:bg-slate-600"></div>
-                <button 
+                <button
                   onClick={handlePrint}
-                  className="p-2 text-[var(--primary-color)] hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all flex items-center gap-2 font-bold text-sm"
+                  className="p-2 text-[var(--primary-color)] hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all flex items-center gap-1.5 font-bold text-[11px]"
                   title="Imprimir Orçamento"
                 >
-                  <Printer size={18} /> Imprimir
+                  <Printer size={15} /> Imprimir
                 </button>
                 <div className="w-px h-6 bg-orange-200 dark:bg-slate-600"></div>
-                <button 
+                <button
                   onClick={syncPricesWithMaterials}
-                  className="p-2 text-blue-600 hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all flex items-center gap-2 font-bold text-sm"
+                  className="p-2 text-blue-600 hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all flex items-center gap-1.5 font-bold text-[11px]"
                   title="Sincronizar preços com o cadastro de materiais"
                 >
-                  <RotateCcw size={18} /> Atualizar Preços
+                  <RotateCcw size={15} /> Atualizar Preços
                 </button>
               </div>
             )}
@@ -714,44 +712,36 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
                 return (
                   <div key={env} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all">
-                    <div className="px-4 py-3 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 group/header">
-                      <div className="flex items-center gap-3">
-                        <div className="w-1.5 h-7 bg-[var(--primary-color)] rounded-full"></div>
+                    <div className="px-4 py-3 bg-slate-50/50 dark:bg-slate-800/30 flex items-center gap-4 border-b border-slate-100 dark:border-slate-800 group/header">
+                      {/* Esquerda: nome + contagem + ações */}
+                      <div className="flex items-center gap-3 min-w-0 flex-shrink-0">
+                        <div className="w-1.5 h-7 bg-[var(--primary-color)] rounded-full flex-shrink-0"></div>
                         <div>
                           <div className="flex items-center gap-2">
                             <h3 className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-widest">{env}</h3>
-                            
-                            {/* Material Selector for Environment */}
-                            <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm ml-2">
-                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Trocar Matéria Prima:</span>
-                              <select 
-                                className="text-[10px] font-bold text-[var(--primary-color)] bg-transparent outline-none cursor-pointer max-w-[150px]"
-                                value={envItems[0]?.materialName || ''}
-                                onChange={(e) => updateEnvironmentMaterial(env, e.target.value)}
+                            <div className="flex items-center gap-1 opacity-0 group-hover/header:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => syncPricesWithMaterials(env)}
+                                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                title="Atualizar preços deste ambiente"
                               >
-                                <option value="">Selecione...</option>
-                                {materials.map(m => (
-                                  <option key={m.id} value={m.name}>{m.name}</option>
-                                ))}
-                              </select>
-                            </div>
-
-                            <div className="flex items-center gap-1 opacity-0 group-hover/header:opacity-100 transition-opacity ml-2">
-                              <button 
+                                <RotateCcw size={14} />
+                              </button>
+                              <button
                                 onClick={() => renameEnvironment(env === 'Sem Ambiente' ? '' : env)}
                                 className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
                                 title="Renomear Ambiente"
                               >
                                 <Pencil size={14} />
                               </button>
-                              <button 
+                              <button
                                 onClick={() => duplicateEnvironment(env === 'Sem Ambiente' ? '' : env)}
                                 className="p-1.5 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all"
                                 title="Duplicar Ambiente"
                               >
                                 <Copy size={14} />
                               </button>
-                              <button 
+                              <button
                                 onClick={() => deleteEnvironment(env === 'Sem Ambiente' ? '' : env)}
                                 className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                                 title="Excluir Ambiente"
@@ -765,7 +755,35 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                           </span>
                         </div>
                       </div>
-                      <div className="text-right">
+
+                      {/* Centro: seletor de matéria prima */}
+                      <div className="flex-1 flex justify-center">
+                        <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter whitespace-nowrap">Trocar Matéria Prima:</span>
+                          <select
+                            className="text-[10px] font-bold text-[var(--primary-color)] bg-transparent outline-none cursor-pointer max-w-[180px]"
+                            value=""
+                            onChange={(e) => {
+                              const newMat = e.target.value;
+                              if (!newMat) return;
+                              const distinct = Array.from(new Set(envItems.map(i => i.materialName || '').filter(Boolean)));
+                              if (distinct.length <= 1) {
+                                updateEnvironmentMaterial(env, newMat, distinct.length === 1 ? distinct : undefined);
+                              } else {
+                                setMaterialSwap({ env, newMaterialName: newMat, toReplace: [] });
+                              }
+                            }}
+                          >
+                            <option value="">Selecione...</option>
+                            {materials.map(m => (
+                              <option key={m.id} value={m.name}>{m.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Direita: subtotal */}
+                      <div className="text-right flex-shrink-0">
                         <span className="text-[9px] font-black text-slate-400 uppercase block leading-none mb-0.5">Subtotal {env}</span>
                         <span className="text-base font-black text-slate-800 dark:text-white">R$ {(envTotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
@@ -974,7 +992,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 <label className={`text-[9px] font-black uppercase tracking-[0.2em] mb-1 block ${!(parseInt(deliveryDeadline) > 0) ? 'text-red-400' : 'text-slate-400'}`}>
                   Prazo de Entrega {!(parseInt(deliveryDeadline) > 0) && <span className="normal-case font-bold">— obrigatório</span>}
                 </label>
-                <div className="relative">
+                <div className="relative w-40">
                   <input
                     type="number"
                     min="1"
@@ -1143,6 +1161,61 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
         />,
         document.body
       )}
+
+      {/* Material Swap Modal */}
+      {materialSwap && (() => {
+        const envItems = items.filter(i => (i.environment || 'Sem Ambiente') === materialSwap.env);
+        const distinctMaterials = Array.from(new Set(envItems.map(i => i.materialName || '').filter(Boolean)));
+        return (
+          <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+              <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800">
+                <h3 className="text-base font-black text-slate-800 dark:text-white">Trocar Matéria Prima</h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Selecione quais materiais serão substituídos por <strong className="text-[var(--primary-color)]">{materialSwap.newMaterialName}</strong>:
+                </p>
+              </div>
+              <div className="px-6 py-4 space-y-2">
+                {distinctMaterials.map(mat => (
+                  <label key={mat} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 rounded text-[var(--primary-color)] focus:ring-[var(--primary-color)]"
+                      checked={materialSwap.toReplace.includes(mat)}
+                      onChange={e => setMaterialSwap(prev => prev ? {
+                        ...prev,
+                        toReplace: e.target.checked
+                          ? [...prev.toReplace, mat]
+                          : prev.toReplace.filter(m => m !== mat)
+                      } : prev)}
+                    />
+                    <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{mat}</span>
+                    <span className="ml-auto text-xs text-slate-400">{envItems.filter(i => i.materialName === mat).length} item(s)</span>
+                  </label>
+                ))}
+              </div>
+              <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex gap-3">
+                <button
+                  onClick={() => setMaterialSwap(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  disabled={materialSwap.toReplace.length === 0}
+                  onClick={() => {
+                    updateEnvironmentMaterial(materialSwap.env, materialSwap.newMaterialName, materialSwap.toReplace);
+                    setMaterialSwap(null);
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-[var(--primary-color)] text-white font-bold text-sm hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Substituir
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Revert to Orçamento Modal */}
       {showRevert && (

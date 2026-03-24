@@ -348,6 +348,7 @@ export interface CompanyInfo {
   sidebarTextColor?: string;
   buttonColor?: string;
   lostReasonOptions?: string[];
+  legalNote?: string;
 }
 
 export interface ExchangeRates {
@@ -542,25 +543,71 @@ export interface ServiceGroup {
   createdAt: string;
 }
 
-export type View = 
-  | 'Produção' 
-  | 'Ordens de Serviço' 
-  | 'Agenda de Entregas' 
-  | 'Equipe' 
-  | 'Relatórios' 
-  | 'Configurações' 
-  | 'Clientes' 
-  | 'Vendas' 
-  | 'Estoque / Acabamentos' 
-  | 'Matéria Prima' 
-  | 'Acabamentos' 
-  | 'Produtos Revenda' 
+export interface WorkOrderMaterialM2 {
+  materialName: string;
+  materialId?: string;
+  totalM2: number;
+}
+
+export interface WorkOrderFinishingLinear {
+  itemName: string;
+  materialName?: string;
+  totalLinear: number;
+  totalQty: number;
+}
+
+export interface WorkOrderLog {
+  id: string;
+  companyId: string;
+  workOrderId: string;
+  saleId?: string;
+  environment: string;
+  action: 'created' | 'reissued';
+  reason?: string;
+  userName?: string;
+  createdAt: string;
+}
+
+export interface WorkOrder {
+  id: string;
+  companyId: string;
+  osNumber: number;
+  saleId: string;
+  saleOrderNumber?: number;
+  clientName?: string;
+  clientId?: string;
+  environments: string[];
+  status: 'Aguardando' | 'Em Produção' | 'Concluído' | 'Entregue';
+  notes?: string;
+  materialsM2: WorkOrderMaterialM2[];
+  finishingsLinear: WorkOrderFinishingLinear[];
+  totalM2: number;
+  totalLinear: number;
+  createdAt: string;
+  updatedAt?: string;
+  logs?: WorkOrderLog[];
+}
+
+export type View =
+  | 'Produção'
+  | 'Ordens de Serviço'
+  | 'Agenda de Entregas'
+  | 'Equipe'
+  | 'Relatórios'
+  | 'Configurações'
+  | 'Clientes'
+  | 'Vendas'
+  | 'O.S. de Produção'
+  | 'Estoque / Acabamentos'
+  | 'Matéria Prima'
+  | 'Acabamentos'
+  | 'Produtos Revenda'
   | 'Mão de obra (Instalação)'
-  | 'Financeiro' 
-  | 'Fornecedores' 
-  | 'Arquitetos' 
-  | 'Produtos de Revenda' 
-  | 'Serviços' 
+  | 'Financeiro'
+  | 'Fornecedores'
+  | 'Arquitetos'
+  | 'Produtos de Revenda'
+  | 'Serviços'
   | 'Colocação'
   | 'Marcas'
   | 'Canais de Vendas'

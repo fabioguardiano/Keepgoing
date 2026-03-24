@@ -324,14 +324,14 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
               </div>
 
               {/* Nota legal */}
-              <div style={{ border: '1px solid #000', padding: '6px 8px', fontSize: '8.5px', color: '#475569' }}>
-                <p style={{ margin: '0 0 3px 0' }}>
-                  Mármores e granitos, por sua natureza, estão sujeitos a variações de tonalidade, veios, buracos, fissuras e/ou manchas, não podendo ser recusados ou devolvidos por essa razão.
-                </p>
-                <p style={{ margin: '0' }}>
-                  Serviços em obra (colagem, calafetagem, polimento etc.) só serão executados se explicitamente inclusos neste orçamento.
-                </p>
-              </div>
+              {(() => {
+                const note = companyInfo.legalNote ?? 'Mármores e granitos, por sua natureza, estão sujeitos a variações de tonalidade, veios, buracos, fissuras e/ou manchas, não podendo ser recusados ou devolvidos por essa razão.\nServiços em obra (colagem, calafetagem, polimento etc.) só serão executados se explicitamente inclusos neste orçamento.';
+                return note.trim() ? (
+                  <div style={{ border: '1px solid #000', padding: '6px 8px', fontSize: '8.5px', color: '#475569', whiteSpace: 'pre-wrap' }}>
+                    {note}
+                  </div>
+                ) : null;
+              })()}
             </div>
 
             {/* Coluna direita: Totais → Prazo → Condições de Pagamento */}

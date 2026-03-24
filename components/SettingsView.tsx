@@ -44,7 +44,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     onSavePaymentType,
     onDeletePaymentType
 }) => {
-    const [activeTab, setActiveTab] = useState<'fluxo' | 'vendas' | 'empresa' | 'dados' | 'financeiro'>('fluxo');
+    const [activeTab, setActiveTab] = useState<'fluxo' | 'vendas' | 'empresa' | 'dados' | 'financeiro' | 'geral'>('fluxo');
     const [newPhaseName, setNewPhaseName] = useState('');
     const [editingPhase, setEditingPhase] = useState<string | null>(null);
     const [editingLostReasonIdx, setEditingLostReasonIdx] = useState<number | null>(null);
@@ -136,17 +136,40 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         </div>
                         <ChevronRight size={16} />
                     </button>
-                    <button className="w-full flex items-center justify-between p-4 text-slate-400 hover:bg-slate-50 rounded-2xl font-bold transition-all opacity-50 cursor-not-allowed">
+                    <button
+                        onClick={() => setActiveTab('geral')}
+                        className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold border transition-all ${activeTab === 'geral' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
+                    >
                         <div className="flex items-center gap-3">
                             <Settings size={20} />
-                            Geral (Em breve)
+                            Geral
                         </div>
+                        <ChevronRight size={16} />
                     </button>
                 </div>
 
                 {/* Content Area */}
                 <div className="lg:col-span-2 space-y-6">
-                    {activeTab === 'financeiro' ? (
+                    {activeTab === 'geral' ? (
+                        <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+                            <div className="p-6 border-b border-slate-100">
+                                <h2 className="text-lg font-bold text-slate-800">Geral</h2>
+                                <p className="text-sm text-slate-400 font-medium">Configurações gerais exibidas nos documentos gerados</p>
+                            </div>
+                            <div className="p-6 space-y-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-1">Nota Legal (rodapé do orçamento/pedido)</label>
+                                    <p className="text-xs text-slate-400 mb-2">Texto exibido abaixo do campo de Observações na impressão do orçamento.</p>
+                                    <textarea
+                                        value={companyInfo.legalNote ?? 'Mármores e granitos, por sua natureza, estão sujeitos a variações de tonalidade, veios, buracos, fissuras e/ou manchas, não podendo ser recusados ou devolvidos por essa razão.\nServiços em obra (colagem, calafetagem, polimento etc.) só serão executados se explicitamente inclusos neste orçamento.'}
+                                        onChange={e => handleUpdateCompany('legalNote', e.target.value)}
+                                        rows={5}
+                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-medium resize-none transition-all"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    ) : activeTab === 'financeiro' ? (
                         <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
                              <div className="p-6 border-b border-slate-100">
                                 <h2 className="text-lg font-bold text-slate-800">Financeiro</h2>

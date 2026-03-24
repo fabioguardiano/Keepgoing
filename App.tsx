@@ -42,6 +42,8 @@ import { useAccountsReceivable } from './hooks/useAccountsReceivable';
 import { useAccountsPayable } from './hooks/useAccountsPayable';
 import { usePaymentMethods } from './hooks/usePaymentMethods';
 import { usePaymentTypes } from './hooks/usePaymentTypes';
+import { useWorkOrders } from './hooks/useWorkOrders';
+import { WorkOrdersView } from './components/WorkOrdersView';
 import 'leaflet/dist/leaflet.css';
 
 
@@ -205,6 +207,7 @@ const App: React.FC = () => {
   const { payables, handleSavePayable, deletePayable, payInstallment: payPayableInstallment, unpayInstallment: unpayPayableInstallment } = useAccountsPayable(activeCompanyId);
   const { paymentMethods, handleSavePaymentMethod, deletePaymentMethod, toggleActive } = usePaymentMethods(activeCompanyId);
   const { paymentTypes, handleSavePaymentType, deletePaymentType: handleDeletePaymentType } = usePaymentTypes(activeCompanyId);
+  const { workOrders, loadingWO, createWorkOrders, updateWorkOrderStatus, getEnvironmentOSMap } = useWorkOrders(activeCompanyId);
 
   // 5. Configurações Globais (Depende de setOrders e setSales para renomeação de fases)
   const { 
@@ -456,6 +459,14 @@ const App: React.FC = () => {
         );
       case 'Ordens de Serviço':
         return <OrderListView orders={orders} />;
+      case 'O.S. de Produção':
+        return (
+          <WorkOrdersView
+            workOrders={workOrders}
+            loading={loadingWO}
+            onUpdateStatus={updateWorkOrderStatus}
+          />
+        );
       case 'Agenda de Entregas':
         return (
           <DeliverySchedule 
@@ -514,10 +525,10 @@ const App: React.FC = () => {
           return num > max ? num : max;
         }, 0) + 1;
         return (
-          <SalesView 
-            sales={sales} 
-            clients={clients} 
-            materials={materials} 
+          <SalesView
+            sales={sales}
+            clients={clients}
+            materials={materials}
             appUsers={appUsers}
             architects={architects}
             products={products}
@@ -531,6 +542,9 @@ const App: React.FC = () => {
             onDeleteSalesPhase={deleteSalesPhase}
             onReorderSalesPhases={reorderSalesPhases}
             onSaveSale={handleSaveSale}
+            companyId={activeCompanyId}
+            createWorkOrders={createWorkOrders}
+            getEnvironmentOSMap={getEnvironmentOSMap}
           />
         );
       case 'Matéria Prima':

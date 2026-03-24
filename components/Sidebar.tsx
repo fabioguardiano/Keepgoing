@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Diamond, LayoutDashboard, Kanban, Package, BarChart3, Users, Settings, PlusCircle, MapPin, ShoppingBag, Wallet, Box, ChevronDown, ChevronRight, Truck, Briefcase, Wrench, TrendingUp } from 'lucide-react';
+import { Diamond, LayoutDashboard, Kanban, Package, BarChart3, Users, Settings, PlusCircle, MapPin, ShoppingBag, Wallet, Box, ChevronDown, ChevronRight, Truck, Briefcase, Wrench, TrendingUp, ClipboardList } from 'lucide-react';
 import { View, CompanyInfo } from '../types';
 
 interface SidebarProps {
@@ -60,6 +60,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
       ]
     },
     { icon: ShoppingBag, label: 'Vendas', view: 'Vendas' as View },
+    { icon: ClipboardList, label: 'O.S. de Produção', view: 'O.S. de Produção' as View },
     { icon: LayoutDashboard, label: 'Produção', view: 'Produção' as View },
     { icon: Kanban, label: 'Ordens de Serviço', view: 'Ordens de Serviço' as View },
     { icon: MapPin, label: 'Agenda de Entregas', view: 'Agenda de Entregas' as View },

@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { ShoppingBag, Plus, Search, FileText, CheckCircle2, Clock, XCircle, MoreVertical, ExternalLink, Printer, LayoutGrid, List, ArrowRight, X, Edit2, GripVertical, Trash2, Check, DollarSign, Calendar, MoreHorizontal, User, AlertTriangle, Lock } from 'lucide-react';
-import { SalesOrder, Client, Material, AppUser, Architect, ProductService, SalesChannel, CompanyInfo, SalesPhaseConfig, ServiceGroup, PaymentMethod } from '../types';
+import { SalesOrder, Client, Material, AppUser, Architect, ProductService, SalesChannel, CompanyInfo, SalesPhaseConfig, ServiceGroup, PaymentMethod, WorkOrder } from '../types';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { NewSaleModal } from './NewSaleModal';
 import { PrintBudget } from './PrintBudget';
@@ -24,11 +24,15 @@ interface SalesViewProps {
   onRenameSalesPhase: (oldName: string, newName: string) => void;
   onDeleteSalesPhase: (name: string) => void;
   onReorderSalesPhases: (startIndex: number, endIndex: number) => void;
+  companyId?: string;
+  createWorkOrders?: (orders: any[]) => Promise<boolean>;
+  getEnvironmentOSMap?: (saleId: string) => Record<string, WorkOrder[]>;
 }
 
 export const SalesView: React.FC<SalesViewProps> = ({
   sales, clients, materials, onSaveSale, appUsers, architects, products, salesChannels, paymentMethods, companyInfo, nextOrderNumber,
-  salesPhases, services, onRenameSalesPhase, onDeleteSalesPhase, onReorderSalesPhases
+  salesPhases, services, onRenameSalesPhase, onDeleteSalesPhase, onReorderSalesPhases,
+  companyId, createWorkOrders, getEnvironmentOSMap
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('kanban');
@@ -668,6 +672,9 @@ export const SalesView: React.FC<SalesViewProps> = ({
           salesPhases={salesPhases}
           initialData={editingSale || undefined}
           readOnly={editingSale?.status === 'Pedido'}
+          companyId={companyId}
+          createWorkOrders={createWorkOrders}
+          getEnvironmentOSMap={getEnvironmentOSMap}
           onSave={(sale) => {
             const wasOrcamento = editingSale?.status === 'Orçamento' || !editingSale;
             onSaveSale(sale);
