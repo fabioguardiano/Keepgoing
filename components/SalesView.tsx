@@ -43,6 +43,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
   const [tempPhaseName, setTempPhaseName] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [lostSaleDetails, setLostSaleDetails] = useState<{ saleId: string; reason: string; details: string } | null>(null);
+  const [incompleteWinSale, setIncompleteWinSale] = useState<{ sale: SalesOrder; missing: string[] } | null>(null);
   const [revertPending, setRevertPending] = useState<{ sale: SalesOrder; targetPhase: string } | null>(null);
   const [revertPassword, setRevertPassword] = useState('');
   const [revertJustification, setRevertJustification] = useState('');
@@ -89,6 +90,14 @@ export const SalesView: React.FC<SalesViewProps> = ({
       if (targetPhase === 'win-zone') {
         const sale = sales.find(s => s.id === saleId);
         if (sale) {
+          const missing: string[] = [];
+          if (!sale.paymentMethodId) missing.push('Forma de pagamento');
+          if (!sale.firstDueDate)    missing.push('Data do primeiro vencimento');
+          if (!(sale.totals?.geral > 0)) missing.push('Itens / valor total da venda');
+          if (missing.length > 0) {
+            setIncompleteWinSale({ sale, missing });
+            return;
+          }
           onSaveSale({ ...sale, salesPhase: 'Pedido/Ganho', status: 'Pedido' });
           fireConfetti(true);
         }
@@ -665,7 +674,9 @@ export const SalesView: React.FC<SalesViewProps> = ({
           initialData={editingSale || undefined}
           readOnly={editingSale?.status === 'Pedido'}
           onSave={(sale) => {
+            const wasOrcamento = editingSale?.status === 'Orçamento' || !editingSale;
             onSaveSale(sale);
+            if (wasOrcamento && sale.status === 'Pedido') fireConfetti(true);
             setIsNewSaleModalOpen(false);
             setEditingSale(null);
           }}
@@ -825,6 +836,61 @@ export const SalesView: React.FC<SalesViewProps> = ({
                 className="flex-1 py-3 px-4 bg-amber-500 text-white rounded-2xl font-black text-sm shadow-lg shadow-amber-500/20 hover:opacity-90 transition-all disabled:opacity-50"
               >
                 {revertLoading ? 'Validando...' : 'Confirmar Retorno'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal — dados incompletos para ganho */}
+      {incompleteWinSale && (
+        <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="bg-amber-50 dark:bg-amber-900/20 px-6 py-5 flex items-center gap-3 border-b border-amber-100 dark:border-amber-900/30">
+              <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
+                <AlertTriangle size={20} className="text-amber-500" />
+              </div>
+              <div>
+                <h3 className="font-black text-slate-800 dark:text-white">Dados incompletos</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Preencha os campos abaixo para gerar o financeiro</p>
+              </div>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                A venda <span className="font-black">#{incompleteWinSale.sale.orderNumber} — {incompleteWinSale.sale.clientName}</span> está sendo marcada como <span className="font-black text-green-600">Ganha</span>, mas os seguintes campos estão faltando:
+              </p>
+              <ul className="space-y-2">
+                {incompleteWinSale.missing.map(m => (
+                  <li key={m} className="flex items-center gap-2 text-sm font-bold text-amber-700 dark:text-amber-400">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                    {m}
+                  </li>
+                ))}
+              </ul>
+              <p className="text-xs text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800 rounded-xl p-3">
+                Sem esses dados, <strong>nenhuma conta a receber será gerada</strong> automaticamente para esta venda.
+              </p>
+            </div>
+            <div className="px-6 pb-6 flex gap-3">
+              <button
+                onClick={() => {
+                  setEditingSale(incompleteWinSale.sale);
+                  setIsNewSaleModalOpen(true);
+                  setIncompleteWinSale(null);
+                }}
+                className="flex-1 py-2.5 rounded-2xl bg-[var(--primary-color)] text-white font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all"
+              >
+                Completar Dados
+              </button>
+              <button
+                onClick={() => {
+                  onSaveSale({ ...incompleteWinSale.sale, salesPhase: 'Pedido/Ganho', status: 'Pedido' });
+                  fireConfetti(true);
+                  setIncompleteWinSale(null);
+                }}
+                className="flex-1 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 font-bold text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-sm"
+              >
+                Ganhar mesmo assim
               </button>
             </div>
           </div>

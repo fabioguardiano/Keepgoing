@@ -300,11 +300,12 @@ const PayInstallmentModal: React.FC<PayInstallmentModalProps> = ({ account, inst
 // ─────────────────────────────────────────────
 // Linha de conta na tabela
 // ─────────────────────────────────────────────
-const AccountRow = ({ account, onEdit, onDelete, onPayInstallment }: {
+const AccountRow = ({ account, onEdit, onDelete, onPayInstallment, onUnpayInstallment }: {
   account: AccountReceivable | AccountPayable;
   onEdit: () => void;
   onDelete: () => void;
   onPayInstallment: (inst: AccountInstallment) => void;
+  onUnpayInstallment: (inst: AccountInstallment) => void;
 }) => {
   const [expanded, setExpanded] = useState(false);
   const overdue = isOverdue(account.dueDate, account.status);
@@ -383,7 +384,16 @@ const AccountRow = ({ account, onEdit, onDelete, onPayInstallment }: {
                     </div>
                     <span className="font-black text-sm text-slate-800 dark:text-white">R$ {fmt(inst.value)}</span>
                     {inst.status === 'pago' ? (
-                      <span className="text-[10px] text-green-600 font-bold">Pago {fmtDate(inst.paidDate || '')}</span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[10px] text-green-600 font-bold">Pago {fmtDate(inst.paidDate || '')}</span>
+                        <button
+                          onClick={() => { if (window.confirm(`Estornar baixa da parcela ${inst.number}?`)) onUnpayInstallment(inst); }}
+                          className="px-2 py-1 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 text-[10px] font-bold hover:bg-red-50 hover:text-red-500 transition-all flex items-center gap-1"
+                          title="Estornar baixa"
+                        >
+                          <X size={10} /> Estornar
+                        </button>
+                      </div>
                     ) : (
                       <button onClick={() => onPayInstallment(inst)} className="px-3 py-1 rounded-xl bg-green-500 text-white text-xs font-bold hover:bg-green-600 transition-all flex items-center gap-1 shrink-0">
                         <CheckCircle2 size={12} /> Baixar
@@ -412,10 +422,11 @@ interface AccountsViewProps {
   onSave: (data: any) => Promise<any>;
   onDelete: (id: string) => Promise<void>;
   onPayInstallment: (accountId: string, installmentId: string, paidValue: number, paidDate: string) => Promise<void>;
+  onUnpayInstallment: (accountId: string, installmentId: string) => Promise<void>;
 }
 
 export const AccountsView: React.FC<AccountsViewProps> = ({
-  mode, accounts, paymentMethods, clients, suppliers, onSave, onDelete, onPayInstallment,
+  mode, accounts, paymentMethods, clients, suppliers, onSave, onDelete, onPayInstallment, onUnpayInstallment,
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [editData, setEditData] = useState<AccountReceivable | AccountPayable | null>(null);
@@ -423,13 +434,34 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [search, setSearch] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [dateFilter, setDateFilter] = useState<'mes_atual' | 'mes_passado' | 'ano_atual' | 'personalizado' | 'todos'>('mes_atual');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   const filtered = useMemo(() => {
+    const now = new Date();
+    const filterByDate = (a: AccountReceivable | AccountPayable) => {
+      const d = new Date(a.dueDate + 'T12:00:00');
+      if (dateFilter === 'mes_atual') return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+      if (dateFilter === 'mes_passado') {
+        const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        return d.getFullYear() === prev.getFullYear() && d.getMonth() === prev.getMonth();
+      }
+      if (dateFilter === 'ano_atual') return d.getFullYear() === now.getFullYear();
+      if (dateFilter === 'personalizado') {
+        const from = dateFrom ? new Date(dateFrom + 'T00:00:00') : null;
+        const to   = dateTo   ? new Date(dateTo   + 'T23:59:59') : null;
+        if (from && d < from) return false;
+        if (to   && d > to  ) return false;
+      }
+      return true;
+    };
     return (accounts as (AccountReceivable | AccountPayable)[])
       .filter(a => statusFilter === 'todos' || a.status === statusFilter || (statusFilter === 'atrasado' && isOverdue(a.dueDate, a.status)))
+      .filter(filterByDate)
       .filter(a => !search || a.description.toLowerCase().includes(search.toLowerCase()) || ((a as any).clientName || (a as any).supplierName || '').toLowerCase().includes(search.toLowerCase()))
       .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-  }, [accounts, statusFilter, search]);
+  }, [accounts, statusFilter, search, dateFilter, dateFrom, dateTo]);
 
   const totalPendente = (accounts as any[]).filter(a => a.status !== 'quitado' && a.status !== 'cancelado').reduce((acc, a) => acc + a.remainingValue, 0);
   const totalRecebido = (accounts as any[]).reduce((acc, a) => acc + a.paidValue, 0);
@@ -474,7 +506,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
 
       {/* Tabela */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
-        {/* Barra de filtros */}
+        {/* Barra de filtros — status */}
         <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
           <div className="flex gap-1">
             {[
@@ -495,6 +527,42 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
               <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar..." className="w-full pl-8 pr-3 py-1.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm font-bold outline-none focus:border-[var(--primary-color)]" />
             </div>
           </div>
+        </div>
+        {/* Barra de filtros — período */}
+        <div className="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">Período:</span>
+          {([
+            { key: 'mes_atual',     label: 'Mês Atual' },
+            { key: 'mes_passado',   label: 'Mês Passado' },
+            { key: 'ano_atual',     label: 'Ano Atual' },
+            { key: 'todos',         label: 'Todos' },
+            { key: 'personalizado', label: 'Personalizado' },
+          ] as { key: typeof dateFilter; label: string }[]).map(opt => (
+            <button
+              key={opt.key}
+              onClick={() => setDateFilter(opt.key)}
+              className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
+                dateFilter === opt.key
+                  ? 'bg-[var(--primary-color)] text-white shadow-sm'
+                  : 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:border-[var(--primary-color)] hover:text-[var(--primary-color)]'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+          {dateFilter === 'personalizado' && (
+            <div className="flex items-center gap-2 ml-1">
+              <input
+                type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                className="px-2 py-1.5 rounded-xl text-[11px] font-bold border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-white outline-none focus:border-[var(--primary-color)]"
+              />
+              <span className="text-slate-400 text-xs font-bold">até</span>
+              <input
+                type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+                className="px-2 py-1.5 rounded-xl text-[11px] font-bold border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-white outline-none focus:border-[var(--primary-color)]"
+              />
+            </div>
+          )}
         </div>
 
         {filtered.length === 0 ? (
@@ -524,6 +592,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                     onEdit={() => { setEditData(account); setShowModal(true); }}
                     onDelete={() => setConfirmDelete(account.id)}
                     onPayInstallment={inst => setPayingInst({ account, inst })}
+                    onUnpayInstallment={inst => onUnpayInstallment(account.id, inst.id)}
                   />
                 ))}
               </tbody>

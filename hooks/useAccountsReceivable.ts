@@ -104,5 +104,23 @@ export const useAccountsReceivable = (companyId?: string) => {
     await handleSaveReceivable({ ...ar, installments: updatedInstallments, paidValue: totalPaid, status: newStatus });
   };
 
-  return { receivables, loadingAR, handleSaveReceivable, deleteReceivable, payInstallment, refreshAR: fetchReceivables };
+  const unpayInstallment = async (arId: string, installmentId: string) => {
+    const ar = receivables.find(x => x.id === arId);
+    if (!ar) return;
+    const updatedInstallments = ar.installments.map(i =>
+      i.id === installmentId
+        ? { ...i, status: 'pendente' as const, paidValue: undefined, paidDate: undefined }
+        : i
+    );
+    const totalPaid = updatedInstallments
+      .filter(i => i.status === 'pago')
+      .reduce((acc, i) => acc + (i.paidValue ?? i.value), 0);
+    const newStatus: AccountReceivable['status'] =
+      totalPaid >= ar.totalValue ? 'quitado'
+      : totalPaid > 0 ? 'parcial'
+      : 'pendente';
+    await handleSaveReceivable({ ...ar, installments: updatedInstallments, paidValue: totalPaid, status: newStatus });
+  };
+
+  return { receivables, loadingAR, handleSaveReceivable, deleteReceivable, payInstallment, unpayInstallment, refreshAR: fetchReceivables };
 };

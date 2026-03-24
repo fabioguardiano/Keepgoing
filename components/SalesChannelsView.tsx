@@ -48,56 +48,54 @@ export const SalesChannelsView: React.FC<SalesChannelsViewProps> = ({ channels, 
   const labelClass = "block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 ml-1";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-            <ShoppingBag className="text-[var(--primary-color)]" />
-            Canais de Vendas
-          </h2>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">Gerencie a origem dos seus pedidos</p>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Canais de Vendas</h1>
+          <p className="text-slate-500 font-medium">Gerencie a origem e canais de entrada dos seus pedidos</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowInactive(v => !v)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-xs font-bold uppercase tracking-widest transition-all ${showInactive ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-200'}`}
-          >
-            <PowerOff size={14} />
-            {showInactive ? 'Ocultar Inativos' : 'Mostrar Inativos'}
-          </button>
-          <button
-            onClick={() => {
-              setEditingChannel(null);
-              setFormData({ name: '' });
-              setIsModalOpen(true);
-            }}
-            className="bg-[var(--primary-color)] hover:opacity-90 text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-[var(--primary-color)]/20 active:scale-95"
-          >
-            <Plus size={20} />
-            Novo Canal
-          </button>
-        </div>
+        <button
+          onClick={() => {
+            setEditingChannel(null);
+            setFormData({ name: '' });
+            setIsModalOpen(true);
+          }}
+          className="bg-primary text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-secondary transition-all transform hover:scale-[1.02] active:scale-95"
+        >
+          <Plus size={20} /> Novo Canal
+        </button>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input
-              type="text"
-              placeholder="Buscar canal..."
-              className="w-full pl-12 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl text-sm focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
-            {channels.filter(c => !c.status || c.status === 'ativo').length} Ativos
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
-            {channels.filter(c => c.status === 'inativo').length} Inativos
-          </div>
+      {/* Search Header */}
+      <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <input
+            type="text"
+            placeholder="Buscar canal..."
+            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium text-sm"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
+        <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
+          <ShoppingBag size={16} />
+          {channels.filter(c => !c.status || c.status === 'ativo').length} Ativos
+        </div>
+        <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
+          <PowerOff size={14} />
+          {channels.filter(c => c.status === 'inativo').length} Inativos
+        </div>
+        <button
+          onClick={() => setShowInactive(v => !v)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-xs font-bold uppercase tracking-widest transition-all ${showInactive ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-200'}`}
+        >
+          <PowerOff size={14} />
+          {showInactive ? 'Ocultar Inativos' : 'Mostrar Inativos'}
+        </button>
+      </div>
+
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -119,7 +117,7 @@ export const SalesChannelsView: React.FC<SalesChannelsViewProps> = ({ channels, 
                   </td>
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-2">
-                      <span className="text-base font-black text-slate-800">{channel.name}</span>
+                      <span className="text-sm font-black text-slate-800">{channel.name}</span>
                       {channel.status === 'inativo' && (
                         <span className="text-[10px] font-bold bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full uppercase tracking-wider">Inativo</span>
                       )}

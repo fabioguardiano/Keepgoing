@@ -8,10 +8,7 @@ CREATE TABLE IF NOT EXISTS payment_methods (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id    UUID REFERENCES companies(id) ON DELETE CASCADE,
   name          TEXT NOT NULL,
-  category      TEXT NOT NULL DEFAULT 'outro'
-                  CHECK (category IN ('dinheiro','pix','transferencia','cartao_debito',
-                                      'cartao_credito_avista','cartao_credito_prazo',
-                                      'boleto','cheque','outro')),
+  category      TEXT NOT NULL DEFAULT 'outro',
   type          TEXT NOT NULL DEFAULT 'avista' CHECK (type IN ('avista','aprazo')),
   installments          INTEGER DEFAULT 1,
   installment_fee       DECIMAL(6,4) DEFAULT 0,   -- taxa % por parcela

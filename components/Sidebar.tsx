@@ -73,7 +73,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
       ]
     },
     { icon: BarChart3, label: 'Relatórios', view: 'Relatórios' as View },
-    { icon: Settings, label: 'Configurações', view: 'Configurações' as View }
+    {
+      icon: Settings,
+      label: 'Configurações',
+      subItems: [
+        { icon: Settings, label: 'Geral', view: 'Configurações' as View },
+        { icon: Wallet, label: 'Tipos de Pagamento', view: 'Tipos de Pagamento' as View },
+      ]
+    }
   ].filter(item => {
     if (userRole === 'driver') {
       return item.view === 'Agenda de Entregas';

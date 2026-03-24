@@ -105,9 +105,13 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-widest">
+        <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
           <Briefcase size={16} />
-          {filteredAndSortedArchitects.length} Arquitetos
+          {architects.filter(a => !a.status || a.status === 'ativo').length} Ativos
+        </div>
+        <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
+          <PowerOff size={14} />
+          {architects.filter(a => a.status === 'inativo').length} Inativos
         </div>
         <button
           onClick={() => setShowInactive(v => !v)}
@@ -166,7 +170,7 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
                         {architect.type === 'Pessoa Jurídica' ? <ShieldCheck size={20} /> : <Briefcase size={20} />}
                       </div>
                       <div>
-                        <div className="text-base font-black text-slate-800 leading-tight">
+                        <div className="text-sm font-black text-slate-800 leading-tight">
                           {architect.tradingName}
                         </div>
                         <div className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">{architect.document}</div>

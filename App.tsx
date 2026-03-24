@@ -16,6 +16,7 @@ import { InventoryView } from './components/InventoryView.tsx';
 import { FinanceView } from './components/FinanceView.tsx';
 import { AccountsView } from './components/AccountsView.tsx';
 import { PaymentMethodsView } from './components/PaymentMethodsView.tsx';
+import { PaymentTypesView } from './components/PaymentTypesView.tsx';
 import { SuppliersView } from './components/SuppliersView.tsx';
 import { ArchitectsView } from './components/ArchitectsView.tsx';
 import { SalesChannelsView } from './components/SalesChannelsView.tsx';
@@ -40,6 +41,7 @@ import { useSettings } from './hooks/useSettings';
 import { useAccountsReceivable } from './hooks/useAccountsReceivable';
 import { useAccountsPayable } from './hooks/useAccountsPayable';
 import { usePaymentMethods } from './hooks/usePaymentMethods';
+import { usePaymentTypes } from './hooks/usePaymentTypes';
 import 'leaflet/dist/leaflet.css';
 
 
@@ -199,9 +201,10 @@ const App: React.FC = () => {
   const { suppliers, handleSaveSupplier, deleteSupplier, setSuppliers } = useSuppliers(activeCompanyId, logActivity);
   const { architects, handleSaveArchitect, deleteArchitect, setArchitects } = useArchitects(activeCompanyId, logActivity);
   const { products, handleSaveProduct } = useProducts(activeCompanyId, logActivity);
-  const { receivables, handleSaveReceivable, deleteReceivable, payInstallment: payReceivableInstallment } = useAccountsReceivable(activeCompanyId);
-  const { payables, handleSavePayable, deletePayable, payInstallment: payPayableInstallment } = useAccountsPayable(activeCompanyId);
+  const { receivables, handleSaveReceivable, deleteReceivable, payInstallment: payReceivableInstallment, unpayInstallment: unpayReceivableInstallment } = useAccountsReceivable(activeCompanyId);
+  const { payables, handleSavePayable, deletePayable, payInstallment: payPayableInstallment, unpayInstallment: unpayPayableInstallment } = useAccountsPayable(activeCompanyId);
   const { paymentMethods, handleSavePaymentMethod, deletePaymentMethod, toggleActive } = usePaymentMethods(activeCompanyId);
+  const { paymentTypes, handleSavePaymentType, deletePaymentType: handleDeletePaymentType } = usePaymentTypes(activeCompanyId);
 
   // 5. Configurações Globais (Depende de setOrders e setSales para renomeação de fases)
   const { 
@@ -497,6 +500,9 @@ const App: React.FC = () => {
             companyInfo={companyInfo}
             onUpdateCompany={setCompanyInfo}
             onImportClients={handleImportClients}
+            paymentTypes={paymentTypes}
+            onSavePaymentType={handleSavePaymentType}
+            onDeletePaymentType={handleDeletePaymentType}
           />
         );
       case 'Clientes':
@@ -548,7 +554,7 @@ const App: React.FC = () => {
         const categoryMap: Record<string, string> = {
           'Acabamentos': 'Acabamentos',
           'Produtos Revenda': 'Produtos de Revenda',
-          'Mão de obra (Instalação) Spain': 'Colocação',
+          'Mão de obra (Instalação)': 'Colocação',
           'Serviços': 'Serviços'
         };
         return (
@@ -576,6 +582,7 @@ const App: React.FC = () => {
             onSave={handleSaveReceivable}
             onDelete={deleteReceivable}
             onPayInstallment={payReceivableInstallment}
+            onUnpayInstallment={unpayReceivableInstallment}
           />
         );
       case 'Contas a Pagar':
@@ -588,15 +595,25 @@ const App: React.FC = () => {
             onSave={handleSavePayable}
             onDelete={deletePayable}
             onPayInstallment={payPayableInstallment}
+            onUnpayInstallment={unpayPayableInstallment}
           />
         );
       case 'Formas de Pagamento':
         return (
           <PaymentMethodsView
             paymentMethods={paymentMethods}
+            paymentTypes={paymentTypes}
             onSave={handleSavePaymentMethod}
             onDelete={deletePaymentMethod}
             onToggle={toggleActive}
+          />
+        );
+      case 'Tipos de Pagamento':
+        return (
+          <PaymentTypesView
+            paymentTypes={paymentTypes}
+            onSaveType={handleSavePaymentType}
+            onDeleteType={handleDeletePaymentType}
           />
         );
       case 'Fornecedores':

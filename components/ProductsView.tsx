@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Plus, Search, Trash2, Edit2, ArrowUpDown, ChevronUp, ChevronDown, Package, Wrench, MapPin, ShoppingBag, Diamond } from 'lucide-react';
+import { Box, Plus, Search, Trash2, Edit2, ArrowUpDown, ChevronUp, ChevronDown, Package, Wrench, MapPin, ShoppingBag, Diamond, PowerOff } from 'lucide-react';
 import { NewProductModal } from './NewProductModal.tsx';
 import { ProductService, View } from '../types';
 
@@ -91,20 +91,12 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           </div>
           <p className="text-slate-500 font-medium">Gestão técnica e precificação de itens</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => setShowInactive(!showInactive)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${showInactive ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
-          >
-            {showInactive ? 'Ocultar Inativos' : 'Mostrar Inativos'}
-          </button>
-          <button 
-            onClick={handleAddNew}
-            className="bg-[var(--primary-color)] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[var(--primary-color)]/20 hover:bg-[var(--secondary-color)] transition-all transform hover:scale-[1.02] active:scale-95"
-          >
-            <Plus size={20} /> Novo Registro
-          </button>
-        </div>
+        <button 
+          onClick={handleAddNew}
+          className="bg-[var(--primary-color)] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[var(--primary-color)]/20 hover:bg-[var(--secondary-color)] transition-all transform hover:scale-[1.02] active:scale-95"
+        >
+          <Plus size={20} /> Novo Registro
+        </button>
       </div>
 
       <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4">
@@ -118,10 +110,21 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-widest">
+        <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
           <Package size={16} />
-          {filteredAndSortedProducts.length} Itens
+          {products.filter(p => p.type === category && p.status === 'ativo').length} Ativos
         </div>
+        <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
+          <PowerOff size={14} />
+          {products.filter(p => p.type === category && p.status === 'inativo').length} Inativos
+        </div>
+        <button
+          onClick={() => setShowInactive(v => !v)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-xs font-bold uppercase tracking-widest transition-all ${showInactive ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-200'}`}
+        >
+          <PowerOff size={14} />
+          {showInactive ? 'Ocultar Inativos' : 'Mostrar Inativos'}
+        </button>
       </div>
 
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
@@ -177,7 +180,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                         </div>
                       )}
                       <div>
-                        <div className="font-bold text-slate-700">{product.description}</div>
+                        <div className="text-sm font-black text-slate-800 leading-tight">{product.description}</div>
                         <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{product.brand || 'Marca não inf.'}</div>
                       </div>
                     </div>

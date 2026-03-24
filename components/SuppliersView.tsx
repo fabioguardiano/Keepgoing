@@ -105,9 +105,13 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-widest">
+        <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
           <Truck size={16} />
-          {filteredAndSortedSuppliers.length} Fornecedores
+          {suppliers.filter(s => !s.status || s.status === 'ativo').length} Ativos
+        </div>
+        <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
+          <PowerOff size={14} />
+          {suppliers.filter(s => s.status === 'inativo').length} Inativos
         </div>
         <button
           onClick={() => setShowInactive(v => !v)}
@@ -166,7 +170,7 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
                         {supplier.type === 'Pessoa Jurídica' ? <ShieldCheck size={20} /> : <Truck size={20} />}
                       </div>
                       <div>
-                        <div className="text-base font-black text-slate-800 leading-tight flex items-center gap-2">
+                        <div className="text-sm font-black text-slate-800 leading-tight flex items-center gap-2">
                           {supplier.tradingName}
                         </div>
                         <div className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">{supplier.document}</div>

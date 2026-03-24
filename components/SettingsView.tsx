@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Settings, Layout, Check, ChevronRight, Plus, Trash2, Edit2, GripVertical, Info, Building2, MapPin, Phone, Mail, ShoppingBag, FileSpreadsheet, Download, Upload, AlertCircle, Loader2 } from 'lucide-react';
+import { Settings, Layout, Check, ChevronRight, Plus, Trash2, Edit2, GripVertical, Info, Building2, MapPin, Phone, Mail, ShoppingBag, FileSpreadsheet, Download, Upload, AlertCircle, Loader2, Wallet } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { PhaseConfig, CompanyInfo, SalesPhaseConfig } from '../types';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { PaymentTypesView } from './PaymentTypesView';
 
 interface SettingsViewProps {
     phases: PhaseConfig[];
@@ -19,6 +20,9 @@ interface SettingsViewProps {
     companyInfo: CompanyInfo;
     onUpdateCompany: (info: CompanyInfo) => void;
     onImportClients: (clients: any[]) => Promise<void>;
+    paymentTypes: any[];
+    onSavePaymentType: (type: any) => Promise<any>;
+    onDeletePaymentType?: (id: string) => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -35,9 +39,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     onReorderSalesPhases,
     companyInfo,
     onUpdateCompany,
-    onImportClients
+    onImportClients,
+    paymentTypes,
+    onSavePaymentType,
+    onDeletePaymentType
 }) => {
-    const [activeTab, setActiveTab] = useState<'fluxo' | 'vendas' | 'empresa' | 'dados'>('fluxo');
+    const [activeTab, setActiveTab] = useState<'fluxo' | 'vendas' | 'empresa' | 'dados' | 'financeiro'>('fluxo');
     const [newPhaseName, setNewPhaseName] = useState('');
     const [editingPhase, setEditingPhase] = useState<string | null>(null);
     const [editingLostReasonIdx, setEditingLostReasonIdx] = useState<number | null>(null);
@@ -110,6 +117,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <ChevronRight size={16} />
                     </button>
                     <button 
+                         onClick={() => setActiveTab('financeiro')}
+                        className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold border transition-all ${activeTab === 'financeiro' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
+                    >
+                        <div className="flex items-center gap-3">
+                            <Wallet size={20} />
+                            Financeiro
+                        </div>
+                        <ChevronRight size={16} />
+                    </button>
+                    <button 
                         onClick={() => setActiveTab('dados')}
                         className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold border transition-all ${activeTab === 'dados' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
                     >
@@ -129,7 +146,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                 {/* Content Area */}
                 <div className="lg:col-span-2 space-y-6">
-                    {activeTab === 'fluxo' ? (
+                    {activeTab === 'financeiro' ? (
+                        <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+                             <div className="p-6 border-b border-slate-100">
+                                <h2 className="text-lg font-bold text-slate-800">Financeiro</h2>
+                                <p className="text-sm text-slate-400 font-medium">Configure os tipos de pagamento para o financeiro</p>
+                            </div>
+                            <div className="p-6">
+                                <PaymentTypesView 
+                                     paymentTypes={paymentTypes} 
+                                     onSaveType={onSavePaymentType} 
+                                     onDeleteType={onDeletePaymentType}
+                                 />
+                            </div>
+                        </div>
+                    ) : activeTab === 'fluxo' ? (
                         <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
                             <div className="p-6 border-b border-slate-100">
                                 <h2 className="text-lg font-bold text-slate-800">Fases do Kanban</h2>

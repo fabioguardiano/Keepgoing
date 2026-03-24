@@ -43,7 +43,7 @@ export const INITIAL_PHASES: PhaseConfig[] = [
   { name: 'Entregue', isRequired: false, requiresResponsible: false }
 ];
 
-export type StaffPosition = 'serrador' | 'acabador' | 'ajudante_serrador' | 'medidor' | 'instalador' | 'vendedor' | 'gerente';
+export type StaffPosition = 'serrador' | 'acabador' | 'ajudante_serrador' | 'ajudante_acabador' | 'motorista' | 'medidor' | 'instalador' | 'vendedor' | 'gerente';
 
 export interface AppUser {
   id: string;
@@ -429,16 +429,16 @@ export interface FinanceTransaction {
   description: string;
 }
 
-export type PaymentCategory =
-  | 'dinheiro'
-  | 'pix'
-  | 'transferencia'
-  | 'cartao_debito'
-  | 'cartao_credito_avista'
-  | 'cartao_credito_prazo'
-  | 'boleto'
-  | 'cheque'
-  | 'outro';
+export type PaymentCategory = string;
+
+export interface PaymentType {
+  id: string;
+  code?: string;
+  name: string;
+  status: 'ativo' | 'inativo';
+  createdAt: string;
+  company_id?: string;
+}
 
 export interface PaymentMethod {
   id: string;
@@ -567,6 +567,7 @@ export type View =
   | 'Grupos de Serviços'
   | 'Contas a Receber'
   | 'Contas a Pagar'
-  | 'Formas de Pagamento';
+  | 'Formas de Pagamento'
+  | 'Tipos de Pagamento';
 
 export type User = AppUser;

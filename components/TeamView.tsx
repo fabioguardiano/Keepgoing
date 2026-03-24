@@ -9,12 +9,16 @@ const POSITION_LABELS: Record<StaffPosition, string> = {
   ajudante_acabador: 'Ajudante de Acabador',
   motorista: 'Motorista',
   medidor: 'Medidor',
+  instalador: 'Instalador',
+  vendedor: 'Vendedor',
+  gerente: 'Gerente',
 };
 
 const ROLE_LABELS: Record<AppUser['role'], string> = {
   admin: 'Administrador',
   manager: 'Gerente',
   seller: 'Vendedor',
+  viewer: 'Observador',
   driver: 'Motorista/Entregador',
 };
 
@@ -22,6 +26,7 @@ const ROLE_COLORS: Record<AppUser['role'], string> = {
   admin: 'bg-red-100 text-red-700',
   manager: 'bg-blue-100 text-blue-700',
   seller: 'bg-green-100 text-green-700',
+  viewer: 'bg-slate-100 text-slate-700',
   driver: 'bg-orange-100 text-orange-700',
 };
 
@@ -128,6 +133,7 @@ const StaffForm: React.FC<StaffFormProps> = ({ initial, onSave, onClose }) => {
       id: initial?.id || String(Date.now()),
       name, position,
       hourlyRate: parseFloat(hourlyRate) || 0,
+      phone: initial?.phone || '',
       status: initial?.status || 'ativo',
     });
     onClose();
@@ -201,16 +207,21 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
   const [editingUser, setEditingUser] = useState<AppUser | undefined>();
   const [editingStaff, setEditingStaff] = useState<ProductionStaff | undefined>();
   const [searchTerm, setSearchTerm] = useState('');
+  const [showInactive, setShowInactive] = useState(false);
 
-  const filteredUsers = appUsers.filter(u =>
-    u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = appUsers.filter(u => {
+    const matchesSearch = u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = showInactive ? true : (u.status || 'ativo') === 'ativo';
+    return matchesSearch && matchesStatus;
+  });
 
-  const filteredStaff = staff.filter(s =>
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    POSITION_LABELS[s.position].toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredStaff = staff.filter(s => {
+    const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      POSITION_LABELS[s.position].toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = showInactive ? true : (s.status || 'ativo') === 'ativo';
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -241,21 +252,44 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
+            <Users size={16} />
+            {tab === 'usuarios' 
+              ? appUsers.filter(u => !u.status || u.status === 'ativo').length 
+              : staff.filter(s => !s.status || s.status === 'ativo').length} Ativos
+          </div>
+          <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
+            <PowerOff size={14} />
+            {tab === 'usuarios' 
+              ? appUsers.filter(u => u.status === 'inativo').length 
+              : staff.filter(s => s.status === 'inativo').length} Inativos
+          </div>
+          <button
+            onClick={() => setShowInactive(v => !v)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-xs font-bold uppercase tracking-widest transition-all ${showInactive ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-200'}`}
+          >
+            <PowerOff size={14} />
+            {showInactive ? 'Ocultar Inativos' : 'Mostrar Inativos'}
+          </button>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex items-center gap-3">
         <button
           onClick={() => setTab('usuarios')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-xs font-bold uppercase tracking-widest transition-all ${tab === 'usuarios' ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-200'}`}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl border text-xs font-bold uppercase tracking-widest transition-all ${tab === 'usuarios' ? 'bg-primary text-white shadow-lg shadow-primary/20 border-primary' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'}`}
         >
           <Shield size={14} />
           Usuários do App
-          <span className="bg-slate-200 text-slate-600 text-[10px] font-black px-1.5 py-0.5 rounded-full">{appUsers.length}</span>
         </button>
         <button
           onClick={() => setTab('producao')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-xs font-bold uppercase tracking-widest transition-all ${tab === 'producao' ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-200'}`}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl border text-xs font-bold uppercase tracking-widest transition-all ${tab === 'producao' ? 'bg-primary text-white shadow-lg shadow-primary/20 border-primary' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'}`}
         >
           <HardHat size={14} />
           Equipe de Produção
-          <span className="bg-slate-200 text-slate-600 text-[10px] font-black px-1.5 py-0.5 rounded-full">{staff.length}</span>
         </button>
       </div>
 
@@ -287,7 +321,7 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
                         <div className={`w-10 h-10 rounded-2xl ${avatarColor(user.id)} flex items-center justify-center text-white font-bold text-sm shrink-0`}>
                           {initials(user.name)}
                         </div>
-                        <div className="font-black text-slate-800 leading-tight">{user.name}</div>
+                        <div className="text-sm font-black text-slate-800 leading-tight">{user.name}</div>
                       </div>
                     </td>
                     <td className="px-6 py-6">
@@ -364,7 +398,7 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
                         <div className={`w-10 h-10 rounded-2xl ${avatarColor(s.id)} flex items-center justify-center text-white font-bold text-sm shrink-0`}>
                           {initials(s.name)}
                         </div>
-                        <div className="font-black text-slate-800 leading-tight">{s.name}</div>
+                        <div className="text-sm font-black text-slate-800 leading-tight">{s.name}</div>
                       </div>
                     </td>
                     <td className="px-6 py-6">

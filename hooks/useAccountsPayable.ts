@@ -99,5 +99,23 @@ export const useAccountsPayable = (companyId?: string) => {
     await handleSavePayable({ ...ap, installments: updatedInstallments, paidValue: totalPaid, status: newStatus });
   };
 
-  return { payables, loadingAP, handleSavePayable, deletePayable, payInstallment, refreshAP: fetchPayables };
+  const unpayInstallment = async (apId: string, installmentId: string) => {
+    const ap = payables.find(x => x.id === apId);
+    if (!ap) return;
+    const updatedInstallments = ap.installments.map(i =>
+      i.id === installmentId
+        ? { ...i, status: 'pendente' as const, paidValue: undefined, paidDate: undefined }
+        : i
+    );
+    const totalPaid = updatedInstallments
+      .filter(i => i.status === 'pago')
+      .reduce((acc, i) => acc + (i.paidValue ?? i.value), 0);
+    const newStatus: AccountPayable['status'] =
+      totalPaid >= ap.totalValue ? 'quitado'
+      : totalPaid > 0 ? 'parcial'
+      : 'pendente';
+    await handleSavePayable({ ...ap, installments: updatedInstallments, paidValue: totalPaid, status: newStatus });
+  };
+
+  return { payables, loadingAP, handleSavePayable, deletePayable, payInstallment, unpayInstallment, refreshAP: fetchPayables };
 };

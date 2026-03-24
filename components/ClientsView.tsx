@@ -172,7 +172,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
                         {client.type === 'Pessoa Jurídica' ? <ShieldCheck size={20} /> : <Users size={20} />}
                       </div>
                       <div>
-                        <div className="text-base font-black text-slate-800 leading-tight flex items-center gap-2">
+                        <div className="text-sm font-black text-slate-800 leading-tight flex items-center gap-2">
                           {client.tradingName || client.legalName}
                           {client.useSpecialTable && (
                             <span className="text-[10px] bg-primary/20 text-primary px-2 py-1 rounded-lg font-black uppercase tracking-tight shadow-sm">ESPECIAL</span>

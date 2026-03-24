@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Plus, Search, Package, AlertTriangle, TrendingUp, TrendingDown, Trash2, Edit2, Diamond, ShoppingBag, Wrench, MapPin } from 'lucide-react';
+import { Box, Plus, Search, Package, AlertTriangle, TrendingUp, TrendingDown, Trash2, Edit2, Diamond, ShoppingBag, Wrench, MapPin, PowerOff, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import { Material, Brand, ProductGroup, Supplier, Category } from '../types';
 import { NewMaterialModal } from './NewMaterialModal';
 
@@ -13,6 +13,9 @@ interface InventoryViewProps {
   exchangeRates: { usd: number; eur: number; lastUpdate: string };
 }
 
+type SortField = 'code' | 'name' | 'stockQuantity' | 'sellingPrice';
+type SortDirection = 'asc' | 'desc';
+
 export const InventoryView: React.FC<InventoryViewProps> = ({ 
   materials, onSaveMaterial, onUpdateStatus,
   brands, productGroups, suppliers, exchangeRates
@@ -21,16 +24,42 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   const [showInactive, setShowInactive] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
-  const filteredMaterials = materials.filter(m => {
-    const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.type.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = showInactive || m.status === 'ativo';
-    
-    return matchesSearch && matchesStatus;
-  });
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const filteredMaterials = materials
+    .filter(m => {
+      const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        m.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        m.type.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = showInactive || m.status === 'ativo';
+      
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      let comparison = 0;
+      if (sortField === 'name') comparison = a.name.localeCompare(b.name);
+      if (sortField === 'code') comparison = a.code.localeCompare(b.code);
+      if (sortField === 'stockQuantity') comparison = a.stockQuantity - b.stockQuantity;
+      if (sortField === 'sellingPrice') comparison = (a.sellingPrice || 0) - (b.sellingPrice || 0);
+      
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown size={14} className="opacity-30 group-hover:opacity-100 transition-opacity" />;
+    return sortDirection === 'asc' ? <ChevronUp size={14} className="text-primary" /> : <ChevronDown size={14} className="text-primary" />;
+  };
 
   const handleEdit = (material: Material) => {
     setEditingMaterial(material);
@@ -47,27 +76,19 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[var(--primary-color)] p-1.5 bg-orange-50 rounded-xl">
+            <span className="text-primary p-1.5 bg-orange-50 rounded-xl">
                <Package size={20} />
             </span>
             <h1 className="text-2xl font-black text-slate-800 tracking-tight">Matéria Prima</h1>
           </div>
           <p className="text-slate-500 font-medium">Controle de chapas e insumos de produção</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => setShowInactive(!showInactive)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${showInactive ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
-          >
-            {showInactive ? 'Ocultar Inativos' : 'Mostrar Inativos'}
-          </button>
-          <button 
-            onClick={handleAddNew}
-            className="bg-[var(--primary-color)] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[var(--primary-color)]/20 hover:bg-[var(--secondary-color)] transition-all transform hover:scale-[1.02] active:scale-95"
-          >
-            <Plus size={20} /> Novo Registro
-          </button>
-        </div>
+        <button 
+          onClick={handleAddNew}
+          className="bg-primary text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-secondary transition-all transform hover:scale-[1.02] active:scale-95"
+        >
+          <Plus size={20} /> Novo Registro
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -82,7 +103,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
         </div>
         <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
           <div className="flex items-center gap-4 mb-2">
-            <div className="p-3 bg-orange-50 text-[var(--primary-color)] rounded-2xl">
+            <div className="p-3 bg-orange-50 text-primary rounded-2xl">
               <TrendingUp size={24} />
             </div>
             <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">Valor em Estoque</span>
@@ -100,17 +121,32 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
         </div>
       </div>
 
-      <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+      <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input 
             type="text"
             placeholder="Buscar por código ou descrição..."
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/20 font-medium"
+            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+        <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
+          <Package size={16} />
+          {materials.filter(m => m.status === 'ativo').length} Ativos
+        </div>
+        <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
+          <PowerOff size={14} />
+          {materials.filter(m => m.status === 'inativo').length} Inativos
+        </div>
+        <button
+          onClick={() => setShowInactive(v => !v)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-xs font-bold uppercase tracking-widest transition-all ${showInactive ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-200'}`}
+        >
+          <PowerOff size={14} />
+          {showInactive ? 'Ocultar Inativos' : 'Mostrar Inativos'}
+        </button>
       </div>
 
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
@@ -118,12 +154,28 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest w-24">Código</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Matéria Prima</th>
+                <th onClick={() => handleSort('code')} className="px-6 py-4 cursor-pointer group hover:bg-slate-100/50 transition-colors w-24">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    Código <SortIcon field="code" />
+                  </div>
+                </th>
+                <th onClick={() => handleSort('name')} className="px-6 py-4 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    Matéria Prima <SortIcon field="name" />
+                  </div>
+                </th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Espessura</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Estoque</th>
+                <th onClick={() => handleSort('stockQuantity')} className="px-6 py-4 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    Estoque <SortIcon field="stockQuantity" />
+                  </div>
+                </th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Sugerido</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Venda</th>
+                <th onClick={() => handleSort('sellingPrice')} className="px-6 py-4 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    Venda <SortIcon field="sellingPrice" />
+                  </div>
+                </th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest text-right">Ações</th>
               </tr>
             </thead>
@@ -143,7 +195,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                         </div>
                       )}
                       <div>
-                        <div className="font-bold text-slate-700">{material.name}</div>
+                        <div className="text-sm font-black text-slate-800 leading-tight">{material.name}</div>
                         <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{material.brand || material.supplier || 'Geral'}</div>
                       </div>
                     </div>
