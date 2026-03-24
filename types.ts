@@ -128,6 +128,7 @@ export interface Client {
   id: string;
   legalName: string;
   tradingName: string;
+  name?: string;
   type: 'Pessoa Física' | 'Pessoa Jurídica';
   document: string;
   rgInsc?: string;

@@ -21,6 +21,7 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
           ...c,
           legalName: c.legal_name || c.name,
           tradingName: c.trading_name || c.name,
+          name: c.trading_name || c.legal_name || c.name,
           rgInsc: c.rg_insc,
           cellphone: c.cellphone || '',
           birthDate: c.birth_date || undefined,

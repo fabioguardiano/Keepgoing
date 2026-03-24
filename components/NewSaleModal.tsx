@@ -64,6 +64,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
       priority: 'media',
       status: saleType,
       salesChannel,
+      architectId,
       architectName: architect,
       items,
       paymentConditions,
@@ -104,6 +105,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const [salesChannel, setSalesChannel] = useState<string>(initialData?.salesChannel || salesChannels[0]?.name || '');
   const [seller, setSeller] = useState(initialData?.seller || appUsers[0]?.name || '');
   const [architect, setArchitect] = useState(initialData?.architectName || '');
+  const [architectId, setArchitectId] = useState(initialData?.architectId || '');
   const [items, setItems] = useState<OrderItem[]>(initialData?.items || []);
   const [paymentConditions, setPaymentConditions] = useState(initialData?.paymentConditions || '');
   const [paymentMethodId, setPaymentMethodId] = useState(initialData?.paymentMethodId || '');
@@ -441,6 +443,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
       priority: 'media',
       status: saleType,
       salesChannel: salesChannel,
+      architectId: architectId,
       architectName: architect,
       items,
       paymentConditions,
@@ -646,13 +649,25 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">Arquiteto / Parceiro</label>
-                <input
-                  type="text"
+                <select
                   value={architect}
-                  onChange={(e) => setArchitect(e.target.value)}
-                  placeholder="Nome do parceiro"
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-slate-800 dark:text-white transition-all"
-                />
+                  onChange={(e) => {
+                    const selectedName = e.target.value;
+                    setArchitect(selectedName);
+                    const arch = architects.find(a => (a.tradingName || a.legalName) === selectedName);
+                    setArchitectId(arch?.id || '');
+                  }}
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-slate-800 dark:text-white transition-all appearance-none"
+                >
+                  <option value="">Nenhum parceiro</option>
+                  {architects
+                    .filter(a => a.status === 'ativo')
+                    .map(a => (
+                      <option key={a.id} value={a.tradingName || a.legalName}>
+                        {a.tradingName || a.legalName}
+                      </option>
+                    ))}
+                </select>
               </div>
 
               <div>
