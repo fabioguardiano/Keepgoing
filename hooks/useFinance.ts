@@ -11,7 +11,7 @@ export const useFinance = (companyId?: string, logActivity?: (action: any, detai
     setLoadingFinance(true);
     try {
       let query = supabase.from('finance_transactions').select('*');
-      query = query.or(`company_id.eq.${companyId},company_id.is.null`);
+      query = query.eq('company_id', companyId);
 
       const { data, error } = await query.order('date', { ascending: false });
 

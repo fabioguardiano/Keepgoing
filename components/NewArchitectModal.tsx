@@ -138,7 +138,7 @@ export const NewArchitectModal: React.FC<NewArchitectModalProps> = ({ isOpen, on
     e.preventDefault();
     onSave({
       ...formData,
-      id: editingArchitect?.id || Math.random().toString(36).substr(2, 9).toUpperCase(),
+      id: editingArchitect?.id || crypto.randomUUID(),
       createdAt: editingArchitect?.createdAt || new Date().toISOString()
     });
     onClose();

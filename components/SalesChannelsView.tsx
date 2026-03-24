@@ -28,7 +28,7 @@ export const SalesChannelsView: React.FC<SalesChannelsViewProps> = ({ channels, 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const channel: SalesChannel = {
-      id: editingChannel?.id || Math.random().toString(36).substr(2, 9),
+      id: editingChannel?.id || crypto.randomUUID(),
       createdAt: editingChannel?.createdAt || new Date().toISOString(),
       ...formData
     };

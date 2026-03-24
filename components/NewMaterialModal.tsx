@@ -149,7 +149,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
     e.preventDefault();
     const finalMaterial = {
       ...formData,
-      id: editingMaterial?.id || Math.random().toString(36).substr(2, 9).toUpperCase(),
+      id: editingMaterial?.id || crypto.randomUUID(),
     } as Material;
 
     // Record price history if cost or selling price changed

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { ShoppingBag, Plus, Search, FileText, CheckCircle2, Clock, XCircle, MoreVertical, ExternalLink, Printer, LayoutGrid, List, ArrowRight, X, Edit2, GripVertical, Trash2, Check, DollarSign, Calendar, MoreHorizontal, User, AlertTriangle, Lock } from 'lucide-react';
 import { SalesOrder, Client, Material, AppUser, Architect, ProductService, SalesChannel, CompanyInfo, SalesPhaseConfig, ServiceGroup, PaymentMethod } from '../types';
@@ -143,6 +143,8 @@ export const SalesView: React.FC<SalesViewProps> = ({
         observations: `[RETORNO] ${revertJustification}${revertPending.sale.observations ? '\n' + revertPending.sale.observations : ''}`
       });
       setRevertPending(null);
+      setRevertPassword('');
+      setRevertJustification('');
     } catch (err: any) {
       setRevertError(err.message || 'Erro ao validar senha.');
     } finally {
@@ -150,23 +152,49 @@ export const SalesView: React.FC<SalesViewProps> = ({
     }
   };
 
-  const handleEdit = (sale: SalesOrder) => {
+  const handleEdit = useCallback((sale: SalesOrder) => {
     setEditingSale(sale);
     setIsNewSaleModalOpen(true);
-  };
+  }, []);
 
-  const handlePrint = (sale: SalesOrder) => {
+  const handlePrint = useCallback((sale: SalesOrder) => {
     setPrintingSale(sale);
     setTimeout(() => {
       window.print();
       setPrintingSale(null);
     }, 100);
-  };
+  }, []);
 
-  const handleNewSale = () => {
+  const handleNewSale = useCallback(() => {
     setEditingSale(null);
     setIsNewSaleModalOpen(true);
-  };
+  }, []);
+
+  const filteredSales = useMemo(() => {
+    const now = new Date();
+    return sales
+      .filter(s => statusFilter === 'todos' || s.status === statusFilter)
+      .filter(s => {
+        const d = new Date(s.createdAt);
+        if (dateFilter === 'mes_atual') return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+        if (dateFilter === 'mes_passado') { const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1); return d.getFullYear() === prev.getFullYear() && d.getMonth() === prev.getMonth(); }
+        if (dateFilter === 'ano_atual') return d.getFullYear() === now.getFullYear();
+        if (dateFilter === 'personalizado') {
+          const from = dateFrom ? new Date(dateFrom + 'T00:00:00') : null;
+          const to   = dateTo   ? new Date(dateTo   + 'T23:59:59') : null;
+          if (from && d < from) return false;
+          if (to   && d > to  ) return false;
+        }
+        return true;
+      })
+      .filter(s => (s.clientName || '').toLowerCase().includes(searchTerm.toLowerCase()) || (s.orderNumber || '').includes(searchTerm))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [sales, statusFilter, dateFilter, dateFrom, dateTo, searchTerm]);
+
+  const totalFiltrado = useMemo(
+    () => filteredSales.reduce((acc, s) => acc + (s.totals?.geral || 0), 0),
+    [filteredSales]
+  );
 
   return (
     <div className="space-y-6">
@@ -293,44 +321,12 @@ export const SalesView: React.FC<SalesViewProps> = ({
             )}
           </div>
 
-          {(() => {
-            const now = new Date();
-            const filterByDate = (s: SalesOrder) => {
-              const d = new Date(s.createdAt);
-              if (dateFilter === 'mes_atual') {
-                return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-              }
-              if (dateFilter === 'mes_passado') {
-                const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-                return d.getFullYear() === prev.getFullYear() && d.getMonth() === prev.getMonth();
-              }
-              if (dateFilter === 'ano_atual') {
-                return d.getFullYear() === now.getFullYear();
-              }
-              if (dateFilter === 'personalizado') {
-                const from = dateFrom ? new Date(dateFrom + 'T00:00:00') : null;
-                const to   = dateTo   ? new Date(dateTo   + 'T23:59:59') : null;
-                if (from && d < from) return false;
-                if (to   && d > to  ) return false;
-                return true;
-              }
-              return true;
-            };
-
-            const filtered = sales
-              .filter(s => statusFilter === 'todos' || s.status === statusFilter)
-              .filter(filterByDate)
-              .filter(s => (s.clientName || '').toLowerCase().includes(searchTerm.toLowerCase()) || (s.orderNumber || '').includes(searchTerm))
-              .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-            const totalFiltrado = filtered.reduce((acc, s) => acc + (s.totals?.geral || 0), 0);
-
-            return filtered.length > 0 ? (
+          {filteredSales.length > 0 ? (
             <div className="overflow-x-auto">
               {/* Rodapé com total do período */}
               <div className="px-6 py-2 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
                 <span className="text-[11px] font-bold text-slate-400">
-                  {filtered.length} registro{filtered.length !== 1 ? 's' : ''} encontrado{filtered.length !== 1 ? 's' : ''}
+                  {filteredSales.length} registro{filteredSales.length !== 1 ? 's' : ''} encontrado{filteredSales.length !== 1 ? 's' : ''}
                 </span>
                 <span className="text-[11px] font-black text-slate-700 dark:text-white">
                   Total do período: <span className="text-[var(--primary-color)]">R$ {totalFiltrado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -349,7 +345,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {filtered.map(sale => (
+                  {filteredSales.map(sale => (
                       <tr key={sale.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
@@ -411,8 +407,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
               <h3 className="font-bold text-slate-700 dark:text-white mb-1">Nenhum registro encontrado</h3>
               <p className="text-slate-400 dark:text-slate-500 max-w-xs mx-auto text-sm">Tente ajustar os filtros de status ou período.</p>
             </div>
-          );
-          })()}
+          )}
         </div>
       ) : (
         <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>

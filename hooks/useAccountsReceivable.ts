@@ -35,7 +35,8 @@ export const useAccountsReceivable = (companyId?: string) => {
         .from('accounts_receivable')
         .select('*')
         .eq('company_id', companyId)
-        .order('due_date', { ascending: true });
+        .order('due_date', { ascending: true })
+        .limit(500);
       if (error) throw error;
       if (data) setReceivables(data.map(map));
     } catch (err) {
@@ -69,7 +70,7 @@ export const useAccountsReceivable = (companyId?: string) => {
       status: ar.status,
     };
     const { data, error } = await supabase.from('accounts_receivable').upsert(payload).select().single();
-    if (error) { alert('Erro ao salvar conta a receber: ' + error.message); throw error; }
+    if (error) { alert('Não foi possível salvar a conta a receber. Verifique sua conexão e tente novamente.'); throw error; }
     const saved = map(data);
     setReceivables(prev =>
       prev.find(x => x.id === saved.id)
@@ -85,10 +86,12 @@ export const useAccountsReceivable = (companyId?: string) => {
     setReceivables(prev => prev.filter(x => x.id !== id));
   };
 
-  // Registra pagamento de uma parcela
+  // Registra pagamento de uma parcela — busca registro fresco para evitar race condition
   const payInstallment = async (arId: string, installmentId: string, paidValue: number, paidDate: string) => {
-    const ar = receivables.find(x => x.id === arId);
-    if (!ar) return;
+    const { data: fresh, error: fetchErr } = await supabase
+      .from('accounts_receivable').select('*').eq('id', arId).single();
+    if (fetchErr || !fresh) return;
+    const ar = map(fresh);
     const updatedInstallments = ar.installments.map(i =>
       i.id === installmentId
         ? { ...i, status: 'pago' as const, paidValue, paidDate }
@@ -105,8 +108,10 @@ export const useAccountsReceivable = (companyId?: string) => {
   };
 
   const unpayInstallment = async (arId: string, installmentId: string) => {
-    const ar = receivables.find(x => x.id === arId);
-    if (!ar) return;
+    const { data: fresh, error: fetchErr } = await supabase
+      .from('accounts_receivable').select('*').eq('id', arId).single();
+    if (fetchErr || !fresh) return;
+    const ar = map(fresh);
     const updatedInstallments = ar.installments.map(i =>
       i.id === installmentId
         ? { ...i, status: 'pendente' as const, paidValue: undefined, paidDate: undefined }

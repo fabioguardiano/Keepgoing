@@ -235,7 +235,7 @@ export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onCl
 
     onSave({
       ...formData,
-      id: editingSupplier?.id || Math.random().toString(36).substr(2, 9).toUpperCase(),
+      id: editingSupplier?.id || crypto.randomUUID(),
       createdAt: editingSupplier?.createdAt || new Date().toISOString()
     });
     onClose();

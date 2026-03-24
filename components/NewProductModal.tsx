@@ -129,7 +129,7 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
     e.preventDefault();
     onSave({
       ...formData,
-      id: editingProduct?.id || Math.random().toString(36).substr(2, 9).toUpperCase(),
+      id: editingProduct?.id || crypto.randomUUID(),
       createdAt: editingProduct?.createdAt || new Date().toISOString()
     });
     onClose();

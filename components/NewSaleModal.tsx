@@ -147,10 +147,12 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   };
 
   const calculateItemTotal = () => {
-    const m2 = calculateM2(itemLength, itemWidth, itemQty);
-    const baseTotal = m2 > 0 ? (m2 * itemPrice) : (itemQty * itemPrice);
-    const serviceBonus = baseTotal * (itemService / 100);
-    return baseTotal + serviceBonus;
+    const safeQty   = isFinite(itemQty)     && itemQty     > 0 ? itemQty     : 0;
+    const safePrice = isFinite(itemPrice)                      ? itemPrice   : 0;
+    const safeSvc   = isFinite(itemService) && itemService > 0 ? itemService : 0;
+    const m2 = calculateM2(itemLength, itemWidth, safeQty);
+    const baseTotal = m2 > 0 ? (m2 * safePrice) : (safeQty * safePrice);
+    return baseTotal + baseTotal * (safeSvc / 100);
   };
 
   const addItem = () => {
@@ -209,7 +211,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
       setEditingItemId(null);
     } else {
       const newItem: OrderItem = {
-        id: Math.random().toString(36).substr(2, 9),
+        id: crypto.randomUUID(),
         description: itemDesc,
         quantity: itemQty,
         unit: m2 > 0 ? 'm²' : 'un',
@@ -328,10 +330,16 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
   const duplicateEnvironment = (envName: string) => {
     const envItems = items.filter(i => (i.environment || 'Sem Ambiente') === envName);
-    const newEnvName = `${envName} (Cópia)`;
+    const existingEnvs = Array.from(new Set(items.map(i => i.environment || 'Sem Ambiente')));
+    let newEnvName = `${envName} (Cópia)`;
+    let counter = 2;
+    while (existingEnvs.includes(newEnvName)) {
+      newEnvName = `${envName} (Cópia ${counter})`;
+      counter++;
+    }
     const newItems = envItems.map(item => ({
       ...item,
-      id: Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID(),
       environment: newEnvName
     }));
     setItems([...items, ...newItems]);
@@ -402,8 +410,10 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
     alert('Preços sincronizados com o cadastro de materiais!');
   };
 
-  const subtotal = items.reduce((acc, item) => acc + item.totalPrice, 0);
-  const calculatedDiscount = discountPercentage > 0 ? (subtotal * (discountPercentage / 100)) : discountValue;
+  const subtotal = items.reduce((acc, item) => acc + (isFinite(item.totalPrice) ? item.totalPrice : 0), 0);
+  const safeDiscPct = isFinite(discountPercentage) ? discountPercentage : 0;
+  const safeDiscVal = isFinite(discountValue)      ? discountValue      : 0;
+  const calculatedDiscount = safeDiscPct > 0 ? (subtotal * (safeDiscPct / 100)) : safeDiscVal;
   const totalGeral = subtotal - calculatedDiscount;
 
   const handleSave = () => {
@@ -428,7 +438,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
     const newSale: SalesOrder = {
       ...initialData,
-      id: initialData?.id || Math.random().toString(36).substr(2, 9),
+      id: initialData?.id || crypto.randomUUID(),
       osNumber: osNumber || `OS-${Math.floor(Math.random() * 10000)}`,
       orderNumber: orderNumber || `PED-${Math.floor(Math.random() * 10000)}`,
       clientName: selectedClient.name,
@@ -490,6 +500,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
       setSaleType('Orçamento');
       setIsLocked(false);
       setShowRevert(false);
+      setRevertPassword('');
+      setRevertJustification('');
     } catch (err: any) {
       setRevertError(err.message || 'Erro ao validar senha.');
     } finally {

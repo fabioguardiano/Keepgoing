@@ -28,6 +28,13 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
   const isPedido = sale.status === 'Pedido';
   const docTitle = isPedido ? 'PEDIDO DE COMPRA' : 'ORÇAMENTO';
 
+  // Remove linhas internas de [RETORNO] — informação gerencial, não deve aparecer ao cliente
+  const clientObservations = (sale.observations || '')
+    .split('\n')
+    .filter(line => !line.trimStart().startsWith('[RETORNO]'))
+    .join('\n')
+    .trim();
+
   const environments = Array.from(
     new Set((sale.items || []).map(i => i.environment || 'Sem Ambiente'))
   );
@@ -49,17 +56,17 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
       style={{ fontFamily: '"Calibri", "Arial", sans-serif', fontSize: '11px', lineHeight: '1.35' }}
     >
       {/* ── CABEÇALHO ────────────────────────────────────────── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #000', paddingBottom: '8px', marginBottom: '8px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #000', paddingBottom: '12px', marginBottom: '10px' }}>
         {/* Logo / Nome */}
-        <div style={{ width: '55%' }}>
+        <div style={{ width: '55%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start' }}>
           {companyInfo.logoUrl ? (
-            <img src={companyInfo.logoUrl} alt="Logo" style={{ maxHeight: '80px', width: 'auto', objectFit: 'contain' }} />
+            <img src={companyInfo.logoUrl} alt="Logo" style={{ maxHeight: '150px', maxWidth: '400px', width: 'auto', objectFit: 'contain', display: 'block' }} />
           ) : (
-            <div style={{ fontSize: '28px', fontWeight: 900, letterSpacing: '-1px', color: '#1e293b' }}>
+            <div style={{ fontSize: '34px', fontWeight: 900, letterSpacing: '-1px', color: '#1e293b' }}>
               {companyInfo.name}
             </div>
           )}
-          <div style={{ fontSize: '9px', marginTop: '4px', color: '#475569' }}>
+          <div style={{ fontSize: '9px', marginTop: '6px', color: '#475569' }}>
             {companyInfo.document && <span>CNPJ: {companyInfo.document} &nbsp;|&nbsp; </span>}
             {companyInfo.address && <span>{companyInfo.address} &nbsp;|&nbsp; </span>}
             {companyInfo.phone && <span>Fone: {companyInfo.phone} &nbsp;|&nbsp; </span>}
@@ -285,128 +292,120 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
       })}
 
       {/* ── TOTAIS + OBSERVAÇÕES ─────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '12px', marginBottom: '10px', pageBreakInside: 'avoid' }}>
-        {/* Observações + condições */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          {/* Condições de pagamento */}
-          {(sale.paymentMethodName || sale.paymentConditions) && (() => {
-            const n = sale.paymentInstallments || 1;
-            const total = sale.totals?.geral ?? sale.totalValue ?? 0;
-            const baseValue = Math.floor((total / n) * 100) / 100;
-            const diff = Math.round((total - baseValue * n) * 100) / 100;
-            const fmtR = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            const rows = n > 1
-              ? Array.from({ length: n }, (_, i) => ({
-                  num: i + 1,
-                  value: i === 0 ? baseValue + diff : baseValue,
-                  due: sale.firstDueDate ? (() => {
-                    const d = new Date(sale.firstDueDate + 'T12:00:00');
-                    return new Date(d.getFullYear(), d.getMonth() + i, d.getDate()).toLocaleDateString('pt-BR');
-                  })() : null,
-                }))
-              : null;
-            return (
-              <div style={{ border: '1px solid #000', padding: '6px 8px' }}>
+      {(() => {
+        const n = sale.paymentInstallments || 1;
+        const totalVal = sale.totals?.geral ?? sale.totalValue ?? 0;
+        const baseValue = Math.floor((totalVal / n) * 100) / 100;
+        const diff = Math.round((totalVal - baseValue * n) * 100) / 100;
+        const fmtR = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const rows = n > 1
+          ? Array.from({ length: n }, (_, i) => ({
+              num: i + 1,
+              value: i === 0 ? baseValue + diff : baseValue,
+              due: sale.firstDueDate ? (() => {
+                const d = new Date(sale.firstDueDate + 'T12:00:00');
+                return new Date(d.getFullYear(), d.getMonth() + i, d.getDate()).toLocaleDateString('pt-BR');
+              })() : null,
+            }))
+          : null;
+
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '12px', marginBottom: '10px', pageBreakInside: 'avoid' }}>
+            {/* Coluna esquerda: Observações + Nota legal */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {/* Observações — campo que o usuário preenche na tela de manutenção */}
+              <div style={{ border: '1px solid #000', padding: '6px 8px', flex: 1 }}>
                 <div style={{ fontWeight: 900, fontSize: '9px', textTransform: 'uppercase', marginBottom: '4px', color: '#334155' }}>
-                  Condições de Pagamento
+                  Observações
                 </div>
-                {sale.paymentMethodName && (
+                <div style={{ fontSize: '10px', minHeight: '40px', whiteSpace: 'pre-wrap' }}>
+                  {sale.paymentConditions || ''}
+                </div>
+              </div>
+
+              {/* Nota legal */}
+              <div style={{ border: '1px solid #000', padding: '6px 8px', fontSize: '8.5px', color: '#475569' }}>
+                <p style={{ margin: '0 0 3px 0' }}>
+                  Mármores e granitos, por sua natureza, estão sujeitos a variações de tonalidade, veios, buracos, fissuras e/ou manchas, não podendo ser recusados ou devolvidos por essa razão.
+                </p>
+                <p style={{ margin: '0' }}>
+                  Serviços em obra (colagem, calafetagem, polimento etc.) só serão executados se explicitamente inclusos neste orçamento.
+                </p>
+              </div>
+            </div>
+
+            {/* Coluna direita: Totais → Prazo → Condições de Pagamento */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {/* Resumo financeiro */}
+              {/* Resumo financeiro */}
+              <div style={{ border: '2px solid #000' }}>
+                <div style={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid #000', padding: '5px 10px', display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontWeight: 700 }}>Sub-Total Geral</span>
+                  <span style={{ fontWeight: 700 }}>R$ {fmt(subtotal)}</span>
+                </div>
+                {discount > 0 && (
+                  <div style={{ padding: '5px 10px', display: 'flex', justifyContent: 'space-between', color: '#b91c1c', borderBottom: '1px solid #e2e8f0' }}>
+                    <span style={{ fontWeight: 700 }}>Desconto</span>
+                    <span style={{ fontWeight: 700 }}>- R$ {fmt(discount)}</span>
+                  </div>
+                )}
+                <div style={{ backgroundColor: '#0f172a', color: '#fff', padding: '8px 10px', display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontWeight: 900, fontSize: '12px' }}>VALOR TOTAL</span>
+                  <span style={{ fontWeight: 900, fontSize: '13px' }}>R$ {fmt(total)}</span>
+                </div>
+              </div>
+
+              {/* Condições de Pagamento */}
+              {sale.paymentMethodName && (
+                <div style={{ border: '1px solid #000', padding: '6px 8px' }}>
+                  <div style={{ fontWeight: 900, fontSize: '9px', textTransform: 'uppercase', marginBottom: '4px', color: '#334155' }}>
+                    Condições de Pagamento
+                  </div>
                   <div style={{ fontWeight: 700, fontSize: '10px', marginBottom: rows ? '5px' : '0' }}>
                     {sale.paymentMethodName}
                     {n > 1 && (
                       <span style={{ marginLeft: '6px', fontWeight: 900, color: '#1e293b' }}>
-                        — {n}x de R$ {fmtR(baseValue + (n === 1 ? diff : 0))}
+                        — {n}x de R$ {fmtR(baseValue)}
                       </span>
                     )}
                     {n === 1 && (
                       <span style={{ marginLeft: '6px', fontWeight: 900, color: '#1e293b' }}>— à vista</span>
                     )}
                   </div>
-                )}
-                {rows && (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px' }}>
-                    <thead>
-                      <tr style={{ backgroundColor: '#f1f5f9' }}>
-                        <th style={{ padding: '2px 4px', textAlign: 'left', fontWeight: 700 }}>Parcela</th>
-                        {rows[0].due && <th style={{ padding: '2px 4px', textAlign: 'left', fontWeight: 700 }}>Vencimento</th>}
-                        <th style={{ padding: '2px 4px', textAlign: 'right', fontWeight: 700 }}>Valor</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.map(r => (
-                        <tr key={r.num} style={{ borderTop: '1px solid #e2e8f0' }}>
-                          <td style={{ padding: '2px 4px', fontWeight: 600 }}>{r.num}ª</td>
-                          {r.due && <td style={{ padding: '2px 4px' }}>{r.due}</td>}
-                          <td style={{ padding: '2px 4px', textAlign: 'right', fontWeight: 700 }}>R$ {fmtR(r.value)}</td>
+                  {rows && (
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: '#f1f5f9' }}>
+                          <th style={{ padding: '2px 4px', textAlign: 'left', fontWeight: 700 }}>Parcela</th>
+                          {rows[0].due && <th style={{ padding: '2px 4px', textAlign: 'left', fontWeight: 700 }}>Vencimento</th>}
+                          <th style={{ padding: '2px 4px', textAlign: 'right', fontWeight: 700 }}>Valor</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-                {sale.paymentConditions && (
-                  <div style={{ marginTop: '4px', fontSize: '9px', color: '#475569', fontStyle: 'italic' }}>
-                    {sale.paymentConditions}
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-
-          {/* Observações */}
-          <div style={{ border: '1px solid #000', padding: '6px 8px', flex: 1 }}>
-            <div style={{ fontWeight: 900, fontSize: '9px', textTransform: 'uppercase', marginBottom: '4px', color: '#334155' }}>
-              Observações
-            </div>
-            <div style={{ fontSize: '10px', minHeight: '36px', whiteSpace: 'pre-wrap' }}>
-              {sale.observations || ''}
-            </div>
-          </div>
-
-          {/* Nota legal */}
-          <div style={{ border: '1px solid #000', padding: '6px 8px', fontSize: '8.5px', color: '#475569' }}>
-            <p style={{ margin: '0 0 3px 0' }}>
-              Mármores e granitos, por sua natureza, estão sujeitos a variações de tonalidade, veios, buracos, fissuras e/ou manchas, não podendo ser recusados ou devolvidos por essa razão.
-            </p>
-            <p style={{ margin: '0' }}>
-              Serviços em obra (colagem, calafetagem, polimento etc.) só serão executados se explicitamente inclusos neste orçamento.
-            </p>
-          </div>
-        </div>
-
-        {/* Resumo financeiro */}
-        <div style={{ border: '2px solid #000', alignSelf: 'start' }}>
-          <div style={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid #000', padding: '5px 10px', display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ fontWeight: 700 }}>Sub-Total Geral</span>
-            <span style={{ fontWeight: 700 }}>R$ {fmt(subtotal)}</span>
-          </div>
-          {discount > 0 && (
-            <div style={{ padding: '5px 10px', display: 'flex', justifyContent: 'space-between', color: '#b91c1c', borderBottom: '1px solid #e2e8f0' }}>
-              <span style={{ fontWeight: 700 }}>Desconto</span>
-              <span style={{ fontWeight: 700 }}>- R$ {fmt(discount)}</span>
-            </div>
-          )}
-          <div style={{ backgroundColor: '#0f172a', color: '#fff', padding: '8px 10px', display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ fontWeight: 900, fontSize: '12px' }}>VALOR TOTAL</span>
-            <span style={{ fontWeight: 900, fontSize: '13px' }}>R$ {fmt(total)}</span>
-          </div>
-          {/* Prazo de entrega */}
-          <div style={{ padding: '6px 10px', borderTop: '1px solid #000' }}>
-            <div style={{ fontWeight: 900, fontSize: '9px', textTransform: 'uppercase', marginBottom: '2px' }}>
-              Prazo de Entrega
-            </div>
-            <div style={{ fontWeight: 700, fontSize: '12px' }}>
-              {deliveryDays && deliveryDays > 0 ? (
-                <>{deliveryDays} <span style={{ fontWeight: 400, fontSize: '10px' }}>dias úteis</span></>
-              ) : (
-                <span style={{ fontStyle: 'italic', color: '#94a3b8', fontSize: '10px' }}>A combinar</span>
+                      </thead>
+                      <tbody>
+                        {rows.map(r => (
+                          <tr key={r.num} style={{ borderTop: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '2px 4px', fontWeight: 600 }}>{r.num}ª</td>
+                            {r.due && <td style={{ padding: '2px 4px' }}>{r.due}</td>}
+                            <td style={{ padding: '2px 4px', textAlign: 'right', fontWeight: 700 }}>R$ {fmtR(r.value)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
               )}
-            </div>
-            <div style={{ fontSize: '8px', color: '#64748b', marginTop: '1px' }}>
-              Prazo conta a partir da confirmação e medição aprovada.
+
+              {/* Prazo de Entrega — abaixo das condições */}
+              <div style={{ border: '1px solid #000', padding: '3px 8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontWeight: 900, fontSize: '9px', textTransform: 'uppercase', color: '#334155' }}>Prazo de Entrega:</span>
+                <span style={{ fontWeight: 700, fontSize: '10px' }}>
+                  {deliveryDays && deliveryDays > 0 ? `${deliveryDays} dias úteis` : <span style={{ fontStyle: 'italic', color: '#94a3b8' }}>A combinar</span>}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* ── ASSINATURAS ──────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', marginTop: '36px', pageBreakInside: 'avoid' }}>

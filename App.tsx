@@ -70,7 +70,7 @@ const App: React.FC = () => {
         const { data, error } = await supabase
           .from('orders_service')
           .select('*')
-          .or(`company_id.eq.${user.company_id},company_id.is.null`)
+          .eq('company_id', user.company_id)
           .order('os_number', { ascending: false });
         
         if (error) throw error;
@@ -222,9 +222,10 @@ const App: React.FC = () => {
   // 6. Efeitos de Terceiros e Gerais
   const [exchangeRates, setExchangeRates] = useState<ExchangeRates>({ usd: 0, eur: 0, lastUpdate: '--:--' });
   useEffect(() => {
+    const controller = new AbortController();
     const fetchRates = async () => {
       try {
-        const response = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL');
+        const response = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL', { signal: controller.signal });
         if (response.ok) {
           const data = await response.json();
           setExchangeRates({
@@ -233,15 +234,15 @@ const App: React.FC = () => {
             lastUpdate: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
           });
         }
-      } catch (error) {
+      } catch (error: any) {
+        if (error?.name === 'AbortError') return;
         console.error('Erro cotações:', error);
-        // Mantém as taxas anteriores se já carregadas; evita cálculos com zero
         setExchangeRates(prev => prev.usd > 0 ? prev : { usd: 5.70, eur: 6.10, lastUpdate: 'Offline' });
       }
     };
     fetchRates();
     const inv = setInterval(fetchRates, 300000);
-    return () => clearInterval(inv);
+    return () => { clearInterval(inv); controller.abort(); };
   }, []);
 
   // 7. Handlers de Negócio Orquestrados
@@ -282,7 +283,7 @@ const App: React.FC = () => {
           const baseValue = Math.floor((total / n) * 100) / 100;
           const diff = Math.round((total - baseValue * n) * 100) / 100;
           const installments = Array.from({ length: n }, (_, i) => ({
-            id: Math.random().toString(36).slice(2, 11),
+            id: crypto.randomUUID(),
             number: i + 1,
             dueDate: new Date(firstDate.getFullYear(), firstDate.getMonth() + i, firstDate.getDate()).toISOString().split('T')[0],
             value: i === 0 ? baseValue + diff : baseValue,

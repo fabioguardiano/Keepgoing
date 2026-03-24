@@ -8,7 +8,7 @@ import { AccountReceivable, AccountPayable, AccountInstallment, PaymentMethod, C
 const fmt = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = (d: string) => d ? new Date(d + 'T12:00:00').toLocaleDateString('pt-BR') : '-';
 const isOverdue = (dueDate: string, status: string) => status !== 'quitado' && status !== 'cancelado' && new Date(dueDate + 'T23:59:59') < new Date();
-const genId = () => Math.random().toString(36).slice(2, 11);
+const genId = () => crypto.randomUUID();
 
 const STATUS_STYLE: Record<string, string> = {
   pendente:  'bg-yellow-100 text-yellow-700',

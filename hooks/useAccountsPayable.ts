@@ -33,7 +33,8 @@ export const useAccountsPayable = (companyId?: string) => {
         .from('accounts_payable')
         .select('*')
         .eq('company_id', companyId)
-        .order('due_date', { ascending: true });
+        .order('due_date', { ascending: true })
+        .limit(500);
       if (error) throw error;
       if (data) setPayables(data.map(map));
     } catch (err) {
@@ -65,7 +66,7 @@ export const useAccountsPayable = (companyId?: string) => {
       status: ap.status,
     };
     const { data, error } = await supabase.from('accounts_payable').upsert(payload).select().single();
-    if (error) { alert('Erro ao salvar conta a pagar: ' + error.message); throw error; }
+    if (error) { alert('Não foi possível salvar a conta a pagar. Verifique sua conexão e tente novamente.'); throw error; }
     const saved = map(data);
     setPayables(prev =>
       prev.find(x => x.id === saved.id)
@@ -82,8 +83,10 @@ export const useAccountsPayable = (companyId?: string) => {
   };
 
   const payInstallment = async (apId: string, installmentId: string, paidValue: number, paidDate: string) => {
-    const ap = payables.find(x => x.id === apId);
-    if (!ap) return;
+    const { data: fresh, error: fetchErr } = await supabase
+      .from('accounts_payable').select('*').eq('id', apId).single();
+    if (fetchErr || !fresh) return;
+    const ap = map(fresh);
     const updatedInstallments = ap.installments.map(i =>
       i.id === installmentId
         ? { ...i, status: 'pago' as const, paidValue, paidDate }
@@ -100,8 +103,10 @@ export const useAccountsPayable = (companyId?: string) => {
   };
 
   const unpayInstallment = async (apId: string, installmentId: string) => {
-    const ap = payables.find(x => x.id === apId);
-    if (!ap) return;
+    const { data: fresh, error: fetchErr } = await supabase
+      .from('accounts_payable').select('*').eq('id', apId).single();
+    if (fetchErr || !fresh) return;
+    const ap = map(fresh);
     const updatedInstallments = ap.installments.map(i =>
       i.id === installmentId
         ? { ...i, status: 'pendente' as const, paidValue: undefined, paidDate: undefined }
