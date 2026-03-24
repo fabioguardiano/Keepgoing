@@ -957,7 +957,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   value={paymentConditions}
                   onChange={e => setPaymentConditions(e.target.value)}
                   placeholder="Observações adicionais sobre o pagamento..."
-                  className="w-full p-2 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-xs text-slate-800 dark:text-white transition-all h-14 resize-none"
+                  className="w-full p-2 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-xs text-slate-800 dark:text-white transition-all h-48 resize-none"
                 />
               </div>
               <div>
