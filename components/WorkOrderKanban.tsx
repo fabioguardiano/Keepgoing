@@ -198,16 +198,39 @@ interface KanbanColumnProps {
   onCardClick: (wo: WorkOrder) => void;
 }
 
-const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, onCardClick }) => (
+const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, onCardClick }) => {
+  const totalM2 = workOrders.reduce((acc, wo) => acc + (wo.totalM2 || 0), 0);
+  const totalLinear = workOrders.reduce((acc, wo) => acc + (wo.totalLinear || 0), 0);
+
+  return (
   <div className="w-72 flex-shrink-0 flex flex-col">
     {/* Column header */}
-    <div className="flex items-center justify-between mb-3 px-1">
-      <h3 className="text-xs font-black uppercase tracking-widest text-gray-600 truncate">
-        {phase.name}
-      </h3>
-      <span className="ml-2 flex-shrink-0 px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 text-xs font-bold">
-        {workOrders.length}
-      </span>
+    <div className="mb-3 px-1 space-y-1">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xs font-black uppercase tracking-widest text-gray-600 truncate">
+          {phase.name}
+        </h3>
+        <span className="ml-2 flex-shrink-0 px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 text-xs font-bold">
+          {workOrders.length}
+        </span>
+      </div>
+      {workOrders.length > 0 && (
+        <div className="flex items-center gap-2">
+          {totalM2 > 0 && (
+            <span className="text-[10px] font-semibold text-gray-400">
+              {totalM2.toFixed(2)} m²
+            </span>
+          )}
+          {totalM2 > 0 && totalLinear > 0 && (
+            <span className="text-[10px] text-gray-300">·</span>
+          )}
+          {totalLinear > 0 && (
+            <span className="text-[10px] font-semibold text-gray-400">
+              {totalLinear.toFixed(2)} m lin.
+            </span>
+          )}
+        </div>
+      )}
     </div>
 
     {/* Droppable area */}
@@ -227,7 +250,8 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, onCardCl
       )}
     </Droppable>
   </div>
-);
+  );
+};
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
