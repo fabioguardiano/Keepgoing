@@ -368,6 +368,9 @@ export interface Measurement {
   measurerName?: string;
   osId?: string;
   osNumber?: string;
+  addressComplement?: string;
+  clientPhone?: string;
+  sellerName?: string;
   company_id: string;
 }
 

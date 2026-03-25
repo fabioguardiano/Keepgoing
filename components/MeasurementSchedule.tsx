@@ -70,8 +70,19 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
     measurerName: '',
     status: 'Pendente' as Measurement['status'],
     osId: '',
-    osNumber: ''
+    osNumber: '',
+    addressComplement: '',
+    clientPhone: '',
+    sellerName: ''
   });
+
+  const formatPhone = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length <= 10) {
+      return digits.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+    }
+    return digits.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+  };
 
   const [mapCenter, setMapCenter] = useState<[number, number]>([-21.1767, -47.8208]); // Ribeirão Preto default
   const [coords, setCoords] = useState<Record<string, [number, number]>>({});
@@ -113,16 +124,19 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
       }
       setIsModalOpen(false);
       setEditingMeasurementId(null);
-      setNewMeasurement({
-        clientName: '',
-        address: '',
-        date: selectedDate,
-        time: '08:00',
-        description: '',
-        measurerName: '',
-        status: 'Pendente',
-        osId: '',
-        osNumber: ''
+      setNewMeasurement({ 
+        clientName: '', 
+        address: '', 
+        date: selectedDate, 
+        time: '08:00', 
+        description: '', 
+        measurerName: '', 
+        status: 'Pendente', 
+        osId: '', 
+        osNumber: '',
+        addressComplement: '',
+        clientPhone: '',
+        sellerName: ''
       });
     } catch (error) {
       console.error('Erro ao salvar medição:', error);
@@ -140,7 +154,10 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
       measurerName: m.measurerName || '',
       status: m.status,
       osId: m.osId || '',
-      osNumber: m.osNumber || ''
+      osNumber: m.osNumber || '',
+      addressComplement: m.addressComplement || '',
+      clientPhone: m.clientPhone || '',
+      sellerName: m.sellerName || ''
     });
     setIsModalOpen(true);
   };
@@ -258,6 +275,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] font-bold text-blue-600">{m.time}</span>
                         {m.osNumber && <span className="text-[10px] font-bold text-gray-400">O.S. {m.osNumber}</span>}
+                        {m.sellerName && <span className="text-[10px] font-bold text-emerald-600">| Ved: {m.sellerName}</span>}
                       </div>
                     </div>
                   </div>
@@ -420,7 +438,20 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                 onClick={() => { 
                   setIsModalOpen(false); 
                   setEditingMeasurementId(null); 
-                  setNewMeasurement({ clientName: '', address: '', date: selectedDate, time: '08:00', description: '', measurerName: '', status: 'Pendente', osId: '', osNumber: '' }); 
+                  setNewMeasurement({ 
+                    clientName: '', 
+                    address: '', 
+                    date: selectedDate, 
+                    time: '08:00', 
+                    description: '', 
+                    measurerName: '', 
+                    status: 'Pendente', 
+                    osId: '', 
+                    osNumber: '',
+                    addressComplement: '',
+                    clientPhone: '',
+                    sellerName: ''
+                  }); 
                 }} 
                 className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
               >
@@ -441,6 +472,28 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                     required
                   />
                 </div>
+
+                <div className="sm:col-span-1">
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Telefone</label>
+                  <input 
+                    type="text" 
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                    value={newMeasurement.clientPhone}
+                    onChange={e => setNewMeasurement({...newMeasurement, clientPhone: formatPhone(e.target.value)})}
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+
+                <div className="sm:col-span-1">
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Vendedor</label>
+                  <input 
+                    type="text" 
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                    value={newMeasurement.sellerName}
+                    onChange={e => setNewMeasurement({...newMeasurement, sellerName: e.target.value})}
+                    placeholder="Nome do vendedor"
+                  />
+                </div>
                 
                 <div className="sm:col-span-2">
                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Endereço da Medição</label>
@@ -452,6 +505,36 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                     placeholder="Logradouro, número, bairro e cidade"
                     required
                   />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Complemento (Apt, Bloco, Casa)</label>
+                  <input 
+                    type="text" 
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                    value={newMeasurement.addressComplement}
+                    onChange={e => setNewMeasurement({...newMeasurement, addressComplement: e.target.value})}
+                    placeholder="Ex: Ap 402, Bloco B ou Condomínio X"
+                  />
+                </div>
+
+                {/* Map Preview in Modal */}
+                <div className="sm:col-span-2 h-32 rounded-2xl overflow-hidden border border-gray-100 relative grayscale hover:grayscale-0 transition-all">
+                   <MapContainer 
+                     center={coords[newMeasurement.address] || mapCenter} 
+                     zoom={15} 
+                     style={{ height: '100%', width: '100%' }} 
+                     zoomControl={false}
+                     scrollWheelZoom={false}
+                     dragging={false}
+                   >
+                     <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                     <MapController center={coords[newMeasurement.address] || mapCenter} />
+                     <Marker position={coords[newMeasurement.address] || mapCenter} />
+                   </MapContainer>
+                   <div className="absolute top-2 left-2 px-2 py-0.5 bg-white/90 backdrop-blur rounded text-[9px] font-black uppercase text-gray-500 shadow-sm z-[500]">
+                     Prévia da Localização
+                   </div>
                 </div>
 
                 <div>
@@ -519,7 +602,14 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
               <div className="pt-4 flex items-center gap-3">
                 <button 
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setEditingMeasurementId(null);
+                    setNewMeasurement({ 
+                      clientName: '', address: '', date: selectedDate, time: '08:00', description: '', measurerName: '', status: 'Pendente', osId: '', osNumber: '',
+                      addressComplement: '', clientPhone: '', sellerName: ''
+                    });
+                  }}
                   className="flex-1 py-4 font-black uppercase tracking-widest text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   Cancelar

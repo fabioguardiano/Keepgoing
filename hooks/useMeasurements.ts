@@ -39,6 +39,9 @@ export const useMeasurements = (companyId?: string) => {
           measurerName: m.measurer_name,
           osId: m.os_id,
           osNumber: m.os_number,
+          addressComplement: m.address_complement,
+          clientPhone: m.client_phone,
+          sellerName: m.seller_name,
           company_id: m.company_id
         }));
         setMeasurements(mapped);
@@ -70,7 +73,10 @@ export const useMeasurements = (companyId?: string) => {
           description: measurement.description,
           measurer_name: measurement.measurerName,
           os_id: measurement.osId,
-          os_number: measurement.osNumber
+          os_number: measurement.osNumber,
+          address_complement: measurement.addressComplement,
+          client_phone: measurement.clientPhone,
+          seller_name: measurement.sellerName
         })
         .select()
         .single();
@@ -88,6 +94,9 @@ export const useMeasurements = (companyId?: string) => {
         measurerName: data.measurer_name,
         osId: data.os_id,
         osNumber: data.os_number,
+        addressComplement: data.address_complement,
+        clientPhone: data.client_phone,
+        sellerName: data.seller_name,
         company_id: data.company_id
       };
 
@@ -111,6 +120,9 @@ export const useMeasurements = (companyId?: string) => {
       if (updates.measurerName !== undefined) payload.measurer_name = updates.measurerName;
       if (updates.osId !== undefined) payload.os_id = updates.osId;
       if (updates.osNumber !== undefined) payload.os_number = updates.osNumber;
+      if (updates.addressComplement !== undefined) payload.address_complement = updates.addressComplement;
+      if (updates.clientPhone !== undefined) payload.client_phone = updates.clientPhone;
+      if (updates.sellerName !== undefined) payload.seller_name = updates.sellerName;
 
       const { error } = await supabase
         .from('measurements')

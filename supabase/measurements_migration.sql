@@ -11,6 +11,9 @@ CREATE TABLE measurements (
     measurer_name TEXT,
     os_id UUID,
     os_number TEXT,
+    address_complement TEXT,
+    client_phone TEXT,
+    seller_name TEXT,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
