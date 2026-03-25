@@ -123,38 +123,55 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
     }
   };
 
-  const handleImportClients = async (data: any[]) => {
+  const handleImportClients = async (data: any[]): Promise<{ success: number; errors: number }> => {
     const finalCompanyId = companyId || '00000000-0000-0000-0000-000000000000';
-    try {
-      const clientsToInsert = data.map(row => ({
-        company_id: finalCompanyId,
-        legal_name: row.nome || row.name || 'Sem Nome',
-        trading_name: row.nome || row.name || 'Sem Nome',
-        type: row.tipo || row.type || 'Pessoa Física',
-        document: String(row.documento || row.document || ''),
-        email: String(row.email || ''),
-        phone: String(row.telefone || row.phone || ''),
-        client_code: isNaN(Number(row.codigo)) ? undefined : Number(row.codigo)
-      }));
+    let success = 0;
+    let errors = 0;
 
-      const { data: insertedData, error } = await supabase
-        .from('clients')
-        .insert(clientsToInsert)
-        .select();
-      
-      if (error) throw error;
-      if (insertedData) {
-        fetchClients(); // Recarrega tudo para garantir consistência
+    for (const row of data) {
+      try {
+        const nome = row.nome || row.name || 'Sem Nome';
+        const address = {
+          street:       String(row.rua         || row.street       || ''),
+          number:       String(row.numero      || row.number       || ''),
+          complement:   String(row.complemento || row.complement   || ''),
+          neighborhood: String(row.bairro      || row.neighborhood || ''),
+          city:         String(row.cidade      || row.city         || ''),
+          state:        String(row.estado      || row.state        || ''),
+          zip:          String(row.cep         || row.zip          || ''),
+        };
+
+        const payload = {
+          company_id:   finalCompanyId,
+          name:         nome,
+          legal_name:   nome,
+          trading_name: nome,
+          type:         String(row.tipo     || row.type     || 'Pessoa Física'),
+          document:     String(row.documento || row.document || ''),
+          email:        String(row.email     || ''),
+          phone:        String(row.telefone  || row.phone    || ''),
+          cellphone:    String(row.celular   || row.cellphone || ''),
+          address,
+          status:       'ativo',
+          client_code:  isNaN(Number(row.codigo)) ? undefined : Number(row.codigo),
+        };
+
+        const { error } = await supabase.from('clients').insert(payload);
+        if (error) throw error;
+        success++;
+      } catch (err: any) {
+        console.error('Erro ao importar linha:', row, err);
+        errors++;
       }
-      
-      if (logActivity) {
-        await logActivity('update', `Importou ${data.length} clientes via planilha`, 'bulk_import', 'BATCH');
-      }
-    } catch (err: any) {
-      console.error('Erro na importação:', err);
-      alert('Erro na importação: ' + err.message);
-      throw err;
     }
+
+    fetchClients();
+
+    if (logActivity) {
+      await logActivity('update', `Importou ${success} clientes via planilha (${errors} erros)`, 'bulk_import', 'BATCH');
+    }
+
+    return { success, errors };
   };
 
   const deleteClient = async (id: string) => {

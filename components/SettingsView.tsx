@@ -19,7 +19,7 @@ interface SettingsViewProps {
     onReorderSalesPhases: (startIndex: number, endIndex: number) => void;
     companyInfo: CompanyInfo;
     onUpdateCompany: (info: CompanyInfo) => void;
-    onImportClients: (clients: any[]) => Promise<void>;
+    onImportClients: (clients: any[]) => Promise<{ success: number; errors: number }>;
     paymentTypes: any[];
     onSavePaymentType: (type: any) => Promise<any>;
     onDeletePaymentType?: (id: string) => void;
@@ -684,53 +684,58 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                 <p className="text-xs text-slate-400 mt-1">Suporta arquivos .xlsx e .csv</p>
                                             </>
                                         )}
-                                        <input 
-                                            type="file" 
-                                            className="hidden" 
-                                            accept=".xlsx, .csv" 
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            accept=".xlsx, .csv"
                                             onChange={async (e) => {
                                                 const file = e.target.files?.[0];
                                                 if (!file) return;
-                                                
+
                                                 setImportLoading(true);
                                                 setImportStats(null);
-                                                
+
                                                 try {
-                                                    const reader = new FileReader();
-                                                    reader.onload = async (evt) => {
-                                                        const bstr = evt.target?.result;
-                                                        const wb = XLSX.read(bstr, { type: 'binary' });
-                                                        const wsname = wb.SheetNames[0];
-                                                        const ws = wb.Sheets[wsname];
-                                                        const data = XLSX.utils.sheet_to_json(ws);
-                                                        
-                                                        // Passar para o App.tsx processar
-                                                        await onImportClients(data);
-                                                        
-                                                        setImportStats({
-                                                            total: data.length,
-                                                            success: data.length, // Simplificado, o App.tsx pode retornar mais detalhes depois
-                                                            errors: 0
-                                                        });
-                                                    };
-                                                    reader.readAsBinaryString(file);
+                                                    const data: any[] = await new Promise((resolve, reject) => {
+                                                        const reader = new FileReader();
+                                                        reader.onload = (evt) => {
+                                                            try {
+                                                                const bstr = evt.target?.result;
+                                                                const wb = XLSX.read(bstr, { type: 'binary' });
+                                                                const ws = wb.Sheets[wb.SheetNames[0]];
+                                                                resolve(XLSX.utils.sheet_to_json(ws));
+                                                            } catch (err) { reject(err); }
+                                                        };
+                                                        reader.onerror = reject;
+                                                        reader.readAsBinaryString(file);
+                                                    });
+
+                                                    const { success, errors } = await onImportClients(data);
+
+                                                    setImportStats({ total: data.length, success, errors });
                                                 } catch (error) {
                                                     console.error("Erro na importação:", error);
                                                 } finally {
                                                     setImportLoading(false);
+                                                    e.target.value = '';
                                                 }
                                             }}
                                         />
                                     </label>
 
                                     {importStats && (
-                                        <div className="p-4 bg-green-50 border border-green-100 rounded-2xl flex items-center gap-4 text-left animate-in fade-in slide-in-from-bottom-2">
-                                            <div className="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center shrink-0">
+                                        <div className={`p-4 border rounded-2xl flex items-center gap-4 text-left animate-in fade-in slide-in-from-bottom-2 ${importStats.errors > 0 ? 'bg-amber-50 border-amber-100' : 'bg-green-50 border-green-100'}`}>
+                                            <div className={`w-10 h-10 text-white rounded-full flex items-center justify-center shrink-0 ${importStats.errors > 0 ? 'bg-amber-500' : 'bg-green-500'}`}>
                                                 <Check size={20} />
                                             </div>
                                             <div>
-                                                <p className="text-sm font-bold text-green-800">Importação Concluída!</p>
-                                                <p className="text-xs text-green-600 font-medium">Foram processados {importStats.total} registros com sucesso.</p>
+                                                <p className={`text-sm font-bold ${importStats.errors > 0 ? 'text-amber-800' : 'text-green-800'}`}>
+                                                    Importação Concluída!
+                                                </p>
+                                                <p className={`text-xs font-medium ${importStats.errors > 0 ? 'text-amber-600' : 'text-green-600'}`}>
+                                                    {importStats.success} importado(s) com sucesso
+                                                    {importStats.errors > 0 && ` · ${importStats.errors} com erro (verifique o console)`}
+                                                </p>
                                             </div>
                                         </div>
                                     )}
