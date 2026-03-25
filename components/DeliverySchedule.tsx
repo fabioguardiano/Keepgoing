@@ -536,31 +536,31 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
           
           {/* Leaflet Map Integration */}
           <div className="flex-1 relative z-0">
+            {/* Status de Rastreamento Online */}
+            <div className="absolute top-4 right-4 z-[1000] pointer-events-none">
+              <div className="bg-white/90 backdrop-blur-md p-3 rounded-2xl shadow-xl border border-white/50 min-w-[140px] pointer-events-auto">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`w-2 h-2 rounded-full ${Object.keys(driverTrackingLocations).length > 0 ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} />
+                  <span className="text-[10px] font-black uppercase text-gray-500 tracking-wider">Monitoramento GPS</span>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-xl font-black text-gray-900 leading-none">{Object.keys(driverTrackingLocations).length}</span>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase">Motoristas Online</span>
+                </div>
+                {Object.keys(driverTrackingLocations).length === 0 && (
+                  <p className="text-[9px] text-gray-400 font-medium mt-1 leading-tight">
+                    Aguardando sinal dos motoristas...
+                  </p>
+                )}
+              </div>
+            </div>
+
             <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }} scrollWheelZoom={true}>
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
               <MapController center={mapCenter} />
-
-              {/* Status de Rastreamento Online */}
-              <div className="absolute top-4 right-4 z-[1000] pointer-events-none">
-                <div className="bg-white/90 backdrop-blur-md p-3 rounded-2xl shadow-xl border border-white/50 min-w-[140px] pointer-events-auto">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className={`w-2 h-2 rounded-full ${Object.keys(driverTrackingLocations).length > 0 ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} />
-                    <span className="text-[10px] font-black uppercase text-gray-500 tracking-wider">Monitoramento GPS</span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-xl font-black text-gray-900 leading-none">{Object.keys(driverTrackingLocations).length}</span>
-                    <span className="text-[10px] font-bold text-gray-400 uppercase">Motoristas Online</span>
-                  </div>
-                  {Object.keys(driverTrackingLocations).length === 0 && (
-                    <p className="text-[9px] text-gray-400 font-medium mt-1 leading-tight">
-                      Aguardando sinal dos motoristas...
-                    </p>
-                  )}
-                </div>
-              </div>
               
               {/* Company Home Marker */}
               {coords[companyAddress] && (
@@ -660,7 +660,7 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
                 </Marker>
               )}
             </MapContainer>
-            
+
             {/* Legend / Overlay */}
             <div className="absolute bottom-6 left-6 space-y-2 z-[1000]">
                 <div className="bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-white flex flex-col gap-3 min-w-[280px] max-h-[400px] overflow-y-auto">
