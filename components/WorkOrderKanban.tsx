@@ -94,26 +94,26 @@ const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, onClic
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           onClick={() => onClick(workOrder)}
-          className={`bg-white rounded-2xl p-4 shadow-sm cursor-pointer select-none transition-all
+          className={`bg-white rounded-2xl p-3 shadow-sm cursor-pointer select-none transition-all
             ${snapshot.isDragging ? 'shadow-xl rotate-1 scale-[1.02]' : 'hover:shadow-md'}`}
         >
           {/* Priority badge */}
-          <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider mb-2 ${priorityCfg.bg} ${priorityCfg.text}`}>
+          <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider mb-1.5 ${priorityCfg.bg} ${priorityCfg.text}`}>
             {priorityCfg.label}
           </span>
 
           {/* Client & OS */}
-          <p className="font-black text-gray-900 text-sm leading-snug truncate">
+          <p className="font-black text-gray-900 text-xs leading-snug truncate">
             {workOrder.clientName || 'Cliente'}
           </p>
-          <p className="text-[11px] text-gray-400 mt-0.5 truncate">
+          <p className="text-[10px] text-gray-400 mt-0.5 truncate">
             {formatOsLabel(workOrder, allWorkOrders)}
             {workOrder.environments.length > 0 && ` · ${workOrder.environments.join(', ')}`}
           </p>
           {workOrder.sellerName && (
-            <div className="flex items-center gap-1 mt-1">
-              <UserRound size={10} className="text-gray-300 flex-shrink-0" />
-              <span className="text-[10px] text-gray-400 truncate">{workOrder.sellerName}</span>
+            <div className="flex items-center gap-1 mt-0.5">
+              <UserRound size={9} className="text-gray-300 flex-shrink-0" />
+              <span className="text-[9px] text-gray-400 truncate">{workOrder.sellerName}</span>
             </div>
           )}
 
@@ -123,10 +123,10 @@ const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, onClic
             const isLate = remaining < 0;
             const isUrgent = remaining >= 0 && remaining <= 3;
             return (
-              <div className={`flex items-center justify-between mt-2 px-2 py-1 rounded-lg text-[10px] font-semibold
+              <div className={`flex items-center justify-between mt-1.5 px-2 py-0.5 rounded-lg text-[9px] font-semibold
                 ${isLate ? 'bg-red-50 text-red-600' : isUrgent ? 'bg-amber-50 text-amber-600' : 'bg-gray-50 text-gray-500'}`}>
                 <div className="flex items-center gap-1">
-                  <Clock size={10} />
+                  <Clock size={9} />
                   <span>{workOrder.deliveryDeadline} dias úteis</span>
                 </div>
                 <span className={`font-black ${isLate ? 'text-red-600' : isUrgent ? 'text-amber-600' : 'text-gray-600'}`}>
@@ -137,7 +137,7 @@ const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, onClic
           })()}
 
           {/* Drawing thumbnail — stack effect when multiple */}
-          <div className="mt-3 relative h-36 group/thumb">
+          <div className="mt-2 relative h-28 group/thumb">
             {drawings.length === 0 ? (
               <div className="absolute inset-0 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 flex flex-col items-center justify-center gap-1 text-gray-300">
                 <ImageIcon size={22} />
@@ -209,9 +209,9 @@ const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, onClic
           </div>
 
           {/* Footer: date + avatars */}
-          <div className="mt-3 flex items-center justify-between">
-            <div className="flex items-center gap-1.5 text-xs text-gray-400">
-              <Calendar size={12} />
+          <div className="mt-2 flex items-center justify-between">
+            <div className="flex items-center gap-1 text-[10px] text-gray-400">
+              <Calendar size={10} />
               <span>{formatDate(workOrder.createdAt)}</span>
             </div>
 
@@ -221,13 +221,13 @@ const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, onClic
                   <div
                     key={u.name}
                     title={u.name}
-                    className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold border-2 border-white ${getAvatarColor(u.name)} ${i > 0 ? '-ml-2' : ''}`}
+                    className={`w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold border-2 border-white ${getAvatarColor(u.name)} ${i > 0 ? '-ml-1.5' : ''}`}
                   >
                     {getInitials(u.name)}
                   </div>
                 ))}
                 {(workOrder.assignedUsers || []).length > 4 && (
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center bg-gray-200 text-gray-600 text-[10px] font-bold border-2 border-white -ml-2">
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center bg-gray-200 text-gray-600 text-[9px] font-bold border-2 border-white -ml-1.5">
                     +{(workOrder.assignedUsers || []).length - 4}
                   </div>
                 )}
