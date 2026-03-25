@@ -104,9 +104,9 @@ export const useDriverTracking = (companyId: string | undefined, user: AppUser |
   const reportLocation = useCallback(async (lat: number, lng: number) => {
     if (!companyId || !user) return;
     
-    // Verificamos se o cargo (role) é de motorista ou gerente de campo
-    const isDriver = user.role === 'driver' || (user as any).position === 'motorista';
-    if (!isDriver) return;
+    // Verificamos se o cargo (role) é de motorista ou medidor
+    const isTracker = user.role === 'driver' || ['motorista', 'medidor'].includes((user as any).position?.toLowerCase());
+    if (!isTracker) return;
 
     try {
       const { error } = await supabase

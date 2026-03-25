@@ -66,6 +66,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
     { icon: ClipboardList, label: 'O.S. de Produção',  view: 'O.S. de Produção' as View,  module: 'producao' },
     { icon: LayoutDashboard,label: 'Produção',          view: 'Produção' as View,          module: 'producao' },
     { icon: MapPin,        label: 'Agenda de Entregas', view: 'Agenda de Entregas' as View,module: 'agenda_entregas' },
+    { icon: ClipboardList, label: 'Agenda de Medição', view: 'Agenda de Medição' as View,module: 'agenda_medicao' },
     {
       icon: Wallet,
       label: 'Financeiro',

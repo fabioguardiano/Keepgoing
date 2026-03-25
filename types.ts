@@ -57,6 +57,7 @@ export type ModuleKey =
   | 'equipe'
   | 'relatorios'
   | 'configuracoes'
+  | 'agenda_medicao'
   | 'cadastros';
 
 export type AccessLevel = 'none' | 'view' | 'full';
@@ -356,6 +357,20 @@ export interface Delivery {
   routeGroup?: string;
 }
 
+export interface Measurement {
+  id: string;
+  clientName: string;
+  address: string;
+  date: string;
+  time: string;
+  status: 'Pendente' | 'Concluída' | 'Cancelada';
+  description?: string;
+  measurerName?: string;
+  osId?: string;
+  osNumber?: string;
+  company_id: string;
+}
+
 export interface DriverStatus {
   lat: number;
   lng: number;
@@ -647,6 +662,7 @@ export interface WorkOrder {
 export type View =
   | 'Produção'
   | 'Agenda de Entregas'
+  | 'Agenda de Medição'
   | 'Equipe'
   | 'Relatórios'
   | 'Configurações'

@@ -46,6 +46,8 @@ import { useDriverTracking } from './hooks/useDriverTracking';
 import { getModuleAccess, VIEW_MODULE_MAP } from './lib/permissions';
 import { WorkOrdersView } from './components/WorkOrdersView';
 import { WorkOrderKanban } from './components/WorkOrderKanban';
+import { useMeasurements } from './hooks/useMeasurements';
+import { MeasurementSchedule } from './components/MeasurementSchedule';
 import 'leaflet/dist/leaflet.css';
 
 
@@ -211,6 +213,7 @@ const App: React.FC = () => {
   const { paymentTypes, handleSavePaymentType, deletePaymentType: handleDeletePaymentType } = usePaymentTypes(activeCompanyId);
   const { workOrders, loadingWO, createWorkOrders, updateWorkOrderStatus, updateWorkOrderPhase, updateWorkOrder, addDrawing, deleteDrawing, getEnvironmentOSMap, refreshWorkOrders } = useWorkOrders(activeCompanyId);
   const { authorizations, requestAuthorization, resolveAuthorization } = useDiscountAuthorizations(activeCompanyId);
+  const { measurements, createMeasurement, updateMeasurement, deleteMeasurement } = useMeasurements(activeCompanyId);
   const { driverLocations, reportLocation, setOffline } = useDriverTracking(activeCompanyId, user);
 
   // 5. Configurações Globais (Depende de setOrders e setSales para renomeação de fases)
@@ -516,6 +519,20 @@ const App: React.FC = () => {
             onUpdateDelivery={updateDelivery}
             onDeleteDelivery={deleteDelivery}
             onReorderDeliveries={setDeliveries}
+            driverTrackingLocations={driverLocations}
+            companyAddress={companyInfo.address}
+            companyName={companyInfo.name}
+            companyLogoUrl={companyInfo.logoUrl}
+          />
+        );
+      case 'Agenda de Medição':
+        return (
+          <MeasurementSchedule
+            measurements={measurements}
+            orders={workOrders}
+            onAddMeasurement={createMeasurement}
+            onUpdateMeasurement={updateMeasurement}
+            onDeleteMeasurement={deleteMeasurement}
             driverTrackingLocations={driverLocations}
             companyAddress={companyInfo.address}
             companyName={companyInfo.name}
