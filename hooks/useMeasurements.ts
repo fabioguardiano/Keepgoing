@@ -74,7 +74,7 @@ export const useMeasurements = (companyId?: string) => {
           status: measurement.status || 'Pendente',
           description: measurement.description,
           measurer_name: measurement.measurerName,
-          os_id: measurement.osId,
+          os_id: measurement.osId || null,
           os_number: measurement.osNumber,
           address_complement: measurement.addressComplement,
           client_phone: measurement.clientPhone,
@@ -122,7 +122,7 @@ export const useMeasurements = (companyId?: string) => {
       if (updates.status !== undefined) payload.status = updates.status;
       if (updates.description !== undefined) payload.description = updates.description;
       if (updates.measurerName !== undefined) payload.measurer_name = updates.measurerName;
-      if (updates.osId !== undefined) payload.os_id = updates.osId;
+      if (updates.osId !== undefined) payload.os_id = updates.osId || null;
       if (updates.osNumber !== undefined) payload.os_number = updates.osNumber;
       if (updates.addressComplement !== undefined) payload.address_complement = updates.addressComplement;
       if (updates.clientPhone !== undefined) payload.client_phone = updates.clientPhone;

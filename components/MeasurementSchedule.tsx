@@ -162,6 +162,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
 
   const handleAddMeasurement = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Original measurement to save:', newMeasurement);
     try {
       if (editingMeasurementId) {
         await onUpdateMeasurement(editingMeasurementId, newMeasurement);
@@ -187,6 +188,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
       });
     } catch (error) {
       console.error('Erro ao salvar medição:', error);
+      alert('Houve um erro ao salvar a medição. Por favor verifique o console ou tente novamente.');
     }
   };
 
@@ -581,6 +583,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                 {/* Map Preview in Modal */}
                 <div className="sm:col-span-2 h-32 rounded-2xl overflow-hidden border border-gray-100 relative grayscale hover:grayscale-0 transition-all">
                    <MapContainer 
+                     key={`modal-map-${mapCenter[0]}-${mapCenter[1]}`}
                      center={mapCenter} 
                      zoom={15} 
                      style={{ height: '100%', width: '100%' }} 
