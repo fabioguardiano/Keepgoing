@@ -116,10 +116,7 @@ export const PaymentMethodsView: React.FC<Props> = ({ paymentMethods, paymentTyp
       ) : (
         <div className="divide-y divide-slate-50 dark:divide-slate-800">
           {methods.map(pm => (
-            <div key={pm.id} className={`flex items-center gap-3 px-5 py-2.5 transition-colors ${pm.active ? '' : 'opacity-50'}`}>
-              <div className={`p-1.5 rounded-lg ${getCategoryColor(pm.category)}`}>
-                {getCategoryIcon(pm.category)}
-              </div>
+            <div key={pm.id} className={`flex items-center gap-3 px-5 py-2 transition-colors ${pm.active ? '' : 'opacity-50'}`}>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-slate-800 dark:text-white text-[12px] leading-tight">{pm.name}</span>
