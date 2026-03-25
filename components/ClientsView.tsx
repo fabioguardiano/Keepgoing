@@ -7,12 +7,13 @@ interface ClientsViewProps {
   clients: Client[];
   onSaveClient: (client: Client) => void;
   onDeleteClient: (id: string) => void;
+  canEdit?: boolean;
 }
 
 type SortField = 'code' | 'name' | 'city' | 'createdAt';
 type SortDirection = 'asc' | 'desc';
 
-export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient, onDeleteClient }) => {
+export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient, onDeleteClient, canEdit = true }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -87,12 +88,14 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
           <h1 className="text-2xl font-black text-slate-800 tracking-tight">Gestão de Clientes</h1>
           <p className="text-slate-500 font-medium">Relatório técnico de base integrada</p>
         </div>
-        <button 
-          onClick={handleAddNew}
-          className="bg-primary text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-secondary transition-all transform hover:scale-[1.02] active:scale-95"
-        >
-          <Plus size={20} /> Novo Cliente
-        </button>
+        {canEdit && (
+          <button
+            onClick={handleAddNew}
+            className="bg-primary text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-secondary transition-all transform hover:scale-[1.02] active:scale-95"
+          >
+            <Plus size={20} /> Novo Cliente
+          </button>
+        )}
       </div>
 
       {/* Search Header */}
@@ -209,20 +212,24 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
                       {client.status === 'inativo' && (
                         <span className="text-[10px] font-black uppercase tracking-widest bg-slate-100 text-slate-400 px-2 py-1 rounded-lg">Inativo</span>
                       )}
-                      <button
-                        onClick={() => handleEdit(client)}
-                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all border border-transparent hover:border-blue-100"
-                        title="Editar"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button
-                        onClick={() => onDeleteClient(client.id)}
-                        className={`p-2 rounded-xl transition-all border border-transparent ${client.status === 'inativo' ? 'text-green-500 hover:bg-green-50 hover:border-green-100' : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-100'}`}
-                        title={client.status === 'inativo' ? 'Reativar' : 'Inativar'}
-                      >
-                        <PowerOff size={16} />
-                      </button>
+                      {canEdit && (
+                        <>
+                          <button
+                            onClick={() => handleEdit(client)}
+                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all border border-transparent hover:border-blue-100"
+                            title="Editar"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => onDeleteClient(client.id)}
+                            className={`p-2 rounded-xl transition-all border border-transparent ${client.status === 'inativo' ? 'text-green-500 hover:bg-green-50 hover:border-green-100' : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-100'}`}
+                            title={client.status === 'inativo' ? 'Reativar' : 'Inativar'}
+                          >
+                            <PowerOff size={16} />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>

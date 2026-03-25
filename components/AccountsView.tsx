@@ -423,10 +423,11 @@ interface AccountsViewProps {
   onDelete: (id: string) => Promise<void>;
   onPayInstallment: (accountId: string, installmentId: string, paidValue: number, paidDate: string) => Promise<void>;
   onUnpayInstallment: (accountId: string, installmentId: string) => Promise<void>;
+  canEdit?: boolean;
 }
 
 export const AccountsView: React.FC<AccountsViewProps> = ({
-  mode, accounts, paymentMethods, clients, suppliers, onSave, onDelete, onPayInstallment, onUnpayInstallment,
+  mode, accounts, paymentMethods, clients, suppliers, onSave, onDelete, onPayInstallment, onUnpayInstallment, canEdit = true,
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [editData, setEditData] = useState<AccountReceivable | AccountPayable | null>(null);
@@ -479,9 +480,11 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
           <h2 className="text-xl font-black text-slate-800 dark:text-white">{title}</h2>
           <p className="text-slate-500 text-sm font-medium">Gerencie seus {mode === 'receber' ? 'recebimentos' : 'pagamentos'}</p>
         </div>
-        <button onClick={() => { setEditData(null); setShowModal(true); }} className="bg-[var(--primary-color)] text-white px-5 py-2.5 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[var(--primary-color)]/20 hover:opacity-90 transition-all">
-          <Plus size={18} /> Nova Conta
-        </button>
+        {canEdit && (
+          <button onClick={() => { setEditData(null); setShowModal(true); }} className="bg-[var(--primary-color)] text-white px-5 py-2.5 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[var(--primary-color)]/20 hover:opacity-90 transition-all">
+            <Plus size={18} /> Nova Conta
+          </button>
+        )}
       </div>
 
       {/* KPIs */}
