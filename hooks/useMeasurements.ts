@@ -32,6 +32,7 @@ export const useMeasurements = (companyId?: string) => {
           id: m.id,
           clientName: m.client_name,
           address: m.address,
+          cep: m.cep,
           date: m.date,
           time: m.time,
           status: m.status,
@@ -67,6 +68,7 @@ export const useMeasurements = (companyId?: string) => {
           company_id: companyId,
           client_name: measurement.clientName,
           address: measurement.address,
+          cep: measurement.cep,
           date: measurement.date,
           time: measurement.time,
           status: measurement.status || 'Pendente',
@@ -87,6 +89,7 @@ export const useMeasurements = (companyId?: string) => {
         id: data.id,
         clientName: data.client_name,
         address: data.address,
+        cep: data.cep,
         date: data.date,
         time: data.time,
         status: data.status,
@@ -113,6 +116,7 @@ export const useMeasurements = (companyId?: string) => {
       const payload: any = {};
       if (updates.clientName !== undefined) payload.client_name = updates.clientName;
       if (updates.address !== undefined) payload.address = updates.address;
+      if (updates.cep !== undefined) payload.cep = updates.cep;
       if (updates.date !== undefined) payload.date = updates.date;
       if (updates.time !== undefined) payload.time = updates.time;
       if (updates.status !== undefined) payload.status = updates.status;

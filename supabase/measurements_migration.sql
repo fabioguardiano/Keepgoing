@@ -11,6 +11,7 @@ CREATE TABLE measurements (
     measurer_name TEXT,
     os_id UUID,
     os_number TEXT,
+    cep TEXT,
     address_complement TEXT,
     client_phone TEXT,
     seller_name TEXT,

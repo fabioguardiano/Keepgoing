@@ -361,6 +361,7 @@ export interface Measurement {
   id: string;
   clientName: string;
   address: string;
+  cep?: string;
   date: string;
   time: string;
   status: 'Pendente' | 'Concluída' | 'Cancelada';

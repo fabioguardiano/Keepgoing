@@ -64,6 +64,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
   const [newMeasurement, setNewMeasurement] = useState({
     clientName: '',
     address: '',
+    cep: '',
     date: selectedDate,
     time: '08:00',
     description: '',
@@ -76,6 +77,10 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
     sellerName: ''
   });
 
+  const formatCEP = (value: string) => {
+    return value.replace(/\D/g, '').replace(/(\d{5})(\d{3})/, '$1-$2').substring(0, 9);
+  };
+
   const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
     if (digits.length <= 10) {
@@ -87,23 +92,55 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
   const [mapCenter, setMapCenter] = useState<[number, number]>([-21.1767, -47.8208]); // Ribeirão Preto default
   const [coords, setCoords] = useState<Record<string, [number, number]>>({});
 
-  // Geocodificação básica para demonstração (na vida real usaria Google Maps / Nominatim API)
+  // Busca por CEP (ViaCEP)
   useEffect(() => {
-    const addresses = [
+    const cepDigits = (newMeasurement.cep || '').replace(/\D/g, '');
+    if (cepDigits.length === 8) {
+      fetch(`https://viacep.com.br/ws/${cepDigits}/json/`)
+        .then(r => r.json())
+        .then(data => {
+          if (!data.erro) {
+            setNewMeasurement(prev => ({
+              ...prev,
+              address: `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`
+            }));
+          }
+        })
+        .catch(err => console.error('Erro ao buscar CEP:', err));
+    }
+  }, [newMeasurement.cep]);
+
+  // Geocodificação Real via Nominatim (OpenStreetMap)
+  useEffect(() => {
+    const addressesToGeocode = [
       ...measurements.map(m => m.address),
+      newMeasurement.address,
       companyAddress
-    ];
-    
-    const newCoords: Record<string, [number, number]> = {};
-    addresses.forEach((addr, idx) => {
-      // Simulação: gera coordenadas próximas a Ribeirão Preto baseadas no hash do endereço
-      const hash = addr.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      const latOffset = (hash % 100) / 1000;
-      const lngOffset = ((hash * 7) % 100) / 1000;
-      newCoords[addr] = [-21.1767 + latOffset, -47.8208 + lngOffset];
+    ].filter((v, i, a) => v && a.indexOf(v) === i); // Unique only
+
+    addressesToGeocode.forEach(addr => {
+      if (coords[addr]) return; // Já geocodificado
+
+      // Nominatim search
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}&limit=1`)
+        .then(r => r.json())
+        .then(data => {
+          if (data && data[0]) {
+            const lat = parseFloat(data[0].lat);
+            const lon = parseFloat(data[0].lon);
+            setCoords(prev => ({ ...prev, [addr]: [lat, lon] }));
+          }
+        })
+        .catch(err => console.error('Erro geocoding:', addr, err));
     });
-    setCoords(newCoords);
-  }, [measurements, companyAddress]);
+  }, [measurements, newMeasurement.address, companyAddress]);
+
+  // Atualizar centro do mapa quando o endereço da nova medição mudar
+  useEffect(() => {
+    if (newMeasurement.address && coords[newMeasurement.address]) {
+      setMapCenter(coords[newMeasurement.address]);
+    }
+  }, [newMeasurement.address, coords]);
 
   // Filtrar medições pela data selecionada e termo de busca
   const filteredMeasurements = measurements.filter(m => {
@@ -127,6 +164,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
       setNewMeasurement({ 
         clientName: '', 
         address: '', 
+        cep: '',
         date: selectedDate, 
         time: '08:00', 
         description: '', 
@@ -155,6 +193,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
       status: m.status,
       osId: m.osId || '',
       osNumber: m.osNumber || '',
+      cep: m.cep || '',
       addressComplement: m.addressComplement || '',
       clientPhone: m.clientPhone || '',
       sellerName: m.sellerName || ''
@@ -441,6 +480,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                   setNewMeasurement({ 
                     clientName: '', 
                     address: '', 
+                    cep: '',
                     date: selectedDate, 
                     time: '08:00', 
                     description: '', 
@@ -470,6 +510,17 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                     onChange={e => setNewMeasurement({...newMeasurement, clientName: e.target.value})}
                     placeholder="Nome completo ou empresa"
                     required
+                  />
+                </div>
+
+                <div className="sm:col-span-1">
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">CEP</label>
+                  <input 
+                    type="text" 
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                    value={newMeasurement.cep}
+                    onChange={e => setNewMeasurement({...newMeasurement, cep: formatCEP(e.target.value)})}
+                    placeholder="00000-000"
                   />
                 </div>
 
@@ -606,7 +657,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                     setIsModalOpen(false);
                     setEditingMeasurementId(null);
                     setNewMeasurement({ 
-                      clientName: '', address: '', date: selectedDate, time: '08:00', description: '', measurerName: '', status: 'Pendente', osId: '', osNumber: '',
+                      clientName: '', address: '', cep: '', date: selectedDate, time: '08:00', description: '', measurerName: '', status: 'Pendente', osId: '', osNumber: '',
                       addressComplement: '', clientPhone: '', sellerName: ''
                     });
                   }}
