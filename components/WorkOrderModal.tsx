@@ -1,9 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { X, Upload, Image as ImageIcon, Plus, Briefcase, Calendar, Layers, User, ChevronDown, Trash2, Clock, ZoomIn } from 'lucide-react';
 import { WorkOrder, WorkOrderLog, PhaseConfig, AppUser } from '../types';
+import { formatOsLabel } from '../hooks/useWorkOrders';
 
 interface WorkOrderModalProps {
   workOrder: WorkOrder;
+  allWorkOrders: WorkOrder[];
   phases: PhaseConfig[];
   appUsers: AppUser[];
   currentUserName: string;
@@ -73,7 +75,7 @@ const LogEntry: React.FC<{ log: WorkOrderLog }> = ({ log }) => {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
-  workOrder, phases, appUsers, currentUserName,
+  workOrder, allWorkOrders, phases, appUsers, currentUserName,
   onUpdatePhase, onUpdate, onAddDrawing, onDeleteDrawing, onClose,
 }) => {
   const [localNotes, setLocalNotes] = useState(workOrder.notes || '');
@@ -119,7 +121,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
     onUpdate(workOrder.id, { assignedUsers: (workOrder.assignedUsers || []).filter(u => u.name !== name) });
   };
 
-  const osLabel = `OS #${String(workOrder.osNumber).padStart(4, '0')}`;
+  const osLabel = formatOsLabel(workOrder, allWorkOrders);
 
   return (
     <>

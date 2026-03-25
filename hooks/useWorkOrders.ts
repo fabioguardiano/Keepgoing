@@ -20,6 +20,7 @@ const map = (r: any): WorkOrder => ({
   id: r.id,
   companyId: r.company_id,
   osNumber: r.os_number,
+  osSubNumber: r.os_sub_number ?? 1,
   saleId: r.sale_id,
   saleOrderNumber: r.sale_order_number,
   clientName: r.client_name,
@@ -68,14 +69,16 @@ export const useWorkOrders = (companyId?: string) => {
 
   useEffect(() => { fetchWorkOrders(); }, [companyId]);
 
-  const getNextOsNumber = async (): Promise<number> => {
+  // Retorna o próximo os_sub_number para um dado os_number (número do pedido)
+  const getNextSubNumber = async (osNumber: number): Promise<number> => {
     const { data } = await supabase
       .from('work_orders')
-      .select('os_number')
+      .select('os_sub_number')
       .eq('company_id', companyId!)
-      .order('os_number', { ascending: false })
+      .eq('os_number', osNumber)
+      .order('os_sub_number', { ascending: false })
       .limit(1);
-    return data && data.length > 0 ? data[0].os_number + 1 : 1;
+    return data && data.length > 0 ? (data[0].os_sub_number ?? 0) + 1 : 1;
   };
 
   const createWorkOrders = async (
@@ -97,13 +100,17 @@ export const useWorkOrders = (companyId?: string) => {
   ): Promise<boolean> => {
     if (!companyId) return false;
     try {
-      let nextNum = await getNextOsNumber();
+      // os_number = número do pedido; os_sub_number = sequencial dentro do pedido
+      const osNumber = orders[0]?.saleOrderNumber ?? 0;
+      let nextSub = await getNextSubNumber(osNumber);
+
       for (const order of orders) {
         const { data: wo, error } = await supabase
           .from('work_orders')
           .insert({
             company_id: companyId,
-            os_number: nextNum++,
+            os_number: order.saleOrderNumber ?? 0,
+            os_sub_number: nextSub++,
             sale_id: order.saleId,
             sale_order_number: order.saleOrderNumber,
             client_name: order.clientName || '',
@@ -235,4 +242,13 @@ export const useWorkOrders = (companyId?: string) => {
   };
 
   return { workOrders, loadingWO, createWorkOrders, updateWorkOrderStatus, updateWorkOrderPhase, updateWorkOrder, uploadDrawing, addDrawing, deleteDrawing, getEnvironmentOSMap, refreshWorkOrders: fetchWorkOrders };
+};
+
+/** Formata o label da O.S. considerando se há múltiplas O.S. no mesmo pedido.
+ *  - 1 O.S. no pedido → "OS #1"
+ *  - Múltiplas → "OS #1/1", "OS #1/2" */
+export const formatOsLabel = (wo: WorkOrder, allWorkOrders: WorkOrder[]): string => {
+  const siblings = allWorkOrders.filter(w => w.osNumber === wo.osNumber);
+  if (siblings.length > 1) return `OS #${wo.osNumber}/${wo.osSubNumber}`;
+  return `OS #${wo.osNumber}`;
 };

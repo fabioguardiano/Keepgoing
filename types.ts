@@ -574,6 +574,7 @@ export interface WorkOrder {
   id: string;
   companyId: string;
   osNumber: number;
+  osSubNumber: number;
   saleId: string;
   saleOrderNumber?: number;
   clientName?: string;

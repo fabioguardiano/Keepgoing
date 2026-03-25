@@ -3,6 +3,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import { Image as ImageIcon, Calendar, ChevronLeft, ChevronRight, UserRound } from 'lucide-react';
 import { WorkOrder, PhaseConfig, AppUser } from '../types';
 import { WorkOrderModal } from './WorkOrderModal';
+import { formatOsLabel } from '../hooks/useWorkOrders';
 
 interface WorkOrderKanbanProps {
   workOrders: WorkOrder[];
@@ -46,11 +47,12 @@ const PRIORITY_CONFIG = {
 
 interface WOCardProps {
   workOrder: WorkOrder;
+  allWorkOrders: WorkOrder[];
   index: number;
   onClick: (wo: WorkOrder) => void;
 }
 
-const WOCard: React.FC<WOCardProps> = ({ workOrder, index, onClick }) => {
+const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, onClick }) => {
   const priority = workOrder.priority || 'media';
   const priorityCfg = PRIORITY_CONFIG[priority];
   const drawings = workOrder.drawingUrls?.length ? workOrder.drawingUrls : (workOrder.drawingUrl ? [workOrder.drawingUrl] : []);
@@ -82,7 +84,7 @@ const WOCard: React.FC<WOCardProps> = ({ workOrder, index, onClick }) => {
             {workOrder.clientName || 'Cliente'}
           </p>
           <p className="text-[11px] text-gray-400 mt-0.5 truncate">
-            OS #{String(workOrder.osNumber).padStart(4, '0')}
+            {formatOsLabel(workOrder, allWorkOrders)}
             {workOrder.environments.length > 0 && ` · ${workOrder.environments.join(', ')}`}
           </p>
           {workOrder.sellerName && (
@@ -201,10 +203,11 @@ const WOCard: React.FC<WOCardProps> = ({ workOrder, index, onClick }) => {
 interface KanbanColumnProps {
   phase: PhaseConfig;
   workOrders: WorkOrder[];
+  allWorkOrders: WorkOrder[];
   onCardClick: (wo: WorkOrder) => void;
 }
 
-const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, onCardClick }) => {
+const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkOrders, onCardClick }) => {
   const totalM2 = workOrders.reduce((acc, wo) => acc + (wo.totalM2 || 0), 0);
   const totalLinear = workOrders.reduce((acc, wo) => acc + (wo.totalLinear || 0), 0);
 
@@ -249,7 +252,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, onCardCl
             ${snapshot.isDraggingOver ? 'bg-[var(--primary-color)]/10' : 'bg-gray-100/60'}`}
         >
           {workOrders.map((wo, index) => (
-            <WOCard key={wo.id} workOrder={wo} index={index} onClick={onCardClick} />
+            <WOCard key={wo.id} workOrder={wo} allWorkOrders={allWorkOrders} index={index} onClick={onCardClick} />
           ))}
           {provided.placeholder}
         </div>
@@ -337,6 +340,7 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
                 key={phase.name}
                 phase={phase}
                 workOrders={columnMap[phase.name] || []}
+                allWorkOrders={workOrders}
                 onCardClick={setSelectedWorkOrder}
               />
             ))}
@@ -347,6 +351,7 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
       {selectedWorkOrder && (
         <WorkOrderModal
           workOrder={selectedWorkOrder}
+          allWorkOrders={workOrders}
           phases={phases}
           appUsers={appUsers}
           currentUserName={currentUserName}
