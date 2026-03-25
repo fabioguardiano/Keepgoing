@@ -644,6 +644,6 @@ export type View =
   | 'Contas a Receber'
   | 'Contas a Pagar'
   | 'Formas de Pagamento'
-  | 'Tipos de Pagamento';
+  | 'Formas de Pagamento';
 
 export type User = AppUser;

@@ -78,7 +78,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
       label: 'Configurações',
       subItems: [
         { icon: Settings, label: 'Geral', view: 'Configurações' as View },
-        { icon: Wallet, label: 'Tipos de Pagamento', view: 'Tipos de Pagamento' as View },
       ]
     }
   ].filter(item => {

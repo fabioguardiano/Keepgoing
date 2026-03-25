@@ -477,7 +477,6 @@ const App: React.FC = () => {
       case 'Relatórios':
         return <ReportsView orders={orders} deliveries={deliveries} />;
       case 'Configurações':
-      case 'Tipos de Pagamento':
         return (
           <SettingsView
             phases={phases}
@@ -501,7 +500,6 @@ const App: React.FC = () => {
             onSavePaymentMethod={handleSavePaymentMethod}
             onDeletePaymentMethod={deletePaymentMethod}
             onTogglePaymentMethod={toggleActive}
-            initialTab={currentView === 'Tipos de Pagamento' ? 'financeiro' : undefined}
           />
         );
       case 'Clientes':
