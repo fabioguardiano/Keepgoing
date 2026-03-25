@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Image as ImageIcon, Calendar, ChevronLeft, ChevronRight, UserRound } from 'lucide-react';
+import { Image as ImageIcon, Calendar, ChevronLeft, ChevronRight, UserRound, Clock } from 'lucide-react';
 import { WorkOrder, PhaseConfig, AppUser } from '../types';
 import { WorkOrderModal } from './WorkOrderModal';
 import { formatOsLabel } from '../hooks/useWorkOrders';
@@ -36,6 +36,29 @@ const getAvatarColor = (name: string): string =>
 
 const getInitials = (name: string): string =>
   name.trim().slice(0, 2).toUpperCase();
+
+// Adiciona N dias úteis a uma data
+const addBusinessDays = (date: Date, days: number): Date => {
+  const result = new Date(date);
+  let added = 0;
+  while (added < days) {
+    result.setDate(result.getDate() + 1);
+    const dow = result.getDay();
+    if (dow !== 0 && dow !== 6) added++; // ignora sábado e domingo
+  }
+  return result;
+};
+
+// Retorna dias corridos restantes até a data de entrega (pode ser negativo)
+const calcRemainingDays = (createdAt: string, deadlineDays: string): number => {
+  const deadline = parseInt(deadlineDays, 10);
+  if (isNaN(deadline) || deadline <= 0) return 0;
+  const dueDate = addBusinessDays(new Date(createdAt), deadline);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  dueDate.setHours(0, 0, 0, 0);
+  return Math.round((dueDate.getTime() - today.getTime()) / 86400000);
+};
 
 const PRIORITY_CONFIG = {
   alta: { label: 'ALTA', bg: 'bg-red-500', text: 'text-white' },
@@ -93,6 +116,25 @@ const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, onClic
               <span className="text-[10px] text-gray-400 truncate">{workOrder.sellerName}</span>
             </div>
           )}
+
+          {/* Prazo de entrega */}
+          {workOrder.deliveryDeadline && parseInt(workOrder.deliveryDeadline) > 0 && (() => {
+            const remaining = calcRemainingDays(workOrder.createdAt, workOrder.deliveryDeadline!);
+            const isLate = remaining < 0;
+            const isUrgent = remaining >= 0 && remaining <= 3;
+            return (
+              <div className={`flex items-center justify-between mt-2 px-2 py-1 rounded-lg text-[10px] font-semibold
+                ${isLate ? 'bg-red-50 text-red-600' : isUrgent ? 'bg-amber-50 text-amber-600' : 'bg-gray-50 text-gray-500'}`}>
+                <div className="flex items-center gap-1">
+                  <Clock size={10} />
+                  <span>{workOrder.deliveryDeadline} dias úteis</span>
+                </div>
+                <span className={`font-black ${isLate ? 'text-red-600' : isUrgent ? 'text-amber-600' : 'text-gray-600'}`}>
+                  {isLate ? `${Math.abs(remaining)}d atrasado` : remaining === 0 ? 'Vence hoje' : `${remaining}d restantes`}
+                </span>
+              </div>
+            );
+          })()}
 
           {/* Drawing thumbnail — stack effect when multiple */}
           <div className="mt-3 relative h-36 group/thumb">
