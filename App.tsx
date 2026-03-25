@@ -42,6 +42,7 @@ import { usePaymentMethods } from './hooks/usePaymentMethods';
 import { usePaymentTypes } from './hooks/usePaymentTypes';
 import { useWorkOrders } from './hooks/useWorkOrders';
 import { useDiscountAuthorizations } from './hooks/useDiscountAuthorizations';
+import { useDriverTracking } from './hooks/useDriverTracking';
 import { getModuleAccess, VIEW_MODULE_MAP } from './lib/permissions';
 import { WorkOrdersView } from './components/WorkOrdersView';
 import { WorkOrderKanban } from './components/WorkOrderKanban';
@@ -210,6 +211,7 @@ const App: React.FC = () => {
   const { paymentTypes, handleSavePaymentType, deletePaymentType: handleDeletePaymentType } = usePaymentTypes(activeCompanyId);
   const { workOrders, loadingWO, createWorkOrders, updateWorkOrderStatus, updateWorkOrderPhase, updateWorkOrder, addDrawing, deleteDrawing, getEnvironmentOSMap, refreshWorkOrders } = useWorkOrders(activeCompanyId);
   const { authorizations, requestAuthorization, resolveAuthorization } = useDiscountAuthorizations(activeCompanyId);
+  const { driverLocations, reportLocation, setOffline } = useDriverTracking(activeCompanyId, user);
 
   // 5. Configurações Globais (Depende de setOrders e setSales para renomeação de fases)
   const { 
@@ -422,6 +424,42 @@ const App: React.FC = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // 9. Rastreamento automático de GPS para motoristas
+  useEffect(() => {
+    if (!user || !activeCompanyId) return;
+    
+    // Verificamos se o cargo (role) é de motorista ou gerente de campo
+    const isDriver = user.role === 'driver' || (user as any).position === 'motorista';
+    if (!isDriver) {
+      setOffline();
+      return;
+    }
+
+    let watchId: number | null = null;
+    
+    if ("geolocation" in navigator) {
+      // Inicia a observação da posição
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          reportLocation(pos.coords.latitude, pos.coords.longitude);
+        },
+        (err) => {
+          console.error("Erro ao vigiar posição GPS:", err);
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 5000,
+          timeout: 10000
+        }
+      );
+    }
+
+    return () => {
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+      setOffline();
+    };
+  }, [user, activeCompanyId, reportLocation, setOffline]);
+
   // 8. Lógica de Renderização
   if (!user) return <Login onLogin={handleLogin} />;
 
@@ -478,6 +516,7 @@ const App: React.FC = () => {
             onUpdateDelivery={updateDelivery}
             onDeleteDelivery={deleteDelivery}
             onReorderDeliveries={setDeliveries}
+            driverTrackingLocations={driverLocations}
             companyAddress={companyInfo.address}
             companyName={companyInfo.name}
             companyLogoUrl={companyInfo.logoUrl}

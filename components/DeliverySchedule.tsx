@@ -35,6 +35,7 @@ interface DeliveryScheduleProps {
   companyAddress: string;
   companyName: string;
   companyLogoUrl?: string;
+  driverTrackingLocations?: Record<string, DriverStatus>;
 }
 
 export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({ 
@@ -47,7 +48,8 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
   onReorderDeliveries,
   companyAddress,
   companyName,
-  companyLogoUrl
+  companyLogoUrl,
+  driverTrackingLocations = {}
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -603,17 +605,37 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
                 );
               })}
 
-              {/* Driver Marker */}
-              {driverLocation && (
-                <Marker position={[driverLocation.lat, driverLocation.lng]} icon={createDriverIcon()}>
+              {/* Driver Marker (Real-time tracking) */}
+              {Object.entries(driverTrackingLocations).map(([name, location]) => (
+                <Marker 
+                  key={name}
+                  position={[location.lat, location.lng]} 
+                  icon={createDriverIcon()}
+                >
                   <Popup>
                     <div className="p-1">
                       <div className="flex items-center gap-2 mb-1">
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                         <p className="font-black text-xs uppercase text-green-600">Motorista Online</p>
                       </div>
+                      <p className="font-bold text-sm">{name}</p>
+                      <p className="text-[10px] text-gray-500 font-medium">Última atualização: {location.lastUpdate}</p>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+
+              {/* Driver Marker (Simulation) */}
+              {driverLocation && !driverTrackingLocations[companyName] && (
+                <Marker position={[driverLocation.lat, driverLocation.lng]} icon={createDriverIcon()}>
+                  <Popup>
+                    <div className="p-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                        <p className="font-black text-xs uppercase text-green-600">Simulação Ativa</p>
+                      </div>
                       <p className="font-bold text-sm">Caminhão de Entrega</p>
-                      <p className="text-[10px] text-gray-500 font-medium">Última atualização: {driverLocation.lastUpdate}</p>
+                      <p className="text-[10px] text-gray-500 font-medium">Status: Simulado</p>
                     </div>
                   </Popup>
                 </Marker>
