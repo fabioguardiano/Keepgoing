@@ -6,9 +6,10 @@ interface PaymentTypesViewProps {
   paymentTypes: PaymentType[];
   onSaveType: (type: PaymentType) => void;
   onDeleteType?: (id: string) => void;
+  hideHeader?: boolean;
 }
 
-export const PaymentTypesView: React.FC<PaymentTypesViewProps> = ({ paymentTypes, onSaveType, onDeleteType }) => {
+export const PaymentTypesView: React.FC<PaymentTypesViewProps> = ({ paymentTypes, onSaveType, onDeleteType, hideHeader = false }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingType, setEditingType] = useState<PaymentType | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,20 +65,22 @@ export const PaymentTypesView: React.FC<PaymentTypesViewProps> = ({ paymentTypes
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-indigo-50 rounded-2xl">
-            <Wallet className="text-indigo-600" size={24} />
+        {!hideHeader && (
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-indigo-50 rounded-2xl">
+              <Wallet className="text-indigo-600" size={24} />
+            </div>
+            <div>
+              <h1 className="text-xl font-black text-slate-800 tracking-tight leading-none mb-1">Tipos de Pagamento</h1>
+              <p className="text-[11px] text-slate-500 font-medium">Categorização para o financeiro</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-black text-slate-800 tracking-tight">Tipos de Pagamento</h1>
-            <p className="text-slate-500 font-medium">Categorização para o financeiro</p>
-          </div>
-        </div>
+        )}
         <button
           onClick={handleAddNew}
-          className="bg-primary text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-secondary transition-all transform hover:scale-[1.02] active:scale-95"
+          className={`${hideHeader ? 'ml-auto text-xs py-2' : 'px-5 py-2.5'} bg-primary text-white rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-secondary transition-all transform hover:scale-[1.02] active:scale-95`}
         >
-          <Plus size={20} /> Novo Tipo
+          <Plus size={hideHeader ? 14 : 18} /> Novo Tipo
         </button>
       </div>
 
@@ -87,7 +90,7 @@ export const PaymentTypesView: React.FC<PaymentTypesViewProps> = ({ paymentTypes
           <input
             type="text"
             placeholder="Buscar por nome..."
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium text-sm"
+            className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium text-xs"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -116,36 +119,31 @@ export const PaymentTypesView: React.FC<PaymentTypesViewProps> = ({ paymentTypes
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest w-24">Cód.</th>
-                <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest">Tipo de Pagamento</th>
-                <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest">Data Cadastro</th>
-                <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-5 text-right text-sm font-bold text-slate-400 uppercase tracking-widest">Ações</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest w-24">Cód.</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Tipo de Pagamento</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Data Cadastro</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Status</th>
+                <th className="px-6 py-4 text-right text-xs font-bold text-slate-400 uppercase tracking-widest">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filteredTypes.map((t) => (
                 <tr key={t.id} className={`hover:bg-slate-50/50 transition-colors group ${t.status === 'inativo' ? 'opacity-60' : ''}`}>
-                  <td className="px-6 py-5 text-sm font-black text-slate-800">
+                  <td className="px-6 py-4 text-xs font-black text-slate-800">
                     {t.code || '-'}
                   </td>
-                  <td className="px-6 py-5">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold shrink-0">
-                        {t.name.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="text-sm font-black text-slate-800">{t.name}</span>
-                    </div>
+                  <td className="px-6 py-4">
+                    <span className="text-xs font-black text-slate-800">{t.name}</span>
                   </td>
-                  <td className="px-6 py-5 text-sm font-bold text-slate-500">
+                  <td className="px-6 py-4 text-xs font-bold text-slate-500">
                     {new Date(t.createdAt).toLocaleDateString('pt-BR')}
                   </td>
-                  <td className="px-6 py-5">
-                    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${t.status === 'ativo' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${t.status === 'ativo' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
                       {t.status === 'ativo' ? 'Ativo' : 'Inativo'}
                     </span>
                   </td>
-                  <td className="px-6 py-5 text-right">
+                  <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => handleEdit(t)}

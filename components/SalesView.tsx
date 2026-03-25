@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import confetti from 'canvas-confetti';
-import { ShoppingBag, Plus, Search, FileText, CheckCircle2, Clock, XCircle, MoreVertical, ExternalLink, Printer, LayoutGrid, List, ArrowRight, X, Edit2, GripVertical, Trash2, Check, DollarSign, Calendar, MoreHorizontal, User, AlertTriangle, Lock } from 'lucide-react';
+import { ShoppingBag, Plus, Search, FileText, CheckCircle2, Clock, XCircle, MoreVertical, ExternalLink, Printer, LayoutGrid, List, ArrowRight, X, Edit2, GripVertical, Trash2, Check, DollarSign, Calendar, MoreHorizontal, User, AlertTriangle, Lock, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import { SalesOrder, Client, Material, AppUser, Architect, ProductService, SalesChannel, CompanyInfo, SalesPhaseConfig, ServiceGroup, PaymentMethod, WorkOrder } from '../types';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { NewSaleModal } from './NewSaleModal';
@@ -27,12 +27,13 @@ interface SalesViewProps {
   companyId?: string;
   createWorkOrders?: (orders: any[]) => Promise<boolean>;
   getEnvironmentOSMap?: (saleId: string) => Record<string, WorkOrder[]>;
+  onRequestDiscount?: (admin: any, requestedPct: number, maxPct: number) => void;
 }
 
 export const SalesView: React.FC<SalesViewProps> = ({
   sales, clients, materials, onSaveSale, appUsers, architects, products, salesChannels, paymentMethods, companyInfo, nextOrderNumber,
   salesPhases, services, onRenameSalesPhase, onDeleteSalesPhase, onReorderSalesPhases,
-  companyId, createWorkOrders, getEnvironmentOSMap
+  companyId, createWorkOrders, getEnvironmentOSMap, onRequestDiscount
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('kanban');
@@ -53,6 +54,17 @@ export const SalesView: React.FC<SalesViewProps> = ({
   const [revertJustification, setRevertJustification] = useState('');
   const [revertError, setRevertError] = useState('');
   const [revertLoading, setRevertLoading] = useState(false);
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({
+    key: 'createdAt',
+    direction: 'desc'
+  });
+
+  const handleSort = (key: string) => {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc'
+    }));
+  };
 
   const fireConfetti = useCallback((intense = false) => {
     if (intense) {
@@ -192,8 +204,29 @@ export const SalesView: React.FC<SalesViewProps> = ({
         return true;
       })
       .filter(s => (s.clientName || '').toLowerCase().includes(searchTerm.toLowerCase()) || (s.orderNumber || '').includes(searchTerm))
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [sales, statusFilter, dateFilter, dateFrom, dateTo, searchTerm]);
+      .sort((a, b) => {
+        const { key, direction } = sortConfig;
+        let valA: any, valB: any;
+
+        if (key === 'total') {
+          valA = a.totals?.geral || 0;
+          valB = b.totals?.geral || 0;
+        } else if (key === 'createdAt') {
+          valA = new Date(a.createdAt).getTime();
+          valB = new Date(b.createdAt).getTime();
+        } else if (key === 'orderNumber') {
+          valA = parseInt((a.orderNumber || '').replace(/\D/g, '')) || 0;
+          valB = parseInt((b.orderNumber || '').replace(/\D/g, '')) || 0;
+        } else {
+          valA = (a[key as keyof SalesOrder] || '').toString().toLowerCase();
+          valB = (b[key as keyof SalesOrder] || '').toString().toLowerCase();
+        }
+
+        if (valA < valB) return direction === 'asc' ? -1 : 1;
+        if (valA > valB) return direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+  }, [sales, statusFilter, dateFilter, dateFrom, dateTo, searchTerm, sortConfig]);
 
   const totalFiltrado = useMemo(
     () => filteredSales.reduce((acc, s) => acc + (s.totals?.geral || 0), 0),
@@ -339,18 +372,49 @@ export const SalesView: React.FC<SalesViewProps> = ({
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-800/50 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4">Data</th>
-                    <th className="px-6 py-4">Cliente</th>
-                    <th className="px-6 py-4">Nº Pedido</th>
-                    <th className="px-6 py-4">Vendedor</th>
-                    <th className="px-6 py-4 text-right">Valor Total</th>
+                    <th className="px-6 py-4 cursor-pointer hover:text-[var(--primary-color)] transition-colors" onClick={() => handleSort('orderNumber')}>
+                      <div className="flex items-center gap-1">
+                        Nº Pedido
+                        {sortConfig.key === 'orderNumber' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-30" />}
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 cursor-pointer hover:text-[var(--primary-color)] transition-colors" onClick={() => handleSort('status')}>
+                      <div className="flex items-center gap-1">
+                        Status
+                        {sortConfig.key === 'status' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-30" />}
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 cursor-pointer hover:text-[var(--primary-color)] transition-colors" onClick={() => handleSort('createdAt')}>
+                      <div className="flex items-center gap-1">
+                        Data
+                        {sortConfig.key === 'createdAt' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-30" />}
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 cursor-pointer hover:text-[var(--primary-color)] transition-colors" onClick={() => handleSort('clientName')}>
+                      <div className="flex items-center gap-1">
+                        Cliente
+                        {sortConfig.key === 'clientName' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-30" />}
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 cursor-pointer hover:text-[var(--primary-color)] transition-colors" onClick={() => handleSort('seller')}>
+                      <div className="flex items-center gap-1">
+                        Vendedor
+                        {sortConfig.key === 'seller' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-30" />}
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-right cursor-pointer hover:text-[var(--primary-color)] transition-colors" onClick={() => handleSort('total')}>
+                      <div className="flex items-center justify-end gap-1">
+                        Valor Total
+                        {sortConfig.key === 'total' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-30" />}
+                      </div>
+                    </th>
                     <th className="px-6 py-4 text-center">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {filteredSales.map(sale => (
                       <tr key={sale.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
+                        <td className="px-6 py-4 text-sm font-bold text-slate-500">#{sale.orderNumber || '-'}</td>
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
                             sale.status === 'Orçamento'  ? 'bg-blue-100 text-blue-600' :
@@ -363,7 +427,6 @@ export const SalesView: React.FC<SalesViewProps> = ({
                         </td>
                         <td className="px-6 py-4 text-sm font-bold text-slate-500">{new Date(sale.createdAt).toLocaleDateString('pt-BR')}</td>
                         <td className="px-6 py-4 text-sm font-bold text-slate-800 dark:text-white">{sale.clientName}</td>
-                        <td className="px-6 py-4 text-sm font-bold text-slate-500">#{sale.orderNumber || '-'}</td>
                         <td className="px-6 py-4 text-sm font-bold text-slate-500">{sale.seller}</td>
                         <td className="px-6 py-4 text-right text-sm font-black text-slate-800 dark:text-white">
                           R$ {(sale.totals?.geral || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -675,6 +738,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
           companyId={companyId}
           createWorkOrders={createWorkOrders}
           getEnvironmentOSMap={getEnvironmentOSMap}
+          onRequestDiscount={onRequestDiscount}
           onSave={(sale) => {
             const wasOrcamento = editingSale?.status === 'Orçamento' || !editingSale;
             onSaveSale(sale);

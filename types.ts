@@ -349,6 +349,25 @@ export interface CompanyInfo {
   buttonColor?: string;
   lostReasonOptions?: string[];
   legalNote?: string;
+  maxDiscountPct?: number;
+}
+
+export interface DiscountAuthorization {
+  id: string;
+  companyId: string;
+  saleId?: string;
+  saleOrderNumber?: number;
+  clientName?: string;
+  sellerId: string;
+  sellerName: string;
+  requestedDiscountPct: number;
+  maxDiscountPct: number;
+  adminId: string;
+  adminName: string;
+  status: 'pending' | 'approved' | 'rejected';
+  adminMessage?: string;
+  createdAt: string;
+  resolvedAt?: string;
 }
 
 export interface ExchangeRates {

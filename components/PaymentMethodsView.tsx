@@ -8,6 +8,7 @@ interface Props {
   onSave: (pm: any) => Promise<any>;
   onDelete: (id: string) => Promise<void>;
   onToggle: (id: string) => Promise<void>;
+  hideHeader?: boolean;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {};
@@ -70,7 +71,7 @@ const emptyForm = (defaultCategory?: string): Partial<PaymentMethod> => ({
   active: true,
 });
 
-export const PaymentMethodsView: React.FC<Props> = ({ paymentMethods, paymentTypes, onSave, onDelete, onToggle }) => {
+export const PaymentMethodsView: React.FC<Props> = ({ paymentMethods, paymentTypes, onSave, onDelete, onToggle, hideHeader = false }) => {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState<Partial<PaymentMethod>>(emptyForm());
   const [saving, setSaving] = useState(false);
@@ -158,12 +159,14 @@ export const PaymentMethodsView: React.FC<Props> = ({ paymentMethods, paymentTyp
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-black text-slate-800 dark:text-white">Formas de Pagamento</h2>
-          <p className="text-slate-500 text-sm font-medium">Gerencie as formas de pagamento aceitas pela empresa</p>
-        </div>
-        <button onClick={openNew} className="bg-[var(--primary-color)] text-white px-5 py-2.5 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[var(--primary-color)]/20 hover:opacity-90 transition-all">
-          <Plus size={18} /> Nova Forma
+        {!hideHeader && (
+          <div>
+            <h2 className="text-xl font-black text-slate-800 dark:text-white">Formas de Pagamento</h2>
+            <p className="text-slate-500 text-sm font-medium">Gerencie as formas de pagamento aceitas pela empresa</p>
+          </div>
+        )}
+        <button onClick={openNew} className={`${hideHeader ? 'ml-auto text-xs py-2' : 'px-5 py-2.5'} bg-[var(--primary-color)] text-white rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[var(--primary-color)]/20 hover:opacity-90 transition-all`}>
+          <Plus size={hideHeader ? 14 : 18} /> Nova Forma
         </button>
       </div>
 

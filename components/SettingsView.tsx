@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Settings, Layout, Check, ChevronRight, Plus, Trash2, Edit2, GripVertical, Info, Building2, MapPin, Phone, Mail, ShoppingBag, FileSpreadsheet, Download, Upload, AlertCircle, Loader2, Wallet } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { PhaseConfig, CompanyInfo, SalesPhaseConfig } from '../types';
-import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { PaymentTypesView } from './PaymentTypesView';
+import { PaymentMethodsView } from './PaymentMethodsView';
+import { PhaseConfig, CompanyInfo, SalesPhaseConfig, PaymentMethod, PaymentType } from '../types';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
 interface SettingsViewProps {
     phases: PhaseConfig[];
@@ -20,9 +21,14 @@ interface SettingsViewProps {
     companyInfo: CompanyInfo;
     onUpdateCompany: (info: CompanyInfo) => void;
     onImportClients: (clients: any[]) => Promise<{ success: number; errors: number }>;
-    paymentTypes: any[];
+    paymentTypes: PaymentType[];
     onSavePaymentType: (type: any) => Promise<any>;
     onDeletePaymentType?: (id: string) => void;
+    paymentMethods: PaymentMethod[];
+    onSavePaymentMethod: (method: any) => Promise<any>;
+    onDeletePaymentMethod: (id: string) => Promise<void>;
+    onTogglePaymentMethod: (id: string) => Promise<void>;
+    initialTab?: 'fluxo' | 'vendas' | 'empresa' | 'dados' | 'financeiro' | 'geral';
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -40,11 +46,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     companyInfo,
     onUpdateCompany,
     onImportClients,
+    paymentMethods,
+    onSavePaymentMethod,
+    onDeletePaymentMethod,
+    onTogglePaymentMethod,
     paymentTypes,
     onSavePaymentType,
-    onDeletePaymentType
+    onDeletePaymentType,
+    initialTab
 }) => {
-    const [activeTab, setActiveTab] = useState<'fluxo' | 'vendas' | 'empresa' | 'dados' | 'financeiro' | 'geral'>('fluxo');
+    const [activeTab, setActiveTab] = useState<'fluxo' | 'vendas' | 'empresa' | 'dados' | 'financeiro' | 'geral'>(initialTab || 'fluxo');
     const [newPhaseName, setNewPhaseName] = useState('');
     const [editingPhase, setEditingPhase] = useState<string | null>(null);
     const [editingLostReasonIdx, setEditingLostReasonIdx] = useState<number | null>(null);
@@ -78,8 +89,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <Settings size={28} />
                 </div>
                 <div>
-                    <h1 className="text-2xl font-black text-slate-800 tracking-tight">Configurações do Sistema</h1>
-                    <p className="text-slate-500 font-medium">Personalize o fluxo de trabalho e informações da empresa</p>
+                    <h1 className="text-xl font-black text-slate-800 tracking-tight leading-none mb-1">Configurações do Sistema</h1>
+                    <p className="text-xs text-slate-500 font-medium">Personalize o fluxo de trabalho e informações da empresa</p>
                 </div>
             </div>
 
@@ -88,63 +99,63 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <div className="space-y-2">
                     <button 
                         onClick={() => setActiveTab('fluxo')}
-                        className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold border transition-all ${activeTab === 'fluxo' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
+                        className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-sm font-bold border transition-all ${activeTab === 'fluxo' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
                     >
                         <div className="flex items-center gap-3">
-                            <Layout size={20} />
+                            <Layout size={18} />
                             Fluxo de Produção
                         </div>
-                        <ChevronRight size={16} />
+                        <ChevronRight size={14} />
                     </button>
                     <button 
                         onClick={() => setActiveTab('vendas')}
-                        className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold border transition-all ${activeTab === 'vendas' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
+                        className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-sm font-bold border transition-all ${activeTab === 'vendas' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
                     >
                         <div className="flex items-center gap-3">
-                            <ShoppingBag size={20} />
+                            <ShoppingBag size={18} />
                             Fluxo de Vendas
                         </div>
-                        <ChevronRight size={16} />
+                        <ChevronRight size={14} />
                     </button>
                     <button 
                         onClick={() => setActiveTab('empresa')}
-                        className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold border transition-all ${activeTab === 'empresa' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
+                        className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-sm font-bold border transition-all ${activeTab === 'empresa' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
                     >
                         <div className="flex items-center gap-3">
-                            <Building2 size={20} />
+                            <Building2 size={18} />
                             Cadastro da Empresa
                         </div>
-                        <ChevronRight size={16} />
+                        <ChevronRight size={14} />
                     </button>
                     <button 
                          onClick={() => setActiveTab('financeiro')}
-                        className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold border transition-all ${activeTab === 'financeiro' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
+                        className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-sm font-bold border transition-all ${activeTab === 'financeiro' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
                     >
                         <div className="flex items-center gap-3">
-                            <Wallet size={20} />
+                            <Wallet size={18} />
                             Financeiro
                         </div>
-                        <ChevronRight size={16} />
+                        <ChevronRight size={14} />
                     </button>
                     <button 
                         onClick={() => setActiveTab('dados')}
-                        className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold border transition-all ${activeTab === 'dados' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
+                        className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-sm font-bold border transition-all ${activeTab === 'dados' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
                     >
                         <div className="flex items-center gap-3">
-                            <FileSpreadsheet size={20} />
+                            <FileSpreadsheet size={18} />
                             Importação de Dados
                         </div>
-                        <ChevronRight size={16} />
+                        <ChevronRight size={14} />
                     </button>
                     <button
                         onClick={() => setActiveTab('geral')}
-                        className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold border transition-all ${activeTab === 'geral' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
+                        className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-sm font-bold border transition-all ${activeTab === 'geral' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
                     >
                         <div className="flex items-center gap-3">
-                            <Settings size={20} />
+                            <Settings size={18} />
                             Geral
                         </div>
-                        <ChevronRight size={16} />
+                        <ChevronRight size={14} />
                     </button>
                 </div>
 
@@ -152,9 +163,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <div className="lg:col-span-2 space-y-6">
                     {activeTab === 'geral' ? (
                         <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
-                            <div className="p-6 border-b border-slate-100">
-                                <h2 className="text-lg font-bold text-slate-800">Geral</h2>
-                                <p className="text-sm text-slate-400 font-medium">Configurações gerais exibidas nos documentos gerados</p>
+                            <div className="p-5 border-b border-slate-100">
+                                <h2 className="text-base font-bold text-slate-800">Geral</h2>
+                                <p className="text-[11px] text-slate-400 font-medium">Configurações gerais exibidas nos documentos gerados</p>
                             </div>
                             <div className="p-6 space-y-4">
                                 <div>
@@ -170,24 +181,56 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             </div>
                         </div>
                     ) : activeTab === 'financeiro' ? (
-                        <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
-                             <div className="p-6 border-b border-slate-100">
-                                <h2 className="text-lg font-bold text-slate-800">Financeiro</h2>
-                                <p className="text-sm text-slate-400 font-medium">Configure os tipos de pagamento para o financeiro</p>
+                        <div className="space-y-6">
+                            {/* Seção 1: Formas de Pagamento (Cartão, Boleto, etc) */}
+                            <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+                                <div className="p-5 border-b border-slate-100 flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                        <Wallet size={18} />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-base font-bold text-slate-800">Formas de Pagamento</h2>
+                                        <p className="text-[11px] text-slate-400 font-medium">Configure as formas de recebimento (ex: Cartão 10x, Boleto 30 dias)</p>
+                                    </div>
+                                </div>
+                                <div className="p-6">
+                                    <PaymentMethodsView 
+                                        paymentMethods={paymentMethods}
+                                        paymentTypes={paymentTypes}
+                                        onSave={onSavePaymentMethod}
+                                        onDelete={onDeletePaymentMethod}
+                                        onToggle={onTogglePaymentMethod}
+                                        hideHeader={true}
+                                    />
+                                </div>
                             </div>
-                            <div className="p-6">
-                                <PaymentTypesView 
-                                     paymentTypes={paymentTypes} 
-                                     onSaveType={onSavePaymentType} 
-                                     onDeleteType={onDeletePaymentType}
-                                 />
+
+                            {/* Seção 2: Tipos de Pagamento (Categorias) */}
+                            <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+                                <div className="p-5 border-b border-slate-100 flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                                        <ShoppingBag size={18} />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-base font-bold text-slate-800 tracking-tight">Tipos de Pagamento</h2>
+                                        <p className="text-[11px] text-slate-400 font-medium">Categorias base para as formas de pagamento acima</p>
+                                    </div>
+                                </div>
+                                <div className="p-6">
+                                    <PaymentTypesView 
+                                         paymentTypes={paymentTypes} 
+                                         onSaveType={onSavePaymentType} 
+                                         onDeleteType={onDeletePaymentType}
+                                         hideHeader={true}
+                                     />
+                                </div>
                             </div>
                         </div>
                     ) : activeTab === 'fluxo' ? (
                         <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
-                            <div className="p-6 border-b border-slate-100">
-                                <h2 className="text-lg font-bold text-slate-800">Fases do Kanban</h2>
-                                <p className="text-sm text-slate-400 font-medium">Configure a ordem e as obrigatoriedades de cada etapa</p>
+                            <div className="p-5 border-b border-slate-100">
+                                <h2 className="text-base font-bold text-slate-800">Fases do Kanban</h2>
+                                <p className="text-[11px] text-slate-400 font-medium">Configure a ordem e as obrigatoriedades de cada etapa</p>
                             </div>
 
                             <div className="p-6 space-y-4">
@@ -236,18 +279,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                                                 onChange={(e) => setTempName(e.target.value)}
                                                                                 onBlur={() => handleRename(phase.name)}
                                                                                 onKeyDown={(e) => e.key === 'Enter' && handleRename(phase.name)}
-                                                                                className="w-full bg-white border border-[var(--primary-color)] rounded-lg px-2 py-1 text-sm font-bold focus:outline-none"
+                                                                                className="w-full bg-white border border-[var(--primary-color)] rounded-lg px-2 py-1 text-xs font-bold focus:outline-none"
                                                                             />
                                                                         </div>
                                                                     ) : (
-                                                                        <span className="font-bold text-slate-700 truncate">{phase.name}</span>
+                                                                        <span className="text-sm font-bold text-slate-700 truncate">{phase.name}</span>
                                                                     )}
                                                                 </div>
 
                                                                 <div className="flex items-center gap-6">
                                                                     {/* Requirement Toggle */}
                                                                     <div className="flex items-center gap-2">
-                                                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Exigir Responsável</span>
+                                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Exigir Responsável</span>
                                                                         <button
                                                                             onClick={() => onToggleRequirement(phase.name)}
                                                                             className={`relative w-11 h-6 rounded-full transition-colors ${phase.requiresResponsible ? 'bg-primary' : 'bg-slate-200'}`}
@@ -282,20 +325,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 </DragDropContext>
 
                                 {/* Info Alert */}
-                                <div className="mt-8 p-4 bg-blue-50 border border-blue-100 rounded-2xl flex gap-3 text-blue-700">
-                                    <Info size={20} className="shrink-0" />
-                                    <div className="text-sm">
-                                        <p className="font-bold mb-1">Sobre a Responsabilidade Obrigatória</p>
-                                        <p className="font-medium opacity-80">Ao ativar esta opção, o sistema impedirá que uma O.S. seja movida para esta fase sem que um colaborador de produção seja selecionado no momento da ação.</p>
+                                <div className="mt-8 p-3 bg-blue-50 border border-blue-100 rounded-2xl flex gap-3 text-blue-700">
+                                    <Info size={18} className="shrink-0" />
+                                    <div className="text-[11px]">
+                                        <p className="font-bold mb-0.5 uppercase tracking-wide">Sobre a Responsabilidade Obrigatória</p>
+                                        <p className="font-medium opacity-80 leading-relaxed">Ao ativar esta opção, o sistema impedirá que uma O.S. seja movida para esta fase sem que um colaborador de produção seja selecionado no momento da ação.</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     ) : activeTab === 'vendas' ? (
                         <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
-                            <div className="p-6 border-b border-slate-100">
-                                <h2 className="text-lg font-bold text-slate-800">Fases de Vendas</h2>
-                                <p className="text-sm text-slate-400 font-medium">Configure as etapas do seu funil comercial</p>
+                            <div className="p-5 border-b border-slate-100">
+                                <h2 className="text-base font-bold text-slate-800">Fases de Vendas</h2>
+                                <p className="text-[11px] text-slate-400 font-medium">Configure as etapas do seu funil comercial</p>
                             </div>
 
                             <div className="p-6 space-y-4">
@@ -357,11 +400,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                                                         setEditingPhase(null);
                                                                                     }
                                                                                 }}
-                                                                                className="w-full bg-white border border-[var(--primary-color)] rounded-lg px-2 py-1 text-sm font-bold focus:outline-none"
+                                                                                className="w-full bg-white border border-[var(--primary-color)] rounded-lg px-2 py-1 text-xs font-bold focus:outline-none"
                                                                             />
                                                                         </div>
                                                                     ) : (
-                                                                        <span className="font-bold text-slate-700 truncate">{phase.name}</span>
+                                                                        <span className="text-sm font-bold text-slate-700 truncate">{phase.name}</span>
                                                                     )}
                                                                 </div>
 
@@ -389,9 +432,33 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                     </Droppable>
                                 </DragDropContext>
 
+                                <div className="mt-8 pt-8 border-t border-slate-100">
+                                    <h3 className="text-xs font-black text-slate-700 uppercase tracking-[0.2em] mb-3">Parâmetros de Desconto</h3>
+                                    <p className="text-[11px] text-slate-400 font-medium mb-4">Defina o limite máximo de desconto que um vendedor pode conceder sem autorização</p>
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex-1 max-w-xs">
+                                            <label className="block text-sm font-bold text-slate-700 mb-1">Desconto máximo permitido (%)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                step="0.5"
+                                                value={companyInfo.maxDiscountPct ?? ''}
+                                                onChange={e => {
+                                                    const v = parseFloat(e.target.value);
+                                                    onUpdateCompany({ ...companyInfo, maxDiscountPct: isNaN(v) ? undefined : v });
+                                                }}
+                                                placeholder="Ex: 10"
+                                                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-bold"
+                                            />
+                                        </div>
+                                        <p className="text-xs text-slate-400 mt-5">Se vazio, não há limite de desconto.</p>
+                                    </div>
+                                </div>
+
                                 <div className="mt-12 pt-8 border-t border-slate-100">
-                                    <h3 className="text-sm font-black text-slate-700 uppercase tracking-widest mb-4">Motivos de Orçamento Perdido</h3>
-                                    <p className="text-xs text-slate-400 font-medium mb-6">Cadastre as opções que o vendedor deverá selecionar ao perder um orçamento</p>
+                                    <h3 className="text-xs font-black text-slate-700 uppercase tracking-[0.2em] mb-3">Motivos de Orçamento Perdido</h3>
+                                    <p className="text-[11px] text-slate-400 font-medium mb-6">Cadastre as opções que o vendedor deverá selecionar ao perder um orçamento</p>
                                     
                                     <div className="flex gap-2 mb-6">
                                         <input
@@ -474,26 +541,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         </div>
                     ) : activeTab === 'empresa' ? (
                         <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
-                            <div className="p-6 border-b border-slate-100">
-                                <h2 className="text-lg font-bold text-slate-800">Dados da Empresa</h2>
-                                <p className="text-sm text-slate-400 font-medium">Informações básicas e endereço principal</p>
+                            <div className="p-5 border-b border-slate-100">
+                                <h2 className="text-base font-bold text-slate-800">Dados da Empresa</h2>
+                                <p className="text-[11px] text-slate-400 font-medium">Informações básicas e endereço principal</p>
                             </div>
 
                             <div className="p-6 space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                                     {/* Logo Upload Section */}
-                                    <div className="md:col-span-2 p-6 bg-slate-50 border border-slate-100 rounded-3xl space-y-4">
+                                    <div className="md:col-span-2 p-5 bg-slate-50 border border-slate-100 rounded-3xl space-y-4">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-20 h-20 bg-white border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center overflow-hidden shrink-0">
+                                            <div className="w-16 h-16 bg-white border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center overflow-hidden shrink-0">
                                                 {companyInfo.logoUrl ? (
                                                     <img src={companyInfo.logoUrl} alt="Logo Preview" className="w-full h-full object-cover" />
                                                 ) : (
-                                                    <Building2 size={32} className="text-slate-300" />
+                                                    <Building2 size={28} className="text-slate-300" />
                                                 )}
                                             </div>
-                                            <div className="flex-1 space-y-1">
-                                                <h3 className="text-sm font-bold text-slate-800">Logotipo da Empresa</h3>
-                                                <p className="text-xs text-slate-400 font-medium">PNG ou JPG. Recomendado: Quadrado, máx. 500x500px.</p>
+                                            <div className="flex-1 space-y-0.5">
+                                                <h3 className="text-xs font-bold text-slate-800">Logotipo da Empresa</h3>
+                                                <p className="text-[10px] text-slate-400 font-medium">PNG ou JPG. Recomendado: Quadrado, máx. 500x500px.</p>
                                                 <div className="flex gap-2 pt-1">
                                                     <label className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[11px] font-bold text-slate-600 cursor-pointer hover:bg-slate-50 transition-all">
                                                         Alterar Logo
@@ -569,9 +636,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                     </div>
 
                                     {/* Sidebar Customization Section */}
-                                    <div className="md:col-span-2 p-6 bg-slate-100/50 border border-slate-200 rounded-3xl space-y-4 shadow-inner">
-                                        <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                            <Layout size={18} className="text-primary" /> Personalização Visual
+                                    <div className="md:col-span-2 p-5 bg-slate-100/50 border border-slate-200 rounded-3xl space-y-4 shadow-inner">
+                                        <h3 className="text-xs font-bold text-slate-800 flex items-center gap-2 uppercase tracking-widest">
+                                            <Layout size={16} className="text-primary" /> Personalização Visual
                                         </h3>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="space-y-3">
@@ -627,15 +694,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     ) : (
                         <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden text-center p-12">
                             <div className="max-w-md mx-auto space-y-6">
-                                <div className="w-20 h-20 bg-primary/5 text-primary rounded-3xl flex items-center justify-center mx-auto mb-6">
-                                    <FileSpreadsheet size={40} />
+                                <div className="w-16 h-16 bg-primary/5 text-primary rounded-3xl flex items-center justify-center mx-auto mb-6">
+                                    <FileSpreadsheet size={32} />
                                 </div>
-                                <h2 className="text-2xl font-black text-slate-800">Importação de Clientes</h2>
-                                <p className="text-slate-500 font-medium leading-relaxed"> Suba sua planilha do Excel (.xlsx) para importar seus clientes em lote para o sistema.</p>
+                                <h2 className="text-lg font-black text-slate-800">Importação de Clientes</h2>
+                                <p className="text-sm text-slate-500 font-medium leading-relaxed"> Suba sua planilha do Excel (.xlsx) para importar seus clientes em lote para o sistema.</p>
                                 
-                                <div className="p-6 bg-slate-50 border border-slate-100 rounded-3xl space-y-4 text-left">
-                                    <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                        <Download size={16} className="text-blue-500" /> Instruções Importantes:
+                                <div className="p-5 bg-slate-50 border border-slate-100 rounded-3xl space-y-4 text-left">
+                                    <h3 className="text-xs font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wide">
+                                        <Download size={14} className="text-blue-500" /> Instruções Importantes:
                                     </h3>
                                     <ul className="text-xs text-slate-400 space-y-2 font-medium">
                                         <li className="flex items-start gap-2">

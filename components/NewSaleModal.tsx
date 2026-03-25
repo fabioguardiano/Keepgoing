@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { X, User, ShoppingBag, Plus, Trash2, Calculator, Save, FileText, Search, Tag, Users, Printer, Edit2, RotateCcw, Check, GripVertical, PlusCircle, Copy, Pencil, Lock, AlertTriangle, Eye, ClipboardList } from 'lucide-react';
-import { SalesOrder, OrderItem, Client, Architect, AppUser, SalesChannel, Material, ProductService, CompanyInfo, SalesPhaseConfig, ServiceGroup, PaymentMethod, WorkOrder } from '../types';
+import { SalesOrder, OrderItem, Client, Architect, AppUser, SalesChannel, Material, ProductService, CompanyInfo, SalesPhaseConfig, ServiceGroup, PaymentMethod, WorkOrder, DiscountAuthorization } from '../types';
 import { ClientSelectModal } from './ClientSelectModal';
 import { PrintBudget } from './PrintBudget';
 import { GenerateOSModal } from './GenerateOSModal';
+import { DiscountRequestModal } from './DiscountAuthModal';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
@@ -27,16 +28,18 @@ interface NewSaleModalProps {
   companyId?: string;
   createWorkOrders?: (orders: any[]) => Promise<boolean>;
   getEnvironmentOSMap?: (saleId: string) => Record<string, WorkOrder[]>;
+  onRequestDiscount?: (admin: AppUser, requestedPct: number, maxPct: number) => void;
 }
 
 export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   onClose, onSave, clients, architects, appUsers, materials, products, services, salesChannels, paymentMethods, initialData, companyInfo, nextOrderNumber, salesPhases, readOnly = false,
-  companyId, createWorkOrders, getEnvironmentOSMap
+  companyId, createWorkOrders, getEnvironmentOSMap, onRequestDiscount
 }) => {
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [printingSale, setPrintingSale] = useState<SalesOrder | null>(null);
   const [blurMeasurements, setBlurMeasurements] = useState(false);
   const [showGenerateOS, setShowGenerateOS] = useState(false);
+  const [showDiscountRequest, setShowDiscountRequest] = useState(false);
   // Revert-to-Orçamento flow (only when readOnly=true)
   const [isLocked, setIsLocked] = useState(readOnly);
   const [showRevert, setShowRevert] = useState(false);
@@ -435,6 +438,13 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
     }
     if (saleType === 'Pedido' && !firstDueDate) {
       alert('Informe a Data do 1º Vencimento para confirmar o Pedido.');
+      return;
+    }
+
+    // Validação de desconto máximo
+    const maxPct = companyInfo.maxDiscountPct;
+    if (maxPct !== undefined && safeDiscPct > maxPct && onRequestDiscount) {
+      setShowDiscountRequest(true);
       return;
     }
 
@@ -1172,6 +1182,21 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
           blurMeasurements={blurMeasurements}
         />,
         document.body
+      )}
+
+      {/* Discount Authorization Request Modal */}
+      {showDiscountRequest && companyInfo.maxDiscountPct !== undefined && onRequestDiscount && (
+        <DiscountRequestModal
+          requestedPct={safeDiscPct}
+          maxPct={companyInfo.maxDiscountPct}
+          admins={appUsers.filter(u => u.role === 'admin' && u.status === 'ativo')}
+          onRequest={(admin) => {
+            onRequestDiscount(admin, safeDiscPct, companyInfo.maxDiscountPct!);
+            setShowDiscountRequest(false);
+          }}
+          onRedo={() => setShowDiscountRequest(false)}
+          onClose={() => setShowDiscountRequest(false)}
+        />
       )}
 
       {/* Generate OS Modal */}

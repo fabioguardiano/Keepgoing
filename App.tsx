@@ -41,6 +41,7 @@ import { useAccountsPayable } from './hooks/useAccountsPayable';
 import { usePaymentMethods } from './hooks/usePaymentMethods';
 import { usePaymentTypes } from './hooks/usePaymentTypes';
 import { useWorkOrders } from './hooks/useWorkOrders';
+import { useDiscountAuthorizations } from './hooks/useDiscountAuthorizations';
 import { WorkOrdersView } from './components/WorkOrdersView';
 import { WorkOrderKanban } from './components/WorkOrderKanban';
 import 'leaflet/dist/leaflet.css';
@@ -207,6 +208,7 @@ const App: React.FC = () => {
   const { paymentMethods, handleSavePaymentMethod, deletePaymentMethod, toggleActive } = usePaymentMethods(activeCompanyId);
   const { paymentTypes, handleSavePaymentType, deletePaymentType: handleDeletePaymentType } = usePaymentTypes(activeCompanyId);
   const { workOrders, loadingWO, createWorkOrders, updateWorkOrderStatus, updateWorkOrderPhase, updateWorkOrder, addDrawing, deleteDrawing, getEnvironmentOSMap, refreshWorkOrders } = useWorkOrders(activeCompanyId);
+  const { authorizations, requestAuthorization, resolveAuthorization } = useDiscountAuthorizations(activeCompanyId);
 
   // 5. Configurações Globais (Depende de setOrders e setSales para renomeação de fases)
   const { 
@@ -475,6 +477,7 @@ const App: React.FC = () => {
       case 'Relatórios':
         return <ReportsView orders={orders} deliveries={deliveries} />;
       case 'Configurações':
+      case 'Tipos de Pagamento':
         return (
           <SettingsView
             phases={phases}
@@ -494,6 +497,11 @@ const App: React.FC = () => {
             paymentTypes={paymentTypes}
             onSavePaymentType={handleSavePaymentType}
             onDeletePaymentType={handleDeletePaymentType}
+            paymentMethods={paymentMethods}
+            onSavePaymentMethod={handleSavePaymentMethod}
+            onDeletePaymentMethod={deletePaymentMethod}
+            onTogglePaymentMethod={toggleActive}
+            initialTab={currentView === 'Tipos de Pagamento' ? 'financeiro' : undefined}
           />
         );
       case 'Clientes':
@@ -524,6 +532,16 @@ const App: React.FC = () => {
             companyId={activeCompanyId}
             createWorkOrders={createWorkOrders}
             getEnvironmentOSMap={getEnvironmentOSMap}
+            onRequestDiscount={async (admin, requestedPct, maxPct) => {
+              await requestAuthorization({
+                sellerId: user.id,
+                sellerName: user.name || user.email || '',
+                requestedDiscountPct: requestedPct,
+                maxDiscountPct: maxPct,
+                adminId: admin.id,
+                adminName: admin.name,
+              });
+            }}
           />
         );
       case 'Matéria Prima':
@@ -602,14 +620,7 @@ const App: React.FC = () => {
             onToggle={toggleActive}
           />
         );
-      case 'Tipos de Pagamento':
-        return (
-          <PaymentTypesView
-            paymentTypes={paymentTypes}
-            onSaveType={handleSavePaymentType}
-            onDeleteType={handleDeletePaymentType}
-          />
-        );
+
       case 'Fornecedores':
         return <SuppliersView suppliers={suppliers} onSaveSupplier={handleSaveSupplier} onDeleteSupplier={deleteSupplier} />;
       case 'Arquitetos':
@@ -639,7 +650,15 @@ const App: React.FC = () => {
         exchangeRates={exchangeRates}
       />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <Header user={user} onLogout={handleLogout} onSearch={setSearchQuery} onToggleActivity={() => setIsHistoryOpen(!isHistoryOpen)} />
+        <Header
+          user={user}
+          onLogout={handleLogout}
+          onSearch={setSearchQuery}
+          onToggleActivity={() => setIsHistoryOpen(!isHistoryOpen)}
+          authorizations={authorizations}
+          onApproveDiscount={(id, msg) => resolveAuthorization(id, 'approved', msg)}
+          onRejectDiscount={(id, msg) => resolveAuthorization(id, 'rejected', msg)}
+        />
         <RecentActivity activities={activities} isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} />
         <main className="flex-1 overflow-x-auto p-4 kanban-container">
           {renderContent()}
