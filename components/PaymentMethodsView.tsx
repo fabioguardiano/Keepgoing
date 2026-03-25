@@ -122,16 +122,16 @@ export const PaymentMethodsView: React.FC<Props> = ({ paymentMethods, paymentTyp
                   <span className="font-bold text-slate-800 dark:text-white text-[12px] leading-tight">{pm.name}</span>
                   {!pm.active && <span className="text-[9px] bg-slate-100 text-slate-400 px-1.5 py-0 rounded-full font-bold uppercase tracking-tighter">Inativo</span>}
                 </div>
-                <div className="text-[10px] text-slate-400 font-medium mt-0.5 flex items-center gap-3">
-                  <span className="opacity-70">{getCategoryLabel(pm.category, paymentTypes)}</span>
+                <div className="text-[10px] text-slate-400 font-medium mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="opacity-70 whitespace-nowrap">{getCategoryLabel(pm.category, paymentTypes)}</span>
                   {pm.type === 'aprazo' && pm.installments && pm.installments > 1 && (
-                    <span className="bg-slate-50 px-1.5 rounded-md border border-slate-100 tracking-tight">até {pm.installments}x</span>
+                    <span className="bg-slate-50 px-1.5 py-0.5 rounded-md border border-slate-100 tracking-tight whitespace-nowrap">até {pm.installments}x</span>
                   )}
                   {pm.installmentFee && pm.installmentFee > 0 ? (
-                    <span className="text-rose-400 font-bold tracking-tight">{pm.installmentFee}% a.m.</span>
+                    <span className="text-rose-400 font-bold tracking-tight whitespace-nowrap">{pm.installmentFee}% a.m.</span>
                   ) : null}
                   {pm.anticipationDiscount && pm.anticipationDiscount > 0 ? (
-                    <span className="text-green-500 font-bold tracking-tight">{pm.anticipationDiscount}% antecip.</span>
+                    <span className="text-green-500 font-bold tracking-tight whitespace-nowrap">{pm.anticipationDiscount}% antecip.</span>
                   ) : null}
                 </div>
               </div>
