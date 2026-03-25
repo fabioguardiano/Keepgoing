@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
-import { KanbanBoard } from './components/KanbanBoard';
 import { Login } from './components/Login';
 import { PlaceholderView } from './components/PlaceholderView';
 import { OrderListView } from './components/OrderListView';
@@ -26,7 +25,7 @@ import { BrandsView } from './components/BrandsView';
 import { ProductGroupsView } from './components/ProductGroupsView';
 import { ServiceGroupsView } from './components/ServiceGroupsView';
 import { MOCK_ORDERS } from './constants';
-import { OrderService, User, View, ProductionPhase, INITIAL_PHASES, AppUser, ProductionStaff, PhaseConfig, ActivityLog, PhaseRecord, PhaseResponsible, Delivery, CompanyInfo, Client, Material, SalesOrder, SalesChannel, FinanceTransaction, Supplier, Architect, ProductService, Brand, ProductGroup, ServiceGroup, SalesPhaseConfig, ExchangeRates } from './types';
+import { OrderService, User, View, ProductionPhase, INITIAL_PHASES, AppUser, ProductionStaff, PhaseConfig, ActivityLog, Delivery, CompanyInfo, Client, Material, SalesOrder, SalesChannel, FinanceTransaction, Supplier, Architect, ProductService, Brand, ProductGroup, ServiceGroup, SalesPhaseConfig, ExchangeRates } from './types';
 import { supabase } from './lib/supabase';
 import { useActivities } from './hooks/useActivities';
 import { useClients } from './hooks/useClients';
@@ -44,6 +43,7 @@ import { usePaymentMethods } from './hooks/usePaymentMethods';
 import { usePaymentTypes } from './hooks/usePaymentTypes';
 import { useWorkOrders } from './hooks/useWorkOrders';
 import { WorkOrdersView } from './components/WorkOrdersView';
+import { WorkOrderKanban } from './components/WorkOrderKanban';
 import 'leaflet/dist/leaflet.css';
 
 
@@ -207,7 +207,7 @@ const App: React.FC = () => {
   const { payables, handleSavePayable, deletePayable, payInstallment: payPayableInstallment, unpayInstallment: unpayPayableInstallment } = useAccountsPayable(activeCompanyId);
   const { paymentMethods, handleSavePaymentMethod, deletePaymentMethod, toggleActive } = usePaymentMethods(activeCompanyId);
   const { paymentTypes, handleSavePaymentType, deletePaymentType: handleDeletePaymentType } = usePaymentTypes(activeCompanyId);
-  const { workOrders, loadingWO, createWorkOrders, updateWorkOrderStatus, getEnvironmentOSMap } = useWorkOrders(activeCompanyId);
+  const { workOrders, loadingWO, createWorkOrders, updateWorkOrderStatus, updateWorkOrderPhase, updateWorkOrder, addDrawing, deleteDrawing, getEnvironmentOSMap, refreshWorkOrders } = useWorkOrders(activeCompanyId);
 
   // 5. Configurações Globais (Depende de setOrders e setSales para renomeação de fases)
   const { 
@@ -341,19 +341,6 @@ const App: React.FC = () => {
     localStorage.removeItem('marmo_user');
   };
 
-  const addPhaseResponsible = (orderId: string, phaseName: string, staffName: string) => {
-    const order = orders.find(o => o.id === orderId);
-    if (!order) return;
-    const now = new Date().toISOString();
-    const history: PhaseRecord[] = order.phaseHistory ? [...order.phaseHistory] : [];
-    const idx = history.findLastIndex(r => r.phaseName === phaseName && !r.completedAt);
-    if (idx !== -1) {
-      const newResponsible: PhaseResponsible = { id: String(Date.now()), staffName, addedAt: now };
-      history[idx] = { ...history[idx], responsibles: [...history[idx].responsibles, newResponsible] };
-      handleSaveOrder({ ...order, phaseHistory: history });
-      logActivity('update', `Adicionou ${staffName} como responsável na fase ${phaseName}`, orderId, order.osNumber);
-    }
-  };
 
   // Persistência inicial de login via Supabase Auth
   useEffect(() => {
@@ -433,28 +420,15 @@ const App: React.FC = () => {
     switch (currentView) {
       case 'Produção':
         return (
-          <KanbanBoard
-            orders={orders}
+          <WorkOrderKanban
+            workOrders={workOrders}
             phases={phases}
-            onOrderMove={async (orderId, newPhase) => {
-              const o = orders.find(x => x.id === orderId);
-              if (o) await handleSaveOrder({ ...o, phase: newPhase });
-            }}
-            onUpdateOrder={async (id, updates) => {
-              const o = orders.find(x => x.id === id);
-              if (o) await handleSaveOrder({ ...o, ...updates });
-            }}
-            onAddOrder={handleSaveOrder}
-            onAddPhase={addPhase}
-            onRenamePhase={renamePhase}
-            onDeletePhase={deletePhase}
-            onReorderPhases={reorderPhases}
-            onTogglePhaseRequirement={togglePhaseRequirement}
             appUsers={appUsers}
-            productionStaff={staff}
-            activities={activities}
-            onAddPhaseResponsible={addPhaseResponsible}
-            isAdmin={user.role === 'admin'}
+            currentUserName={user?.name || user?.email || 'Usuário'}
+            onUpdatePhase={updateWorkOrderPhase}
+            onUpdate={updateWorkOrder}
+            onAddDrawing={addDrawing}
+            onDeleteDrawing={deleteDrawing}
           />
         );
       case 'Ordens de Serviço':

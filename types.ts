@@ -562,10 +562,12 @@ export interface WorkOrderLog {
   workOrderId: string;
   saleId?: string;
   environment: string;
-  action: 'created' | 'reissued';
+  action: 'created' | 'reissued' | 'phase_changed';
   reason?: string;
   userName?: string;
   createdAt: string;
+  fromPhase?: string;
+  toPhase?: string;
 }
 
 export interface WorkOrder {
@@ -586,6 +588,12 @@ export interface WorkOrder {
   createdAt: string;
   updatedAt?: string;
   logs?: WorkOrderLog[];
+  productionPhase?: string;
+  drawingUrl?: string;
+  drawingUrls: string[];
+  deliveryDeadline?: string;
+  priority: 'alta' | 'media' | 'baixa';
+  assignedUsers: Array<{ name: string; role?: string }>;
 }
 
 export type View =

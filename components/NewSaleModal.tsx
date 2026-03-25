@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, ShoppingBag, Plus, Trash2, Calculator, Save, FileText, Search, Tag, Users, Printer, Edit2, RotateCcw, Check, GripVertical, PlusCircle, Copy, Pencil, Lock, AlertTriangle, Eye } from 'lucide-react';
-import { SalesOrder, OrderItem, Client, Architect, AppUser, SalesChannel, Material, ProductService, CompanyInfo, SalesPhaseConfig, ServiceGroup, PaymentMethod } from '../types';
+import { X, User, ShoppingBag, Plus, Trash2, Calculator, Save, FileText, Search, Tag, Users, Printer, Edit2, RotateCcw, Check, GripVertical, PlusCircle, Copy, Pencil, Lock, AlertTriangle, Eye, ClipboardList } from 'lucide-react';
+import { SalesOrder, OrderItem, Client, Architect, AppUser, SalesChannel, Material, ProductService, CompanyInfo, SalesPhaseConfig, ServiceGroup, PaymentMethod, WorkOrder } from '../types';
 import { ClientSelectModal } from './ClientSelectModal';
 import { PrintBudget } from './PrintBudget';
+import { GenerateOSModal } from './GenerateOSModal';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
@@ -23,14 +24,19 @@ interface NewSaleModalProps {
   salesPhases: SalesPhaseConfig[];
   services: ServiceGroup[];
   readOnly?: boolean;
+  companyId?: string;
+  createWorkOrders?: (orders: any[]) => Promise<boolean>;
+  getEnvironmentOSMap?: (saleId: string) => Record<string, WorkOrder[]>;
 }
 
 export const NewSaleModal: React.FC<NewSaleModalProps> = ({
-  onClose, onSave, clients, architects, appUsers, materials, products, services, salesChannels, paymentMethods, initialData, companyInfo, nextOrderNumber, salesPhases, readOnly = false
+  onClose, onSave, clients, architects, appUsers, materials, products, services, salesChannels, paymentMethods, initialData, companyInfo, nextOrderNumber, salesPhases, readOnly = false,
+  companyId, createWorkOrders, getEnvironmentOSMap
 }) => {
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [printingSale, setPrintingSale] = useState<SalesOrder | null>(null);
   const [blurMeasurements, setBlurMeasurements] = useState(false);
+  const [showGenerateOS, setShowGenerateOS] = useState(false);
   // Revert-to-Orçamento flow (only when readOnly=true)
   const [isLocked, setIsLocked] = useState(readOnly);
   const [showRevert, setShowRevert] = useState(false);
@@ -592,6 +598,18 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 >
                   <RotateCcw size={15} /> Atualizar Preços
                 </button>
+                {saleType === 'Pedido' && initialData?.id && createWorkOrders && (
+                  <>
+                    <div className="w-px h-6 bg-orange-200 dark:bg-slate-600"></div>
+                    <button
+                      onClick={() => setShowGenerateOS(true)}
+                      className="p-2 text-emerald-600 hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all flex items-center gap-1.5 font-bold text-[11px]"
+                      title="Gerar Ordens de Serviço de Produção"
+                    >
+                      <ClipboardList size={15} /> Gerar O.S.
+                    </button>
+                  </>
+                )}
               </div>
             )}
             <button onClick={onClose} className="p-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-800 rounded-2xl transition-all shadow-sm">
@@ -1160,6 +1178,30 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
           blurMeasurements={blurMeasurements}
         />,
         document.body
+      )}
+
+      {/* Generate OS Modal */}
+      {showGenerateOS && initialData?.id && companyId && createWorkOrders && (
+        <GenerateOSModal
+          sale={{ ...initialData, items, status: saleType, paymentConditions, deliveryDeadline } as any}
+          companyId={companyId}
+          existingOSMap={getEnvironmentOSMap ? getEnvironmentOSMap(initialData.id) : {}}
+          onConfirm={async (groups) => {
+            const success = await createWorkOrders(groups.map(g => ({
+              saleId: initialData.id,
+              saleOrderNumber: initialData.orderNumber,
+              clientName: selectedClient?.tradingName || selectedClient?.legalName || initialData.clientName,
+              clientId: initialData.clientId,
+              deliveryDeadline: deliveryDeadline || initialData.deliveryDeadline,
+              ...g,
+            })));
+            if (success) {
+              setShowGenerateOS(false);
+              alert(`${groups.length} O.S. gerada(s) com sucesso!`);
+            }
+          }}
+          onClose={() => setShowGenerateOS(false)}
+        />
       )}
 
       {/* Material Swap Modal */}
