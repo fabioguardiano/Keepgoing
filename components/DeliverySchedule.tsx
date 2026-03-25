@@ -55,6 +55,7 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDeliveryId, setSelectedDeliveryId] = useState<string | null>(deliveries.length > 0 ? deliveries[0].id : null);
   const [editingDeliveryId, setEditingDeliveryId] = useState<string | null>(null);
+  const [activeMobileView, setActiveMobileView] = useState<'list' | 'map'>('list');
   const [coords, setCoords] = useState<Record<string, [number, number]>>({});
   const [roadPaths, setRoadPaths] = useState<Record<string, [number, number][]>>({});
   const [newDelivery, setNewDelivery] = useState({
@@ -374,9 +375,25 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
   };
 
   return (
-    <div className="flex h-full bg-gray-50 overflow-hidden font-sans">
+    <div className="flex flex-col lg:flex-row h-full bg-gray-50 overflow-hidden font-sans relative">
+      {/* Mobile Nav Switcher */}
+      <div className="lg:hidden flex border-b bg-white relative z-[1001]">
+        <button 
+          onClick={() => setActiveMobileView('list')}
+          className={`flex-1 py-3 text-xs font-black uppercase tracking-widest transition-all ${activeMobileView === 'list' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400'}`}
+        >
+          Lista de Entregas
+        </button>
+        <button 
+          onClick={() => setActiveMobileView('map')}
+          className={`flex-1 py-3 text-xs font-black uppercase tracking-widest transition-all ${activeMobileView === 'map' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400'}`}
+        >
+          Mapa da Rota
+        </button>
+      </div>
+
       {/* Sidebar - Delivery List */}
-      <div className="w-96 border-r bg-white flex flex-col shrink-0">
+      <div className={`${activeMobileView === 'list' ? 'flex' : 'hidden'} lg:flex w-full lg:w-96 border-r bg-white flex-col shrink-0 overflow-y-auto`}>
         <div className="p-6 border-b">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-gray-900">Agenda de Entregas</h2>
@@ -496,9 +513,9 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
       </div>
 
       {/* Main Content - Map View */}
-      <div className="flex-1 relative bg-gray-200">
+      <div className={`${activeMobileView === 'map' ? 'flex' : 'hidden'} lg:flex flex-1 relative bg-gray-200 min-h-[400px]`}>
         <div className="absolute inset-0 bg-[#f8f9fa] flex flex-col">
-          <div className="p-4 bg-white/80 backdrop-blur-md border-b flex items-center justify-between z-[1000] absolute top-0 left-0 right-0">
+          <div className="p-3 lg:p-4 bg-white/80 backdrop-blur-md border-b flex flex-col sm:flex-row items-center justify-between gap-3 z-[1000] absolute top-0 left-0 right-0">
             <div className="flex items-center gap-4">
                <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border shadow-sm text-sm font-bold text-gray-700">
                  <Truck size={16} className="text-[var(--primary-color)]" /> Rota de hoje: {deliveries.length} paradas
