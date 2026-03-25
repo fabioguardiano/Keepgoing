@@ -282,8 +282,13 @@ const App: React.FC = () => {
           const total = s.totals?.geral ?? s.totalValue ?? 0;
           const n = s.paymentInstallments || 1;
           const firstDate = new Date(s.firstDueDate + 'T12:00:00');
-          const baseValue = Math.floor((total / n) * 100) / 100;
-          const diff = Math.round((total - baseValue * n) * 100) / 100;
+          // Desconta a taxa da operadora: ela cobra installmentFee% por parcela (exceto a 1ª)
+          const fee = (pm?.installmentFee ?? 0);
+          const netTotal = fee > 0 && n > 1
+            ? Math.round(total * (1 - (fee * (n - 1)) / 100) * 100) / 100
+            : total;
+          const baseValue = Math.floor((netTotal / n) * 100) / 100;
+          const diff = Math.round((netTotal - baseValue * n) * 100) / 100;
           const installments = Array.from({ length: n }, (_, i) => ({
             id: crypto.randomUUID(),
             number: i + 1,
@@ -291,14 +296,17 @@ const App: React.FC = () => {
             value: i === 0 ? baseValue + diff : baseValue,
             status: 'pendente' as const,
           }));
+          const feeNote = fee > 0 && n > 1
+            ? ` | Taxa operadora: ${fee}% × ${n - 1} = ${(fee * (n - 1)).toFixed(2)}% | Líquido: R$ ${netTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+            : '';
           await handleSaveReceivable({
             id: undefined as any,
-            description: `Venda ${s.orderNumber} — ${s.clientName}`,
+            description: `Venda ${s.orderNumber} — ${s.clientName}${feeNote}`,
             clientId: s.clientId,
             clientName: s.clientName || '',
             saleId,
             orderNumber: s.orderNumber || '',
-            totalValue: total,
+            totalValue: netTotal,
             paidValue: 0,
             installments,
             paymentMethodId: s.paymentMethodId,

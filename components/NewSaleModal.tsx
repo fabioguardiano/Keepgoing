@@ -1080,9 +1080,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   const baseValue = Math.floor((totalGeral / n) * 100) / 100;
                   const diff = Math.round((totalGeral - baseValue * n) * 100) / 100;
                   const fmtR = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                  const hasInstallmentFee = pm.installmentFee && pm.installmentFee > 0 && n > 1;
-                  const feeTotal = hasInstallmentFee ? totalGeral * (1 + (pm.installmentFee! * (n - 1)) / 100) : totalGeral;
-                  const installmentValue = n > 1 ? feeTotal / n : baseValue + diff;
+                  const installmentValue = n > 1 ? baseValue + (diff > 0 ? diff : 0) : baseValue + diff;
                   return (
                     <div className="bg-[var(--primary-color)]/10 dark:bg-[var(--primary-color)]/20 rounded-lg p-2.5 border border-[var(--primary-color)]/20">
                       <p className="text-[9px] font-black uppercase tracking-widest text-[var(--primary-color)] mb-0.5">{pm.name}</p>
@@ -1091,11 +1089,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                       ) : (
                         <>
                           <p className="text-lg font-black text-[var(--primary-color)]">{n}x de R$ {fmtR(installmentValue)}</p>
-                          {hasInstallmentFee ? (
-                            <p className="text-[10px] text-[var(--primary-color)]/70 font-bold mt-0.5">Total com taxas: R$ {fmtR(feeTotal)}</p>
-                          ) : (
-                            <p className="text-[10px] text-[var(--primary-color)]/70 font-bold mt-0.5">Total: R$ {fmtR(totalGeral)}</p>
-                          )}
+                          <p className="text-[10px] text-[var(--primary-color)]/70 font-bold mt-0.5">Total: R$ {fmtR(totalGeral)}</p>
                         </>
                       )}
                     </div>
