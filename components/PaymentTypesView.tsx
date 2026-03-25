@@ -119,45 +119,45 @@ export const PaymentTypesView: React.FC<PaymentTypesViewProps> = ({ paymentTypes
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest w-24">Cód.</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Tipo de Pagamento</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Data Cadastro</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-4 text-right text-xs font-bold text-slate-400 uppercase tracking-widest">Ações</th>
+                <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-20">Cód.</th>
+                <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tipo de Pagamento</th>
+                <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Data Cadastro</th>
+                <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
+                <th className="px-5 py-3 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filteredTypes.map((t) => (
                 <tr key={t.id} className={`hover:bg-slate-50/50 transition-colors group ${t.status === 'inativo' ? 'opacity-60' : ''}`}>
-                  <td className="px-6 py-4 text-xs font-black text-slate-800">
+                  <td className="px-5 py-2.5 text-[10px] font-black text-slate-800">
                     {t.code || '-'}
                   </td>
-                  <td className="px-6 py-4">
-                    <span className="text-xs font-black text-slate-800">{t.name}</span>
+                  <td className="px-5 py-2.5">
+                    <span className="text-[11px] font-black text-slate-800 uppercase tracking-tight">{t.name}</span>
                   </td>
-                  <td className="px-6 py-4 text-xs font-bold text-slate-500">
+                  <td className="px-5 py-2.5 text-[10px] font-bold text-slate-500">
                     {new Date(t.createdAt).toLocaleDateString('pt-BR')}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-5 py-2.5">
                     <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${t.status === 'ativo' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
                       {t.status === 'ativo' ? 'Ativo' : 'Inativo'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
+                  <td className="px-5 py-2.5 text-right">
+                    <div className="flex justify-end gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => handleEdit(t)}
-                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all border border-transparent hover:border-blue-100"
+                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all border border-transparent hover:border-blue-100"
                         title="Editar"
                       >
-                        <Edit2 size={16} />
+                        <Edit2 size={14} />
                       </button>
                       <button
                         onClick={() => onSaveType({ ...t, status: t.status === 'ativo' ? 'inativo' : 'ativo' })}
-                        className={`p-2 rounded-xl transition-all border border-transparent ${t.status === 'inativo' ? 'text-green-500 hover:bg-green-50' : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50'}`}
+                        className={`p-1.5 rounded-lg transition-all border border-transparent ${t.status === 'inativo' ? 'text-green-500 hover:bg-green-50' : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50'}`}
                         title={t.status === 'inativo' ? 'Reativar' : 'Inativar'}
                       >
-                        <PowerOff size={16} />
+                        <PowerOff size={14} />
                       </button>
                       {onDeleteType && (
                         <button

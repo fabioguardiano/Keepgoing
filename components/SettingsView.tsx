@@ -189,8 +189,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                         <Wallet size={18} />
                                     </div>
                                     <div>
-                                        <h2 className="text-base font-bold text-slate-800">Formas de Pagamento</h2>
-                                        <p className="text-[11px] text-slate-400 font-medium">Configure as formas de recebimento (ex: Cartão 10x, Boleto 30 dias)</p>
+                                        <h2 className="text-sm font-bold text-slate-800 uppercase tracking-tight">Formas de Pagamento</h2>
+                                        <p className="text-[10px] text-slate-400 font-medium">Configure as formas de recebimento (ex: Cartão 10x, Boleto 30 dias)</p>
                                     </div>
                                 </div>
                                 <div className="p-6">
@@ -212,8 +212,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                         <ShoppingBag size={18} />
                                     </div>
                                     <div>
-                                        <h2 className="text-base font-bold text-slate-800 tracking-tight">Tipos de Pagamento</h2>
-                                        <p className="text-[11px] text-slate-400 font-medium">Categorias base para as formas de pagamento acima</p>
+                                        <h2 className="text-sm font-bold text-slate-800 uppercase tracking-tight">Tipos de Pagamento</h2>
+                                        <p className="text-[10px] text-slate-400 font-medium">Categorias base para as formas de pagamento acima</p>
                                     </div>
                                 </div>
                                 <div className="p-6">

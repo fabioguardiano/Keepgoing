@@ -18,13 +18,13 @@ const getCategoryLabel = (cat: string, types: PaymentType[]) => {
 };
 
 const THEME_ICONS: Record<string, React.ReactNode> = {
-  dinheiro:      <Banknote size={16} />,
-  pix:           <QrCode size={16} />,
-  transferencia: <Building2 size={16} />,
-  cartao:        <CreditCard size={16} />,
-  boleto:        <FileText size={16} />,
-  cheque:        <FileText size={16} />,
-  outro:         <Banknote size={16} />,
+  dinheiro:      <Banknote size={14} />,
+  pix:           <QrCode size={14} />,
+  transferencia: <Building2 size={14} />,
+  cartao:        <CreditCard size={14} />,
+  boleto:        <FileText size={14} />,
+  cheque:        <FileText size={14} />,
+  outro:         <Banknote size={14} />,
 };
 
 const getCategoryIcon = (cat: string) => {
@@ -107,46 +107,50 @@ export const PaymentMethodsView: React.FC<Props> = ({ paymentMethods, paymentTyp
 
   const GroupCard = ({ methods, title }: { methods: PaymentMethod[]; title: string }) => (
     <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
-      <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-        <h3 className="font-black text-slate-700 dark:text-white text-sm uppercase tracking-widest">{title}</h3>
-        <span className="text-xs font-bold text-slate-400">{methods.length} forma{methods.length !== 1 ? 's' : ''}</span>
+      <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/30">
+        <h3 className="font-black text-slate-700 dark:text-white text-[10px] uppercase tracking-widest leading-none">{title}</h3>
+        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">{methods.length} forma{methods.length !== 1 ? 's' : ''}</span>
       </div>
       {methods.length === 0 ? (
         <div className="py-10 text-center text-slate-400 text-sm">Nenhuma forma cadastrada.</div>
       ) : (
         <div className="divide-y divide-slate-50 dark:divide-slate-800">
           {methods.map(pm => (
-            <div key={pm.id} className={`flex items-center gap-4 px-6 py-4 transition-colors ${pm.active ? '' : 'opacity-50'}`}>
-              <div className={`p-2 rounded-xl ${getCategoryColor(pm.category)}`}>
+            <div key={pm.id} className={`flex items-center gap-3 px-5 py-2.5 transition-colors ${pm.active ? '' : 'opacity-50'}`}>
+              <div className={`p-1.5 rounded-lg ${getCategoryColor(pm.category)}`}>
                 {getCategoryIcon(pm.category)}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-slate-800 dark:text-white text-sm">{pm.name}</span>
-                  {!pm.active && <span className="text-[10px] bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full font-bold">Inativo</span>}
+                  <span className="font-bold text-slate-800 dark:text-white text-[12px] leading-tight">{pm.name}</span>
+                  {!pm.active && <span className="text-[9px] bg-slate-100 text-slate-400 px-1.5 py-0 rounded-full font-bold uppercase tracking-tighter">Inativo</span>}
                 </div>
-                <div className="text-xs text-slate-400 font-medium mt-0.5 flex items-center gap-3">
-                  <span>{getCategoryLabel(pm.category, paymentTypes)}</span>
+                <div className="text-[10px] text-slate-400 font-medium mt-0.5 flex items-center gap-3">
+                  <span className="opacity-70">{getCategoryLabel(pm.category, paymentTypes)}</span>
                   {pm.type === 'aprazo' && pm.installments && pm.installments > 1 && (
-                    <span>até {pm.installments}x</span>
+                    <span className="bg-slate-50 px-1.5 rounded-md border border-slate-100 tracking-tight">até {pm.installments}x</span>
                   )}
                   {pm.installmentFee && pm.installmentFee > 0 ? (
-                    <span className="text-rose-400">{pm.installmentFee}% a.m.</span>
+                    <span className="text-rose-400 font-bold tracking-tight">{pm.installmentFee}% a.m.</span>
                   ) : null}
                   {pm.anticipationDiscount && pm.anticipationDiscount > 0 ? (
-                    <span className="text-green-500">{pm.anticipationDiscount}% antecipação</span>
+                    <span className="text-green-500 font-bold tracking-tight">{pm.anticipationDiscount}% antecip.</span>
                   ) : null}
                 </div>
               </div>
-              <div className="flex items-center gap-1">
-                <button onClick={() => onToggle(pm.id)} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-400" title={pm.active ? 'Desativar' : 'Ativar'}>
-                  {pm.active ? <ToggleRight size={20} className="text-green-500" /> : <ToggleLeft size={20} />}
+              <div className="flex items-center gap-0.5">
+                <button 
+                  onClick={() => onToggle(pm.id)} 
+                  className="p-1.5 rounded-lg hover:bg-slate-50 transition-all" 
+                  title={pm.active ? 'Desativar' : 'Ativar'}
+                >
+                  {pm.active ? <ToggleRight size={18} className="text-green-500" /> : <ToggleLeft size={18} className="text-slate-300" />}
                 </button>
-                <button onClick={() => openEdit(pm)} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-400 hover:text-[var(--primary-color)]">
-                  <Pencil size={16} />
+                <button onClick={() => openEdit(pm)} className="p-1.5 rounded-lg hover:bg-slate-50 transition-all text-slate-400 hover:text-[var(--primary-color)]">
+                  <Pencil size={14} />
                 </button>
-                <button onClick={() => setConfirmDelete(pm.id)} className="p-2 rounded-xl hover:bg-red-50 dark:hover:bg-slate-800 transition-all text-slate-400 hover:text-red-500">
-                  <Trash2 size={16} />
+                <button onClick={() => setConfirmDelete(pm.id)} className="p-1.5 rounded-lg hover:bg-rose-50 transition-all text-slate-300 hover:text-rose-500">
+                  <Trash2 size={14} />
                 </button>
               </div>
             </div>
