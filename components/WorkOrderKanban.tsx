@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Image as ImageIcon, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Image as ImageIcon, Calendar, ChevronLeft, ChevronRight, UserRound } from 'lucide-react';
 import { WorkOrder, PhaseConfig, AppUser } from '../types';
 import { WorkOrderModal } from './WorkOrderModal';
 
@@ -85,6 +85,12 @@ const WOCard: React.FC<WOCardProps> = ({ workOrder, index, onClick }) => {
             OS #{String(workOrder.osNumber).padStart(4, '0')}
             {workOrder.environments.length > 0 && ` · ${workOrder.environments.join(', ')}`}
           </p>
+          {workOrder.sellerName && (
+            <div className="flex items-center gap-1 mt-1">
+              <UserRound size={10} className="text-gray-300 flex-shrink-0" />
+              <span className="text-[10px] text-gray-400 truncate">{workOrder.sellerName}</span>
+            </div>
+          )}
 
           {/* Drawing thumbnail — stack effect when multiple */}
           <div className="mt-3 relative h-36 group/thumb">

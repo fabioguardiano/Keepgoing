@@ -594,6 +594,7 @@ export interface WorkOrder {
   deliveryDeadline?: string;
   priority: 'alta' | 'media' | 'baixa';
   assignedUsers: Array<{ name: string; role?: string }>;
+  sellerName?: string;
 }
 
 export type View =

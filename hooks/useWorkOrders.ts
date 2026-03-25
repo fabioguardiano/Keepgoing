@@ -40,6 +40,7 @@ const map = (r: any): WorkOrder => ({
   deliveryDeadline: r.delivery_deadline,
   priority: r.priority || 'media',
   assignedUsers: r.assigned_users || [],
+  sellerName: r.seller_name || undefined,
 });
 
 export const useWorkOrders = (companyId?: string) => {
@@ -83,6 +84,7 @@ export const useWorkOrders = (companyId?: string) => {
       saleOrderNumber?: number;
       clientName?: string;
       clientId?: string;
+      sellerName?: string;
       environments: string[];
       notes?: string;
       deliveryDeadline?: string;
@@ -106,6 +108,7 @@ export const useWorkOrders = (companyId?: string) => {
             sale_order_number: order.saleOrderNumber,
             client_name: order.clientName || '',
             client_id: order.clientId || null,
+            seller_name: order.sellerName || null,
             environments: order.environments,
             status: 'Aguardando',
             notes: order.notes || '',

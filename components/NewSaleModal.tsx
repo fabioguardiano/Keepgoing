@@ -1192,6 +1192,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
               saleOrderNumber: initialData.orderNumber,
               clientName: selectedClient?.tradingName || selectedClient?.legalName || initialData.clientName,
               clientId: initialData.clientId,
+              sellerName: initialData.seller || undefined,
               deliveryDeadline: deliveryDeadline || initialData.deliveryDeadline,
               ...g,
             })));
