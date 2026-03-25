@@ -599,7 +599,6 @@ export interface WorkOrder {
 
 export type View =
   | 'Produção'
-  | 'Ordens de Serviço'
   | 'Agenda de Entregas'
   | 'Equipe'
   | 'Relatórios'

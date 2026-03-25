@@ -3,7 +3,6 @@ import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { Login } from './components/Login';
 import { PlaceholderView } from './components/PlaceholderView';
-import { OrderListView } from './components/OrderListView';
 import { TeamView } from './components/TeamView';
 import { ReportsView } from './components/ReportsView';
 import { SettingsView } from './components/SettingsView';
@@ -431,8 +430,6 @@ const App: React.FC = () => {
             onDeleteDrawing={deleteDrawing}
           />
         );
-      case 'Ordens de Serviço':
-        return <OrderListView orders={orders} />;
       case 'O.S. de Produção':
         return (
           <WorkOrdersView
