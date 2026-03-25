@@ -112,35 +112,44 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
 
   // Geocodificação Real via Nominatim (OpenStreetMap)
   useEffect(() => {
-    const addressesToGeocode = [
-      ...measurements.map(m => m.address),
-      newMeasurement.address,
-      companyAddress
-    ].filter((v, i, a) => v && a.indexOf(v) === i); // Unique only
+    const timer = setTimeout(() => {
+      const addressesToGeocode = [
+        ...measurements.map(m => m.address),
+        newMeasurement.address,
+        companyAddress
+      ].filter((v, i, a) => v && a.indexOf(v) === i); // Unique only
 
-    addressesToGeocode.forEach(addr => {
-      if (coords[addr]) return; // Já geocodificado
+      addressesToGeocode.forEach(addr => {
+        if (coords[addr] || !addr || addr.length < 5) return; // Já geocodificado ou curto
 
-      // Nominatim search
-      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}&limit=1`)
-        .then(r => r.json())
-        .then(data => {
-          if (data && data[0]) {
-            const lat = parseFloat(data[0].lat);
-            const lon = parseFloat(data[0].lon);
-            setCoords(prev => ({ ...prev, [addr]: [lat, lon] }));
-          }
-        })
-        .catch(err => console.error('Erro geocoding:', addr, err));
-    });
+        // Nominatim search
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}&limit=1`)
+          .then(r => r.json())
+          .then(data => {
+            if (data && data[0]) {
+              const lat = parseFloat(data[0].lat);
+              const lon = parseFloat(data[0].lon);
+              setCoords(prev => ({ ...prev, [addr]: [lat, lon] }));
+              if (addr === newMeasurement.address) {
+                setMapCenter([lat, lon]);
+              }
+            }
+          })
+          .catch(err => console.error('Erro geocoding:', addr, err));
+      });
+    }, 1500); // 1.5s debounce para respeitar política do Nominatim
+
+    return () => clearTimeout(timer);
   }, [measurements, newMeasurement.address, companyAddress]);
 
-  // Atualizar centro do mapa quando o endereço da nova medição mudar
+  // Atualizar centro do mapa quando o endereço da nova medição mudar (caso já tenhamos a coordenada)
   useEffect(() => {
     if (newMeasurement.address && coords[newMeasurement.address]) {
       setMapCenter(coords[newMeasurement.address]);
+    } else if (companyAddress && coords[companyAddress]) {
+      setMapCenter(coords[companyAddress]);
     }
-  }, [newMeasurement.address, coords]);
+  }, [newMeasurement.address, coords, companyAddress]);
 
   // Filtrar medições pela data selecionada e termo de busca
   const filteredMeasurements = measurements.filter(m => {
@@ -572,7 +581,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                 {/* Map Preview in Modal */}
                 <div className="sm:col-span-2 h-32 rounded-2xl overflow-hidden border border-gray-100 relative grayscale hover:grayscale-0 transition-all">
                    <MapContainer 
-                     center={coords[newMeasurement.address] || mapCenter} 
+                     center={mapCenter} 
                      zoom={15} 
                      style={{ height: '100%', width: '100%' }} 
                      zoomControl={false}
@@ -580,8 +589,8 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                      dragging={false}
                    >
                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                     <MapController center={coords[newMeasurement.address] || mapCenter} />
-                     <Marker position={coords[newMeasurement.address] || mapCenter} />
+                     <MapController center={mapCenter} />
+                     <Marker position={mapCenter} />
                    </MapContainer>
                    <div className="absolute top-2 left-2 px-2 py-0.5 bg-white/90 backdrop-blur rounded text-[9px] font-black uppercase text-gray-500 shadow-sm z-[500]">
                      Prévia da Localização
