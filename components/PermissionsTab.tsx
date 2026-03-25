@@ -1,0 +1,259 @@
+import React, { useState } from 'react';
+import { ShieldCheck, Plus, Edit2, Trash2, ChevronLeft, Check, Lock } from 'lucide-react';
+import { PermissionProfile, AppUser, ModuleKey, AccessLevel } from '../types';
+import { ALL_MODULES, MODULE_LABELS, DEFAULT_PROFILES } from '../lib/permissions';
+
+interface Props {
+  profiles: PermissionProfile[];
+  appUsers: AppUser[];
+  onSaveProfile: (profile: PermissionProfile) => void;
+  onDeleteProfile: (id: string) => void;
+  onSaveUser: (user: AppUser) => void;
+}
+
+const ACCESS_OPTIONS: { value: AccessLevel; label: string; color: string }[] = [
+  { value: 'none',  label: 'Sem acesso', color: 'bg-slate-100 text-slate-400' },
+  { value: 'view',  label: 'Visualizar', color: 'bg-blue-100 text-blue-700' },
+  { value: 'full',  label: 'Completo',   color: 'bg-green-100 text-green-700' },
+];
+
+// ─── Editor de Perfil ─────────────────────────────────────────────────────────
+
+interface ProfileEditorProps {
+  profile: PermissionProfile;
+  onSave: (p: PermissionProfile) => void;
+  onBack: () => void;
+}
+
+const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, onSave, onBack }) => {
+  const [name, setName] = useState(profile.name);
+  const [perms, setPerms] = useState<Record<ModuleKey, AccessLevel>>({ ...profile.permissions });
+
+  const setAccess = (module: ModuleKey, level: AccessLevel) =>
+    setPerms(prev => ({ ...prev, [module]: level }));
+
+  const handleSave = () => {
+    if (!name.trim()) return;
+    onSave({ ...profile, name: name.trim(), permissions: perms });
+    onBack();
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center gap-3">
+        <button onClick={onBack} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors">
+          <ChevronLeft size={18} />
+        </button>
+        <h3 className="text-base font-black text-slate-800">
+          {profile.isDefault && profile.id !== 'profile-admin'
+            ? `Editar: ${profile.name}`
+            : profile.id === 'profile-admin'
+            ? 'Administrador (somente leitura)'
+            : profile.name ? `Editar: ${profile.name}` : 'Novo Perfil'}
+        </h3>
+      </div>
+
+      {/* Nome do perfil */}
+      <div>
+        <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Nome do perfil</label>
+        <input
+          value={name}
+          onChange={e => setName(e.target.value)}
+          disabled={profile.id === 'profile-admin'}
+          placeholder="Ex: Projetista Sênior"
+          className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
+        />
+      </div>
+
+      {/* Matriz de permissões */}
+      <div>
+        <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Módulos e Acessos</label>
+        <div className="space-y-2">
+          {ALL_MODULES.map(module => (
+            <div key={module} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+              <span className="flex-1 text-sm font-bold text-slate-700">{MODULE_LABELS[module]}</span>
+              <div className="flex gap-1.5">
+                {ACCESS_OPTIONS.map(opt => {
+                  const isSelected = perms[module] === opt.value;
+                  const isAdminLocked = profile.id === 'profile-admin';
+                  return (
+                    <button
+                      key={opt.value}
+                      onClick={() => !isAdminLocked && setAccess(module, opt.value)}
+                      disabled={isAdminLocked}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all border-2
+                        ${isSelected
+                          ? `${opt.color} border-transparent shadow-sm`
+                          : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'}
+                        ${isAdminLocked ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+                    >
+                      {isSelected && <Check size={10} className="inline mr-1" />}
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {profile.id !== 'profile-admin' && (
+        <button
+          onClick={handleSave}
+          className="w-full py-2.5 bg-primary text-white font-black rounded-xl hover:opacity-90 transition-opacity text-sm"
+        >
+          Salvar perfil
+        </button>
+      )}
+    </div>
+  );
+};
+
+// ─── Componente Principal ──────────────────────────────────────────────────────
+
+export const PermissionsTab: React.FC<Props> = ({
+  profiles, appUsers, onSaveProfile, onDeleteProfile, onSaveUser,
+}) => {
+  const [editingProfile, setEditingProfile] = useState<PermissionProfile | null>(null);
+
+  if (editingProfile) {
+    return (
+      <ProfileEditor
+        profile={editingProfile}
+        onSave={p => { onSaveProfile(p); setEditingProfile(null); }}
+        onBack={() => setEditingProfile(null)}
+      />
+    );
+  }
+
+  const handleNewProfile = () => {
+    setEditingProfile({
+      id: `profile-${Date.now()}`,
+      name: '',
+      permissions: ALL_MODULES.reduce((acc, m) => ({ ...acc, [m]: 'none' }), {} as Record<ModuleKey, AccessLevel>),
+    });
+  };
+
+  return (
+    <div className="space-y-8">
+
+      {/* ── Seção 1: Perfis ── */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-sm font-black text-slate-700 uppercase tracking-widest">Perfis de Acesso</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Defina quais módulos cada perfil pode acessar</p>
+          </div>
+          <button
+            onClick={handleNewProfile}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-bold text-sm hover:opacity-90 transition-opacity"
+          >
+            <Plus size={16} /> Novo Perfil
+          </button>
+        </div>
+
+        <div className="space-y-2">
+          {profiles.map(profile => {
+            const assignedCount = appUsers.filter(u => u.profileId === profile.id).length;
+            return (
+              <div key={profile.id} className="flex items-center gap-4 p-4 bg-slate-50 border border-slate-100 rounded-2xl hover:bg-white hover:border-slate-200 transition-all group">
+                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <ShieldCheck size={18} className="text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-sm text-slate-800 truncate">{profile.name}</p>
+                    {profile.isDefault && (
+                      <span className="flex items-center gap-0.5 text-[9px] font-black uppercase tracking-widest text-slate-400 bg-slate-200 px-1.5 py-0.5 rounded-full">
+                        <Lock size={8} /> Padrão
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {assignedCount > 0 ? `${assignedCount} usuário(s)` : 'Nenhum usuário'}
+                  </p>
+                </div>
+
+                {/* Resumo de acessos */}
+                <div className="hidden sm:flex gap-1 flex-wrap max-w-[220px]">
+                  {ALL_MODULES.filter(m => profile.permissions[m] !== 'none').slice(0, 4).map(m => (
+                    <span key={m} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                      profile.permissions[m] === 'full' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {MODULE_LABELS[m].split(' ')[0]}
+                    </span>
+                  ))}
+                  {ALL_MODULES.filter(m => profile.permissions[m] !== 'none').length > 4 && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-500">
+                      +{ALL_MODULES.filter(m => profile.permissions[m] !== 'none').length - 4}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => setEditingProfile(profile)}
+                    className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
+                    title="Editar"
+                  >
+                    <Edit2 size={15} />
+                  </button>
+                  {!profile.isDefault && (
+                    <button
+                      onClick={() => onDeleteProfile(profile.id)}
+                      className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                      title="Excluir"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Seção 2: Atribuição de usuários ── */}
+      <div>
+        <h3 className="text-sm font-black text-slate-700 uppercase tracking-widest mb-1">Atribuição de Perfis</h3>
+        <p className="text-xs text-slate-400 mb-4">Selecione qual perfil cada usuário deve usar</p>
+
+        <div className="space-y-2">
+          {appUsers.filter(u => u.status === 'ativo').map(user => (
+            <div key={user.id} className="flex items-center gap-4 p-3 bg-white border border-slate-100 rounded-xl">
+              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-black flex-shrink-0">
+                {user.name.trim().slice(0, 2).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-slate-800 truncate">{user.name}</p>
+                <p className="text-xs text-slate-400">{user.email}</p>
+              </div>
+              <select
+                value={user.profileId ?? ''}
+                onChange={e => onSaveUser({ ...user, profileId: e.target.value || undefined })}
+                className="text-xs font-bold border border-slate-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-700 min-w-[160px]"
+              >
+                <option value="">— Sem perfil (role padrão) —</option>
+                {profiles.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Legenda ── */}
+      <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl text-sm text-blue-700 space-y-1">
+        <p className="font-black text-xs uppercase tracking-widest mb-2">Legenda de acessos</p>
+        <div className="flex flex-wrap gap-3">
+          <span className="flex items-center gap-1.5 text-xs"><span className="w-3 h-3 rounded-full bg-slate-300 inline-block" /> Sem acesso — menu e tela ocultos</span>
+          <span className="flex items-center gap-1.5 text-xs"><span className="w-3 h-3 rounded-full bg-blue-400 inline-block" /> Visualizar — só leitura, sem criar/editar</span>
+          <span className="flex items-center gap-1.5 text-xs"><span className="w-3 h-3 rounded-full bg-green-500 inline-block" /> Completo — CRUD completo</span>
+        </div>
+      </div>
+    </div>
+  );
+};

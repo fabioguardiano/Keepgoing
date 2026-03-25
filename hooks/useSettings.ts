@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { 
-  AppUser, ProductionStaff, PhaseConfig, SalesPhaseConfig, 
-  Brand, ProductGroup, ServiceGroup, SalesChannel, 
-  CompanyInfo, ProductionPhase, INITIAL_PHASES 
+import {
+  AppUser, ProductionStaff, PhaseConfig, SalesPhaseConfig,
+  Brand, ProductGroup, ServiceGroup, SalesChannel,
+  CompanyInfo, ProductionPhase, INITIAL_PHASES, PermissionProfile
 } from '../types';
+import { DEFAULT_PROFILES } from '../lib/permissions';
 
 const INITIAL_APP_USERS: AppUser[] = [
   { id: '1', name: 'Fábio Admin', email: 'fabio@marmoflow.com', role: 'admin', status: 'ativo', createdAt: '2024-01-10' },
@@ -235,6 +236,33 @@ export const useSettings = (
     setSalesPhases(result);
   };
 
+  // Permission Profiles
+  const [permissionProfiles, setPermissionProfiles] = useState<PermissionProfile[]>(() => {
+    try {
+      const saved = localStorage.getItem('marmo_permission_profiles');
+      if (!saved) return DEFAULT_PROFILES;
+      const parsed: PermissionProfile[] = JSON.parse(saved);
+      // Garante que perfis padrão sempre existem (merge)
+      const ids = parsed.map(p => p.id);
+      const missing = DEFAULT_PROFILES.filter(d => !ids.includes(d.id));
+      return [...missing, ...parsed];
+    } catch {
+      return DEFAULT_PROFILES;
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('marmo_permission_profiles', JSON.stringify(permissionProfiles));
+  }, [permissionProfiles]);
+
+  const handleSaveProfile = (profile: PermissionProfile) =>
+    setPermissionProfiles(prev => prev.find(p => p.id === profile.id)
+      ? prev.map(p => p.id === profile.id ? profile : p)
+      : [...prev, profile]);
+
+  const handleDeleteProfile = (id: string) =>
+    setPermissionProfiles(prev => prev.filter(p => p.id !== id && !p.isDefault));
+
   const handleSaveBrand = (b: Brand) => setBrands(prev => prev.find(x => x.id === b.id) ? prev.map(x => x.id === b.id ? b : x) : [b, ...prev]);
   const handleDeleteBrand = (id: string) => setBrands(prev => prev.map(x => x.id === id ? { ...x, status: 'inativo' as const } : x));
 
@@ -256,6 +284,7 @@ export const useSettings = (
     productGroups, handleSaveProductGroup, handleDeleteProductGroup,
     serviceGroups, handleSaveServiceGroup, handleDeleteServiceGroup,
     salesChannels, handleSaveSalesChannel, handleDeleteSalesChannel,
-    companyInfo, setCompanyInfo
+    companyInfo, setCompanyInfo,
+    permissionProfiles, handleSaveProfile, handleDeleteProfile,
   };
 };

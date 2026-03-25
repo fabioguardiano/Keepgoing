@@ -45,12 +45,38 @@ export const INITIAL_PHASES: PhaseConfig[] = [
 
 export type StaffPosition = 'serrador' | 'acabador' | 'ajudante_serrador' | 'ajudante_acabador' | 'motorista' | 'medidor' | 'instalador' | 'vendedor' | 'gerente';
 
+// ─── Sistema de Permissões ────────────────────────────────────────────────────
+
+export type ModuleKey =
+  | 'producao'
+  | 'vendas'
+  | 'agenda_entregas'
+  | 'financeiro'
+  | 'clientes'
+  | 'estoque'
+  | 'equipe'
+  | 'relatorios'
+  | 'configuracoes'
+  | 'cadastros';
+
+export type AccessLevel = 'none' | 'view' | 'full';
+
+export interface PermissionProfile {
+  id: string;
+  name: string;
+  isDefault?: boolean; // perfis padrão não podem ser excluídos
+  permissions: Record<ModuleKey, AccessLevel>;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export interface AppUser {
   id: string;
   name: string;
   email: string;
   role: 'admin' | 'manager' | 'seller' | 'viewer' | 'driver';
   status: 'ativo' | 'inativo';
+  profileId?: string; // ID do PermissionProfile atribuído
   company_id?: string;
   createdAt: string;
 }
@@ -350,6 +376,7 @@ export interface CompanyInfo {
   lostReasonOptions?: string[];
   legalNote?: string;
   maxDiscountPct?: number;
+  permissionProfiles?: PermissionProfile[];
 }
 
 export interface DiscountAuthorization {

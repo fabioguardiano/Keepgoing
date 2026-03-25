@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Diamond, LayoutDashboard, Package, BarChart3, Users, Settings, PlusCircle, MapPin, ShoppingBag, Wallet, Box, ChevronDown, ChevronRight, Truck, Briefcase, Wrench, TrendingUp, ClipboardList } from 'lucide-react';
-import { View, CompanyInfo } from '../types';
+import { View, CompanyInfo, ModuleKey, AccessLevel } from '../types';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -8,18 +8,19 @@ interface SidebarProps {
   currentView: View;
   onViewChange: (view: View) => void;
   companyInfo: CompanyInfo;
-  userRole: string;
   exchangeRates: { usd: number; eur: number; lastUpdate: string };
+  getAccess: (module: ModuleKey) => AccessLevel;
 }
 
 interface NavItem {
   icon: any;
   label: string;
   view?: View;
-  subItems?: { label: string; view: View; icon: any }[];
+  module?: string;
+  subItems?: { label: string; view: View; icon: any; module?: string }[];
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, onViewChange, companyInfo, userRole, exchangeRates }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, onViewChange, companyInfo, exchangeRates, getAccess }) => {
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
 
   const toggleMenu = (label: string) => {
@@ -33,56 +34,66 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
       icon: PlusCircle,
       label: 'Cadastros',
       subItems: [
-        { icon: Users, label: 'Clientes', view: 'Clientes' as View },
-        { icon: Truck, label: 'Fornecedores', view: 'Fornecedores' as View },
-        { icon: Briefcase, label: 'Arquitetos', view: 'Arquitetos' as View },
-        { icon: Users, label: 'Equipe', view: 'Equipe' as View },
+        { icon: Users,    label: 'Clientes',     view: 'Clientes' as View,     module: 'clientes' },
+        { icon: Truck,    label: 'Fornecedores', view: 'Fornecedores' as View, module: 'cadastros' },
+        { icon: Briefcase,label: 'Arquitetos',   view: 'Arquitetos' as View,   module: 'cadastros' },
+        { icon: Users,    label: 'Equipe',       view: 'Equipe' as View,       module: 'equipe' },
       ]
     },
     {
       icon: Package,
       label: 'Grupo/Coleções',
+      module: 'cadastros' as ModuleKey,
       subItems: [
-        { icon: Diamond, label: 'Marcas', view: 'Marcas' as View },
-        { icon: ShoppingBag, label: 'Canais de Vendas', view: 'Canais de Vendas' as View },
-        { icon: Box, label: 'Produtos', view: 'Grupos de Produtos' as View },
-        { icon: Wrench, label: 'Serviços', view: 'Grupos de Serviços' as View },
+        { icon: Diamond,    label: 'Marcas',          view: 'Marcas' as View,          module: 'cadastros' },
+        { icon: ShoppingBag,label: 'Canais de Vendas',view: 'Canais de Vendas' as View,module: 'cadastros' },
+        { icon: Box,        label: 'Produtos',        view: 'Grupos de Produtos' as View, module: 'cadastros' },
+        { icon: Wrench,     label: 'Serviços',        view: 'Grupos de Serviços' as View, module: 'cadastros' },
       ]
     },
     {
       icon: Box,
       label: 'Estoque / Acabamentos',
+      module: 'estoque' as ModuleKey,
       subItems: [
-        { icon: Package, label: 'Matéria Prima', view: 'Matéria Prima' as View },
-        { icon: Diamond, label: 'Acabamentos', view: 'Acabamentos' as View },
-        { icon: ShoppingBag, label: 'Produtos Revenda', view: 'Produtos Revenda' as View },
-        { icon: Wrench, label: 'Mão de obra (Instalação)', view: 'Mão de obra (Instalação)' as View },
+        { icon: Package,    label: 'Matéria Prima',           view: 'Matéria Prima' as View,           module: 'estoque' },
+        { icon: Diamond,    label: 'Acabamentos',             view: 'Acabamentos' as View,             module: 'estoque' },
+        { icon: ShoppingBag,label: 'Produtos Revenda',        view: 'Produtos Revenda' as View,        module: 'estoque' },
+        { icon: Wrench,     label: 'Mão de obra (Instalação)',view: 'Mão de obra (Instalação)' as View,module: 'estoque' },
       ]
     },
-    { icon: ShoppingBag, label: 'Vendas', view: 'Vendas' as View },
-    { icon: ClipboardList, label: 'O.S. de Produção', view: 'O.S. de Produção' as View },
-    { icon: LayoutDashboard, label: 'Produção', view: 'Produção' as View },
-    { icon: MapPin, label: 'Agenda de Entregas', view: 'Agenda de Entregas' as View },
+    { icon: ShoppingBag,   label: 'Vendas',            view: 'Vendas' as View,            module: 'vendas' },
+    { icon: ClipboardList, label: 'O.S. de Produção',  view: 'O.S. de Produção' as View,  module: 'producao' },
+    { icon: LayoutDashboard,label: 'Produção',          view: 'Produção' as View,          module: 'producao' },
+    { icon: MapPin,        label: 'Agenda de Entregas', view: 'Agenda de Entregas' as View,module: 'agenda_entregas' },
     {
       icon: Wallet,
       label: 'Financeiro',
+      module: 'financeiro' as ModuleKey,
       subItems: [
-        { icon: TrendingUp, label: 'Contas a Receber', view: 'Contas a Receber' as View },
-        { icon: Wallet, label: 'Contas a Pagar', view: 'Contas a Pagar' as View },
-        { icon: ShoppingBag, label: 'Formas de Pagamento', view: 'Formas de Pagamento' as View },
+        { icon: TrendingUp, label: 'Contas a Receber',    view: 'Contas a Receber' as View,    module: 'financeiro' },
+        { icon: Wallet,     label: 'Contas a Pagar',      view: 'Contas a Pagar' as View,      module: 'financeiro' },
+        { icon: ShoppingBag,label: 'Formas de Pagamento', view: 'Formas de Pagamento' as View, module: 'financeiro' },
       ]
     },
-    { icon: BarChart3, label: 'Relatórios', view: 'Relatórios' as View },
+    { icon: BarChart3, label: 'Relatórios', view: 'Relatórios' as View, module: 'relatorios' },
     {
       icon: Settings,
       label: 'Configurações',
+      module: 'configuracoes' as ModuleKey,
       subItems: [
-        { icon: Settings, label: 'Geral', view: 'Configurações' as View },
+        { icon: Settings, label: 'Geral', view: 'Configurações' as View, module: 'configuracoes' },
       ]
     }
   ].filter(item => {
-    if (userRole === 'driver') {
-      return item.view === 'Agenda de Entregas';
+    const mod = item.module ?? item.subItems?.[0]?.module;
+    if (!mod) return true;
+    if (getAccess(mod as ModuleKey) === 'none') return false;
+    if (item.subItems) {
+      item.subItems = item.subItems.filter(si =>
+        !si.module || getAccess(si.module as ModuleKey) !== 'none'
+      );
+      return item.subItems.length > 0;
     }
     return true;
   });

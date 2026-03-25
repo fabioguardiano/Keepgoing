@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Settings, Layout, Check, ChevronRight, Plus, Trash2, Edit2, GripVertical, Info, Building2, MapPin, Phone, Mail, ShoppingBag, FileSpreadsheet, Download, Upload, AlertCircle, Loader2, Wallet } from 'lucide-react';
+import { Settings, Layout, Check, ChevronRight, Plus, Trash2, Edit2, GripVertical, Info, Building2, MapPin, Phone, Mail, ShoppingBag, FileSpreadsheet, Download, Upload, AlertCircle, Loader2, Wallet, Shield } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { PaymentTypesView } from './PaymentTypesView';
 import { PaymentMethodsView } from './PaymentMethodsView';
-import { PhaseConfig, CompanyInfo, SalesPhaseConfig, PaymentMethod, PaymentType } from '../types';
+import { PermissionsTab } from './PermissionsTab';
+import { PhaseConfig, CompanyInfo, SalesPhaseConfig, PaymentMethod, PaymentType, PermissionProfile, AppUser } from '../types';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
 interface SettingsViewProps {
@@ -28,7 +29,12 @@ interface SettingsViewProps {
     onSavePaymentMethod: (method: any) => Promise<any>;
     onDeletePaymentMethod: (id: string) => Promise<void>;
     onTogglePaymentMethod: (id: string) => Promise<void>;
-    initialTab?: 'fluxo' | 'vendas' | 'empresa' | 'dados' | 'financeiro' | 'geral';
+    permissionProfiles: PermissionProfile[];
+    appUsers: AppUser[];
+    onSaveProfile: (profile: PermissionProfile) => void;
+    onDeleteProfile: (id: string) => void;
+    onSaveUser: (user: AppUser) => void;
+    initialTab?: 'fluxo' | 'vendas' | 'empresa' | 'dados' | 'financeiro' | 'geral' | 'permissoes';
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -53,9 +59,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     paymentTypes,
     onSavePaymentType,
     onDeletePaymentType,
+    permissionProfiles,
+    appUsers,
+    onSaveProfile,
+    onDeleteProfile,
+    onSaveUser,
     initialTab
 }) => {
-    const [activeTab, setActiveTab] = useState<'fluxo' | 'vendas' | 'empresa' | 'dados' | 'financeiro' | 'geral'>(initialTab || 'fluxo');
+    const [activeTab, setActiveTab] = useState<'fluxo' | 'vendas' | 'empresa' | 'dados' | 'financeiro' | 'geral' | 'permissoes'>(initialTab || 'fluxo');
     const [newPhaseName, setNewPhaseName] = useState('');
     const [editingPhase, setEditingPhase] = useState<string | null>(null);
     const [editingLostReasonIdx, setEditingLostReasonIdx] = useState<number | null>(null);
@@ -157,11 +168,37 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         </div>
                         <ChevronRight size={14} />
                     </button>
+                    <button
+                        onClick={() => setActiveTab('permissoes')}
+                        className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-sm font-bold border transition-all ${activeTab === 'permissoes' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
+                    >
+                        <div className="flex items-center gap-3">
+                            <Shield size={18} />
+                            Permissões
+                        </div>
+                        <ChevronRight size={14} />
+                    </button>
                 </div>
 
                 {/* Content Area */}
                 <div className="lg:col-span-2 space-y-6">
-                    {activeTab === 'geral' ? (
+                    {activeTab === 'permissoes' ? (
+                        <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+                            <div className="p-5 border-b border-slate-100">
+                                <h2 className="text-base font-bold text-slate-800">Perfis de Permissão</h2>
+                                <p className="text-[11px] text-slate-400 font-medium">Gerencie os níveis de acesso por módulo e atribua perfis aos usuários</p>
+                            </div>
+                            <div className="p-6">
+                                <PermissionsTab
+                                    profiles={permissionProfiles}
+                                    appUsers={appUsers}
+                                    onSaveProfile={onSaveProfile}
+                                    onDeleteProfile={onDeleteProfile}
+                                    onSaveUser={onSaveUser}
+                                />
+                            </div>
+                        </div>
+                    ) : activeTab === 'geral' ? (
                         <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
                             <div className="p-5 border-b border-slate-100">
                                 <h2 className="text-base font-bold text-slate-800">Geral</h2>

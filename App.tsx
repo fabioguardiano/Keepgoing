@@ -42,6 +42,7 @@ import { usePaymentMethods } from './hooks/usePaymentMethods';
 import { usePaymentTypes } from './hooks/usePaymentTypes';
 import { useWorkOrders } from './hooks/useWorkOrders';
 import { useDiscountAuthorizations } from './hooks/useDiscountAuthorizations';
+import { getModuleAccess, VIEW_MODULE_MAP } from './lib/permissions';
 import { WorkOrdersView } from './components/WorkOrdersView';
 import { WorkOrderKanban } from './components/WorkOrderKanban';
 import 'leaflet/dist/leaflet.css';
@@ -220,8 +221,13 @@ const App: React.FC = () => {
     productGroups, handleSaveProductGroup, handleDeleteProductGroup,
     serviceGroups, handleSaveServiceGroup, handleDeleteServiceGroup,
     salesChannels, handleSaveSalesChannel, handleDeleteSalesChannel,
-    companyInfo, setCompanyInfo
+    companyInfo, setCompanyInfo,
+    permissionProfiles, handleSaveProfile, handleDeleteProfile,
   } = useSettings(setOrders, setSales);
+
+  // Função de acesso por módulo para o usuário logado
+  const getAccess = (module: import('./types').ModuleKey) =>
+    getModuleAccess(user!, appUsers, permissionProfiles, module);
 
   // 6. Efeitos de Terceiros e Gerais
   const [exchangeRates, setExchangeRates] = useState<ExchangeRates>({ usd: 0, eur: 0, lastUpdate: '--:--' });
@@ -426,6 +432,20 @@ const App: React.FC = () => {
   );
 
   const renderContent = () => {
+    // Bloqueia acesso se o módulo da view atual for 'none'
+    const viewModule = VIEW_MODULE_MAP[currentView];
+    if (viewModule && getAccess(viewModule) === 'none') {
+      return (
+        <div className="flex flex-col items-center justify-center h-full gap-4 text-slate-400">
+          <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center">
+            <span className="text-3xl">🔒</span>
+          </div>
+          <p className="text-lg font-black text-slate-600">Acesso restrito</p>
+          <p className="text-sm">Você não tem permissão para acessar este módulo.</p>
+        </div>
+      );
+    }
+
     switch (currentView) {
       case 'Produção':
         return (
@@ -500,6 +520,11 @@ const App: React.FC = () => {
             onSavePaymentMethod={handleSavePaymentMethod}
             onDeletePaymentMethod={deletePaymentMethod}
             onTogglePaymentMethod={toggleActive}
+            permissionProfiles={permissionProfiles}
+            appUsers={appUsers}
+            onSaveProfile={handleSaveProfile}
+            onDeleteProfile={handleDeleteProfile}
+            onSaveUser={handleSaveUser}
           />
         );
       case 'Clientes':
@@ -644,8 +669,8 @@ const App: React.FC = () => {
         currentView={currentView}
         onViewChange={setCurrentView}
         companyInfo={companyInfo}
-        userRole={user.role}
         exchangeRates={exchangeRates}
+        getAccess={getAccess}
       />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header
