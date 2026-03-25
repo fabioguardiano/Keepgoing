@@ -86,48 +86,75 @@ const WOCard: React.FC<WOCardProps> = ({ workOrder, index, onClick }) => {
             {workOrder.environments.length > 0 && ` · ${workOrder.environments.join(', ')}`}
           </p>
 
-          {/* Drawing thumbnail with navigation */}
-          <div className="mt-3 relative rounded-xl overflow-hidden border border-gray-100 bg-gray-50 h-32 flex items-center justify-center group/thumb">
-            {drawings.length > 0 ? (
-              <>
-                <img
-                  src={drawings[imgIndex]}
-                  alt={`Desenho ${imgIndex + 1}`}
-                  className="w-full h-full object-cover"
-                />
-                {drawings.length > 1 && (
-                  <>
-                    {/* Prev */}
-                    <button
-                      onClick={e => handleNav(e, -1)}
-                      className="absolute left-1 top-1/2 -translate-y-1/2 p-0.5 rounded-full bg-black/40 text-white opacity-0 group-hover/thumb:opacity-100 transition-opacity hover:bg-black/60"
-                    >
-                      <ChevronLeft size={14} />
-                    </button>
-                    {/* Next */}
-                    <button
-                      onClick={e => handleNav(e, 1)}
-                      className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded-full bg-black/40 text-white opacity-0 group-hover/thumb:opacity-100 transition-opacity hover:bg-black/60"
-                    >
-                      <ChevronRight size={14} />
-                    </button>
-                    {/* Dots */}
-                    <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1">
-                      {drawings.map((_, i) => (
-                        <span
-                          key={i}
-                          className={`block w-1.5 h-1.5 rounded-full transition-colors ${i === imgIndex ? 'bg-white' : 'bg-white/40'}`}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
-              </>
-            ) : (
-              <div className="flex flex-col items-center gap-1 text-gray-300">
-                <ImageIcon size={24} />
+          {/* Drawing thumbnail — stack effect when multiple */}
+          <div className="mt-3 relative h-36 group/thumb">
+            {drawings.length === 0 ? (
+              <div className="absolute inset-0 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 flex flex-col items-center justify-center gap-1 text-gray-300">
+                <ImageIcon size={22} />
                 <span className="text-[10px]">Sem imagem</span>
               </div>
+            ) : (
+              <>
+                {/* Background stacked cards (up to 2 behind) */}
+                {drawings.length >= 3 && (
+                  <div
+                    className="absolute inset-x-2 inset-y-2 rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden"
+                    style={{ transform: 'rotate(-4deg)', zIndex: 1 }}
+                  >
+                    <img
+                      src={drawings[(imgIndex + 2) % drawings.length]}
+                      alt=""
+                      className="w-full h-full object-contain p-1.5 opacity-70"
+                    />
+                  </div>
+                )}
+                {drawings.length >= 2 && (
+                  <div
+                    className="absolute inset-x-1 inset-y-1 rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden"
+                    style={{ transform: 'rotate(3deg)', zIndex: 2 }}
+                  >
+                    <img
+                      src={drawings[(imgIndex + 1) % drawings.length]}
+                      alt=""
+                      className="w-full h-full object-contain p-1.5 opacity-80"
+                    />
+                  </div>
+                )}
+
+                {/* Top card — current drawing */}
+                <div
+                  className="absolute inset-0 rounded-xl border border-gray-200 bg-white shadow-md overflow-hidden"
+                  style={{ zIndex: 3 }}
+                >
+                  <img
+                    src={drawings[imgIndex]}
+                    alt={`Desenho ${imgIndex + 1}`}
+                    className="w-full h-full object-contain p-2"
+                  />
+
+                  {/* Navigation arrows — hover only */}
+                  {drawings.length > 1 && (
+                    <>
+                      <button
+                        onClick={e => handleNav(e, -1)}
+                        className="absolute left-1 top-1/2 -translate-y-1/2 p-0.5 rounded-full bg-black/35 text-white opacity-0 group-hover/thumb:opacity-100 transition-opacity hover:bg-black/60"
+                      >
+                        <ChevronLeft size={14} />
+                      </button>
+                      <button
+                        onClick={e => handleNav(e, 1)}
+                        className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded-full bg-black/35 text-white opacity-0 group-hover/thumb:opacity-100 transition-opacity hover:bg-black/60"
+                      >
+                        <ChevronRight size={14} />
+                      </button>
+                      {/* Count badge */}
+                      <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-full bg-black/40 text-white text-[10px] font-bold leading-none">
+                        {imgIndex + 1}/{drawings.length}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </>
             )}
           </div>
 
