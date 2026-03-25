@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Image as ImageIcon, Calendar } from 'lucide-react';
+import { Image as ImageIcon, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { WorkOrder, PhaseConfig, AppUser } from '../types';
 import { WorkOrderModal } from './WorkOrderModal';
 
@@ -53,6 +53,13 @@ interface WOCardProps {
 const WOCard: React.FC<WOCardProps> = ({ workOrder, index, onClick }) => {
   const priority = workOrder.priority || 'media';
   const priorityCfg = PRIORITY_CONFIG[priority];
+  const drawings = workOrder.drawingUrls?.length ? workOrder.drawingUrls : (workOrder.drawingUrl ? [workOrder.drawingUrl] : []);
+  const [imgIndex, setImgIndex] = useState(0);
+
+  const handleNav = (e: React.MouseEvent, dir: 1 | -1) => {
+    e.stopPropagation();
+    setImgIndex(i => (i + dir + drawings.length) % drawings.length);
+  };
 
   return (
     <Draggable draggableId={workOrder.id} index={index}>
@@ -79,14 +86,43 @@ const WOCard: React.FC<WOCardProps> = ({ workOrder, index, onClick }) => {
             {workOrder.environments.length > 0 && ` · ${workOrder.environments.join(', ')}`}
           </p>
 
-          {/* Drawing thumbnail */}
-          <div className="mt-3 rounded-xl overflow-hidden border border-gray-100 bg-gray-50 h-32 flex items-center justify-center">
-            {(workOrder.drawingUrls?.[0] || workOrder.drawingUrl) ? (
-              <img
-                src={workOrder.drawingUrls?.[0] || workOrder.drawingUrl}
-                alt="Desenho"
-                className="w-full h-full object-cover"
-              />
+          {/* Drawing thumbnail with navigation */}
+          <div className="mt-3 relative rounded-xl overflow-hidden border border-gray-100 bg-gray-50 h-32 flex items-center justify-center group/thumb">
+            {drawings.length > 0 ? (
+              <>
+                <img
+                  src={drawings[imgIndex]}
+                  alt={`Desenho ${imgIndex + 1}`}
+                  className="w-full h-full object-cover"
+                />
+                {drawings.length > 1 && (
+                  <>
+                    {/* Prev */}
+                    <button
+                      onClick={e => handleNav(e, -1)}
+                      className="absolute left-1 top-1/2 -translate-y-1/2 p-0.5 rounded-full bg-black/40 text-white opacity-0 group-hover/thumb:opacity-100 transition-opacity hover:bg-black/60"
+                    >
+                      <ChevronLeft size={14} />
+                    </button>
+                    {/* Next */}
+                    <button
+                      onClick={e => handleNav(e, 1)}
+                      className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded-full bg-black/40 text-white opacity-0 group-hover/thumb:opacity-100 transition-opacity hover:bg-black/60"
+                    >
+                      <ChevronRight size={14} />
+                    </button>
+                    {/* Dots */}
+                    <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1">
+                      {drawings.map((_, i) => (
+                        <span
+                          key={i}
+                          className={`block w-1.5 h-1.5 rounded-full transition-colors ${i === imgIndex ? 'bg-white' : 'bg-white/40'}`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
             ) : (
               <div className="flex flex-col items-center gap-1 text-gray-300">
                 <ImageIcon size={24} />
