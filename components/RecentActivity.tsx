@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Clock, Move, Plus, Image as ImageIcon, Trash2, FileEdit, User } from 'lucide-react';
 import { ActivityLog } from '../types';
 
@@ -6,6 +6,7 @@ interface RecentActivityProps {
     activities: ActivityLog[];
     isOpen: boolean;
     onClose: () => void;
+    currentUserName?: string;
 }
 
 const ACTION_ICONS = {
@@ -29,7 +30,12 @@ const getRelativeDate = (isoString: string) => {
     return date.toLocaleDateString('pt-BR');
 };
 
-export const RecentActivity: React.FC<RecentActivityProps> = ({ activities, isOpen, onClose }) => {
+export const RecentActivity: React.FC<RecentActivityProps> = ({ activities, isOpen, onClose, currentUserName }) => {
+    const [onlyMine, setOnlyMine] = useState(false);
+    const visibleActivities = onlyMine && currentUserName
+        ? activities.filter(a => a.userName === currentUserName)
+        : activities;
+
     return (
         <>
             {/* Backdrop */}
@@ -48,18 +54,29 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities, isOp
                             <Clock size={18} className="text-[var(--primary-color)]" />
                             Atividade Recente
                         </h2>
-                        <p className="text-xs text-slate-500 font-medium">{activities.length} ações registradas</p>
+                        <p className="text-xs text-slate-500 font-medium">{visibleActivities.length} ações registradas</p>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-slate-200 rounded-lg text-slate-400 transition-colors"
-                    >
-                        <Trash2 size={18} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {currentUserName && (
+                            <button
+                                onClick={() => setOnlyMine(v => !v)}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all border ${onlyMine ? 'bg-[var(--primary-color)]/10 border-[var(--primary-color)]/30 text-[var(--primary-color)]' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'}`}
+                                title="Mostrar apenas minhas ações"
+                            >
+                                <User size={12} /> Minhas
+                            </button>
+                        )}
+                        <button
+                            onClick={onClose}
+                            className="p-2 hover:bg-slate-200 rounded-lg text-slate-400 transition-colors"
+                        >
+                            <Trash2 size={18} />
+                        </button>
+                    </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
-                    {activities.length === 0 ? (
+                    {visibleActivities.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-4 px-8 text-center">
                             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center">
                                 <Clock size={32} className="opacity-20" />
@@ -68,8 +85,8 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities, isOp
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            {activities.map((activity, idx) => {
-                                const showDate = idx === 0 || getRelativeDate(activity.timestamp) !== getRelativeDate(activities[idx - 1].timestamp);
+                            {visibleActivities.map((activity, idx) => {
+                                const showDate = idx === 0 || getRelativeDate(activity.timestamp) !== getRelativeDate(visibleActivities[idx - 1].timestamp);
 
                                 return (
                                     <React.Fragment key={activity.id}>
@@ -85,7 +102,7 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities, isOp
                                                 <div className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shadow-sm group-hover:border-orange-200 group-hover:bg-orange-50 transition-all">
                                                     {ACTION_ICONS[activity.action]}
                                                 </div>
-                                                {idx < activities.length - 1 && (
+                                                {idx < visibleActivities.length - 1 && (
                                                     <div className="w-px flex-1 bg-slate-100" />
                                                 )}
                                             </div>

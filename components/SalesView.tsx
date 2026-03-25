@@ -28,12 +28,13 @@ interface SalesViewProps {
   createWorkOrders?: (orders: any[]) => Promise<boolean>;
   getEnvironmentOSMap?: (saleId: string) => Record<string, WorkOrder[]>;
   onRequestDiscount?: (admin: any, requestedPct: number, maxPct: number) => void;
+  canEdit?: boolean;
 }
 
 export const SalesView: React.FC<SalesViewProps> = ({
   sales, clients, materials, onSaveSale, appUsers, architects, products, salesChannels, paymentMethods, companyInfo, nextOrderNumber,
   salesPhases, services, onRenameSalesPhase, onDeleteSalesPhase, onReorderSalesPhases,
-  companyId, createWorkOrders, getEnvironmentOSMap, onRequestDiscount
+  companyId, createWorkOrders, getEnvironmentOSMap, onRequestDiscount, canEdit = true
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('kanban');
@@ -255,12 +256,14 @@ export const SalesView: React.FC<SalesViewProps> = ({
               <List size={20} />
             </button>
           </div>
-          <button 
-            onClick={handleNewSale}
-            className="bg-[var(--primary-color)] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[var(--primary-color)]/20 hover:opacity-90 transition-all font-premium"
-          >
-            <Plus size={20} /> Novo Orçamento
-          </button>
+          {canEdit && (
+            <button
+              onClick={handleNewSale}
+              className="bg-[var(--primary-color)] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[var(--primary-color)]/20 hover:opacity-90 transition-all font-premium"
+            >
+              <Plus size={20} /> Novo Orçamento
+            </button>
+          )}
         </div>
       </div>
 
@@ -734,7 +737,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
           nextOrderNumber={nextOrderNumber}
           salesPhases={salesPhases}
           initialData={editingSale || undefined}
-          readOnly={editingSale?.status === 'Pedido'}
+          readOnly={!canEdit || editingSale?.status === 'Pedido'}
           companyId={companyId}
           createWorkOrders={createWorkOrders}
           getEnvironmentOSMap={getEnvironmentOSMap}

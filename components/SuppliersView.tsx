@@ -166,7 +166,7 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
                   </td>
                   <td className="px-6 py-6">
                     <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border ${supplier.type === 'Pessoa Jurídica' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-primary/10 text-primary border-primary/10'}`}>
+                      <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border bg-primary/10 text-primary border-primary/10">
                         {supplier.type === 'Pessoa Jurídica' ? <ShieldCheck size={20} /> : <Truck size={20} />}
                       </div>
                       <div>

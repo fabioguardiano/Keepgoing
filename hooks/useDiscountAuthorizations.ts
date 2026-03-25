@@ -34,7 +34,29 @@ export const useDiscountAuthorizations = (companyId?: string) => {
     if (data) setAuthorizations(data.map(map));
   };
 
-  useEffect(() => { fetch(); }, [companyId]);
+  useEffect(() => {
+    fetch();
+    if (!companyId) return;
+
+    const channel = supabase
+      .channel(`discount_auth:${companyId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'discount_authorizations', filter: `company_id=eq.${companyId}` },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setAuthorizations(prev => [map(payload.new), ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            setAuthorizations(prev => prev.map(a => a.id === payload.new.id ? map(payload.new) : a));
+          } else if (payload.eventType === 'DELETE') {
+            setAuthorizations(prev => prev.filter(a => a.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [companyId]);
 
   const requestAuthorization = async (params: {
     saleId?: string;

@@ -528,7 +528,7 @@ const App: React.FC = () => {
           />
         );
       case 'Clientes':
-        return <ClientsView clients={clients} onSaveClient={handleSaveClient} onDeleteClient={deleteClient} />;
+        return <ClientsView clients={clients} onSaveClient={handleSaveClient} onDeleteClient={deleteClient} canEdit={getAccess('clientes') === 'full'} />;
       case 'Vendas':
         const nextOrderNumber = sales.reduce((max, s) => {
           const num = parseInt(s.orderNumber?.replace(/\D/g, '') || '0');
@@ -565,6 +565,7 @@ const App: React.FC = () => {
                 adminName: admin.name,
               });
             }}
+            canEdit={getAccess('vendas') === 'full'}
           />
         );
       case 'Matéria Prima':
@@ -618,6 +619,7 @@ const App: React.FC = () => {
             onDelete={deleteReceivable}
             onPayInstallment={payReceivableInstallment}
             onUnpayInstallment={unpayReceivableInstallment}
+            canEdit={getAccess('financeiro') === 'full'}
           />
         );
       case 'Contas a Pagar':
@@ -631,6 +633,7 @@ const App: React.FC = () => {
             onDelete={deletePayable}
             onPayInstallment={payPayableInstallment}
             onUnpayInstallment={unpayPayableInstallment}
+            canEdit={getAccess('financeiro') === 'full'}
           />
         );
       case 'Formas de Pagamento':
@@ -682,7 +685,7 @@ const App: React.FC = () => {
           onApproveDiscount={(id, msg) => resolveAuthorization(id, 'approved', msg)}
           onRejectDiscount={(id, msg) => resolveAuthorization(id, 'rejected', msg)}
         />
-        <RecentActivity activities={activities} isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} />
+        <RecentActivity activities={activities} isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} currentUserName={user?.name || user?.email} />
         <main className="flex-1 overflow-x-auto p-4 kanban-container">
           {renderContent()}
         </main>

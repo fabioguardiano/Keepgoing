@@ -300,12 +300,13 @@ const PayInstallmentModal: React.FC<PayInstallmentModalProps> = ({ account, inst
 // ─────────────────────────────────────────────
 // Linha de conta na tabela
 // ─────────────────────────────────────────────
-const AccountRow = ({ account, onEdit, onDelete, onPayInstallment, onUnpayInstallment }: {
+const AccountRow = ({ account, onEdit, onDelete, onPayInstallment, onUnpayInstallment, canEdit = true }: {
   account: AccountReceivable | AccountPayable;
   onEdit: () => void;
   onDelete: () => void;
   onPayInstallment: (inst: AccountInstallment) => void;
   onUnpayInstallment: (inst: AccountInstallment) => void;
+  canEdit?: boolean;
 }) => {
   const [expanded, setExpanded] = useState(false);
   const overdue = isOverdue(account.dueDate, account.status);
@@ -354,12 +355,16 @@ const AccountRow = ({ account, onEdit, onDelete, onPayInstallment, onUnpayInstal
             <button onClick={() => setExpanded(e => !e)} className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 transition-all" title="Ver parcelas">
               {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </button>
-            <button onClick={onEdit} className="p-1.5 rounded-xl hover:bg-orange-50 dark:hover:bg-slate-700 text-slate-400 hover:text-[var(--primary-color)] transition-all" title="Editar">
-              <Search size={15} />
-            </button>
-            <button onClick={onDelete} className="p-1.5 rounded-xl hover:bg-red-50 dark:hover:bg-slate-700 text-slate-400 hover:text-red-500 transition-all" title="Excluir">
-              <Trash2 size={15} />
-            </button>
+            {canEdit && (
+              <>
+                <button onClick={onEdit} className="p-1.5 rounded-xl hover:bg-orange-50 dark:hover:bg-slate-700 text-slate-400 hover:text-[var(--primary-color)] transition-all" title="Editar">
+                  <Search size={15} />
+                </button>
+                <button onClick={onDelete} className="p-1.5 rounded-xl hover:bg-red-50 dark:hover:bg-slate-700 text-slate-400 hover:text-red-500 transition-all" title="Excluir">
+                  <Trash2 size={15} />
+                </button>
+              </>
+            )}
           </div>
         </td>
       </tr>
@@ -386,19 +391,21 @@ const AccountRow = ({ account, onEdit, onDelete, onPayInstallment, onUnpayInstal
                     {inst.status === 'pago' ? (
                       <div className="flex items-center gap-2 shrink-0">
                         <span className="text-[10px] text-green-600 font-bold">Pago {fmtDate(inst.paidDate || '')}</span>
-                        <button
-                          onClick={() => { if (window.confirm(`Estornar baixa da parcela ${inst.number}?`)) onUnpayInstallment(inst); }}
-                          className="px-2 py-1 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 text-[10px] font-bold hover:bg-red-50 hover:text-red-500 transition-all flex items-center gap-1"
-                          title="Estornar baixa"
-                        >
-                          <X size={10} /> Estornar
-                        </button>
+                        {canEdit && (
+                          <button
+                            onClick={() => { if (window.confirm(`Estornar baixa da parcela ${inst.number}?`)) onUnpayInstallment(inst); }}
+                            className="px-2 py-1 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 text-[10px] font-bold hover:bg-red-50 hover:text-red-500 transition-all flex items-center gap-1"
+                            title="Estornar baixa"
+                          >
+                            <X size={10} /> Estornar
+                          </button>
+                        )}
                       </div>
-                    ) : (
+                    ) : canEdit ? (
                       <button onClick={() => onPayInstallment(inst)} className="px-3 py-1 rounded-xl bg-green-500 text-white text-xs font-bold hover:bg-green-600 transition-all flex items-center gap-1 shrink-0">
                         <CheckCircle2 size={12} /> Baixar
                       </button>
-                    )}
+                    ) : null}
                   </div>
                 );
               })}
@@ -596,6 +603,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                     onDelete={() => setConfirmDelete(account.id)}
                     onPayInstallment={inst => setPayingInst({ account, inst })}
                     onUnpayInstallment={inst => onUnpayInstallment(account.id, inst.id)}
+                    canEdit={canEdit}
                   />
                 ))}
               </tbody>
