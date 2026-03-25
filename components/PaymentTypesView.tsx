@@ -78,9 +78,9 @@ export const PaymentTypesView: React.FC<PaymentTypesViewProps> = ({ paymentTypes
         )}
         <button
           onClick={handleAddNew}
-          className={`${hideHeader ? 'ml-auto text-xs py-2' : 'px-5 py-2.5'} bg-primary text-white rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-secondary transition-all transform hover:scale-[1.02] active:scale-95`}
+          className={`${hideHeader ? 'ml-auto text-sm px-6 py-3' : 'px-8 py-4 text-base'} bg-primary text-white rounded-2xl font-black flex items-center gap-2 shadow-xl shadow-primary/20 hover:bg-secondary transition-all transform hover:scale-[1.02] active:scale-95`}
         >
-          <Plus size={hideHeader ? 14 : 18} /> Novo Tipo
+          <Plus size={hideHeader ? 16 : 20} strokeWidth={3} /> Novo Tipo
         </button>
       </div>
 

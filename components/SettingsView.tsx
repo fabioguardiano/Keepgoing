@@ -208,8 +208,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             {/* Seção 2: Tipos de Pagamento (Categorias) */}
                             <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
                                 <div className="p-5 border-b border-slate-100 flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                                        <ShoppingBag size={18} />
+                                    <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                        <Wallet size={18} />
                                     </div>
                                     <div>
                                         <h2 className="text-sm font-bold text-slate-800 uppercase tracking-tight">Tipos de Pagamento</h2>

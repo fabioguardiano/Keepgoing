@@ -166,8 +166,8 @@ export const PaymentMethodsView: React.FC<Props> = ({ paymentMethods, paymentTyp
             <p className="text-slate-500 text-sm font-medium">Gerencie as formas de pagamento aceitas pela empresa</p>
           </div>
         )}
-        <button onClick={openNew} className={`${hideHeader ? 'ml-auto text-xs py-2' : 'px-5 py-2.5'} bg-[var(--primary-color)] text-white rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[var(--primary-color)]/20 hover:opacity-90 transition-all`}>
-          <Plus size={hideHeader ? 14 : 18} /> Nova Forma
+        <button onClick={openNew} className={`${hideHeader ? 'ml-auto text-sm px-6 py-3' : 'px-8 py-4 text-base'} bg-[var(--primary-color)] text-white rounded-2xl font-black flex items-center gap-2 shadow-xl shadow-[var(--primary-color)]/20 hover:opacity-90 transition-all transform hover:scale-[1.02] active:scale-95`}>
+          <Plus size={hideHeader ? 16 : 20} strokeWidth={3} /> Nova Forma
         </button>
       </div>
 
