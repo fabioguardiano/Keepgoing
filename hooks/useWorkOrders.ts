@@ -26,6 +26,8 @@ const map = (r: any): WorkOrder => ({
   clientName: r.client_name,
   clientId: r.client_id,
   environments: r.environments || [],
+  saleItemIds: r.sale_item_ids || [],
+  deliveryDate: r.delivery_date || undefined,
   status: r.status,
   notes: r.notes,
   materialsM2: r.materials_m2 || [],
@@ -43,6 +45,19 @@ const map = (r: any): WorkOrder => ({
   assignedUsers: r.assigned_users || [],
   sellerName: r.seller_name || undefined,
 });
+
+const addBusinessDays = (date: Date, days: number): Date => {
+  const result = new Date(date);
+  let added = 0;
+  while (added < days) {
+    result.setDate(result.getDate() + 1);
+    const dow = result.getDay();
+    if (dow !== 0 && dow !== 6) added++;
+  }
+  return result;
+};
+
+const toISODate = (d: Date): string => d.toISOString().split('T')[0];
 
 export const useWorkOrders = (companyId?: string) => {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
@@ -89,6 +104,7 @@ export const useWorkOrders = (companyId?: string) => {
       clientId?: string;
       sellerName?: string;
       environments: string[];
+      saleItemIds?: string[];
       notes?: string;
       deliveryDeadline?: string;
       materialsM2: any[];
@@ -117,9 +133,13 @@ export const useWorkOrders = (companyId?: string) => {
             client_id: order.clientId || null,
             seller_name: order.sellerName || null,
             environments: order.environments,
+            sale_item_ids: order.saleItemIds || [],
             status: 'Aguardando',
             notes: order.notes || '',
             delivery_deadline: order.deliveryDeadline || null,
+            delivery_date: order.deliveryDeadline && parseInt(order.deliveryDeadline) > 0
+              ? toISODate(addBusinessDays(new Date(), parseInt(order.deliveryDeadline)))
+              : null,
             materials_m2: order.materialsM2,
             finishings_linear: order.finishingsLinear,
             total_m2: order.totalM2,
@@ -159,9 +179,30 @@ export const useWorkOrders = (companyId?: string) => {
     setWorkOrders(prev => prev.map(wo => wo.id === id ? { ...wo, status } : wo));
   };
 
+  const cancelWorkOrder = async (id: string, reason: string, authorizedBy: string) => {
+    if (!companyId) return;
+    const wo = workOrders.find(w => w.id === id);
+    await supabase.from('work_orders')
+      .update({ status: 'Cancelada', updated_at: new Date().toISOString() })
+      .eq('id', id).eq('company_id', companyId);
+
+    await supabase.from('work_order_logs').insert({
+      company_id: companyId,
+      work_order_id: id,
+      sale_id: wo?.saleId,
+      environment: wo?.environments.join(', ') || '',
+      action: 'cancelled',
+      reason,
+      user_name: authorizedBy,
+    });
+
+    setWorkOrders(prev => prev.map(w => w.id === id ? { ...w, status: 'Cancelada' as const } : w));
+  };
+
   const getEnvironmentOSMap = (saleId: string): Record<string, WorkOrder[]> => {
     const result: Record<string, WorkOrder[]> = {};
-    workOrders.filter(wo => wo.saleId === saleId).forEach(wo => {
+    // Exclui canceladas — ambientes de O.S. canceladas ficam livres para nova geração
+    workOrders.filter(wo => wo.saleId === saleId && wo.status !== 'Cancelada').forEach(wo => {
       wo.environments.forEach(env => {
         if (!result[env]) result[env] = [];
         result[env].push(wo);
@@ -191,6 +232,27 @@ export const useWorkOrders = (companyId?: string) => {
       user_name: userName,
     });
 
+    await fetchWorkOrders();
+  };
+
+  const updateDeliveryDate = async (id: string, newDate: string, justification: string, authorizedBy: string) => {
+    if (!companyId) return;
+    const wo = workOrders.find(w => w.id === id);
+    await supabase.from('work_orders')
+      .update({ delivery_date: newDate, updated_at: new Date().toISOString() })
+      .eq('id', id).eq('company_id', companyId);
+
+    await supabase.from('work_order_logs').insert({
+      company_id: companyId,
+      work_order_id: id,
+      sale_id: wo?.saleId,
+      environment: wo?.environments.join(', ') || '',
+      action: 'deadline_changed',
+      reason: justification,
+      user_name: authorizedBy,
+    });
+
+    setWorkOrders(prev => prev.map(w => w.id === id ? { ...w, deliveryDate: newDate } : w));
     await fetchWorkOrders();
   };
 
@@ -241,7 +303,7 @@ export const useWorkOrders = (companyId?: string) => {
     } catch { /* ignore storage delete errors */ }
   };
 
-  return { workOrders, loadingWO, createWorkOrders, updateWorkOrderStatus, updateWorkOrderPhase, updateWorkOrder, uploadDrawing, addDrawing, deleteDrawing, getEnvironmentOSMap, refreshWorkOrders: fetchWorkOrders };
+  return { workOrders, loadingWO, createWorkOrders, updateWorkOrderStatus, updateWorkOrderPhase, updateWorkOrder, updateDeliveryDate, cancelWorkOrder, uploadDrawing, addDrawing, deleteDrawing, getEnvironmentOSMap, refreshWorkOrders: fetchWorkOrders };
 };
 
 /** Formata o label da O.S. considerando se há múltiplas O.S. no mesmo pedido.

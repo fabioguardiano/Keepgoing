@@ -5,6 +5,7 @@ import { ClientSelectModal } from './ClientSelectModal';
 import { PrintBudget } from './PrintBudget';
 import { GenerateOSModal } from './GenerateOSModal';
 import { DiscountRequestModal } from './DiscountAuthModal';
+import { CRMSection } from './CRMSection';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
@@ -602,7 +603,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 </button>
                 <div className="w-px h-6 bg-orange-200 dark:bg-slate-600"></div>
                 <button
-                  onClick={syncPricesWithMaterials}
+                  onClick={() => syncPricesWithMaterials()}
                   className="p-2 text-blue-600 hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all flex items-center gap-1.5 font-bold text-[11px]"
                   title="Sincronizar preços com o cadastro de materiais"
                 >
@@ -1162,6 +1163,16 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 </div>
               </div>
             </div>
+          </div>
+          
+          <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-6">
+            {initialData?.id && (
+              <CRMSection 
+                sale={initialData} 
+                onSaveSale={onSave} 
+                currentUser={appUsers.find(u => u.name === seller) || null}
+              />
+            )}
           </div>
         </div>
       </div>

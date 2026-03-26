@@ -5,6 +5,8 @@ import { SalesOrder, Client, Material, AppUser, Architect, ProductService, Sales
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { NewSaleModal } from './NewSaleModal';
 import { PrintBudget } from './PrintBudget';
+import { SalesCard } from './SalesCard';
+import { CRMSection } from './CRMSection';
 import { supabase } from '../lib/supabase';
 
 interface SalesViewProps {
@@ -29,12 +31,13 @@ interface SalesViewProps {
   getEnvironmentOSMap?: (saleId: string) => Record<string, WorkOrder[]>;
   onRequestDiscount?: (admin: any, requestedPct: number, maxPct: number) => void;
   canEdit?: boolean;
+  currentUser?: AppUser | null;
 }
 
 export const SalesView: React.FC<SalesViewProps> = ({
   sales, clients, materials, onSaveSale, appUsers, architects, products, salesChannels, paymentMethods, companyInfo, nextOrderNumber,
   salesPhases, services, onRenameSalesPhase, onDeleteSalesPhase, onReorderSalesPhases,
-  companyId, createWorkOrders, getEnvironmentOSMap, onRequestDiscount, canEdit = true
+  companyId, createWorkOrders, getEnvironmentOSMap, onRequestDiscount, canEdit = true, currentUser
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('kanban');
@@ -59,6 +62,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
     key: 'createdAt',
     direction: 'desc'
   });
+  const [expandedCrmSaleId, setExpandedCrmSaleId] = useState<string | null>(null);
 
   const handleSort = (key: string) => {
     setSortConfig(prev => ({
@@ -269,17 +273,17 @@ export const SalesView: React.FC<SalesViewProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center">
-          <Clock className="text-orange-400 mb-2" size={24} />
+          <Clock className="text-[var(--primary-color)] mb-2" size={24} />
           <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Orçamentos</span>
           <p className="text-2xl font-black text-slate-800 dark:text-white">{sales.filter(s => s.status === 'Orçamento').length}</p>
         </div>
         <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center">
-          <CheckCircle2 className="text-green-500 mb-2" size={24} />
+          <CheckCircle2 className="text-[var(--primary-color)] mb-2" size={24} />
           <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Confirmados</span>
           <p className="text-2xl font-black text-slate-800 dark:text-white">{sales.filter(s => s.status === 'Confirmado' || s.status === 'Pedido').length}</p>
         </div>
         <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center">
-          <ShoppingBag className="text-blue-500 mb-2" size={24} />
+          <ShoppingBag className="text-[var(--primary-color)] mb-2" size={24} />
           <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Em Produção</span>
           <p className="text-2xl font-black text-slate-800 dark:text-white">{sales.filter(s => s.status === 'Pedido' && s.phase !== 'Entregue').length}</p>
         </div>
@@ -405,18 +409,20 @@ export const SalesView: React.FC<SalesViewProps> = ({
                         {sortConfig.key === 'seller' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-30" />}
                       </div>
                     </th>
-                    <th className="px-6 py-4 text-right cursor-pointer hover:text-[var(--primary-color)] transition-colors" onClick={() => handleSort('total')}>
+                     <th className="px-6 py-4 text-right cursor-pointer hover:text-[var(--primary-color)] transition-colors" onClick={() => handleSort('total')}>
                       <div className="flex items-center justify-end gap-1">
                         Valor Total
                         {sortConfig.key === 'total' ? (sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowUpDown size={12} className="opacity-30" />}
                       </div>
                     </th>
+                    <th className="px-6 py-4 text-center">CRM</th>
                     <th className="px-6 py-4 text-center">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {filteredSales.map(sale => (
-                      <tr key={sale.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
+                    <React.Fragment key={sale.id}>
+                      <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
                         <td className="px-6 py-4 text-sm font-bold text-slate-500">#{sale.orderNumber || '-'}</td>
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
@@ -433,6 +439,20 @@ export const SalesView: React.FC<SalesViewProps> = ({
                         <td className="px-6 py-4 text-sm font-bold text-slate-500">{sale.seller}</td>
                         <td className="px-6 py-4 text-right text-sm font-black text-slate-800 dark:text-white">
                           R$ {(sale.totals?.geral || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <button 
+                            onClick={() => setExpandedCrmSaleId(expandedCrmSaleId === sale.id ? null : sale.id)}
+                            className={`p-2 rounded-xl transition-all relative ${sale.crmNotes?.length ? 'text-orange-500 bg-orange-50 dark:bg-orange-900/10' : 'text-slate-300 hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-slate-800'}`}
+                            title="Histórico CRM"
+                          >
+                            <User size={18} />
+                            {!!sale.crmNotes?.length && (
+                              <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900">
+                                {sale.crmNotes.length}
+                              </span>
+                            )}
+                          </button>
                         </td>
                         <td className="px-6 py-4 text-center">
                           <div className="flex items-center justify-center gap-2">
@@ -465,7 +485,22 @@ export const SalesView: React.FC<SalesViewProps> = ({
                           </div>
                         </td>
                       </tr>
-                    ))}
+                      {expandedCrmSaleId === sale.id && (
+                        <tr className="bg-slate-50 dark:bg-slate-900/50">
+                          <td colSpan={8} className="px-6 py-4 pb-8">
+                            <div className="max-w-4xl mx-auto">
+                              <CRMSection 
+                                sale={sale} 
+                                onSaveSale={onSaveSale} 
+                                currentUser={currentUser} 
+                                defaultExpanded={true}
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -540,7 +575,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
                         <div 
                           ref={provided.innerRef}
                           {...provided.draggableProps}
-                          className="flex-shrink-0 w-80 flex flex-col gap-4"
+                          className="flex-shrink-0 w-[420px] flex flex-col gap-4"
                         >
                           {/* Column Header */}
                           <div 
@@ -633,77 +668,15 @@ export const SalesView: React.FC<SalesViewProps> = ({
                                 className={`flex flex-col gap-3 min-h-[150px] p-2 rounded-2xl transition-colors ${snapshot.isDraggingOver ? 'bg-slate-100/50 dark:bg-slate-800/30' : 'bg-transparent'}`}
                               >
                                 {phaseSales.map((sale, cardIndex) => (
-                                  <Draggable key={sale.id} draggableId={sale.id} index={cardIndex}>
-                                    {(provided, snapshot) => (
-                                      <div 
-                                        {...provided.draggableProps}
-                                        {...provided.dragHandleProps}
-                                        ref={provided.innerRef}
-                                        className={`bg-white dark:bg-slate-900 border p-4 rounded-2xl shadow-sm transition-all cursor-grab active:cursor-grabbing group ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-[var(--primary-color)] scale-[1.02] z-50' : 'hover:shadow-md'} ${sale.status === 'Pedido' ? 'border-green-200 dark:border-green-900/50 bg-green-50/30 dark:bg-green-900/10' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200'}`}
-                                        onClick={() => handleEdit(sale)}
-                                      >
-                                        <div className="flex justify-between items-start mb-2">
-                                          <div className="flex items-center gap-2 flex-wrap">
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">#{sale.orderNumber}</span>
-                                            {sale.isOsGenerated && (
-                                              <span className="bg-green-100 text-green-600 text-[8px] font-black px-1.5 py-0.5 rounded uppercase flex items-center gap-1">
-                                                <CheckCircle2 size={8} /> OS Gerada
-                                              </span>
-                                            )}
-                                            {sale.status === 'Pedido' && (
-                                              <span className="bg-green-100 text-green-700 text-[8px] font-black px-1.5 py-0.5 rounded uppercase flex items-center gap-1" title="Pedido confirmado — bloqueado para edição">
-                                                <Lock size={8} /> Bloqueado
-                                              </span>
-                                            )}
-                                          </div>
-                                          <GripVertical size={16} className="text-slate-300 group-hover:text-slate-400 transition-colors" />
-                                        </div>
-
-                                        <h4 className="font-black text-slate-800 dark:text-white text-sm mb-1 group-hover:text-[var(--primary-color)] transition-colors line-clamp-1">{sale.clientName}</h4>
-                                        <p className="text-[10px] text-slate-400 font-bold mb-3 line-clamp-2 leading-relaxed">{sale.projectDescription || 'Sem descrição'}</p>
-                                        
-                                        <div className="space-y-2 mb-3">
-                                          <div className="flex items-center gap-2 text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                                            <Calendar size={12} className="text-slate-400" />
-                                            <span>{sale.createdAt ? new Date(sale.createdAt).toLocaleDateString('pt-BR') : 'Sem data'}</span>
-                                          </div>
-                                          <div className="flex items-center gap-2 text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                                            <User size={12} className="text-slate-400" />
-                                            <span>{sale.seller || 'Sem vendedor'}</span>
-                                          </div>
-                                        </div>
-
-                                        <div className="flex items-center justify-between pt-3 border-t border-slate-50 dark:border-slate-800/50">
-                                          <div className="flex items-center gap-1.5">
-                                            <div className="w-5 h-5 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400 text-[8px] font-black border border-orange-200 dark:border-orange-800/50">
-                                              {sale.seller?.charAt(0)?.toUpperCase() || '?'}
-                                            </div>
-                                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider">{sale.salesChannel || 'Direto'}</span>
-                                          </div>
-                                          <div className="text-right">
-                                            <div className="flex items-center gap-1 justify-end">
-                                              <DollarSign size={10} className="text-green-500" />
-                                              <span className="text-xs font-black text-slate-800 dark:text-white">
-                                                {(sale.totals?.geral || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                              </span>
-                                            </div>
-                                          </div>
-                                        </div>
-
-                                        {phase === 'Pedido/Ganho' && !sale.isOsGenerated && (
-                                          <button 
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              onSaveSale({ ...sale, isOsGenerated: true, status: 'Pedido' });
-                                            }}
-                                            className="mt-4 w-full py-2.5 bg-green-500 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg shadow-green-500/20"
-                                          >
-                                            <ArrowRight size={14} /> Gerar OS Produtiva
-                                          </button>
-                                        )}
-                                      </div>
-                                    )}
-                                  </Draggable>
+                                  <SalesCard
+                                    key={sale.id}
+                                    sale={sale}
+                                    index={cardIndex}
+                                    handleEdit={handleEdit}
+                                    onSaveSale={onSaveSale}
+                                    phase={phase}
+                                    currentUser={currentUser}
+                                  />
                                 ))}
                                 {provided.placeholder}
                               </div>

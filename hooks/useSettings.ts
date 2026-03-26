@@ -1,4 +1,25 @@
 import { useState, useEffect } from 'react';
+
+// ─── useLocalStorage ────────────────────────────────────────────────────────
+// Substitui o padrão repetitivo useState + useEffect para localStorage.
+function useLocalStorage<T>(key: string, fallback: T): [T, React.Dispatch<React.SetStateAction<T>>] {
+  const [value, setValue] = useState<T>(() => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      const parsed = JSON.parse(raw);
+      // Mantém fallback se array vazio veio salvo (ex: usuários iniciais)
+      if (Array.isArray(parsed) && parsed.length === 0 && Array.isArray(fallback) && (fallback as unknown[]).length > 0) return fallback;
+      return parsed ?? fallback;
+    } catch {
+      return fallback;
+    }
+  });
+  useEffect(() => {
+    localStorage.setItem(key, JSON.stringify(value));
+  }, [key, value]);
+  return [value, setValue];
+}
 import {
   AppUser, ProductionStaff, PhaseConfig, SalesPhaseConfig,
   Brand, ProductGroup, ServiceGroup, SalesChannel,
@@ -24,126 +45,35 @@ export const useSettings = (
   setSales?: (update: (prev: any[]) => any[]) => void
 ) => {
   // App Users
-  const [appUsers, setAppUsers] = useState<AppUser[]>(() => {
-    try {
-      const saved = localStorage.getItem('marmo_app_users');
-      return (saved && JSON.parse(saved).length > 0) ? JSON.parse(saved) : INITIAL_APP_USERS;
-    } catch {
-      return INITIAL_APP_USERS;
-    }
-  });
-
-  useEffect(() => {
-    localStorage.setItem('marmo_app_users', JSON.stringify(appUsers));
-  }, [appUsers]);
+  const [appUsers, setAppUsers] = useLocalStorage<AppUser[]>('marmo_app_users', INITIAL_APP_USERS);
 
   // Production Staff
-  const [staff, setStaff] = useState<ProductionStaff[]>(() => {
-    try {
-      const saved = localStorage.getItem('marmo_staff');
-      return (saved && JSON.parse(saved).length > 0) ? JSON.parse(saved) : INITIAL_STAFF;
-    } catch {
-      return INITIAL_STAFF;
-    }
-  });
+  const [staff, setStaff] = useLocalStorage<ProductionStaff[]>('marmo_staff', INITIAL_STAFF);
 
-  useEffect(() => {
-    localStorage.setItem('marmo_staff', JSON.stringify(staff));
-  }, [staff]);
+  // Deadline alert thresholds
+  const [deadlineWarningDays, setDeadlineWarningDays] = useLocalStorage<number>('marmo_deadline_warning_days', 7);
+  const [deadlineUrgentDays, setDeadlineUrgentDays] = useLocalStorage<number>('marmo_deadline_urgent_days', 3);
 
   // Production Phases
-  const [phases, setPhases] = useState<PhaseConfig[]>(() => {
-    try {
-      const saved = localStorage.getItem('marmo_phases');
-      return (saved && JSON.parse(saved).length > 0) ? JSON.parse(saved) : INITIAL_PHASES;
-    } catch {
-      return INITIAL_PHASES;
-    }
-  });
-
-  useEffect(() => {
-    localStorage.setItem('marmo_phases', JSON.stringify(phases));
-  }, [phases]);
+  const [phases, setPhases] = useLocalStorage<PhaseConfig[]>('marmo_phases', INITIAL_PHASES);
 
   // Sales Phases
-  const [salesPhases, setSalesPhases] = useState<SalesPhaseConfig[]>(() => {
-    const defaultPhases = [
-      { name: 'Oportunidade' },
-      { name: 'Orçamento' },
-      { name: 'Negociação' },
-      { name: 'Pedido/Ganho' }
-    ];
-    try {
-      const saved = localStorage.getItem('marmo_sales_phases');
-      if (!saved) return defaultPhases;
-      const parsed = JSON.parse(saved);
-      return (parsed && parsed.length > 0) ? parsed : defaultPhases;
-    } catch {
-      return defaultPhases;
-    }
-  });
-
-  useEffect(() => {
-    localStorage.setItem('marmo_sales_phases', JSON.stringify(salesPhases));
-  }, [salesPhases]);
+  const DEFAULT_SALES_PHASES: SalesPhaseConfig[] = [
+    { name: 'Oportunidade' }, { name: 'Orçamento' }, { name: 'Negociação' }, { name: 'Pedido/Ganho' },
+  ];
+  const [salesPhases, setSalesPhases] = useLocalStorage<SalesPhaseConfig[]>('marmo_sales_phases', DEFAULT_SALES_PHASES);
 
   // Categories & Lists
-  const [brands, setBrands] = useState<Brand[]>(() => {
-    try {
-      const saved = localStorage.getItem('marmo_brands');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  useEffect(() => {
-    localStorage.setItem('marmo_brands', JSON.stringify(brands));
-  }, [brands]);
-
-  const [productGroups, setProductGroups] = useState<ProductGroup[]>(() => {
-    try {
-      const saved = localStorage.getItem('marmo_product_groups');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  useEffect(() => {
-    localStorage.setItem('marmo_product_groups', JSON.stringify(productGroups));
-  }, [productGroups]);
-
-  const [serviceGroups, setServiceGroups] = useState<ServiceGroup[]>(() => {
-    try {
-      const saved = localStorage.getItem('marmo_service_groups');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  useEffect(() => {
-    localStorage.setItem('marmo_service_groups', JSON.stringify(serviceGroups));
-  }, [serviceGroups]);
-
-  const [salesChannels, setSalesChannels] = useState<SalesChannel[]>(() => {
-    try {
-      const saved = localStorage.getItem('marmo_sales_channels');
-      return (saved && JSON.parse(saved).length > 0) ? JSON.parse(saved) : [
-        { id: '1', name: 'Google', createdAt: new Date().toISOString() },
-        { id: '2', name: 'Indicação', createdAt: new Date().toISOString() },
-        { id: '3', name: 'Instagram', createdAt: new Date().toISOString() },
-        { id: '4', name: 'Showroom', createdAt: new Date().toISOString() }
-      ];
-    } catch {
-      return [];
-    }
-  });
-
-  useEffect(() => {
-    localStorage.setItem('marmo_sales_channels', JSON.stringify(salesChannels));
-  }, [salesChannels]);
+  const DEFAULT_SALES_CHANNELS: SalesChannel[] = [
+    { id: '1', name: 'Google', createdAt: new Date().toISOString() },
+    { id: '2', name: 'Indicação', createdAt: new Date().toISOString() },
+    { id: '3', name: 'Instagram', createdAt: new Date().toISOString() },
+    { id: '4', name: 'Showroom', createdAt: new Date().toISOString() },
+  ];
+  const [brands, setBrands]               = useLocalStorage<Brand[]>('marmo_brands', []);
+  const [productGroups, setProductGroups] = useLocalStorage<ProductGroup[]>('marmo_product_groups', []);
+  const [serviceGroups, setServiceGroups] = useLocalStorage<ServiceGroup[]>('marmo_service_groups', []);
+  const [salesChannels, setSalesChannels] = useLocalStorage<SalesChannel[]>('marmo_sales_channels', DEFAULT_SALES_CHANNELS);
 
   // Company Info
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>(() => {
@@ -192,10 +122,10 @@ export const useSettings = (
 
   // Handlers
   const handleSaveUser = (u: AppUser) => setAppUsers(prev => prev.find(x => x.id === u.id) ? prev.map(x => x.id === u.id ? u : x) : [...prev, u]);
-  const handleDeleteUser = (id: string) => setAppUsers(prev => prev.filter(x => x.id !== id));
+  const handleDeleteUser = (id: string) => setAppUsers(prev => prev.map(x => x.id === id ? { ...x, status: 'inativo' as const } : x));
 
   const handleSaveStaff = (s: ProductionStaff) => setStaff(prev => prev.find(x => x.id === s.id) ? prev.map(x => x.id === s.id ? s : x) : [...prev, s]);
-  const handleDeleteStaff = (id: string) => setStaff(prev => prev.filter(x => x.id !== id));
+  const handleDeleteStaff = (id: string) => setStaff(prev => prev.map(x => x.id === id ? { ...x, status: 'inativo' as const } : x));
 
   const addPhase = (name: string) => {
     if (!phases.find(p => p.name === name)) {
@@ -236,13 +166,12 @@ export const useSettings = (
     setSalesPhases(result);
   };
 
-  // Permission Profiles
+  // Permission Profiles — init com merge para garantir perfis padrão
   const [permissionProfiles, setPermissionProfiles] = useState<PermissionProfile[]>(() => {
     try {
-      const saved = localStorage.getItem('marmo_permission_profiles');
-      if (!saved) return DEFAULT_PROFILES;
-      const parsed: PermissionProfile[] = JSON.parse(saved);
-      // Garante que perfis padrão sempre existem (merge)
+      const raw = localStorage.getItem('marmo_permission_profiles');
+      if (!raw) return DEFAULT_PROFILES;
+      const parsed: PermissionProfile[] = JSON.parse(raw);
       const ids = parsed.map(p => p.id);
       const missing = DEFAULT_PROFILES.filter(d => !ids.includes(d.id));
       return [...missing, ...parsed];
@@ -250,7 +179,6 @@ export const useSettings = (
       return DEFAULT_PROFILES;
     }
   });
-
   useEffect(() => {
     localStorage.setItem('marmo_permission_profiles', JSON.stringify(permissionProfiles));
   }, [permissionProfiles]);
@@ -286,5 +214,7 @@ export const useSettings = (
     salesChannels, handleSaveSalesChannel, handleDeleteSalesChannel,
     companyInfo, setCompanyInfo,
     permissionProfiles, handleSaveProfile, handleDeleteProfile,
+    deadlineWarningDays, setDeadlineWarningDays,
+    deadlineUrgentDays, setDeadlineUrgentDays,
   };
 };

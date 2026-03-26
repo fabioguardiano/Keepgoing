@@ -1,13 +1,23 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Check, Clock, AlertCircle, X, ChevronDown, ChevronUp, Trash2, CheckCircle2, Search } from 'lucide-react';
+import { Plus, Check, AlertCircle, X, ChevronDown, ChevronUp, Trash2, CheckCircle2, Search } from 'lucide-react';
 import { AccountReceivable, AccountPayable, AccountInstallment, PaymentMethod, Client, Supplier } from '../types';
+import { fmt, fmtDate } from '../utils/formatting';
 
 // ─────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────
-const fmt = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtDate = (d: string) => d ? new Date(d + 'T12:00:00').toLocaleDateString('pt-BR') : '-';
-const isOverdue = (dueDate: string, status: string) => status !== 'quitado' && status !== 'cancelado' && new Date(dueDate + 'T23:59:59') < new Date();
+const isAccountOverdue = (a: { status: string; dueDate: string; installments: AccountInstallment[] }) => {
+  if (a.status === 'quitado' || a.status === 'cancelado') return false;
+  const now = new Date();
+  // Se tem parcelas, só é atrasado se houver parcela não paga com vencimento passado
+  if (a.installments && a.installments.length > 0) {
+    return a.installments.some(
+      inst => inst.status !== 'pago' && new Date(inst.dueDate + 'T23:59:59') < now
+    );
+  }
+  // Sem parcelas: usa o vencimento geral da conta
+  return new Date(a.dueDate + 'T23:59:59') < now;
+};
 const genId = () => crypto.randomUUID();
 
 const STATUS_STYLE: Record<string, string> = {
@@ -265,7 +275,7 @@ interface PayInstallmentModalProps {
   onClose: () => void;
 }
 
-const PayInstallmentModal: React.FC<PayInstallmentModalProps> = ({ account, installment, onConfirm, onClose }) => {
+const PayInstallmentModal: React.FC<PayInstallmentModalProps> = ({ installment, onConfirm, onClose }) => {
   const [paidValue, setPaidValue] = useState(installment.value.toString());
   const [paidDate, setPaidDate] = useState(new Date().toISOString().split('T')[0]);
   const [saving, setSaving] = useState(false);
@@ -309,7 +319,7 @@ const AccountRow = ({ account, onEdit, onDelete, onPayInstallment, onUnpayInstal
   canEdit?: boolean;
 }) => {
   const [expanded, setExpanded] = useState(false);
-  const overdue = isOverdue(account.dueDate, account.status);
+  const overdue = isAccountOverdue(account);
   const statusKey = overdue && account.status === 'pendente' ? 'atrasado' : account.status;
   const pct = account.totalValue > 0 ? (account.paidValue / account.totalValue) * 100 : 0;
 
@@ -465,16 +475,18 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
       return true;
     };
     return (accounts as (AccountReceivable | AccountPayable)[])
-      .filter(a => statusFilter === 'todos' || a.status === statusFilter || (statusFilter === 'atrasado' && isOverdue(a.dueDate, a.status)))
+      .filter(a => statusFilter === 'todos' || a.status === statusFilter || (statusFilter === 'atrasado' && isAccountOverdue(a)))
       .filter(filterByDate)
       .filter(a => !search || a.description.toLowerCase().includes(search.toLowerCase()) || ((a as any).clientName || (a as any).supplierName || '').toLowerCase().includes(search.toLowerCase()))
       .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   }, [accounts, statusFilter, search, dateFilter, dateFrom, dateTo]);
 
-  const totalPendente = (accounts as any[]).filter(a => a.status !== 'quitado' && a.status !== 'cancelado').reduce((acc, a) => acc + a.remainingValue, 0);
-  const totalRecebido = (accounts as any[]).reduce((acc, a) => acc + a.paidValue, 0);
-  const totalGeral    = (accounts as any[]).reduce((acc, a) => acc + a.totalValue, 0);
-  const atrasados     = (accounts as any[]).filter(a => isOverdue(a.dueDate, a.status)).length;
+  const { totalPendente, totalRecebido, totalGeral, atrasados } = useMemo(() => ({
+    totalPendente: accounts.filter(a => a.status !== 'quitado' && a.status !== 'cancelado').reduce((acc, a) => acc + a.remainingValue, 0),
+    totalRecebido: accounts.reduce((acc, a) => acc + a.paidValue, 0),
+    totalGeral:    accounts.reduce((acc, a) => acc + a.totalValue, 0),
+    atrasados:     accounts.filter(a => isAccountOverdue(a as any)).length,
+  }), [accounts]);
 
   const accentColor = mode === 'receber' ? 'text-green-600' : 'text-red-500';
   const title = mode === 'receber' ? 'Contas a Receber' : 'Contas a Pagar';

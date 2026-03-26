@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Layout, Check, ChevronRight, Plus, Trash2, Edit2, GripVertical, Info, Building2, MapPin, Phone, Mail, ShoppingBag, FileSpreadsheet, Download, Upload, AlertCircle, Loader2, Wallet, Shield } from 'lucide-react';
+import { Settings, Layout, Check, ChevronRight, Plus, Trash2, Edit2, GripVertical, Info, Building2, MapPin, Phone, Mail, ShoppingBag, FileSpreadsheet, Download, Upload, AlertCircle, Loader2, Wallet, Shield, Bell } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { PaymentTypesView } from './PaymentTypesView';
 import { PaymentMethodsView } from './PaymentMethodsView';
@@ -34,6 +34,10 @@ interface SettingsViewProps {
     onSaveProfile: (profile: PermissionProfile) => void;
     onDeleteProfile: (id: string) => void;
     onSaveUser: (user: AppUser) => void;
+    deadlineWarningDays: number;
+    deadlineUrgentDays: number;
+    onSetDeadlineWarningDays: (v: number) => void;
+    onSetDeadlineUrgentDays: (v: number) => void;
     initialTab?: 'fluxo' | 'vendas' | 'empresa' | 'dados' | 'financeiro' | 'geral' | 'permissoes';
 }
 
@@ -64,6 +68,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     onSaveProfile,
     onDeleteProfile,
     onSaveUser,
+    deadlineWarningDays,
+    deadlineUrgentDays,
+    onSetDeadlineWarningDays,
+    onSetDeadlineUrgentDays,
     initialTab
 }) => {
     const [activeTab, setActiveTab] = useState<'fluxo' | 'vendas' | 'empresa' | 'dados' | 'financeiro' | 'geral' | 'permissoes'>(initialTab || 'fluxo');
@@ -139,16 +147,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <ChevronRight size={14} />
                     </button>
                     <button 
-                         onClick={() => setActiveTab('financeiro')}
-                        className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-sm font-bold border transition-all ${activeTab === 'financeiro' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
-                    >
-                        <div className="flex items-center gap-3">
-                            <Wallet size={18} />
-                            Financeiro
-                        </div>
-                        <ChevronRight size={14} />
-                    </button>
-                    <button 
                         onClick={() => setActiveTab('dados')}
                         className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-sm font-bold border transition-all ${activeTab === 'dados' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
                     >
@@ -217,53 +215,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 </div>
                             </div>
                         </div>
-                    ) : activeTab === 'financeiro' ? (
-                        <div className="space-y-6">
-                            {/* Seção 1: Formas de Pagamento (Cartão, Boleto, etc) */}
-                            <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
-                                <div className="p-5 border-b border-slate-100 flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                                        <Wallet size={18} />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-sm font-bold text-slate-800 uppercase tracking-tight">Formas de Pagamento</h2>
-                                        <p className="text-[10px] text-slate-400 font-medium">Configure as formas de recebimento (ex: Cartão 10x, Boleto 30 dias)</p>
-                                    </div>
-                                </div>
-                                <div className="p-6">
-                                    <PaymentMethodsView 
-                                        paymentMethods={paymentMethods}
-                                        paymentTypes={paymentTypes}
-                                        onSave={onSavePaymentMethod}
-                                        onDelete={onDeletePaymentMethod}
-                                        onToggle={onTogglePaymentMethod}
-                                        hideHeader={true}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Seção 2: Tipos de Pagamento (Categorias) */}
-                            <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
-                                <div className="p-5 border-b border-slate-100 flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                                        <Wallet size={18} />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-sm font-bold text-slate-800 uppercase tracking-tight">Tipos de Pagamento</h2>
-                                        <p className="text-[10px] text-slate-400 font-medium">Categorias base para as formas de pagamento acima</p>
-                                    </div>
-                                </div>
-                                <div className="p-6">
-                                    <PaymentTypesView 
-                                         paymentTypes={paymentTypes} 
-                                         onSaveType={onSavePaymentType} 
-                                         onDeleteType={onDeletePaymentType}
-                                         hideHeader={true}
-                                     />
-                                </div>
-                            </div>
-                        </div>
                     ) : activeTab === 'fluxo' ? (
+                        <>
                         <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
                             <div className="p-5 border-b border-slate-100">
                                 <h2 className="text-base font-bold text-slate-800">Fases do Kanban</h2>
@@ -371,6 +324,66 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 </div>
                             </div>
                         </div>
+
+                        {/* Alertas de Prazo de Entrega */}
+                        <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden mt-6">
+                            <div className="p-5 border-b border-slate-100 flex items-center gap-3">
+                                <Bell size={18} className="text-amber-500" />
+                                <div>
+                                    <h2 className="text-base font-bold text-slate-800">Alertas de Prazo de Entrega</h2>
+                                    <p className="text-[11px] text-slate-400 font-medium">Define quando os cards de O.S. mudam de cor no kanban</p>
+                                </div>
+                            </div>
+                            <div className="p-6 space-y-5">
+                                <div className="flex items-center justify-between gap-4">
+                                    <div>
+                                        <p className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                                            <span className="w-3 h-3 rounded-full bg-amber-400 inline-block" />
+                                            Alerta de atenção (amarelo)
+                                        </p>
+                                        <p className="text-xs text-slate-400 mt-0.5">Exibe o aviso amarelo quando restar este número de dias ou menos</p>
+                                    </div>
+                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            max={90}
+                                            value={deadlineWarningDays}
+                                            onChange={e => onSetDeadlineWarningDays(Math.max(1, parseInt(e.target.value) || 1))}
+                                            className="w-20 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-center focus:outline-none focus:ring-2 focus:ring-amber-400"
+                                        />
+                                        <span className="text-xs text-slate-400 font-medium">dias</span>
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between gap-4">
+                                    <div>
+                                        <p className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                                            <span className="w-3 h-3 rounded-full bg-red-500 inline-block" />
+                                            Alerta urgente (vermelho)
+                                        </p>
+                                        <p className="text-xs text-slate-400 mt-0.5">Exibe o aviso vermelho quando restar este número de dias ou menos</p>
+                                    </div>
+                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            max={deadlineWarningDays - 1}
+                                            value={deadlineUrgentDays}
+                                            onChange={e => onSetDeadlineUrgentDays(Math.max(0, parseInt(e.target.value) || 0))}
+                                            className="w-20 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-center focus:outline-none focus:ring-2 focus:ring-red-400"
+                                        />
+                                        <span className="text-xs text-slate-400 font-medium">dias</span>
+                                    </div>
+                                </div>
+                                <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs text-slate-500 font-medium space-y-1">
+                                    <p>🟢 Mais de <strong>{deadlineWarningDays} dias</strong> restantes → verde (normal)</p>
+                                    <p>🟡 Entre <strong>{deadlineUrgentDays + 1}</strong> e <strong>{deadlineWarningDays} dias</strong> → amarelo (atenção)</p>
+                                    <p>🔴 <strong>{deadlineUrgentDays} dias</strong> ou menos → vermelho (urgente)</p>
+                                    <p>⛔ Vencido → vermelho (atrasado)</p>
+                                </div>
+                            </div>
+                        </div>
+                        </>
                     ) : activeTab === 'vendas' ? (
                         <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
                             <div className="p-5 border-b border-slate-100">

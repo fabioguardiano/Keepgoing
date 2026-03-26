@@ -75,17 +75,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
         { icon: TrendingUp, label: 'Contas a Receber',    view: 'Contas a Receber' as View,    module: 'financeiro' },
         { icon: Wallet,     label: 'Contas a Pagar',      view: 'Contas a Pagar' as View,      module: 'financeiro' },
         { icon: ShoppingBag,label: 'Formas de Pagamento', view: 'Formas de Pagamento' as View, module: 'financeiro' },
+        { icon: Wallet,     label: 'Tipos de Pagamento',  view: 'Tipos de Pagamento' as View,  module: 'financeiro' },
       ]
     },
     { icon: BarChart3, label: 'Relatórios', view: 'Relatórios' as View, module: 'relatorios' },
-    {
-      icon: Settings,
-      label: 'Configurações',
-      module: 'configuracoes' as ModuleKey,
-      subItems: [
-        { icon: Settings, label: 'Geral', view: 'Configurações' as View, module: 'configuracoes' },
-      ]
-    }
+    { icon: Settings, label: 'Configurações', view: 'Configurações' as View, module: 'configuracoes' }
   ].filter(item => {
     const mod = item.module ?? item.subItems?.[0]?.module;
     if (!mod) return true;

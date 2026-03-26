@@ -1,6 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { SalesOrder, CompanyInfo, Client, Material } from '../types';
+import { fmt } from '../utils/formatting';
 
 interface PrintBudgetProps {
   sale: SalesOrder;
@@ -9,9 +10,6 @@ interface PrintBudgetProps {
   materials: Material[];
   blurMeasurements?: boolean;
 }
-
-const fmt = (v: number) =>
-  v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const fmtDim = (v?: number) =>
   v && v > 0 ? Number(v).toFixed(3) : null;

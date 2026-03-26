@@ -10,8 +10,14 @@ interface WorkOrderKanbanProps {
   phases: PhaseConfig[];
   appUsers: AppUser[];
   currentUserName: string;
+  canCancelOS: boolean;
+  canEditDeadline: boolean;
+  deadlineWarningDays: number;
+  deadlineUrgentDays: number;
   onUpdatePhase: (id: string, toPhase: string, fromPhase: string, userName: string) => void;
   onUpdate: (id: string, updates: any) => void;
+  onUpdateDeliveryDate: (id: string, newDate: string, justification: string, authorizedBy: string) => Promise<void>;
+  onCancelWorkOrder: (id: string, reason: string, authorizedBy: string) => Promise<void>;
   onAddDrawing: (id: string, file: File) => Promise<void>;
   onDeleteDrawing: (id: string, url: string) => Promise<void>;
 }
@@ -37,28 +43,7 @@ const getAvatarColor = (name: string): string =>
 const getInitials = (name: string): string =>
   name.trim().slice(0, 2).toUpperCase();
 
-// Adiciona N dias úteis a uma data
-const addBusinessDays = (date: Date, days: number): Date => {
-  const result = new Date(date);
-  let added = 0;
-  while (added < days) {
-    result.setDate(result.getDate() + 1);
-    const dow = result.getDay();
-    if (dow !== 0 && dow !== 6) added++; // ignora sábado e domingo
-  }
-  return result;
-};
 
-// Retorna dias corridos restantes até a data de entrega (pode ser negativo)
-const calcRemainingDays = (createdAt: string, deadlineDays: string): number => {
-  const deadline = parseInt(deadlineDays, 10);
-  if (isNaN(deadline) || deadline <= 0) return 0;
-  const dueDate = addBusinessDays(new Date(createdAt), deadline);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  dueDate.setHours(0, 0, 0, 0);
-  return Math.round((dueDate.getTime() - today.getTime()) / 86400000);
-};
 
 const PRIORITY_CONFIG = {
   alta: { label: 'ALTA', bg: 'bg-red-500', text: 'text-white' },
@@ -72,10 +57,12 @@ interface WOCardProps {
   workOrder: WorkOrder;
   allWorkOrders: WorkOrder[];
   index: number;
+  deadlineWarningDays: number;
+  deadlineUrgentDays: number;
   onClick: (wo: WorkOrder) => void;
 }
 
-const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, onClick }) => {
+const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, deadlineWarningDays, deadlineUrgentDays, onClick }) => {
   const priority = workOrder.priority || 'media';
   const priorityCfg = PRIORITY_CONFIG[priority];
   const drawings = workOrder.drawingUrls?.length ? workOrder.drawingUrls : (workOrder.drawingUrl ? [workOrder.drawingUrl] : []);
@@ -118,18 +105,21 @@ const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, onClic
           )}
 
           {/* Prazo de entrega */}
-          {workOrder.deliveryDeadline && parseInt(workOrder.deliveryDeadline) > 0 && (() => {
-            const remaining = calcRemainingDays(workOrder.createdAt, workOrder.deliveryDeadline!);
+          {workOrder.deliveryDate && (() => {
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const due = new Date(workOrder.deliveryDate + 'T12:00:00');
+            const remaining = Math.round((due.getTime() - today.getTime()) / 86400000);
             const isLate = remaining < 0;
-            const isUrgent = remaining >= 0 && remaining <= 3;
+            const isUrgent = remaining >= 0 && remaining <= deadlineUrgentDays;
+            const isWarning = remaining > deadlineUrgentDays && remaining <= deadlineWarningDays;
             return (
               <div className={`flex items-center justify-between mt-1.5 px-2 py-0.5 rounded-lg text-[9px] font-semibold
-                ${isLate ? 'bg-red-50 text-red-600' : isUrgent ? 'bg-amber-50 text-amber-600' : 'bg-gray-50 text-gray-500'}`}>
+                ${isLate || isUrgent ? 'bg-red-50 text-red-600' : isWarning ? 'bg-amber-50 text-amber-600' : 'bg-gray-50 text-gray-500'}`}>
                 <div className="flex items-center gap-1">
                   <Clock size={9} />
                   <span>{workOrder.deliveryDeadline} dias úteis</span>
                 </div>
-                <span className={`font-black ${isLate ? 'text-red-600' : isUrgent ? 'text-amber-600' : 'text-gray-600'}`}>
+                <span className={`font-black ${isLate || isUrgent ? 'text-red-600' : isWarning ? 'text-amber-600' : 'text-gray-600'}`}>
                   {isLate ? `${Math.abs(remaining)}d atrasado` : remaining === 0 ? 'Vence hoje' : `${remaining}d restantes`}
                 </span>
               </div>
@@ -215,24 +205,42 @@ const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, onClic
               <span>{formatDate(workOrder.createdAt)}</span>
             </div>
 
-            {(workOrder.assignedUsers || []).length > 0 && (
-              <div className="flex items-center">
-                {(workOrder.assignedUsers || []).slice(0, 4).map((u, i) => (
-                  <div
-                    key={u.name}
-                    title={u.name}
-                    className={`w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold border-2 border-white ${getAvatarColor(u.name)} ${i > 0 ? '-ml-1.5' : ''}`}
-                  >
-                    {getInitials(u.name)}
+            <div className="flex flex-col items-end gap-1.5">
+              {(workOrder.assignedUsers || []).length > 0 && (
+                <div className="flex items-center">
+                  {(workOrder.assignedUsers || []).slice(0, 4).map((u, i) => (
+                    <div
+                      key={u.name}
+                      title={u.name}
+                      className={`w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold border-2 border-white ${getAvatarColor(u.name)} ${i > 0 ? '-ml-1.5' : ''}`}
+                    >
+                      {getInitials(u.name)}
+                    </div>
+                  ))}
+                  {(workOrder.assignedUsers || []).length > 4 && (
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center bg-gray-200 text-gray-600 text-[9px] font-bold border-2 border-white -ml-1.5">
+                      +{(workOrder.assignedUsers || []).length - 4}
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {workOrder.deliveryDate && (() => {
+                const today = new Date(); today.setHours(0, 0, 0, 0);
+                const due = new Date(workOrder.deliveryDate + 'T12:00:00');
+                const remaining = Math.round((due.getTime() - today.getTime()) / 86400000);
+                const isLate = remaining < 0;
+                const isUrgent = remaining >= 0 && remaining <= deadlineUrgentDays;
+                const isWarning = remaining > deadlineUrgentDays && remaining <= deadlineWarningDays;
+                return (
+                  <div className={`flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-tighter
+                    ${isLate || isUrgent ? 'text-rose-600 bg-rose-50' : isWarning ? 'text-amber-600 bg-amber-50' : 'text-gray-500 bg-gray-50'}`}>
+                    <Clock size={10} className="shrink-0" />
+                    <span>Entrega: {formatDate(workOrder.deliveryDate + 'T12:00:00')}</span>
                   </div>
-                ))}
-                {(workOrder.assignedUsers || []).length > 4 && (
-                  <div className="w-5 h-5 rounded-full flex items-center justify-center bg-gray-200 text-gray-600 text-[9px] font-bold border-2 border-white -ml-1.5">
-                    +{(workOrder.assignedUsers || []).length - 4}
-                  </div>
-                )}
-              </div>
-            )}
+                );
+              })()}
+            </div>
           </div>
         </div>
       )}
@@ -246,10 +254,12 @@ interface KanbanColumnProps {
   phase: PhaseConfig;
   workOrders: WorkOrder[];
   allWorkOrders: WorkOrder[];
+  deadlineWarningDays: number;
+  deadlineUrgentDays: number;
   onCardClick: (wo: WorkOrder) => void;
 }
 
-const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkOrders, onCardClick }) => {
+const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkOrders, deadlineWarningDays, deadlineUrgentDays, onCardClick }) => {
   const totalM2 = workOrders.reduce((acc, wo) => acc + (wo.totalM2 || 0), 0);
   const totalLinear = workOrders.reduce((acc, wo) => acc + (wo.totalLinear || 0), 0);
 
@@ -294,7 +304,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkO
             ${snapshot.isDraggingOver ? 'bg-[var(--primary-color)]/10' : 'bg-gray-100/60'}`}
         >
           {workOrders.map((wo, index) => (
-            <WOCard key={wo.id} workOrder={wo} allWorkOrders={allWorkOrders} index={index} onClick={onCardClick} />
+            <WOCard key={wo.id} workOrder={wo} allWorkOrders={allWorkOrders} index={index} deadlineWarningDays={deadlineWarningDays} deadlineUrgentDays={deadlineUrgentDays} onClick={onCardClick} />
           ))}
           {provided.placeholder}
         </div>
@@ -311,8 +321,14 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
   phases,
   appUsers,
   currentUserName,
+  canCancelOS,
+  canEditDeadline,
+  deadlineWarningDays,
+  deadlineUrgentDays,
   onUpdatePhase,
   onUpdate,
+  onUpdateDeliveryDate,
+  onCancelWorkOrder,
   onAddDrawing,
   onDeleteDrawing,
 }) => {
@@ -327,11 +343,12 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
 
   const firstPhaseName = phases[0]?.name || '';
 
-  // Group work orders by phase
+  // Group work orders by phase — exclui canceladas do kanban
+  const activeWorkOrders = workOrders.filter(wo => wo.status !== 'Cancelada');
   const columnMap: Record<string, WorkOrder[]> = {};
   phases.forEach(ph => { columnMap[ph.name] = []; });
 
-  workOrders.forEach(wo => {
+  activeWorkOrders.forEach(wo => {
     const phase = wo.productionPhase || firstPhaseName;
     if (columnMap[phase] !== undefined) {
       columnMap[phase].push(wo);
@@ -383,6 +400,8 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
                 phase={phase}
                 workOrders={columnMap[phase.name] || []}
                 allWorkOrders={workOrders}
+                deadlineWarningDays={deadlineWarningDays}
+                deadlineUrgentDays={deadlineUrgentDays}
                 onCardClick={setSelectedWorkOrder}
               />
             ))}
@@ -399,6 +418,10 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
           currentUserName={currentUserName}
           onUpdatePhase={handleUpdatePhase}
           onUpdate={handleUpdate}
+          onUpdateDeliveryDate={onUpdateDeliveryDate}
+          onCancelWorkOrder={onCancelWorkOrder}
+          canCancelOS={canCancelOS}
+          canEditDeadline={canEditDeadline}
           onAddDrawing={onAddDrawing}
           onDeleteDrawing={onDeleteDrawing}
           onClose={() => setSelectedWorkOrder(null)}

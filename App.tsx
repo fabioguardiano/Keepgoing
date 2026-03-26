@@ -19,13 +19,11 @@ import { SuppliersView } from './components/SuppliersView';
 import { ArchitectsView } from './components/ArchitectsView';
 import { SalesChannelsView } from './components/SalesChannelsView';
 import { ProductsView } from './components/ProductsView';
-import { NewProductModal } from './components/NewProductModal';
 import { BrandsView } from './components/BrandsView';
 import { ProductGroupsView } from './components/ProductGroupsView';
 import { ServiceGroupsView } from './components/ServiceGroupsView';
-import { MOCK_ORDERS } from './constants';
-import { OrderService, User, View, ProductionPhase, INITIAL_PHASES, AppUser, ProductionStaff, PhaseConfig, ActivityLog, Delivery, CompanyInfo, Client, Material, SalesOrder, SalesChannel, FinanceTransaction, Supplier, Architect, ProductService, Brand, ProductGroup, ServiceGroup, SalesPhaseConfig, ExchangeRates } from './types';
-import { supabase } from './lib/supabase';
+import { View, ProductionPhase, SalesOrder, OrderService } from './types';
+import { useAuth } from './hooks/useAuth';
 import { useActivities } from './hooks/useActivities';
 import { useClients } from './hooks/useClients';
 import { useMaterials } from './hooks/useMaterials';
@@ -38,11 +36,15 @@ import { useProducts } from './hooks/useProducts';
 import { useSettings } from './hooks/useSettings';
 import { useAccountsReceivable } from './hooks/useAccountsReceivable';
 import { useAccountsPayable } from './hooks/useAccountsPayable';
+import { useBillCategories } from './hooks/useBillCategories';
+import { PayablesView } from './components/PayablesView';
 import { usePaymentMethods } from './hooks/usePaymentMethods';
 import { usePaymentTypes } from './hooks/usePaymentTypes';
 import { useWorkOrders } from './hooks/useWorkOrders';
 import { useDiscountAuthorizations } from './hooks/useDiscountAuthorizations';
 import { useDriverTracking } from './hooks/useDriverTracking';
+import { useOrderService } from './hooks/useOrderService';
+import { useExchangeRates } from './hooks/useExchangeRates';
 import { getModuleAccess, VIEW_MODULE_MAP } from './lib/permissions';
 import { WorkOrdersView } from './components/WorkOrdersView';
 import { WorkOrderKanban } from './components/WorkOrderKanban';
@@ -52,151 +54,20 @@ import 'leaflet/dist/leaflet.css';
 
 
 const App: React.FC = () => {
-  // 1. Estados de Autenticação e UI de topo
-  const [user, setUser] = useState<User | null>(null);
-  const [authReady, setAuthReady] = useState(false);
+  // 1. Autenticação
+  const { user, authReady, handleLogin: authLogin, handleLogout } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [currentView, setCurrentView] = useState<View>('Produção');
   const [searchQuery, setSearchQuery] = useState('');
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
-  // 2. Logs de Atividade (Depende do usuário)
+  // 2. Logs de Atividade
   const { activities, logActivity } = useActivities(user);
 
-  // 3. Estado de Ordens de Serviço (Lógica modularizada mas mantida em App para orquestração)
-  const [orders, setOrders] = useState<OrderService[]>([]);
-  const [loadingOrders, setLoadingOrders] = useState(true);
+  // 3. Cotações
+  const exchangeRates = useExchangeRates();
 
-  // Efeito de busca de ordens — depende do company_id para evitar vazar dados entre empresas
-  useEffect(() => {
-    if (!user?.company_id) return;
-    const fetchOrders = async () => {
-      setLoadingOrders(true);
-      try {
-        const { data, error } = await supabase
-          .from('orders_service')
-          .select('*')
-          .eq('company_id', user.company_id)
-          .order('os_number', { ascending: false });
-        
-        if (error) throw error;
-        if (data) {
-          const mapped = data.map(o => ({
-            ...o,
-            osNumber: o.os_number,
-            orderNumber: o.order_number,
-            clientName: o.client_name,
-            projectDescription: o.project_description,
-            materialArea: o.material_area,
-            clientId: o.client_id,
-            architectId: o.architect_id,
-            architectName: o.architect_name,
-            totalValue: o.total_value,
-            remainingValue: o.remaining_value,
-            imageUrls: o.image_urls,
-            phaseHistory: o.phase_history,
-            responsibleStaffName: o.responsible_staff_name,
-            salesChannel: o.sales_channel,
-            salesPhase: o.sales_phase,
-            isOsGenerated: o.is_os_generated,
-            discountValue: o.discount_value,
-            discountPercentage: o.discount_percentage,
-            paymentConditions: o.payment_conditions,
-            deliveryDeadline: o.delivery_deadline,
-            lostReason: o.lost_reason,
-            lostDetails: o.lost_details,
-            createdAt: o.created_at
-          }));
-          setOrders(mapped as OrderService[]);
-        }
-      } catch (err) {
-        console.error('Erro ao carregar ordens de serviço:', err);
-      } finally {
-        setLoadingOrders(false);
-      }
-    };
-    fetchOrders();
-  }, [user?.company_id]);
-
-  const handleSaveOrder = async (o: OrderService) => {
-    try {
-      const payload = {
-        id: o.id.length > 20 ? o.id : undefined,
-        company_id: user?.company_id || '00000000-0000-0000-0000-000000000000',
-        os_number: o.osNumber,
-        order_number: o.orderNumber,
-        client_name: o.clientName,
-        project_description: o.projectDescription,
-        material: o.material,
-        material_area: o.materialArea,
-        phase: o.phase,
-        seller: o.seller,
-        deadline: o.deadline,
-        priority: o.priority,
-        client_id: o.clientId,
-        architect_id: o.architectId,
-        architect_name: o.architectName,
-        total_value: o.totalValue,
-        remaining_value: o.remainingValue,
-        observations: o.observations,
-        internal_observations: o.internalObservations,
-        image_urls: o.imageUrls,
-        items: o.items,
-        payments: o.payments,
-        logs: o.logs,
-        phase_history: o.phaseHistory,
-        responsible_staff_name: o.responsibleStaffName,
-        sales_channel: o.salesChannel,
-        sales_phase: o.salesPhase,
-        is_os_generated: o.isOsGenerated,
-        status: o.status,
-        discount_value: o.discountValue,
-        discount_percentage: o.discountPercentage,
-        payment_conditions: o.paymentConditions,
-        delivery_deadline: o.deliveryDeadline,
-        totals: o.totals,
-        lost_reason: o.lostReason,
-        lost_details: o.lostDetails
-      };
-
-      const { data, error } = await supabase.from('orders_service').upsert(payload).select().single();
-      if (error) throw error;
-      
-      const savedOrder = {
-        ...data,
-        osNumber: data.os_number,
-        orderNumber: data.order_number,
-        clientName: data.client_name,
-        projectDescription: data.project_description,
-        materialArea: data.material_area,
-        clientId: data.client_id,
-        architectId: data.architect_id,
-        architectName: data.architect_name,
-        totalValue: data.total_value,
-        remainingValue: data.remaining_value,
-        imageUrls: data.image_urls,
-        phaseHistory: data.phase_history,
-        responsibleStaffName: data.responsible_staff_name,
-        salesChannel: data.sales_channel,
-        salesPhase: data.sales_phase,
-        isOsGenerated: data.is_os_generated,
-        discountValue: data.discount_value,
-        discountPercentage: data.discount_percentage,
-        paymentConditions: data.payment_conditions,
-        deliveryDeadline: data.delivery_deadline,
-        lostReason: data.lost_reason,
-        lost_details: data.lost_details,
-        createdAt: data.created_at
-      } as OrderService;
-      
-      setOrders(prev => prev.find(x => x.id === o.id || x.id === savedOrder.id) ? prev.map(x => (x.id === o.id || x.id === savedOrder.id) ? savedOrder : x) : [savedOrder, ...prev]);
-      logActivity(orders.find(x => x.id === o.id) ? 'update' : 'create', `${orders.find(x => x.id === o.id) ? 'Atualizou' : 'Iniciou'} produção da OS: ${o.osNumber}`, savedOrder.id, o.osNumber);
-    } catch (err) {
-      console.error('Erro ao salvar ordem de serviço:', err);
-    }
-  };
-
-  // 4. Hooks de Domínio (Dependem de company_id e logActivity)
+  // 4. Hooks de Domínio
   // Só passamos o companyId quando authReady=true para evitar busca prematura com UUID errado
   const activeCompanyId = authReady ? user?.company_id : undefined;
   const { sales, handleSaveSale: saveSaleBase, setSales, refreshSales } = useSales(activeCompanyId, logActivity);
@@ -208,16 +79,18 @@ const App: React.FC = () => {
   const { architects, handleSaveArchitect, deleteArchitect, setArchitects } = useArchitects(activeCompanyId, logActivity);
   const { products, handleSaveProduct } = useProducts(activeCompanyId, logActivity);
   const { receivables, handleSaveReceivable, deleteReceivable, payInstallment: payReceivableInstallment, unpayInstallment: unpayReceivableInstallment } = useAccountsReceivable(activeCompanyId);
-  const { payables, handleSavePayable, deletePayable, payInstallment: payPayableInstallment, unpayInstallment: unpayPayableInstallment } = useAccountsPayable(activeCompanyId);
+  const { payables, handleSavePayable, deletePayable, settleBill, cancelBill } = useAccountsPayable(activeCompanyId);
+  const { categories: billCategories, saveCategory: saveBillCategory, deleteCategory: deleteBillCategory } = useBillCategories(activeCompanyId);
   const { paymentMethods, handleSavePaymentMethod, deletePaymentMethod, toggleActive } = usePaymentMethods(activeCompanyId);
   const { paymentTypes, handleSavePaymentType, deletePaymentType: handleDeletePaymentType } = usePaymentTypes(activeCompanyId);
-  const { workOrders, loadingWO, createWorkOrders, updateWorkOrderStatus, updateWorkOrderPhase, updateWorkOrder, addDrawing, deleteDrawing, getEnvironmentOSMap, refreshWorkOrders } = useWorkOrders(activeCompanyId);
+  const { workOrders, loadingWO, createWorkOrders, updateWorkOrderStatus, updateWorkOrderPhase, updateWorkOrder, updateDeliveryDate, cancelWorkOrder, addDrawing, deleteDrawing, getEnvironmentOSMap, refreshWorkOrders } = useWorkOrders(activeCompanyId);
   const { authorizations, requestAuthorization, resolveAuthorization } = useDiscountAuthorizations(activeCompanyId);
   const { measurements, createMeasurement, updateMeasurement, deleteMeasurement } = useMeasurements(activeCompanyId);
   const { driverLocations, reportLocation, setOffline } = useDriverTracking(activeCompanyId, user);
+  const { orders, setOrders, handleSaveOrder } = useOrderService(activeCompanyId, logActivity);
 
   // 5. Configurações Globais (Depende de setOrders e setSales para renomeação de fases)
-  const { 
+  const {
     appUsers, handleSaveUser, handleDeleteUser,
     staff, handleSaveStaff, handleDeleteStaff,
     phases, addPhase, renamePhase, deletePhase, reorderPhases, togglePhaseRequirement,
@@ -228,39 +101,15 @@ const App: React.FC = () => {
     salesChannels, handleSaveSalesChannel, handleDeleteSalesChannel,
     companyInfo, setCompanyInfo,
     permissionProfiles, handleSaveProfile, handleDeleteProfile,
+    deadlineWarningDays, setDeadlineWarningDays,
+    deadlineUrgentDays, setDeadlineUrgentDays,
   } = useSettings(setOrders, setSales);
 
   // Função de acesso por módulo para o usuário logado
   const getAccess = (module: import('./types').ModuleKey) =>
     getModuleAccess(user!, appUsers, permissionProfiles, module);
 
-  // 6. Efeitos de Terceiros e Gerais
-  const [exchangeRates, setExchangeRates] = useState<ExchangeRates>({ usd: 0, eur: 0, lastUpdate: '--:--' });
-  useEffect(() => {
-    const controller = new AbortController();
-    const fetchRates = async () => {
-      try {
-        const response = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL', { signal: controller.signal });
-        if (response.ok) {
-          const data = await response.json();
-          setExchangeRates({
-            usd: Number(data.USDBRL.bid),
-            eur: Number(data.EURBRL.bid),
-            lastUpdate: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-          });
-        }
-      } catch (error: any) {
-        if (error?.name === 'AbortError') return;
-        console.error('Erro cotações:', error);
-        setExchangeRates(prev => prev.usd > 0 ? prev : { usd: 5.70, eur: 6.10, lastUpdate: 'Offline' });
-      }
-    };
-    fetchRates();
-    const inv = setInterval(fetchRates, 300000);
-    return () => { clearInterval(inv); controller.abort(); };
-  }, []);
-
-  // 7. Handlers de Negócio Orquestrados
+  // 6. Handlers de Negócio Orquestrados
   const handleSaveSale = async (s: SalesOrder) => {
     // ── Retorno Pedido → Orçamento: protege o financeiro ──────────────────────
     if (s.status === 'Orçamento' && s.id) {
@@ -349,85 +198,13 @@ const App: React.FC = () => {
     } catch (err) { /* Erro já tratado no hook */ }
   };
 
-  const handleLogin = (u: User) => {
-    setUser(u);
-    localStorage.setItem('marmo_user', JSON.stringify(u));
+  // Login com redirect para motoristas
+  const handleLogin = (u: import('./types').User) => {
+    authLogin(u);
     if (u.role === 'driver') setCurrentView('Agenda de Entregas');
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    localStorage.removeItem('marmo_user');
-  };
-
-
-  // Persistência inicial de login via Supabase Auth
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        const userMetadata = session.user.user_metadata;
-        const mappedUser = {
-          id: session.user.id,
-          email: session.user.email,
-          name: userMetadata.full_name || userMetadata.name || session.user.email?.split('@')[0],
-          role: userMetadata.role || 'viewer',
-          company_id: userMetadata.company_id || '00000000-0000-0000-0000-000000000000',
-          status: 'ativo',
-          createdAt: session.user.created_at
-        } as User;
-
-        setUser(mappedUser);
-        localStorage.setItem('marmo_user', JSON.stringify(mappedUser));
-      } else {
-        // Fallback for legacy local storage users if any (optional)
-        const savedUser = localStorage.getItem('marmo_user');
-        if (savedUser) {
-          try {
-            const u = JSON.parse(savedUser);
-            if (u && !u.company_id) {
-              u.company_id = '00000000-0000-0000-0000-000000000000';
-              localStorage.setItem('marmo_user', JSON.stringify(u));
-            }
-            setUser(u);
-          } catch (e) {
-            console.error('Erro ao recuperar usuário local:', e);
-          }
-        }
-      }
-      setAuthReady(true);
-    };
-
-    checkSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        const userMetadata = session.user.user_metadata;
-        const mappedUser = {
-          id: session.user.id,
-          email: session.user.email,
-          name: userMetadata.full_name || userMetadata.name || session.user.email?.split('@')[0],
-          role: userMetadata.role || 'viewer',
-          company_id: userMetadata.company_id || '00000000-0000-0000-0000-000000000000',
-          status: 'ativo',
-          createdAt: session.user.created_at
-        } as User;
-        setUser(prev => {
-          if (prev?.id === mappedUser.id && prev?.company_id === mappedUser.company_id) return prev;
-          return mappedUser;
-        });
-        localStorage.setItem('marmo_user', JSON.stringify(mappedUser));
-      } else {
-        setUser(null);
-        localStorage.removeItem('marmo_user');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  // 9. Rastreamento automático de GPS para motoristas
+  // 7. Rastreamento automático de GPS para motoristas
   useEffect(() => {
     if (!user || !activeCompanyId) return;
     
@@ -495,8 +272,14 @@ const App: React.FC = () => {
             phases={phases}
             appUsers={appUsers}
             currentUserName={user?.name || user?.email || 'Usuário'}
+            canCancelOS={getAccess('producao') === 'full'}
+            canEditDeadline={getAccess('producao') === 'full'}
+            deadlineWarningDays={deadlineWarningDays}
+            deadlineUrgentDays={deadlineUrgentDays}
             onUpdatePhase={updateWorkOrderPhase}
             onUpdate={updateWorkOrder}
+            onUpdateDeliveryDate={updateDeliveryDate}
+            onCancelWorkOrder={cancelWorkOrder}
             onAddDrawing={addDrawing}
             onDeleteDrawing={deleteDrawing}
           />
@@ -581,6 +364,10 @@ const App: React.FC = () => {
             onSaveProfile={handleSaveProfile}
             onDeleteProfile={handleDeleteProfile}
             onSaveUser={handleSaveUser}
+            deadlineWarningDays={deadlineWarningDays}
+            deadlineUrgentDays={deadlineUrgentDays}
+            onSetDeadlineWarningDays={v => setDeadlineWarningDays(v)}
+            onSetDeadlineUrgentDays={v => setDeadlineUrgentDays(v)}
           />
         );
       case 'Clientes':
@@ -622,6 +409,7 @@ const App: React.FC = () => {
               });
             }}
             canEdit={getAccess('vendas') === 'full'}
+            currentUser={user}
           />
         );
       case 'Matéria Prima':
@@ -680,15 +468,17 @@ const App: React.FC = () => {
         );
       case 'Contas a Pagar':
         return (
-          <AccountsView
-            mode="pagar"
+          <PayablesView
             accounts={payables}
             paymentMethods={paymentMethods}
             suppliers={suppliers}
+            categories={billCategories}
             onSave={handleSavePayable}
             onDelete={deletePayable}
-            onPayInstallment={payPayableInstallment}
-            onUnpayInstallment={unpayPayableInstallment}
+            onSettle={settleBill}
+            onCancel={cancelBill}
+            onSaveCategory={saveBillCategory}
+            onDeleteCategory={deleteBillCategory}
             canEdit={getAccess('financeiro') === 'full'}
           />
         );
@@ -700,6 +490,14 @@ const App: React.FC = () => {
             onSave={handleSavePaymentMethod}
             onDelete={deletePaymentMethod}
             onToggle={toggleActive}
+          />
+        );
+      case 'Tipos de Pagamento':
+        return (
+          <PaymentTypesView 
+            paymentTypes={paymentTypes}
+            onSaveType={handleSavePaymentType}
+            onDeleteType={handleDeletePaymentType}
           />
         );
 

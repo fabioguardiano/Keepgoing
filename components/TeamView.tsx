@@ -23,16 +23,22 @@ const ROLE_LABELS: Record<AppUser['role'], string> = {
 };
 
 const ROLE_COLORS: Record<AppUser['role'], string> = {
-  admin: 'bg-red-100 text-red-700',
-  manager: 'bg-blue-100 text-blue-700',
-  seller: 'bg-green-100 text-green-700',
-  viewer: 'bg-slate-100 text-slate-700',
-  driver: 'bg-orange-100 text-orange-700',
+  admin: 'bg-primary/10 text-primary border border-primary/20',
+  manager: 'bg-primary/10 text-primary border border-primary/20',
+  seller: 'bg-primary/10 text-primary border border-primary/20',
+  viewer: 'bg-primary/10 text-primary border border-primary/20',
+  driver: 'bg-primary/10 text-primary border border-primary/20',
 };
 
 const AVATAR_COLORS = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-pink-500', 'bg-teal-500'];
 const avatarColor = (id: string) => AVATAR_COLORS[parseInt(id) % AVATAR_COLORS.length] || 'bg-slate-500';
 const initials = (name: string) => name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
+const formatDateBR = (dateStr: string) => {
+  if (!dateStr) return '';
+  const parts = dateStr.includes('T') ? dateStr.split('T')[0].split('-') : dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+};
 
 // ─── Modal: Add/Edit App User ─────────────────────────────────────────────────
 
@@ -318,7 +324,7 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
                     </td>
                     <td className="px-6 py-6">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-2xl ${avatarColor(user.id)} flex items-center justify-center text-white font-bold text-sm shrink-0`}>
+                        <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center text-white font-bold text-sm shrink-0">
                           {initials(user.name)}
                         </div>
                         <div className="text-sm font-black text-slate-800 leading-tight">{user.name}</div>
@@ -336,7 +342,7 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
                       </span>
                     </td>
                     <td className="px-6 py-6">
-                      <div className="text-sm font-bold text-slate-600">{user.createdAt}</div>
+                      <div className="text-sm font-bold text-slate-600">{formatDateBR(user.createdAt)}</div>
                       <div className={`text-[10px] font-black uppercase tracking-widest mt-0.5 ${user.status === 'ativo' ? 'text-green-500' : 'text-slate-400'}`}>
                         {user.status === 'ativo' ? 'Ativo' : 'Inativo'}
                       </div>
@@ -351,11 +357,21 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
                           <Edit2 size={16} />
                         </button>
                         <button
-                          onClick={() => onDeleteUser(user.id)}
-                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
-                          title="Excluir"
+                          onClick={() => {
+                            if (user.status === 'inativo') {
+                              onSaveUser({ ...user, status: 'ativo' });
+                            } else {
+                              onDeleteUser(user.id);
+                            }
+                          }}
+                          className={`p-2 rounded-xl transition-all border border-transparent ${
+                            user.status === 'inativo' 
+                              ? 'text-green-500 hover:bg-green-50 hover:border-green-100' 
+                              : 'text-slate-400 hover:text-orange-500 hover:bg-orange-50 hover:border-orange-100'
+                          }`}
+                          title={user.status === 'inativo' ? 'Reativar' : 'Inativar'}
                         >
-                          <Trash2 size={16} />
+                          <PowerOff size={16} />
                         </button>
                       </div>
                     </td>
@@ -395,14 +411,14 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
                     </td>
                     <td className="px-6 py-6">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-2xl ${avatarColor(s.id)} flex items-center justify-center text-white font-bold text-sm shrink-0`}>
+                        <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center text-white font-bold text-sm shrink-0">
                           {initials(s.name)}
                         </div>
                         <div className="text-sm font-black text-slate-800 leading-tight">{s.name}</div>
                       </div>
                     </td>
                     <td className="px-6 py-6">
-                      <span className="text-xs font-black bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg">
+                      <span className="text-xs font-black bg-primary/10 text-primary border border-primary/20 px-2.5 py-1 rounded-lg">
                         {POSITION_LABELS[s.position]}
                       </span>
                     </td>
@@ -424,11 +440,21 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
                           <Edit2 size={16} />
                         </button>
                         <button
-                          onClick={() => onDeleteStaff(s.id)}
-                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
-                          title="Excluir"
+                          onClick={() => {
+                            if (s.status === 'inativo') {
+                              onSaveStaff({ ...s, status: 'ativo' });
+                            } else {
+                              onDeleteStaff(s.id);
+                            }
+                          }}
+                          className={`p-2 rounded-xl transition-all border border-transparent ${
+                            s.status === 'inativo' 
+                              ? 'text-green-500 hover:bg-green-50 hover:border-green-100' 
+                              : 'text-slate-400 hover:text-orange-500 hover:bg-orange-50 hover:border-orange-100'
+                          }`}
+                          title={s.status === 'inativo' ? 'Reativar' : 'Inativar'}
                         >
-                          <Trash2 size={16} />
+                          <PowerOff size={16} />
                         </button>
                       </div>
                     </td>

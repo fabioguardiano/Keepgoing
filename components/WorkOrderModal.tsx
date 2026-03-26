@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, Image as ImageIcon, Plus, Briefcase, Calendar, Layers, User, ChevronDown, Trash2, Clock, ZoomIn } from 'lucide-react';
+import { X, Upload, Image as ImageIcon, Plus, Briefcase, Calendar, Layers, User, ChevronDown, Trash2, Clock, ZoomIn, Lock, Pencil, XCircle, AlertTriangle } from 'lucide-react';
 import { WorkOrder, WorkOrderLog, PhaseConfig, AppUser } from '../types';
 import { formatOsLabel } from '../hooks/useWorkOrders';
 
@@ -11,6 +11,10 @@ interface WorkOrderModalProps {
   currentUserName: string;
   onUpdatePhase: (id: string, toPhase: string, fromPhase: string, userName: string) => void;
   onUpdate: (id: string, updates: any) => void;
+  onUpdateDeliveryDate: (id: string, newDate: string, justification: string, authorizedBy: string) => Promise<void>;
+  onCancelWorkOrder: (id: string, reason: string, authorizedBy: string) => Promise<void>;
+  canCancelOS: boolean;
+  canEditDeadline: boolean;
   onAddDrawing: (id: string, file: File) => Promise<void>;
   onDeleteDrawing: (id: string, url: string) => Promise<void>;
   onClose: () => void;
@@ -55,6 +59,10 @@ const LogEntry: React.FC<{ log: WorkOrderLog }> = ({ log }) => {
     message = `O.S. criada${log.environment ? ` — ${log.environment}` : ''}`;
   } else if (log.action === 'reissued') {
     message = `Reemissão: ${log.reason || ''}${log.environment ? ` — ${log.environment}` : ''}`;
+  } else if (log.action === 'deadline_changed') {
+    message = `Prazo alterado — ${log.reason || ''}`;
+  } else if (log.action === 'cancelled') {
+    message = `O.S. cancelada — ${log.reason || ''}`;
   } else {
     message = log.action;
   }
@@ -74,9 +82,19 @@ const LogEntry: React.FC<{ log: WorkOrderLog }> = ({ log }) => {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
+const CANCEL_REASONS = [
+  'Erro de medição',
+  'Alteração solicitada pelo cliente',
+  'Material danificado',
+  'Pedido cancelado pelo cliente',
+  'Duplicidade',
+  'Outro',
+];
+
 export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   workOrder, allWorkOrders, phases, appUsers, currentUserName,
-  onUpdatePhase, onUpdate, onAddDrawing, onDeleteDrawing, onClose,
+  onUpdatePhase, onUpdate, onUpdateDeliveryDate, onCancelWorkOrder, canCancelOS, canEditDeadline,
+  onAddDrawing, onDeleteDrawing, onClose,
 }) => {
   const [localNotes, setLocalNotes] = useState(workOrder.notes || '');
   const [uploading, setUploading] = useState(false);
@@ -84,6 +102,17 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   const [showPhaseDropdown, setShowPhaseDropdown] = useState(false);
   const [lightbox, setLightbox] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [editingDeadline, setEditingDeadline] = useState(false);
+  const [newDeliveryDate, setNewDeliveryDate] = useState(workOrder.deliveryDate || '');
+  const [deadlineJustification, setDeadlineJustification] = useState('');
+  const [deadlinePassword, setDeadlinePassword] = useState('');
+  const [savingDeadline, setSavingDeadline] = useState(false);
+
+  const [showCancelForm, setShowCancelForm] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelReasonFree, setCancelReasonFree] = useState('');
+  const [cancelling, setCancelling] = useState(false);
 
   const currentPhase = workOrder.productionPhase || phases[0]?.name || '';
   const sortedLogs = [...(workOrder.logs || [])].sort(
@@ -131,7 +160,27 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
           className="fixed inset-0 z-[700] flex items-center justify-center bg-black/80 backdrop-blur-sm"
           onClick={() => setLightbox(null)}
         >
-          <img src={lightbox} alt="Desenho" className="max-h-[90vh] max-w-[90vw] rounded-xl shadow-2xl object-contain" />
+          <div className="relative" onClick={e => e.stopPropagation()}>
+            <img src={lightbox} alt="Desenho" className="max-h-[90vh] max-w-[90vw] rounded-xl shadow-2xl object-contain" />
+            {/* Watermark — visível apenas ao imprimir */}
+            <div className="absolute inset-0 hidden print:flex items-center justify-center pointer-events-none rounded-xl overflow-hidden">
+              <span style={{
+                transform: 'rotate(-45deg)',
+                color: 'rgba(185,28,28,0.50)',
+                fontSize: '28px',
+                fontWeight: 900,
+                textAlign: 'center',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+                lineHeight: 1.4,
+                whiteSpace: 'nowrap',
+                border: '3px solid rgba(185,28,28,0.35)',
+                padding: '8px 20px',
+              }}>
+                CÓPIA NÃO OFICIAL<br/>USE O DESENHO ORIGINAL
+              </span>
+            </div>
+          </div>
           <button onClick={() => setLightbox(null)} className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/40 rounded-full text-white transition-colors">
             <X size={22} />
           </button>
@@ -151,8 +200,13 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                 <h2 className="text-xl font-black text-gray-900 leading-tight">{osLabel}</h2>
                 <p className="text-xs text-gray-400 mt-0.5">Criado em {formatDate(workOrder.createdAt)}</p>
               </div>
+              {workOrder.status === 'Cancelada' && (
+                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-100 text-red-700 text-sm font-black">
+                  <XCircle size={14} /> CANCELADA
+                </span>
+              )}
               {/* Phase selector */}
-              <div className="relative">
+              {workOrder.status !== 'Cancelada' && <div className="relative">
                 <button
                   onClick={() => setShowPhaseDropdown(v => !v)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--primary-color)] text-white text-sm font-semibold hover:opacity-90 transition-opacity"
@@ -169,7 +223,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                     ))}
                   </div>
                 )}
-              </div>
+              </div>}
             </div>
             <div className="flex items-center gap-2">
               {/* Priority */}
@@ -215,10 +269,84 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                       <Calendar size={14} className="text-gray-400 flex-shrink-0" />
                       <span>{formatDate(workOrder.createdAt)}</span>
                     </div>
-                    {workOrder.deliveryDeadline && parseInt(workOrder.deliveryDeadline) > 0 && (
+                    {workOrder.deliveryDate && !editingDeadline && (
                       <div className="flex items-center gap-2 text-sm text-gray-500">
                         <Clock size={14} className="text-gray-400 flex-shrink-0" />
-                        <span>Prazo de entrega: <strong className="text-gray-700">{workOrder.deliveryDeadline} dias úteis</strong></span>
+                        <span>
+                          Entrega: <strong className="text-gray-700">{formatDate(workOrder.deliveryDate + 'T12:00:00')}</strong>
+                          {workOrder.deliveryDeadline && parseInt(workOrder.deliveryDeadline) > 0 && (
+                            <span className="text-xs text-gray-400 ml-1">({workOrder.deliveryDeadline} dias úteis)</span>
+                          )}
+                        </span>
+                        {canEditDeadline && (
+                          <button
+                            onClick={() => { setNewDeliveryDate(workOrder.deliveryDate || ''); setEditingDeadline(true); }}
+                            className="ml-auto p-1 text-gray-400 hover:text-[var(--primary-color)] hover:bg-gray-100 rounded-lg transition-colors"
+                            title="Alterar prazo"
+                          >
+                            <Pencil size={12} />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    {editingDeadline && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 space-y-2.5">
+                        <div className="flex items-center gap-1.5 text-amber-700 text-xs font-black">
+                          <Lock size={12} /> Alterar prazo de entrega
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1">Nova data de entrega</label>
+                          <input
+                            type="date"
+                            value={newDeliveryDate}
+                            onChange={e => setNewDeliveryDate(e.target.value)}
+                            className="w-full px-2.5 py-1.5 bg-white border border-amber-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1">Justificativa</label>
+                          <input
+                            type="text"
+                            value={deadlineJustification}
+                            onChange={e => setDeadlineJustification(e.target.value)}
+                            placeholder="Motivo da alteração..."
+                            className="w-full px-2.5 py-1.5 bg-white border border-amber-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1">
+                            <Lock size={10} className="inline mr-1" />Senha de autorização
+                          </label>
+                          <input
+                            type="password"
+                            value={deadlinePassword}
+                            onChange={e => setDeadlinePassword(e.target.value)}
+                            placeholder="Senha"
+                            className="w-full px-2.5 py-1.5 bg-white border border-amber-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                          />
+                        </div>
+                        <div className="flex gap-2 pt-0.5">
+                          <button
+                            onClick={() => { setEditingDeadline(false); setDeadlineJustification(''); setDeadlinePassword(''); }}
+                            className="flex-1 py-1.5 text-xs font-bold border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-all"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            disabled={savingDeadline || !newDeliveryDate || !deadlineJustification || !deadlinePassword}
+                            onClick={async () => {
+                              setSavingDeadline(true);
+                              await onUpdateDeliveryDate(workOrder.id, newDeliveryDate, deadlineJustification, deadlinePassword);
+                              setSavingDeadline(false);
+                              setEditingDeadline(false);
+                              setDeadlineJustification('');
+                              setDeadlinePassword('');
+                            }}
+                            className="flex-1 py-1.5 text-xs font-bold bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            {savingDeadline ? 'Salvando...' : 'Confirmar'}
+                          </button>
+                        </div>
                       </div>
                     )}
                     {workOrder.saleOrderNumber && (
@@ -294,6 +422,24 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                       {drawings.map((url, idx) => (
                         <div key={idx} className="relative group rounded-xl overflow-hidden border border-gray-200 aspect-square bg-gray-50">
                           <img src={url} alt={`Desenho ${idx + 1}`} className="w-full h-full object-cover" />
+                          {/* Watermark — visível apenas ao imprimir */}
+                          <div className="absolute inset-0 hidden print:flex items-center justify-center pointer-events-none" style={{ zIndex: 10 }}>
+                            <span style={{
+                              transform: 'rotate(-45deg)',
+                              color: 'rgba(185,28,28,0.55)',
+                              fontSize: '9px',
+                              fontWeight: 900,
+                              textAlign: 'center',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.08em',
+                              lineHeight: 1.4,
+                              whiteSpace: 'nowrap',
+                              border: '1.5px solid rgba(185,28,28,0.4)',
+                              padding: '2px 6px',
+                            }}>
+                              CÓPIA NÃO OFICIAL<br/>USE O DESENHO ORIGINAL
+                            </span>
+                          </div>
                           {/* Hover overlay */}
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
                             <button
@@ -400,13 +546,91 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t bg-gray-50 flex justify-end">
+          <div className="px-6 py-4 border-t bg-gray-50 flex items-center justify-between">
+            {canCancelOS && workOrder.status !== 'Cancelada' ? (
+              <button
+                onClick={() => setShowCancelForm(true)}
+                className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-red-600 border border-red-200 rounded-xl hover:bg-red-50 transition-all"
+              >
+                <XCircle size={15} /> Cancelar O.S.
+              </button>
+            ) : <div />}
             <button onClick={onClose} className="px-6 py-2.5 rounded-xl bg-[var(--primary-color)] text-white font-bold text-sm hover:opacity-90 transition-opacity shadow-sm">
               Fechar e Salvar
             </button>
           </div>
         </div>
       </div>
+
+      {/* Cancel form overlay */}
+      {showCancelForm && (
+        <div className="fixed inset-0 z-[700] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 border-b bg-red-50 flex items-center gap-3">
+              <AlertTriangle size={20} className="text-red-600 flex-shrink-0" />
+              <div>
+                <h3 className="font-black text-red-800 text-base">Cancelar O.S.</h3>
+                <p className="text-xs text-red-600 mt-0.5">Esta ação é irreversível. Registre o motivo e a autorização.</p>
+              </div>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1.5">Motivo do cancelamento</label>
+                <select
+                  value={cancelReason}
+                  onChange={e => setCancelReason(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+                >
+                  <option value="">Selecione o motivo...</option>
+                  {CANCEL_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+              {cancelReason === 'Outro' && (
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1.5">Descreva o motivo</label>
+                  <textarea
+                    value={cancelReasonFree}
+                    onChange={e => setCancelReasonFree(e.target.value)}
+                    rows={2}
+                    placeholder="Descreva o motivo..."
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-red-400"
+                  />
+                </div>
+              )}
+              <div>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1.5">
+                  <Lock size={10} className="inline mr-1" />Cancelado por
+                </label>
+                <div className="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-xl text-sm text-gray-700 font-semibold">
+                  {currentUserName}
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t bg-gray-50 flex gap-3">
+              <button
+                onClick={() => { setShowCancelForm(false); setCancelReason(''); setCancelReasonFree(''); }}
+                className="flex-1 py-2.5 text-sm font-bold border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-100 transition-all"
+              >
+                Voltar
+              </button>
+              <button
+                disabled={cancelling || !cancelReason || (cancelReason === 'Outro' && !cancelReasonFree)}
+                onClick={async () => {
+                  const reason = cancelReason === 'Outro' ? cancelReasonFree : cancelReason;
+                  setCancelling(true);
+                  await onCancelWorkOrder(workOrder.id, reason, currentUserName);
+                  setCancelling(false);
+                  setShowCancelForm(false);
+                  onClose();
+                }}
+                className="flex-1 py-2.5 text-sm font-bold bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {cancelling ? 'Cancelando...' : 'Confirmar cancelamento'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

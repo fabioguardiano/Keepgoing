@@ -15,6 +15,7 @@ const STATUS_TABS: Array<{ label: string; value: WorkOrder['status'] | 'Todos' }
   { label: 'Em Produção', value: 'Em Produção' },
   { label: 'Concluído', value: 'Concluído' },
   { label: 'Entregue', value: 'Entregue' },
+  { label: 'Cancelada', value: 'Cancelada' },
 ];
 
 const STATUS_COLORS: Record<WorkOrder['status'], string> = {
@@ -22,6 +23,7 @@ const STATUS_COLORS: Record<WorkOrder['status'], string> = {
   'Em Produção': 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
   'Concluído': 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
   'Entregue': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+  'Cancelada': 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
 };
 
 const fmtDate = (iso: string) => {

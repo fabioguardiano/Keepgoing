@@ -118,6 +118,13 @@ export interface PhaseResponsible {
   addedAt: string;
 }
 
+export interface CRMNote {
+  id: string;
+  userName: string;
+  timestamp: string;
+  text: string;
+}
+
 export interface ProductService {
   id: string;
   type: Category;
@@ -306,6 +313,7 @@ export interface OrderService {
     desconto: number;
     geral: number;
   };
+  crmNotes?: CRMNote[];
   lostReason?: string;
   lostDetails?: string;
 }
@@ -554,6 +562,27 @@ export interface AccountReceivable {
   createdAt: string;
 }
 
+export interface BillCategory {
+  id: string;
+  name: string;
+  color: string;       // hex color, e.g. '#6366F1'
+  nature: 'Fixa' | 'Variável';
+  companyId?: string;
+  createdAt: string;
+}
+
+export interface BillTransaction {
+  id: string;
+  date: string;              // YYYY-MM-DD
+  paidValue: number;         // cash that went out
+  interest: number;          // juros/multa acrescidos
+  discount: number;          // desconto concedido
+  paymentMethodId?: string;
+  paymentMethodName?: string;
+  receipt?: string;          // url ou nº do comprovante
+  notes?: string;
+}
+
 export interface AccountPayable {
   id: string;
   description: string;
@@ -563,10 +592,14 @@ export interface AccountPayable {
   paidValue: number;
   remainingValue: number;
   installments: AccountInstallment[];
+  transactions: BillTransaction[];   // histórico de baixas
   paymentMethodId?: string;
   paymentMethodName?: string;
   category: string;
+  categoryId?: string;               // ref → BillCategory.id
   dueDate: string;
+  competenceDate?: string;           // data de competência (YYYY-MM-DD)
+  recurrence?: 'none' | 'monthly' | 'yearly';
   notes?: string;
   status: 'pendente' | 'parcial' | 'quitado' | 'cancelado';
   companyId?: string;
@@ -627,7 +660,7 @@ export interface WorkOrderLog {
   workOrderId: string;
   saleId?: string;
   environment: string;
-  action: 'created' | 'reissued' | 'phase_changed';
+  action: 'created' | 'reissued' | 'phase_changed' | 'deadline_changed' | 'cancelled';
   reason?: string;
   userName?: string;
   createdAt: string;
@@ -645,7 +678,8 @@ export interface WorkOrder {
   clientName?: string;
   clientId?: string;
   environments: string[];
-  status: 'Aguardando' | 'Em Produção' | 'Concluído' | 'Entregue';
+  saleItemIds: string[];
+  status: 'Aguardando' | 'Em Produção' | 'Concluído' | 'Entregue' | 'Cancelada';
   notes?: string;
   materialsM2: WorkOrderMaterialM2[];
   finishingsLinear: WorkOrderFinishingLinear[];
@@ -658,6 +692,7 @@ export interface WorkOrder {
   drawingUrl?: string;
   drawingUrls: string[];
   deliveryDeadline?: string;
+  deliveryDate?: string;
   priority: 'alta' | 'media' | 'baixa';
   assignedUsers: Array<{ name: string; role?: string }>;
   sellerName?: string;
@@ -691,6 +726,6 @@ export type View =
   | 'Contas a Receber'
   | 'Contas a Pagar'
   | 'Formas de Pagamento'
-  | 'Formas de Pagamento';
+  | 'Tipos de Pagamento';
 
 export type User = AppUser;

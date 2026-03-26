@@ -35,6 +35,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   producao: 'Produção / O.S.',
   vendas: 'Vendas',
   agenda_entregas: 'Agenda de Entregas',
+  agenda_medicao: 'Agenda de Medição',
   financeiro: 'Financeiro',
   clientes: 'Clientes',
   estoque: 'Estoque / Acabamentos',

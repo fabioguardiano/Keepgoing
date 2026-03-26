@@ -44,7 +44,8 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
             vendas: Number(s.subtotal),
             desconto: Number(s.discount_value || s.discount || 0),
             geral: Number(s.total)
-          }
+          },
+          crmNotes: s.crm_notes || []
         }));
         setSales(mapped as SalesOrder[]);
         localStorage.setItem(`marmo_sales_${companyId || 'legacy'}`, JSON.stringify(mapped));
@@ -92,6 +93,7 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
         payment_method_name: s.paymentMethodName || null,
         payment_installments: s.paymentInstallments || null,
         first_due_date: s.firstDueDate || null,
+        crm_notes: s.crmNotes || null
       };
 
       const { data, error } = await supabase
@@ -130,7 +132,8 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
           vendas: Number(savedRow.subtotal),
           desconto: Number(savedRow.discount_value || savedRow.discount || 0),
           geral: Number(savedRow.total)
-        }
+        },
+        crmNotes: savedRow.crm_notes || []
       } as SalesOrder;
 
       const isUpdate = sales.some(x => x.id === s.id || x.id === savedSale.id);
