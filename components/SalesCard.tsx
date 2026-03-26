@@ -1,6 +1,6 @@
 import React from 'react';
 import { Draggable } from '@hello-pangea/dnd';
-import { Calendar, User as UserIcon, DollarSign, CheckCircle2, Lock, GripVertical, ArrowRight } from 'lucide-react';
+import { Calendar, User as UserIcon, DollarSign, CheckCircle2, Lock, GripVertical, ArrowRight, EyeOff } from 'lucide-react';
 import { SalesOrder, AppUser } from '../types';
 import { CRMSection } from './CRMSection';
 
@@ -11,9 +11,10 @@ interface SalesCardProps {
   onSaveSale: (sale: SalesOrder) => void;
   phase: string;
   currentUser?: AppUser | null;
+  canEdit?: boolean;
 }
 
-export const SalesCard: React.FC<SalesCardProps> = ({ sale, index, handleEdit, onSaveSale, phase, currentUser }) => {
+export const SalesCard: React.FC<SalesCardProps> = ({ sale, index, handleEdit, onSaveSale, phase, currentUser, canEdit = true }) => {
 
   return (
     <Draggable key={sale.id} draggableId={sale.id} index={index}>
@@ -22,8 +23,8 @@ export const SalesCard: React.FC<SalesCardProps> = ({ sale, index, handleEdit, o
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           ref={provided.innerRef}
-          className={`bg-white dark:bg-slate-900 border p-4 rounded-2xl shadow-sm transition-all cursor-grab active:cursor-grabbing group ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-[var(--primary-color)] scale-[1.02] z-50' : 'hover:shadow-md'} ${sale.status === 'Pedido' ? 'border-green-200 dark:border-green-900/50 bg-green-50/30 dark:bg-green-900/10' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200'}`}
-          onClick={() => handleEdit(sale)}
+          className={`bg-white dark:bg-slate-900 border p-4 rounded-2xl shadow-sm transition-all group ${canEdit ? 'cursor-grab active:cursor-grabbing' : 'cursor-default opacity-80'} ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-[var(--primary-color)] scale-[1.02] z-50' : canEdit ? 'hover:shadow-md' : ''} ${sale.status === 'Pedido' ? 'border-green-200 dark:border-green-900/50 bg-green-50/30 dark:bg-green-900/10' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200'}`}
+          onClick={() => canEdit && handleEdit(sale)}
         >
           <div className="flex justify-between items-start mb-2">
             <div className="flex items-center gap-2 flex-wrap">
@@ -36,6 +37,11 @@ export const SalesCard: React.FC<SalesCardProps> = ({ sale, index, handleEdit, o
               {sale.status === 'Pedido' && (
                 <span className="bg-green-100 text-green-700 text-[8px] font-black px-1.5 py-0.5 rounded uppercase flex items-center gap-1" title="Pedido confirmado — bloqueado para edição">
                   <Lock size={8} /> Bloqueado
+                </span>
+              )}
+              {!canEdit && (
+                <span className="bg-slate-100 text-slate-400 text-[8px] font-black px-1.5 py-0.5 rounded uppercase flex items-center gap-1" title="Você não tem permissão para editar este orçamento">
+                  <EyeOff size={8} /> Só visualização
                 </span>
               )}
             </div>

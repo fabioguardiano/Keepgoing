@@ -121,6 +121,14 @@ const App: React.FC = () => {
   const getAccess = (module: import('./types').ModuleKey) =>
     getModuleAccess(user!, appUsers, permissionProfiles, module);
 
+  // Escopo de visibilidade em Vendas para o usuário logado
+  const getVendasScope = (): import('./types').VendasScope => {
+    const appUser = appUsers.find(u => u.email === user?.email);
+    if (!appUser?.profileId) return 'all';
+    const profile = permissionProfiles.find(p => p.id === appUser.profileId);
+    return profile?.vendasScope ?? 'all';
+  };
+
   // 6. Handlers de Negócio Orquestrados
   const handleSaveSale = async (s: SalesOrder) => {
     // ── Retorno Pedido → Orçamento: protege o financeiro ──────────────────────
@@ -465,6 +473,7 @@ const App: React.FC = () => {
               });
             }}
             canEdit={getAccess('vendas') === 'full'}
+            vendasScope={getVendasScope()}
             currentUser={user}
           />
         );

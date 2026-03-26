@@ -62,11 +62,14 @@ export type ModuleKey =
 
 export type AccessLevel = 'none' | 'view' | 'full';
 
+export type VendasScope = 'all' | 'own' | 'view_all_edit_own';
+
 export interface PermissionProfile {
   id: string;
   name: string;
   isDefault?: boolean; // perfis padrão não podem ser excluídos
   permissions: Record<ModuleKey, AccessLevel>;
+  vendasScope?: VendasScope; // escopo de visibilidade em Vendas
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

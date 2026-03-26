@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { ShoppingBag, Plus, Search, FileText, CheckCircle2, Clock, XCircle, MoreVertical, ExternalLink, Printer, LayoutGrid, List, ArrowRight, X, Edit2, GripVertical, Trash2, Check, DollarSign, Calendar, MoreHorizontal, User, AlertTriangle, Lock, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
-import { SalesOrder, Client, Material, AppUser, Architect, ProductService, SalesChannel, CompanyInfo, SalesPhaseConfig, ServiceGroup, PaymentMethod, WorkOrder } from '../types';
+import { SalesOrder, Client, Material, AppUser, Architect, ProductService, SalesChannel, CompanyInfo, SalesPhaseConfig, ServiceGroup, PaymentMethod, WorkOrder, VendasScope } from '../types';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { NewSaleModal } from './NewSaleModal';
 import { PrintBudget } from './PrintBudget';
@@ -31,13 +31,14 @@ interface SalesViewProps {
   getEnvironmentOSMap?: (saleId: string) => Record<string, WorkOrder[]>;
   onRequestDiscount?: (admin: any, requestedPct: number, maxPct: number) => void;
   canEdit?: boolean;
+  vendasScope?: VendasScope;
   currentUser?: AppUser | null;
 }
 
 export const SalesView: React.FC<SalesViewProps> = ({
   sales, clients, materials, onSaveSale, appUsers, architects, products, salesChannels, paymentMethods, companyInfo, nextOrderNumber,
   salesPhases, services, onRenameSalesPhase, onDeleteSalesPhase, onReorderSalesPhases,
-  companyId, createWorkOrders, getEnvironmentOSMap, onRequestDiscount, canEdit = true, currentUser
+  companyId, createWorkOrders, getEnvironmentOSMap, onRequestDiscount, canEdit = true, vendasScope = 'all', currentUser
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('kanban');
@@ -191,9 +192,20 @@ export const SalesView: React.FC<SalesViewProps> = ({
     setIsNewSaleModalOpen(true);
   }, []);
 
+  // Helpers de escopo por vendedor
+  const isOwnSale = (s: SalesOrder) =>
+    s.seller === currentUser?.name || s.seller === currentUser?.email;
+
+  const canEditSale = (s: SalesOrder) => {
+    if (!canEdit) return false;
+    if (vendasScope === 'own' || vendasScope === 'view_all_edit_own') return isOwnSale(s);
+    return true;
+  };
+
   const filteredSales = useMemo(() => {
     const now = new Date();
     return sales
+      .filter(s => vendasScope === 'own' ? isOwnSale(s) : true)
       .filter(s => statusFilter === 'todos' || s.status === statusFilter)
       .filter(s => {
         const d = new Date(s.createdAt);
@@ -456,10 +468,10 @@ export const SalesView: React.FC<SalesViewProps> = ({
                         </td>
                         <td className="px-6 py-4 text-center">
                           <div className="flex items-center justify-center gap-2">
-                            <button 
-                              onClick={() => handleEdit(sale)}
-                              className="p-2 text-slate-400 hover:text-[var(--primary-color)] hover:bg-orange-50 dark:hover:bg-slate-800 rounded-xl transition-all"
-                              title="Editar"
+                            <button
+                              onClick={() => canEditSale(sale) && handleEdit(sale)}
+                              className={`p-2 rounded-xl transition-all ${canEditSale(sale) ? 'text-slate-400 hover:text-[var(--primary-color)] hover:bg-orange-50 dark:hover:bg-slate-800' : 'text-slate-200 cursor-not-allowed'}`}
+                              title={canEditSale(sale) ? 'Editar' : 'Sem permissão para editar'}
                             >
                               <ExternalLink size={18} />
                             </button>
@@ -676,6 +688,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
                                     onSaveSale={onSaveSale}
                                     phase={phase}
                                     currentUser={currentUser}
+                                    canEdit={canEditSale(sale)}
                                   />
                                 ))}
                                 {provided.placeholder}
@@ -710,7 +723,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
           nextOrderNumber={nextOrderNumber}
           salesPhases={salesPhases}
           initialData={editingSale || undefined}
-          readOnly={!canEdit || editingSale?.status === 'Pedido'}
+          readOnly={!(editingSale ? canEditSale(editingSale) : canEdit) || editingSale?.status === 'Pedido'}
           companyId={companyId}
           createWorkOrders={createWorkOrders}
           getEnvironmentOSMap={getEnvironmentOSMap}

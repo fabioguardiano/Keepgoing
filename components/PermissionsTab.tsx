@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ShieldCheck, Plus, Edit2, Trash2, ChevronLeft, Check, Lock } from 'lucide-react';
-import { PermissionProfile, AppUser, ModuleKey, AccessLevel } from '../types';
+import { PermissionProfile, AppUser, ModuleKey, AccessLevel, VendasScope } from '../types';
 import { ALL_MODULES, MODULE_LABELS, DEFAULT_PROFILES } from '../lib/permissions';
 
 interface Props {
@@ -25,16 +25,23 @@ interface ProfileEditorProps {
   onBack: () => void;
 }
 
+const VENDAS_SCOPE_OPTIONS: { value: VendasScope; label: string; description: string }[] = [
+  { value: 'all',              label: 'Todos',                  description: 'Vê e edita todos os orçamentos' },
+  { value: 'own',              label: 'Apenas os seus',         description: 'Vê e edita só os próprios orçamentos' },
+  { value: 'view_all_edit_own', label: 'Ver todos / Editar só os seus', description: 'Vê todos, mas só edita os próprios' },
+];
+
 const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, onSave, onBack }) => {
   const [name, setName] = useState(profile.name);
   const [perms, setPerms] = useState<Record<ModuleKey, AccessLevel>>({ ...profile.permissions });
+  const [vendasScope, setVendasScope] = useState<VendasScope>(profile.vendasScope ?? 'all');
 
   const setAccess = (module: ModuleKey, level: AccessLevel) =>
     setPerms(prev => ({ ...prev, [module]: level }));
 
   const handleSave = () => {
     if (!name.trim()) return;
-    onSave({ ...profile, name: name.trim(), permissions: perms });
+    onSave({ ...profile, name: name.trim(), permissions: perms, vendasScope });
     onBack();
   };
 
@@ -70,29 +77,58 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, onSave, onBack }
         <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Módulos e Acessos</label>
         <div className="space-y-2">
           {ALL_MODULES.map(module => (
-            <div key={module} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-              <span className="flex-1 text-sm font-bold text-slate-700">{MODULE_LABELS[module]}</span>
-              <div className="flex gap-1.5">
-                {ACCESS_OPTIONS.map(opt => {
-                  const isSelected = perms[module] === opt.value;
-                  const isAdminLocked = profile.id === 'profile-admin';
-                  return (
-                    <button
-                      key={opt.value}
-                      onClick={() => !isAdminLocked && setAccess(module, opt.value)}
-                      disabled={isAdminLocked}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all border-2
-                        ${isSelected
-                          ? `${opt.color} border-transparent shadow-sm`
-                          : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'}
-                        ${isAdminLocked ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
-                    >
-                      {isSelected && <Check size={10} className="inline mr-1" />}
-                      {opt.label}
-                    </button>
-                  );
-                })}
+            <div key={module} className="bg-slate-50 rounded-xl overflow-hidden">
+              <div className="flex items-center gap-3 p-3">
+                <span className="flex-1 text-sm font-bold text-slate-700">{MODULE_LABELS[module]}</span>
+                <div className="flex gap-1.5">
+                  {ACCESS_OPTIONS.map(opt => {
+                    const isSelected = perms[module] === opt.value;
+                    const isAdminLocked = profile.id === 'profile-admin';
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() => !isAdminLocked && setAccess(module, opt.value)}
+                        disabled={isAdminLocked}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all border-2
+                          ${isSelected
+                            ? `${opt.color} border-transparent shadow-sm`
+                            : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'}
+                          ${isAdminLocked ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+                      >
+                        {isSelected && <Check size={10} className="inline mr-1" />}
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
+
+              {/* Escopo de visibilidade — só aparece no módulo Vendas quando tem acesso */}
+              {module === 'vendas' && perms['vendas'] !== 'none' && (
+                <div className="px-3 pb-3 pt-1 border-t border-slate-200/60">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Visibilidade dos orçamentos</p>
+                  <div className="flex flex-col gap-1.5">
+                    {VENDAS_SCOPE_OPTIONS.map(opt => (
+                      <button
+                        key={opt.value}
+                        onClick={() => profile.id !== 'profile-admin' && setVendasScope(opt.value)}
+                        disabled={profile.id === 'profile-admin'}
+                        className={`flex items-start gap-2.5 px-3 py-2 rounded-lg text-left text-xs transition-all border-2
+                          ${vendasScope === opt.value
+                            ? 'bg-white border-[var(--primary-color)] shadow-sm'
+                            : 'bg-white/60 border-transparent hover:border-slate-200'}
+                          ${profile.id === 'profile-admin' ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                      >
+                        <span className={`mt-0.5 w-3 h-3 rounded-full border-2 flex-shrink-0 ${vendasScope === opt.value ? 'border-[var(--primary-color)] bg-[var(--primary-color)]' : 'border-slate-300'}`} />
+                        <span>
+                          <span className="font-bold text-slate-700">{opt.label}</span>
+                          <span className="text-slate-400 ml-1.5">— {opt.description}</span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
