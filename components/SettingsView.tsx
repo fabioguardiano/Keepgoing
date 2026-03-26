@@ -10,22 +10,42 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 // ─── FinanceiroTabContent ─────────────────────────────────────────────────────
 interface FinanceiroTabProps {
   payablePMs: PayablePaymentMethod[];
+  paymentMethods: PaymentMethod[];
   onSave: (pm: Omit<PayablePaymentMethod, 'id' | 'createdAt'> & { id?: string }) => Promise<any>;
   onDelete: (id: string) => Promise<void>;
   onToggle: (id: string) => Promise<void>;
 }
 
-const FinanceiroTabContent: React.FC<FinanceiroTabProps> = ({ payablePMs, onSave, onDelete, onToggle }) => {
+const FinanceiroTabContent: React.FC<FinanceiroTabProps> = ({ payablePMs, paymentMethods, onSave, onDelete, onToggle }) => {
   const [newName, setNewName] = useState('');
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [editingCode, setEditingCode] = useState('');
   const [editSaving, setEditSaving] = useState(false);
+  const [importing, setImporting] = useState(false);
 
-  const nextCode = () => {
+  const nextCode = (offset = 0) => {
     const codes = payablePMs.map(pm => parseInt(pm.code || '0')).filter(c => !isNaN(c) && c > 0);
-    return (Math.max(0, ...codes) + 1).toString().padStart(2, '0');
+    return (Math.max(0, ...codes) + 1 + offset).toString().padStart(2, '0');
+  };
+
+  const handleImport = async () => {
+    // Formas do Contas a Receber que ainda não existem no Contas a Pagar (comparando pelo nome)
+    const existingNames = new Set(payablePMs.map(pm => pm.name.toLowerCase().trim()));
+    const toImport = paymentMethods.filter(pm => !existingNames.has(pm.name.toLowerCase().trim()));
+    if (toImport.length === 0) return alert('Todas as formas de pagamento já foram importadas.');
+    setImporting(true);
+    try {
+      for (let i = 0; i < toImport.length; i++) {
+        const pm = toImport[i];
+        await onSave({ code: nextCode(i), name: pm.name, active: pm.active });
+      }
+    } catch (err: any) {
+      alert(`Erro ao importar: ${err?.message || 'Verifique sua conexão e tente novamente.'}`);
+    } finally {
+      setImporting(false);
+    }
   };
 
   const handleAdd = async () => {
@@ -66,6 +86,26 @@ const FinanceiroTabContent: React.FC<FinanceiroTabProps> = ({ payablePMs, onSave
         </div>
       </div>
       <div className="p-6 space-y-4">
+        {/* Importar do Contas a Receber */}
+        {paymentMethods.length > 0 && (
+          <div className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-emerald-800">Importar do Contas a Receber</p>
+              <p className="text-[11px] text-emerald-600 mt-0.5">
+                Copia as {paymentMethods.length} formas já cadastradas para cá, gerando códigos automaticamente.
+              </p>
+            </div>
+            <button
+              onClick={handleImport}
+              disabled={importing}
+              className="px-3 py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 disabled:opacity-50 transition-all flex items-center gap-1.5 shrink-0"
+            >
+              <Download size={13} />
+              {importing ? 'Importando...' : 'Importar'}
+            </button>
+          </div>
+        )}
+
         {/* Add new */}
         <div className="flex gap-2">
           <input
@@ -394,6 +434,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     ) : activeTab === 'financeiro' ? (
                         <FinanceiroTabContent
                             payablePMs={payablePMs}
+                            paymentMethods={paymentMethods}
                             onSave={onSavePayablePM}
                             onDelete={onDeletePayablePM}
                             onToggle={onTogglePayablePM}
