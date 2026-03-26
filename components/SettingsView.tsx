@@ -4,8 +4,106 @@ import * as XLSX from 'xlsx';
 import { PaymentTypesView } from './PaymentTypesView';
 import { PaymentMethodsView } from './PaymentMethodsView';
 import { PermissionsTab } from './PermissionsTab';
-import { PhaseConfig, CompanyInfo, SalesPhaseConfig, PaymentMethod, PaymentType, PermissionProfile, AppUser } from '../types';
+import { PhaseConfig, CompanyInfo, SalesPhaseConfig, PaymentMethod, PaymentType, PermissionProfile, AppUser, PayablePaymentMethod } from '../types';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+
+// ─── FinanceiroTabContent ─────────────────────────────────────────────────────
+interface FinanceiroTabProps {
+  payablePMs: PayablePaymentMethod[];
+  onSave: (pm: Omit<PayablePaymentMethod, 'id' | 'createdAt'> & { id?: string }) => Promise<any>;
+  onDelete: (id: string) => Promise<void>;
+  onToggle: (id: string) => Promise<void>;
+}
+
+const FinanceiroTabContent: React.FC<FinanceiroTabProps> = ({ payablePMs, onSave, onDelete, onToggle }) => {
+  const [newName, setNewName] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleAdd = async () => {
+    if (!newName.trim()) return;
+    setSaving(true);
+    try {
+      await onSave({ name: newName.trim(), active: true });
+      setNewName('');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+      <div className="p-5 border-b border-slate-100 flex items-center gap-3">
+        <div className="p-2 bg-emerald-50 rounded-xl text-emerald-600">
+          <Wallet size={16} />
+        </div>
+        <div>
+          <h2 className="text-base font-bold text-slate-800">Formas de Pagamento — Contas a Pagar</h2>
+          <p className="text-[11px] text-slate-400 font-medium">Configure como você realiza pagamentos a fornecedores</p>
+        </div>
+      </div>
+      <div className="p-6 space-y-4">
+        {/* Add new */}
+        <div className="flex gap-2">
+          <input
+            value={newName}
+            onChange={e => setNewName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleAdd()}
+            placeholder="Ex: PIX, TED, Boleto, Cheque..."
+            className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+          />
+          <button
+            onClick={handleAdd}
+            disabled={!newName.trim() || saving}
+            className="px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:opacity-90 disabled:opacity-40 transition-all flex items-center gap-1.5"
+          >
+            <Plus size={15} />
+            Adicionar
+          </button>
+        </div>
+
+        {/* List */}
+        {payablePMs.length === 0 ? (
+          <div className="py-8 text-center text-slate-400 text-sm">
+            Nenhuma forma de pagamento cadastrada.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {payablePMs.map(pm => (
+              <div key={pm.id} className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-100 rounded-2xl group">
+                <div className="flex items-center gap-3">
+                  <div className={`w-2 h-2 rounded-full ${pm.active ? 'bg-emerald-400' : 'bg-slate-300'}`} />
+                  <span className={`text-sm font-bold ${pm.active ? 'text-slate-700' : 'text-slate-400 line-through'}`}>
+                    {pm.name}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                  <button
+                    onClick={() => onToggle(pm.id)}
+                    title={pm.active ? 'Desativar' : 'Ativar'}
+                    className={`p-1.5 rounded-lg text-xs font-bold transition-colors
+                      ${pm.active ? 'text-emerald-600 hover:bg-emerald-50' : 'text-slate-400 hover:bg-slate-100'}`}
+                  >
+                    <Check size={14} />
+                  </button>
+                  <button
+                    onClick={() => onDelete(pm.id)}
+                    className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <p className="text-[11px] text-slate-400">
+          Itens inativos ficam ocultos ao registrar pagamentos no Contas a Pagar.
+        </p>
+      </div>
+    </div>
+  );
+};
 
 interface SettingsViewProps {
     phases: PhaseConfig[];
@@ -41,6 +139,10 @@ interface SettingsViewProps {
     idleTimeoutMinutes: number;
     onSetIdleTimeoutMinutes: (v: number) => void;
     initialTab?: 'fluxo' | 'vendas' | 'empresa' | 'dados' | 'financeiro' | 'geral' | 'permissoes';
+    payablePMs: PayablePaymentMethod[];
+    onSavePayablePM: (pm: Omit<PayablePaymentMethod, 'id' | 'createdAt'> & { id?: string }) => Promise<any>;
+    onDeletePayablePM: (id: string) => Promise<void>;
+    onTogglePayablePM: (id: string) => Promise<void>;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -76,7 +178,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     onSetDeadlineUrgentDays,
     idleTimeoutMinutes,
     onSetIdleTimeoutMinutes,
-    initialTab
+    initialTab,
+    payablePMs,
+    onSavePayablePM,
+    onDeletePayablePM,
+    onTogglePayablePM,
 }) => {
     const [activeTab, setActiveTab] = useState<'fluxo' | 'vendas' | 'empresa' | 'dados' | 'financeiro' | 'geral' | 'permissoes'>(initialTab || 'fluxo');
     const [newPhaseName, setNewPhaseName] = useState('');
@@ -161,6 +267,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <ChevronRight size={14} />
                     </button>
                     <button
+                        onClick={() => setActiveTab('financeiro')}
+                        className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-sm font-bold border transition-all ${activeTab === 'financeiro' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
+                    >
+                        <div className="flex items-center gap-3">
+                            <Wallet size={18} />
+                            Financeiro
+                        </div>
+                        <ChevronRight size={14} />
+                    </button>
+                    <button
                         onClick={() => setActiveTab('geral')}
                         className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-sm font-bold border transition-all ${activeTab === 'geral' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
                     >
@@ -200,6 +316,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 />
                             </div>
                         </div>
+                    ) : activeTab === 'financeiro' ? (
+                        <FinanceiroTabContent
+                            payablePMs={payablePMs}
+                            onSave={onSavePayablePM}
+                            onDelete={onDeletePayablePM}
+                            onToggle={onTogglePayablePM}
+                        />
                     ) : activeTab === 'geral' ? (
                         <>
                         <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">

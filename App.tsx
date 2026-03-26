@@ -42,6 +42,7 @@ import { useBillCategories } from './hooks/useBillCategories';
 import { PayablesView } from './components/PayablesView';
 import { usePaymentMethods } from './hooks/usePaymentMethods';
 import { usePaymentTypes } from './hooks/usePaymentTypes';
+import { usePayablePaymentMethods } from './hooks/usePayablePaymentMethods';
 import { useWorkOrders } from './hooks/useWorkOrders';
 import { useDiscountAuthorizations } from './hooks/useDiscountAuthorizations';
 import { useDriverTracking } from './hooks/useDriverTracking';
@@ -85,6 +86,7 @@ const App: React.FC = () => {
   const { categories: billCategories, saveCategory: saveBillCategory, deleteCategory: deleteBillCategory } = useBillCategories(activeCompanyId);
   const { paymentMethods, handleSavePaymentMethod, deletePaymentMethod, toggleActive } = usePaymentMethods(activeCompanyId);
   const { paymentTypes, handleSavePaymentType, deletePaymentType: handleDeletePaymentType } = usePaymentTypes(activeCompanyId);
+  const { payablePMs, handleSave: handleSavePayablePM, handleDelete: deletePayablePM, toggleActive: togglePayablePM } = usePayablePaymentMethods(activeCompanyId);
   const { workOrders, loadingWO, createWorkOrders, updateWorkOrderStatus, updateWorkOrderPhase, updateWorkOrder, updateDeliveryDate, cancelWorkOrder, addDrawing, deleteDrawing, getEnvironmentOSMap, refreshWorkOrders } = useWorkOrders(activeCompanyId);
   const { authorizations, requestAuthorization, resolveAuthorization } = useDiscountAuthorizations(activeCompanyId);
   const { measurements, createMeasurement, updateMeasurement, deleteMeasurement } = useMeasurements(activeCompanyId);
@@ -380,6 +382,10 @@ const App: React.FC = () => {
             onSetDeadlineUrgentDays={v => setDeadlineUrgentDays(v)}
             idleTimeoutMinutes={idleTimeoutMinutes}
             onSetIdleTimeoutMinutes={v => setIdleTimeoutMinutes(v)}
+            payablePMs={payablePMs}
+            onSavePayablePM={handleSavePayablePM}
+            onDeletePayablePM={deletePayablePM}
+            onTogglePayablePM={togglePayablePM}
           />
         );
       case 'Clientes':
@@ -482,7 +488,7 @@ const App: React.FC = () => {
         return (
           <PayablesView
             accounts={payables}
-            paymentMethods={paymentMethods}
+            paymentMethods={payablePMs}
             suppliers={suppliers}
             categories={billCategories}
             onSave={handleSavePayable}

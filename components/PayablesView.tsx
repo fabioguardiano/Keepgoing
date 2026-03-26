@@ -3,11 +3,18 @@ import {
   Plus, X, Check, Trash2, Edit2, Anchor, TrendingUp, ChevronDown, ChevronUp,
   Search, AlertTriangle, Settings, Receipt, DollarSign, Info, Ban, RotateCcw,
 } from 'lucide-react';
-import { AccountPayable, BillCategory, BillTransaction, PaymentMethod, Supplier } from '../types';
+import { AccountPayable, BillCategory, BillTransaction, PayablePaymentMethod, Supplier } from '../types';
 import { fmt, fmtDate } from '../utils/formatting';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const todayStr = () => new Date().toISOString().split('T')[0];
+
+const formatCurrencyInput = (value: string) => {
+  const digits = value.replace(/\D/g, '');
+  if (!digits) return '';
+  const amount = parseInt(digits) / 100;
+  return amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
 
 const isBillOverdue = (b: AccountPayable) => {
   if (b.status === 'quitado' || b.status === 'cancelado') return false;
@@ -151,13 +158,13 @@ const CategoryManagerModal: React.FC<CatMgrProps> = ({ categories, onSave, onDel
 // ─── SettleBillModal ─────────────────────────────────────────────────────────
 interface SettleProps {
   bill: AccountPayable;
-  paymentMethods: PaymentMethod[];
+  paymentMethods: PayablePaymentMethod[];
   onSettle: (tx: { date: string; paidValue: number; interest: number; discount: number; paymentMethodId?: string; paymentMethodName?: string; receipt?: string; notes?: string }) => Promise<boolean>;
   onClose: () => void;
 }
 const SettleBillModal: React.FC<SettleProps> = ({ bill, paymentMethods, onSettle, onClose }) => {
   const [paidDate, setPaidDate] = useState(todayStr());
-  const [paidValue, setPaidValue] = useState(bill.remainingValue.toFixed(2).replace('.', ','));
+  const [paidValue, setPaidValue] = useState(formatCurrencyInput(bill.remainingValue.toFixed(2).replace('.', '')));
   const [interestOverride, setInterestOverride] = useState('');
   const [discount, setDiscount] = useState('');
   const [pmId, setPmId] = useState('');
@@ -165,11 +172,11 @@ const SettleBillModal: React.FC<SettleProps> = ({ bill, paymentMethods, onSettle
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const paidN    = parseFloat(paidValue.replace(',', '.')) || 0;
-  const discN    = parseFloat(discount.replace(',', '.')) || 0;
+  const paidN    = parseFloat(paidValue.replace(/\./g, '').replace(',', '.')) || 0;
+  const discN    = parseFloat(discount.replace(/\./g, '').replace(',', '.')) || 0;
   const effDue   = Math.max(0, bill.remainingValue - discN);          // principal after discount
   const autoInt  = Math.max(0, paidN - effDue);                       // excess = juros paid
-  const intN     = interestOverride !== '' ? (parseFloat(interestOverride.replace(',', '.')) || 0) : autoInt;
+  const intN     = interestOverride !== '' ? (parseFloat(interestOverride.replace(/\./g, '').replace(',', '.')) || 0) : autoInt;
   const applied  = Math.max(0, paidN - intN);                         // principal reduction
   const afterPay = Math.max(0, bill.remainingValue - discN - applied);
   const isFullSettlement = afterPay < 0.01;
@@ -225,9 +232,20 @@ const SettleBillModal: React.FC<SettleProps> = ({ bill, paymentMethods, onSettle
                 className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30" />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Valor Pago (R$)</label>
-              <input type="text" inputMode="decimal" value={paidValue} onChange={e => { setPaidValue(e.target.value); setInterestOverride(''); }}
-                className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30" />
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Valor Pago *</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">R$</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={paidValue}
+                  onChange={e => {
+                    setPaidValue(formatCurrencyInput(e.target.value));
+                    setInterestOverride('');
+                  }}
+                  className="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30"
+                />
+              </div>
             </div>
           </div>
 
@@ -240,16 +258,31 @@ const SettleBillModal: React.FC<SettleProps> = ({ bill, paymentMethods, onSettle
                   <span className="text-amber-500 font-bold normal-case">(auto)</span>
                 )}
               </label>
-              <input type="text" inputMode="decimal"
-                value={interestOverride !== '' ? interestOverride : (autoInt > 0 ? autoInt.toFixed(2).replace('.', ',') : '')}
-                onChange={e => setInterestOverride(e.target.value)}
-                placeholder="0,00"
-                className="w-full px-3 py-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/30" />
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-amber-500">R$</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={interestOverride !== '' ? interestOverride : (autoInt > 0 ? formatCurrencyInput(autoInt.toFixed(2).replace('.', '')) : '')}
+                  onChange={e => setInterestOverride(formatCurrencyInput(e.target.value))}
+                  placeholder="0,00"
+                  className="w-full pl-9 pr-3 py-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/30 font-bold"
+                />
+              </div>
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Desconto (R$)</label>
-              <input type="text" inputMode="decimal" value={discount} onChange={e => setDiscount(e.target.value)} placeholder="0,00"
-                className="w-full px-3 py-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-400/30" />
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Desconto</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-green-500">R$</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={discount}
+                  onChange={e => setDiscount(formatCurrencyInput(e.target.value))}
+                  placeholder="0,00"
+                  className="w-full pl-9 pr-3 py-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-400/30 font-bold"
+                />
+              </div>
             </div>
           </div>
 
@@ -302,7 +335,7 @@ const SettleBillModal: React.FC<SettleProps> = ({ bill, paymentMethods, onSettle
 interface NewBillProps {
   categories: BillCategory[];
   suppliers: Supplier[];
-  paymentMethods: PaymentMethod[];
+  paymentMethods: PayablePaymentMethod[];
   editData?: AccountPayable | null;
   onSave: (ap: any) => Promise<any>;
   onClose: () => void;
@@ -313,7 +346,7 @@ const NewBillModal: React.FC<NewBillProps> = ({ categories, suppliers, paymentMe
   const [categoryId, setCategoryId] = useState(editData?.categoryId || '');
   const [supplierId, setSupplierId] = useState(editData?.supplierId || '');
   const [supplierName, setSupplierName] = useState(editData?.supplierName || '');
-  const [totalValue, setTotalValue] = useState(editData?.totalValue?.toFixed(2).replace('.', ',') || '');
+  const [totalValue, setTotalValue] = useState(editData?.totalValue ? formatCurrencyInput(editData.totalValue.toFixed(2).replace('.', '')) : '');
   const [dueDate, setDueDate] = useState(editData?.dueDate || todayStr());
   const [competenceDate, setCompetenceDate] = useState(editData?.competenceDate || '');
   const [recurrence, setRecurrence] = useState<'none' | 'monthly' | 'yearly'>(editData?.recurrence || 'none');
@@ -331,7 +364,7 @@ const NewBillModal: React.FC<NewBillProps> = ({ categories, suppliers, paymentMe
 
   const handleSave = async () => {
     if (!desc.trim()) return alert('Informe a descrição.');
-    const tv = parseFloat(totalValue.replace(',', '.'));
+    const tv = parseFloat(totalValue.replace(/\./g, '').replace(',', '.')) || 0;
     if (!tv || tv <= 0) return alert('Informe o valor total.');
     if (!dueDate) return alert('Informe a data de vencimento.');
     setSaving(true);
@@ -420,8 +453,14 @@ const NewBillModal: React.FC<NewBillProps> = ({ categories, suppliers, paymentMe
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Valor Total *</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">R$</span>
-                <input type="text" inputMode="decimal" value={totalValue} onChange={e => setTotalValue(e.target.value)} placeholder="0,00"
-                  className="w-full pl-9 pr-3 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30" />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={totalValue}
+                  onChange={e => setTotalValue(formatCurrencyInput(e.target.value))}
+                  placeholder="0,00"
+                  className="w-full pl-9 pr-3 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30"
+                />
               </div>
             </div>
             <div>
@@ -616,7 +655,7 @@ const BillRow: React.FC<BillRowProps> = ({ bill, category, canEdit, onSettle, on
 // ─── PayablesView ─────────────────────────────────────────────────────────────
 interface Props {
   accounts: AccountPayable[];
-  paymentMethods: PaymentMethod[];
+  paymentMethods: PayablePaymentMethod[];
   suppliers: Supplier[];
   categories: BillCategory[];
   onSave: (ap: any) => Promise<any>;

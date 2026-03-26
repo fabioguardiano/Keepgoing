@@ -528,6 +528,14 @@ export interface PaymentMethod {
   createdAt: string;
 }
 
+export interface PayablePaymentMethod {
+  id: string;
+  name: string;
+  active: boolean;
+  companyId?: string;
+  createdAt: string;
+}
+
 export interface AccountInstallment {
   id: string;
   number: number;
