@@ -38,6 +38,8 @@ interface SettingsViewProps {
     deadlineUrgentDays: number;
     onSetDeadlineWarningDays: (v: number) => void;
     onSetDeadlineUrgentDays: (v: number) => void;
+    idleTimeoutMinutes: number;
+    onSetIdleTimeoutMinutes: (v: number) => void;
     initialTab?: 'fluxo' | 'vendas' | 'empresa' | 'dados' | 'financeiro' | 'geral' | 'permissoes';
 }
 
@@ -72,6 +74,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     deadlineUrgentDays,
     onSetDeadlineWarningDays,
     onSetDeadlineUrgentDays,
+    idleTimeoutMinutes,
+    onSetIdleTimeoutMinutes,
     initialTab
 }) => {
     const [activeTab, setActiveTab] = useState<'fluxo' | 'vendas' | 'empresa' | 'dados' | 'financeiro' | 'geral' | 'permissoes'>(initialTab || 'fluxo');
@@ -197,6 +201,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             </div>
                         </div>
                     ) : activeTab === 'geral' ? (
+                        <>
                         <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
                             <div className="p-5 border-b border-slate-100">
                                 <h2 className="text-base font-bold text-slate-800">Geral</h2>
@@ -215,6 +220,45 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 </div>
                             </div>
                         </div>
+
+                        {/* Segurança de Sessão */}
+                        <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+                            <div className="p-5 border-b border-slate-100 flex items-center gap-3">
+                                <div className="p-2 bg-amber-50 rounded-xl text-amber-600">
+                                    <Shield size={16} />
+                                </div>
+                                <div>
+                                    <h2 className="text-base font-bold text-slate-800">Segurança de Sessão</h2>
+                                    <p className="text-[11px] text-slate-400 font-medium">Desloga automaticamente usuários inativos</p>
+                                </div>
+                            </div>
+                            <div className="p-6">
+                                <label className="block text-sm font-bold text-slate-700 mb-1">
+                                    Tempo de inatividade para deslogar
+                                </label>
+                                <p className="text-xs text-slate-400 mb-3">
+                                    Após esse tempo sem interação (mouse, teclado ou scroll), o sistema exibirá um aviso de 60 segundos antes de encerrar a sessão.
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                    {[5, 10, 15, 30, 60].map(min => (
+                                        <button
+                                            key={min}
+                                            onClick={() => onSetIdleTimeoutMinutes(min)}
+                                            className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all
+                                                ${idleTimeoutMinutes === min
+                                                    ? 'bg-primary/10 text-primary border-primary/20'
+                                                    : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'}`}
+                                        >
+                                            {min} min
+                                        </button>
+                                    ))}
+                                </div>
+                                <p className="mt-3 text-xs text-slate-400">
+                                    Configuração atual: <span className="font-bold text-slate-600">{idleTimeoutMinutes} minutos</span> de inatividade.
+                                </p>
+                            </div>
+                        </div>
+                        </>
                     ) : activeTab === 'fluxo' ? (
                         <>
                         <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">

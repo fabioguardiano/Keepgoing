@@ -6,6 +6,8 @@ import { PlaceholderView } from './components/PlaceholderView';
 import { TeamView } from './components/TeamView';
 import { ReportsView } from './components/ReportsView';
 import { SettingsView } from './components/SettingsView';
+import { IdleWarningModal } from './components/IdleWarningModal';
+import { useIdleTimer } from './hooks/useIdleTimer';
 import { RecentActivity } from './components/RecentActivity';
 import { DeliverySchedule } from './components/DeliverySchedule';
 import { ClientsView } from './components/ClientsView';
@@ -103,7 +105,15 @@ const App: React.FC = () => {
     permissionProfiles, handleSaveProfile, handleDeleteProfile,
     deadlineWarningDays, setDeadlineWarningDays,
     deadlineUrgentDays, setDeadlineUrgentDays,
+    idleTimeoutMinutes, setIdleTimeoutMinutes,
   } = useSettings(setOrders, setSales);
+
+  // Idle session timer
+  const { isWarning: idleWarning, secondsLeft: idleSecondsLeft, reset: resetIdleTimer } = useIdleTimer({
+    timeoutMinutes: idleTimeoutMinutes,
+    onLogout: handleLogout,
+    enabled: !!user,
+  });
 
   // Função de acesso por módulo para o usuário logado
   const getAccess = (module: import('./types').ModuleKey) =>
@@ -368,6 +378,8 @@ const App: React.FC = () => {
             deadlineUrgentDays={deadlineUrgentDays}
             onSetDeadlineWarningDays={v => setDeadlineWarningDays(v)}
             onSetDeadlineUrgentDays={v => setDeadlineUrgentDays(v)}
+            idleTimeoutMinutes={idleTimeoutMinutes}
+            onSetIdleTimeoutMinutes={v => setIdleTimeoutMinutes(v)}
           />
         );
       case 'Clientes':
@@ -520,6 +532,13 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
+      {idleWarning && (
+        <IdleWarningModal
+          secondsLeft={idleSecondsLeft}
+          onContinue={resetIdleTimer}
+          onLogout={handleLogout}
+        />
+      )}
       <Sidebar
         isOpen={isSidebarOpen}
         toggle={() => setIsSidebarOpen(!isSidebarOpen)}

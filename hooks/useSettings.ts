@@ -54,6 +54,9 @@ export const useSettings = (
   const [deadlineWarningDays, setDeadlineWarningDays] = useLocalStorage<number>('marmo_deadline_warning_days', 7);
   const [deadlineUrgentDays, setDeadlineUrgentDays] = useLocalStorage<number>('marmo_deadline_urgent_days', 3);
 
+  // Idle session timeout
+  const [idleTimeoutMinutes, setIdleTimeoutMinutes] = useLocalStorage<number>('marmo_idle_timeout_minutes', 15);
+
   // Production Phases
   const [phases, setPhases] = useLocalStorage<PhaseConfig[]>('marmo_phases', INITIAL_PHASES);
 
@@ -216,5 +219,6 @@ export const useSettings = (
     permissionProfiles, handleSaveProfile, handleDeleteProfile,
     deadlineWarningDays, setDeadlineWarningDays,
     deadlineUrgentDays, setDeadlineUrgentDays,
+    idleTimeoutMinutes, setIdleTimeoutMinutes,
   };
 };
