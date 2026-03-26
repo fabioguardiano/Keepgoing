@@ -521,6 +521,7 @@ export interface PaymentType {
 
 export interface PaymentMethod {
   id: string;
+  code?: string;
   name: string;
   category: PaymentCategory;
   type: 'avista' | 'aprazo';

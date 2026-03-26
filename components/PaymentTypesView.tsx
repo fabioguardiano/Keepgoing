@@ -4,7 +4,7 @@ import { PaymentType } from '../types';
 
 interface PaymentTypesViewProps {
   paymentTypes: PaymentType[];
-  onSaveType: (type: PaymentType) => void;
+  onSaveType: (type: PaymentType) => Promise<any> | void;
   onDeleteType?: (id: string) => void;
   hideHeader?: boolean;
 }
@@ -42,15 +42,24 @@ export const PaymentTypesView: React.FC<PaymentTypesViewProps> = ({ paymentTypes
     setIsModalOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const type: PaymentType = {
       id: editingType?.id || '',
       createdAt: editingType?.createdAt || new Date().toISOString(),
       ...formData
     };
-    onSaveType(type);
-    setIsModalOpen(false);
+    setSubmitting(true);
+    try {
+      await onSaveType(type);
+      setIsModalOpen(false);
+    } catch (err: any) {
+      alert(`Erro ao salvar: ${err?.message || 'Verifique sua conexão e tente novamente.'}`);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const filteredTypes = paymentTypes.filter(t => {
@@ -242,9 +251,10 @@ export const PaymentTypesView: React.FC<PaymentTypesViewProps> = ({ paymentTypes
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95"
+                  disabled={submitting}
+                  className="flex-1 px-6 py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95 disabled:opacity-60"
                 >
-                  Salvar Tipo
+                  {submitting ? 'Salvando...' : 'Salvar Tipo'}
                 </button>
               </div>
             </form>

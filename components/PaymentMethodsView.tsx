@@ -61,7 +61,8 @@ const getCategoryColor = (cat: string) => {
 
 const APRAZO_CATEGORIES = ['cartao_credito_prazo', 'boleto', 'cheque', 'BOLETO', 'CHEQUE', 'CARTÃO PARCELADO'];
 
-const emptyForm = (defaultCategory?: string): Partial<PaymentMethod> => ({
+const emptyForm = (defaultCategory?: string, nextCode?: string): Partial<PaymentMethod> => ({
+  code: nextCode || '',
   name: '',
   category: defaultCategory || '',
   type: 'avista',
@@ -77,10 +78,12 @@ export const PaymentMethodsView: React.FC<Props> = ({ paymentMethods, paymentTyp
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
-  const openNew = () => { 
+  const openNew = () => {
     const defaultCat = paymentTypes.filter(t => t.status === 'ativo')[0]?.name || '';
-    setForm(emptyForm(defaultCat)); 
-    setShowModal(true); 
+    const codes = paymentMethods.map(pm => parseInt(pm.code || '0')).filter(c => !isNaN(c));
+    const nextCode = (Math.max(0, ...codes) + 1).toString().padStart(2, '0');
+    setForm(emptyForm(defaultCat, nextCode));
+    setShowModal(true);
   };
   const openEdit = (pm: PaymentMethod) => { setForm({ ...pm }); setShowModal(true); };
 
@@ -97,9 +100,14 @@ export const PaymentMethodsView: React.FC<Props> = ({ paymentMethods, paymentTyp
   const handleSave = async () => {
     if (!form.name?.trim()) return alert('Informe o nome da forma de pagamento.');
     setSaving(true);
-    try { await onSave(form); setShowModal(false); }
-    catch { /* erro já alertado no hook */ }
-    finally { setSaving(false); }
+    try {
+      await onSave(form);
+      setShowModal(false);
+    } catch (err: any) {
+      alert(`Erro ao salvar: ${err?.message || 'Verifique sua conexão e tente novamente.'}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const avista  = paymentMethods.filter(p => p.type === 'avista');
@@ -120,10 +128,11 @@ export const PaymentMethodsView: React.FC<Props> = ({ paymentMethods, paymentTyp
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-slate-800 dark:text-white text-[12px] leading-tight">{pm.name}</span>
-                  <span className="text-[9px] font-mono font-bold text-slate-300 bg-slate-50 border border-slate-100 px-1.5 py-0 rounded-md tracking-tight select-all" title="ID da forma de pagamento">#{pm.id.slice(0, 8)}</span>
                   {!pm.active && <span className="text-[9px] bg-slate-100 text-slate-400 px-1.5 py-0 rounded-full font-bold uppercase tracking-tighter">Inativo</span>}
                 </div>
                 <div className="text-[10px] text-slate-400 font-medium mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                  {pm.code && <span className="font-mono text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{pm.code}</span>}
+                  {pm.code && <span className="text-slate-200">·</span>}
                   <span className="opacity-70 whitespace-nowrap">{getCategoryLabel(pm.category, paymentTypes)}</span>
                   {pm.type === 'aprazo' && pm.installments && pm.installments > 1 && (
                     <span className="bg-slate-50 px-1.5 py-0.5 rounded-md border border-slate-100 tracking-tight whitespace-nowrap">até {pm.installments}x</span>
@@ -187,15 +196,25 @@ export const PaymentMethodsView: React.FC<Props> = ({ paymentMethods, paymentTyp
             </div>
 
             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-              {/* Nome */}
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-1">Nome</label>
-                <input
-                  value={form.name || ''}
-                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="Ex: Cartão Crédito 6x"
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-sm text-slate-800 dark:text-white"
-                />
+              {/* Código + Nome */}
+              <div className="grid grid-cols-4 gap-3">
+                <div className="col-span-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-1">Código</label>
+                  <input
+                    value={form.code || ''}
+                    readOnly
+                    className="w-full p-2.5 bg-slate-100 dark:bg-slate-800/50 rounded-xl border-2 border-transparent outline-none font-bold text-sm text-slate-500 opacity-70 cursor-not-allowed"
+                  />
+                </div>
+                <div className="col-span-3">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-1">Nome</label>
+                  <input
+                    value={form.name || ''}
+                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                    placeholder="Ex: Cartão Crédito 6x"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-sm text-slate-800 dark:text-white"
+                  />
+                </div>
               </div>
 
               {/* Categoria */}

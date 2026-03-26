@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Layout, Check, ChevronRight, Plus, Trash2, Edit2, GripVertical, Info, Building2, MapPin, Phone, Mail, ShoppingBag, FileSpreadsheet, Download, Upload, AlertCircle, Loader2, Wallet, Shield, Bell } from 'lucide-react';
+import { Settings, Layout, Check, ChevronRight, Plus, Trash2, Edit2, GripVertical, Info, Building2, MapPin, Phone, Mail, ShoppingBag, FileSpreadsheet, Download, Upload, AlertCircle, Loader2, Wallet, Shield, Bell, ToggleLeft, ToggleRight, X, Pencil } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { PaymentTypesView } from './PaymentTypesView';
 import { PaymentMethodsView } from './PaymentMethodsView';
@@ -18,6 +18,9 @@ interface FinanceiroTabProps {
 const FinanceiroTabContent: React.FC<FinanceiroTabProps> = ({ payablePMs, onSave, onDelete, onToggle }) => {
   const [newName, setNewName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
 
   const handleAdd = async () => {
     if (!newName.trim()) return;
@@ -25,8 +28,23 @@ const FinanceiroTabContent: React.FC<FinanceiroTabProps> = ({ payablePMs, onSave
     try {
       await onSave({ name: newName.trim(), active: true });
       setNewName('');
+    } catch (err: any) {
+      alert(`Erro ao salvar: ${err?.message || 'Verifique sua conexão e tente novamente.'}`);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleEditSave = async (pm: { id: string; name: string; active: boolean }) => {
+    if (!editingName.trim()) return;
+    setEditSaving(true);
+    try {
+      await onSave({ id: pm.id, name: editingName.trim(), active: pm.active });
+      setEditingId(null);
+    } catch (err: any) {
+      alert(`Erro ao salvar: ${err?.message || 'Verifique sua conexão e tente novamente.'}`);
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -69,30 +87,70 @@ const FinanceiroTabContent: React.FC<FinanceiroTabProps> = ({ payablePMs, onSave
         ) : (
           <div className="space-y-2">
             {payablePMs.map(pm => (
-              <div key={pm.id} className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-100 rounded-2xl group">
-                <div className="flex items-center gap-3">
-                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${pm.active ? 'bg-emerald-400' : 'bg-slate-300'}`} />
-                  <span className={`text-sm font-bold ${pm.active ? 'text-slate-700' : 'text-slate-400 line-through'}`}>
-                    {pm.name}
-                  </span>
-                  <span className="text-[9px] font-mono font-bold text-slate-300 bg-white border border-slate-100 px-1.5 py-0 rounded-md tracking-tight select-all" title="ID da forma de pagamento">#{pm.id.slice(0, 8)}</span>
-                </div>
-                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                  <button
-                    onClick={() => onToggle(pm.id)}
-                    title={pm.active ? 'Desativar' : 'Ativar'}
-                    className={`p-1.5 rounded-lg text-xs font-bold transition-colors
-                      ${pm.active ? 'text-emerald-600 hover:bg-emerald-50' : 'text-slate-400 hover:bg-slate-100'}`}
-                  >
-                    <Check size={14} />
-                  </button>
-                  <button
-                    onClick={() => onDelete(pm.id)}
-                    className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
+              <div key={pm.id} className="p-3.5 bg-slate-50 border border-slate-100 rounded-2xl group">
+                {editingId === pm.id ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      autoFocus
+                      value={editingName}
+                      onChange={e => setEditingName(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') handleEditSave(pm); if (e.key === 'Escape') setEditingId(null); }}
+                      className="flex-1 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                    />
+                    <button
+                      onClick={() => handleEditSave(pm)}
+                      disabled={editSaving}
+                      className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
+                      title="Salvar"
+                    >
+                      <Check size={14} />
+                    </button>
+                    <button
+                      onClick={() => setEditingId(null)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
+                      title="Cancelar"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${pm.active ? 'bg-emerald-400' : 'bg-slate-300'}`} />
+                      <div className="min-w-0">
+                        <span className={`text-sm font-bold ${pm.active ? 'text-slate-700' : 'text-slate-400 line-through'}`}>
+                          {pm.name}
+                        </span>
+                        <p className="text-[9px] font-mono text-slate-300 select-all" title="ID">#{pm.id.slice(0, 8)}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">
+                      <button
+                        onClick={() => { setEditingId(pm.id); setEditingName(pm.name); }}
+                        title="Renomear"
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-[var(--primary-color)] hover:bg-slate-100 transition-colors"
+                      >
+                        <Pencil size={13} />
+                      </button>
+                      <button
+                        onClick={() => onToggle(pm.id)}
+                        title={pm.active ? 'Desativar' : 'Ativar'}
+                        className="p-1.5 rounded-lg transition-colors text-slate-400 hover:bg-slate-100"
+                      >
+                        {pm.active
+                          ? <ToggleRight size={16} className="text-emerald-500" />
+                          : <ToggleLeft size={16} className="text-slate-300" />}
+                      </button>
+                      <button
+                        onClick={() => onDelete(pm.id)}
+                        title="Excluir"
+                        className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

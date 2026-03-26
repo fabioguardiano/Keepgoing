@@ -4,6 +4,7 @@ import { PaymentMethod } from '../types';
 
 const map = (r: any): PaymentMethod => ({
   id: r.id,
+  code: r.code ?? undefined,
   name: r.name,
   category: r.category,
   type: r.type,
@@ -44,6 +45,7 @@ export const usePaymentMethods = (companyId?: string) => {
     const payload = {
       id: pm.id && pm.id.length > 20 ? pm.id : undefined,
       company_id: companyId,
+      code: pm.code ?? null,
       name: pm.name,
       category: pm.category,
       type: pm.type,

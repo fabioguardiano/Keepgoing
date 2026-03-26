@@ -26,6 +26,24 @@ const STATUS_COLORS: Record<WorkOrder['status'], string> = {
   'Cancelada': 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
 };
 
+const PHASE_COLORS: Record<string, string> = {
+  'Serviço Lançado':    'bg-slate-100 text-slate-600',
+  'Medição':            'bg-cyan-100 text-cyan-700',
+  'Aprovação':          'bg-amber-100 text-amber-700',
+  'Corte':              'bg-orange-100 text-orange-700',
+  'Acabamento':         'bg-purple-100 text-purple-700',
+  'Conferência':        'bg-indigo-100 text-indigo-700',
+  'Serviço Finalizado': 'bg-green-100 text-green-700',
+  'A Retirar':          'bg-teal-100 text-teal-700',
+  'A Entregar':         'bg-blue-100 text-blue-700',
+  'Instalação':         'bg-sky-100 text-sky-700',
+  'Pós-Venda':          'bg-pink-100 text-pink-700',
+  'Entregue':           'bg-emerald-100 text-emerald-700',
+};
+
+const getPhaseColor = (phase?: string) =>
+  phase ? (PHASE_COLORS[phase] ?? 'bg-slate-100 text-slate-600') : 'bg-slate-100 text-slate-400';
+
 const fmtDate = (iso: string) => {
   try {
     return new Date(iso).toLocaleDateString('pt-BR');
@@ -40,7 +58,6 @@ const fmtLin = (v: number) => v > 0 ? v.toFixed(3).replace('.', ',') + ' m' : nu
 export const WorkOrdersView: React.FC<WorkOrdersViewProps> = ({
   workOrders,
   loading,
-  onUpdateStatus,
   onOpenSale,
 }) => {
   const [statusFilter, setStatusFilter] = useState<WorkOrder['status'] | 'Todos'>('Todos');
@@ -145,19 +162,14 @@ export const WorkOrdersView: React.FC<WorkOrdersViewProps> = ({
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <span className={`px-3 py-1 rounded-full text-xs font-black ${STATUS_COLORS[wo.status]}`}>
-                  {wo.status}
+                {wo.status === 'Cancelada' && (
+                  <span className={`px-3 py-1 rounded-full text-xs font-black ${STATUS_COLORS['Cancelada']}`}>
+                    Cancelada
+                  </span>
+                )}
+                <span className={`px-3 py-1 rounded-full text-xs font-black ${getPhaseColor(wo.productionPhase)}`}>
+                  {wo.productionPhase || 'Sem fase'}
                 </span>
-                <select
-                  value={wo.status}
-                  onChange={e => onUpdateStatus(wo.id, e.target.value as WorkOrder['status'])}
-                  className="text-xs font-bold px-2 py-1.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30 cursor-pointer"
-                >
-                  <option value="Aguardando">Aguardando</option>
-                  <option value="Em Produção">Em Produção</option>
-                  <option value="Concluído">Concluído</option>
-                  <option value="Entregue">Entregue</option>
-                </select>
               </div>
             </div>
 

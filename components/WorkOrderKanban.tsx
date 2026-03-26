@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Image as ImageIcon, Calendar, ChevronLeft, ChevronRight, UserRound, Clock } from 'lucide-react';
+import { Image as ImageIcon, Calendar, ChevronLeft, ChevronRight, UserRound, Clock, Maximize2, Minimize2 } from 'lucide-react';
 import { WorkOrder, PhaseConfig, AppUser } from '../types';
 import { WorkOrderModal } from './WorkOrderModal';
 import { formatOsLabel } from '../hooks/useWorkOrders';
@@ -333,6 +333,16 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
   onDeleteDrawing,
 }) => {
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrder | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Handle ESC key to exit fullscreen
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsFullscreen(false);
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, []);
 
   // Sync selectedWorkOrder whenever workOrders updates (add/delete drawing, phase change, etc.)
   useEffect(() => {
@@ -389,25 +399,74 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
     );
   }
 
+  const kanbanBoard = (
+    <DragDropContext onDragEnd={handleDragEnd}>
+      <div className={`h-full overflow-x-auto pb-4 ${isFullscreen ? 'px-6' : ''}`}>
+        <div className="flex gap-4 min-w-max px-1 py-1 h-full">
+          {phases.map(phase => (
+            <KanbanColumn
+              key={phase.name}
+              phase={phase}
+              workOrders={columnMap[phase.name] || []}
+              allWorkOrders={workOrders}
+              deadlineWarningDays={deadlineWarningDays}
+              deadlineUrgentDays={deadlineUrgentDays}
+              onCardClick={setSelectedWorkOrder}
+            />
+          ))}
+        </div>
+      </div>
+    </DragDropContext>
+  );
+
   return (
     <>
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="h-full overflow-x-auto pb-4">
-          <div className="flex gap-4 min-w-max px-1 py-1 h-full">
-            {phases.map(phase => (
-              <KanbanColumn
-                key={phase.name}
-                phase={phase}
-                workOrders={columnMap[phase.name] || []}
-                allWorkOrders={workOrders}
-                deadlineWarningDays={deadlineWarningDays}
-                deadlineUrgentDays={deadlineUrgentDays}
-                onCardClick={setSelectedWorkOrder}
-              />
-            ))}
+      <div className={`flex flex-col h-full bg-transparent relative ${isFullscreen ? 'fixed inset-0 z-[9999] bg-gray-50' : ''}`}>
+        {/* Botão de Controle - Sticky para ficar sempre visível ao rolar horizontalmente */}
+        <div className={`z-20 flex items-center justify-between p-4 sticky left-0 w-full ${isFullscreen ? 'border-b border-gray-200 bg-white mb-4' : 'pointer-events-none'}`}>
+          
+          <div className="flex items-center gap-3 pointer-events-auto">
+            {isFullscreen && (
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[var(--primary-color)]/10 rounded-xl">
+                  <Maximize2 size={18} className="text-[var(--primary-color)]" />
+                </div>
+                <div>
+                  <h2 className="text-base font-black text-gray-800 uppercase tracking-tight">Quadro de Produção — Live</h2>
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Monitoramento Ativo</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!isFullscreen && (
+              <button
+                onClick={() => setIsFullscreen(true)}
+                className="group flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 border-2 border-[var(--primary-color)]/20 text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white rounded-2xl shadow-lg transition-all transform hover:scale-105 active:scale-95"
+              >
+                <Maximize2 size={18} className="group-hover:rotate-12 transition-transform" />
+                <span className="text-xs font-black uppercase tracking-wider">Modo Monitor (Full Screen)</span>
+              </button>
+            )}
           </div>
+
+          {isFullscreen && (
+            <button
+              onClick={() => setIsFullscreen(false)}
+              className="pointer-events-auto flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-xl transition-all font-bold text-xs uppercase tracking-wider"
+            >
+              <Minimize2 size={16} />
+              Sair (ESC)
+            </button>
+          )}
         </div>
-      </DragDropContext>
+
+        <div className={`flex-1 overflow-hidden ${isFullscreen ? 'px-6' : ''}`}>
+          {kanbanBoard}
+        </div>
+      </div>
 
       {selectedWorkOrder && (
         <WorkOrderModal

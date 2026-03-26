@@ -82,7 +82,26 @@ export const useWorkOrders = (companyId?: string) => {
     }
   };
 
-  useEffect(() => { fetchWorkOrders(); }, [companyId]);
+  useEffect(() => {
+    fetchWorkOrders();
+    if (!companyId) return;
+
+    const channel = supabase
+      .channel('work_orders_realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'work_orders',
+        filter: `company_id=eq.${companyId}`
+      }, () => {
+        fetchWorkOrders();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [companyId]);
 
   // Retorna o próximo os_sub_number para um dado os_number (número do pedido)
   const getNextSubNumber = async (osNumber: number): Promise<number> => {
