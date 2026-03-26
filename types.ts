@@ -538,6 +538,7 @@ export interface PaymentMethod {
 
 export interface PayablePaymentMethod {
   id: string;
+  code?: string;
   name: string;
   active: boolean;
   companyId?: string;

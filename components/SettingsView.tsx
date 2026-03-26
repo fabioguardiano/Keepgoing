@@ -20,13 +20,19 @@ const FinanceiroTabContent: React.FC<FinanceiroTabProps> = ({ payablePMs, onSave
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [editingCode, setEditingCode] = useState('');
   const [editSaving, setEditSaving] = useState(false);
+
+  const nextCode = () => {
+    const codes = payablePMs.map(pm => parseInt(pm.code || '0')).filter(c => !isNaN(c) && c > 0);
+    return (Math.max(0, ...codes) + 1).toString().padStart(2, '0');
+  };
 
   const handleAdd = async () => {
     if (!newName.trim()) return;
     setSaving(true);
     try {
-      await onSave({ name: newName.trim(), active: true });
+      await onSave({ code: nextCode(), name: newName.trim(), active: true });
       setNewName('');
     } catch (err: any) {
       alert(`Erro ao salvar: ${err?.message || 'Verifique sua conexão e tente novamente.'}`);
@@ -35,11 +41,11 @@ const FinanceiroTabContent: React.FC<FinanceiroTabProps> = ({ payablePMs, onSave
     }
   };
 
-  const handleEditSave = async (pm: { id: string; name: string; active: boolean }) => {
+  const handleEditSave = async (pm: PayablePaymentMethod) => {
     if (!editingName.trim()) return;
     setEditSaving(true);
     try {
-      await onSave({ id: pm.id, name: editingName.trim(), active: pm.active });
+      await onSave({ id: pm.id, code: editingCode.trim() || pm.code, name: editingName.trim(), active: pm.active });
       setEditingId(null);
     } catch (err: any) {
       alert(`Erro ao salvar: ${err?.message || 'Verifique sua conexão e tente novamente.'}`);
@@ -75,7 +81,7 @@ const FinanceiroTabContent: React.FC<FinanceiroTabProps> = ({ payablePMs, onSave
             className="px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:opacity-90 disabled:opacity-40 transition-all flex items-center gap-1.5"
           >
             <Plus size={15} />
-            Adicionar
+            {saving ? 'Salvando...' : 'Adicionar'}
           </button>
         </div>
 
@@ -90,6 +96,12 @@ const FinanceiroTabContent: React.FC<FinanceiroTabProps> = ({ payablePMs, onSave
               <div key={pm.id} className="p-3.5 bg-slate-50 border border-slate-100 rounded-2xl group">
                 {editingId === pm.id ? (
                   <div className="flex items-center gap-2">
+                    <input
+                      value={editingCode}
+                      onChange={e => setEditingCode(e.target.value)}
+                      placeholder="Cód."
+                      className="w-14 px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-bold text-center focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                    />
                     <input
                       autoFocus
                       value={editingName}
@@ -117,16 +129,20 @@ const FinanceiroTabContent: React.FC<FinanceiroTabProps> = ({ payablePMs, onSave
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className={`w-2 h-2 rounded-full flex-shrink-0 ${pm.active ? 'bg-emerald-400' : 'bg-slate-300'}`} />
+                      {pm.code && (
+                        <span className="font-mono text-[11px] font-black text-slate-500 bg-slate-200 px-2 py-0.5 rounded flex-shrink-0">
+                          {pm.code}
+                        </span>
+                      )}
                       <div className="min-w-0">
                         <span className={`text-sm font-bold ${pm.active ? 'text-slate-700' : 'text-slate-400 line-through'}`}>
                           {pm.name}
                         </span>
-                        <p className="text-[9px] font-mono text-slate-300 select-all" title="ID">#{pm.id.slice(0, 8)}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">
                       <button
-                        onClick={() => { setEditingId(pm.id); setEditingName(pm.name); }}
+                        onClick={() => { setEditingId(pm.id); setEditingName(pm.name); setEditingCode(pm.code || ''); }}
                         title="Renomear"
                         className="p-1.5 rounded-lg text-slate-400 hover:text-[var(--primary-color)] hover:bg-slate-100 transition-colors"
                       >

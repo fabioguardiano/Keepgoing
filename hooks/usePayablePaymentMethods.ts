@@ -4,6 +4,7 @@ import { PayablePaymentMethod } from '../types';
 
 const map = (r: any): PayablePaymentMethod => ({
   id: r.id,
+  code: r.code ?? undefined,
   name: r.name,
   active: r.active ?? true,
   companyId: r.company_id,
@@ -39,6 +40,7 @@ export const usePayablePaymentMethods = (companyId?: string) => {
     const payload = {
       id: pm.id && pm.id.length > 20 ? pm.id : undefined,
       company_id: companyId,
+      code: pm.code ?? null,
       name: pm.name,
       active: pm.active,
     };
