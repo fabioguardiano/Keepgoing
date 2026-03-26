@@ -71,10 +71,11 @@ const FinanceiroTabContent: React.FC<FinanceiroTabProps> = ({ payablePMs, onSave
             {payablePMs.map(pm => (
               <div key={pm.id} className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-100 rounded-2xl group">
                 <div className="flex items-center gap-3">
-                  <div className={`w-2 h-2 rounded-full ${pm.active ? 'bg-emerald-400' : 'bg-slate-300'}`} />
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${pm.active ? 'bg-emerald-400' : 'bg-slate-300'}`} />
                   <span className={`text-sm font-bold ${pm.active ? 'text-slate-700' : 'text-slate-400 line-through'}`}>
                     {pm.name}
                   </span>
+                  <span className="text-[9px] font-mono font-bold text-slate-300 bg-white border border-slate-100 px-1.5 py-0 rounded-md tracking-tight select-all" title="ID da forma de pagamento">#{pm.id.slice(0, 8)}</span>
                 </div>
                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
                   <button

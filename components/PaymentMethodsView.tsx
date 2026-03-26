@@ -120,6 +120,7 @@ export const PaymentMethodsView: React.FC<Props> = ({ paymentMethods, paymentTyp
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-slate-800 dark:text-white text-[12px] leading-tight">{pm.name}</span>
+                  <span className="text-[9px] font-mono font-bold text-slate-300 bg-slate-50 border border-slate-100 px-1.5 py-0 rounded-md tracking-tight select-all" title="ID da forma de pagamento">#{pm.id.slice(0, 8)}</span>
                   {!pm.active && <span className="text-[9px] bg-slate-100 text-slate-400 px-1.5 py-0 rounded-full font-bold uppercase tracking-tighter">Inativo</span>}
                 </div>
                 <div className="text-[10px] text-slate-400 font-medium mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
