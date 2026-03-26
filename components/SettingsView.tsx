@@ -86,26 +86,6 @@ const FinanceiroTabContent: React.FC<FinanceiroTabProps> = ({ payablePMs, paymen
         </div>
       </div>
       <div className="p-6 space-y-4">
-        {/* Importar do Contas a Receber */}
-        {paymentMethods.length > 0 && (
-          <div className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-emerald-800">Importar do Contas a Receber</p>
-              <p className="text-[11px] text-emerald-600 mt-0.5">
-                Copia as {paymentMethods.length} formas já cadastradas para cá, gerando códigos automaticamente.
-              </p>
-            </div>
-            <button
-              onClick={handleImport}
-              disabled={importing}
-              className="px-3 py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 disabled:opacity-50 transition-all flex items-center gap-1.5 shrink-0"
-            >
-              <Download size={13} />
-              {importing ? 'Importando...' : 'Importar'}
-            </button>
-          </div>
-        )}
-
         {/* Add new */}
         <div className="flex gap-2">
           <input
