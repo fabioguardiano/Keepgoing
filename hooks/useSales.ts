@@ -38,6 +38,10 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
           paymentMethodName: s.payment_method_name || undefined,
           paymentInstallments: s.payment_installments || undefined,
           firstDueDate: s.first_due_date || undefined,
+          downPaymentValue: Number(s.down_payment_value || 0) || undefined,
+          downPaymentMethodId: s.down_payment_method_id || undefined,
+          downPaymentMethodName: s.down_payment_method_name || undefined,
+          downPaymentDueDate: s.down_payment_due_date || undefined,
           discountValue: Number(s.discount_value || s.discount || 0),
           discountPercentage: Number(s.discount_percentage || 0),
           totals: {
@@ -93,6 +97,10 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
         payment_method_name: s.paymentMethodName || null,
         payment_installments: s.paymentInstallments || null,
         first_due_date: s.firstDueDate || null,
+        down_payment_value: s.downPaymentValue || null,
+        down_payment_method_id: s.downPaymentMethodId || null,
+        down_payment_method_name: s.downPaymentMethodName || null,
+        down_payment_due_date: s.downPaymentDueDate || null,
         crm_notes: s.crmNotes || null
       };
 
@@ -126,6 +134,10 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
         paymentMethodName: savedRow.payment_method_name,
         paymentInstallments: savedRow.payment_installments,
         firstDueDate: savedRow.first_due_date,
+        downPaymentValue: Number(savedRow.down_payment_value || 0) || undefined,
+        downPaymentMethodId: savedRow.down_payment_method_id || undefined,
+        downPaymentMethodName: savedRow.down_payment_method_name || undefined,
+        downPaymentDueDate: savedRow.down_payment_due_date || undefined,
         discountValue: Number(savedRow.discount_value || savedRow.discount || 0),
         discountPercentage: Number(savedRow.discount_percentage || 0),
         totals: {

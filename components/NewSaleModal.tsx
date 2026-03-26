@@ -121,6 +121,11 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const [paymentMethodId, setPaymentMethodId] = useState(initialData?.paymentMethodId || '');
   const [paymentInstallments, setPaymentInstallments] = useState(initialData?.paymentInstallments || 1);
   const [firstDueDate, setFirstDueDate] = useState(initialData?.firstDueDate || '');
+  // Entrada (down payment)
+  const [downPaymentEnabled, setDownPaymentEnabled] = useState(!!(initialData?.downPaymentValue && initialData.downPaymentValue > 0));
+  const [downPaymentValue, setDownPaymentValue] = useState(initialData?.downPaymentValue || 0);
+  const [downPaymentMethodId, setDownPaymentMethodId] = useState(initialData?.downPaymentMethodId || '');
+  const [downPaymentDueDate, setDownPaymentDueDate] = useState(initialData?.downPaymentDueDate || '');
   const [deliveryDeadline, setDeliveryDeadline] = useState(initialData?.deliveryDeadline || '');
   const [discountValue, setDiscountValue] = useState(initialData?.discountValue || 0);
   const [discountPercentage, setDiscountPercentage] = useState(initialData?.discountPercentage || 0);
@@ -441,6 +446,40 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
       alert('Informe a Data do 1º Vencimento para confirmar o Pedido.');
       return;
     }
+    // Validação: nenhuma parcela pode estar em atraso
+    if (saleType === 'Pedido' && firstDueDate) {
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const first = new Date(firstDueDate + 'T12:00:00'); first.setHours(0, 0, 0, 0);
+      if (first < today) {
+        alert(`A data do 1º vencimento (${first.toLocaleDateString('pt-BR')}) já está em atraso.\n\nVolte para Orçamento e redefina as condições de pagamento.`);
+        return;
+      }
+    }
+    // Validação da entrada
+    if (saleType === 'Pedido' && downPaymentEnabled) {
+      if (!downPaymentValue || downPaymentValue <= 0) {
+        alert('Informe o valor da entrada.');
+        return;
+      }
+      if (downPaymentValue >= totalGeral) {
+        alert('O valor da entrada não pode ser igual ou maior que o total do pedido.');
+        return;
+      }
+      if (!downPaymentMethodId) {
+        alert('Informe a forma de pagamento da entrada.');
+        return;
+      }
+      if (!downPaymentDueDate) {
+        alert('Informe a data de vencimento da entrada.');
+        return;
+      }
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const dpDate = new Date(downPaymentDueDate + 'T12:00:00'); dpDate.setHours(0, 0, 0, 0);
+      if (dpDate < today) {
+        alert(`A data de vencimento da entrada (${dpDate.toLocaleDateString('pt-BR')}) já está em atraso.\n\nRedefina a data da entrada.`);
+        return;
+      }
+    }
 
     // Validação de desconto máximo
     const maxPct = companyInfo.maxDiscountPct;
@@ -476,6 +515,10 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
       paymentMethodName: selectedPm?.name || '',
       paymentInstallments: paymentInstallments || undefined,
       firstDueDate: firstDueDate || undefined,
+      downPaymentValue: downPaymentEnabled && downPaymentValue > 0 ? downPaymentValue : undefined,
+      downPaymentMethodId: downPaymentEnabled ? downPaymentMethodId || undefined : undefined,
+      downPaymentMethodName: downPaymentEnabled ? paymentMethods.find(p => p.id === downPaymentMethodId)?.name : undefined,
+      downPaymentDueDate: downPaymentEnabled ? downPaymentDueDate || undefined : undefined,
       deliveryDeadline,
       discountValue: calculatedDiscount,
       discountPercentage,
@@ -1041,8 +1084,62 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 <p className={`text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5 ${saleType === 'Pedido' ? 'text-[var(--primary-color)]' : 'text-slate-400'}`}>
                   Condições de Pagamento {saleType === 'Pedido' && <span className="text-red-400">*</span>}
                 </p>
+                {/* ── Entrada ── */}
                 <div>
-                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Forma de Pagamento</label>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={downPaymentEnabled}
+                      onChange={e => setDownPaymentEnabled(e.target.checked)}
+                      className="accent-[var(--primary-color)] w-3.5 h-3.5"
+                    />
+                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Cobrar Entrada</span>
+                  </label>
+                </div>
+                {downPaymentEnabled && (
+                  <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
+                    <p className="text-[8px] font-black text-amber-700 uppercase tracking-widest">Entrada</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Valor (R$)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={downPaymentValue || ''}
+                          onChange={e => setDownPaymentValue(parseFloat(e.target.value) || 0)}
+                          className="w-full p-1.5 bg-white rounded-lg border-2 border-transparent focus:border-amber-400 outline-none font-bold text-xs text-slate-800 transition-all"
+                          placeholder="0,00"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Vencimento</label>
+                        <input
+                          type="date"
+                          value={downPaymentDueDate}
+                          onChange={e => setDownPaymentDueDate(e.target.value)}
+                          className="w-full p-1.5 bg-white rounded-lg border-2 border-transparent focus:border-amber-400 outline-none font-bold text-xs text-slate-800 transition-all"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Forma de Pag. da Entrada</label>
+                      <select
+                        value={downPaymentMethodId}
+                        onChange={e => setDownPaymentMethodId(e.target.value)}
+                        className="w-full p-1.5 bg-white rounded-lg border-2 border-transparent focus:border-amber-400 outline-none font-bold text-xs text-slate-800 appearance-none transition-all"
+                      >
+                        <option value="">-- Selecione --</option>
+                        {paymentMethods.filter(p => p.active).map(p => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Forma de Pagamento{downPaymentEnabled && downPaymentValue > 0 ? ' do Restante' : ''}</label>
                   <select
                     value={paymentMethodId}
                     onChange={e => {
@@ -1087,22 +1184,38 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 {paymentMethodId && totalGeral > 0 && (() => {
                   const pm = paymentMethods.find(p => p.id === paymentMethodId);
                   if (!pm) return null;
+                  const dpValue = downPaymentEnabled && downPaymentValue > 0 ? downPaymentValue : 0;
+                  const baseForInstallments = totalGeral - dpValue;
                   const n = pm.type === 'aprazo' ? paymentInstallments : 1;
-                  const baseValue = Math.floor((totalGeral / n) * 100) / 100;
-                  const diff = Math.round((totalGeral - baseValue * n) * 100) / 100;
+                  const baseValue = Math.floor((baseForInstallments / n) * 100) / 100;
+                  const diff = Math.round((baseForInstallments - baseValue * n) * 100) / 100;
                   const fmtR = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                   const installmentValue = n > 1 ? baseValue + (diff > 0 ? diff : 0) : baseValue + diff;
+                  const dpPm = downPaymentEnabled && downPaymentMethodId ? paymentMethods.find(p => p.id === downPaymentMethodId) : null;
                   return (
-                    <div className="bg-[var(--primary-color)]/10 dark:bg-[var(--primary-color)]/20 rounded-lg p-2.5 border border-[var(--primary-color)]/20">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-[var(--primary-color)] mb-0.5">{pm.name}</p>
-                      {n === 1 ? (
-                        <p className="text-lg font-black text-[var(--primary-color)]">R$ {fmtR(totalGeral)} <span className="text-[10px] font-bold opacity-80 italic">à vista</span></p>
-                      ) : (
-                        <>
-                          <p className="text-lg font-black text-[var(--primary-color)]">{n}x de R$ {fmtR(installmentValue)}</p>
-                          <p className="text-[10px] text-[var(--primary-color)]/70 font-bold mt-0.5">Total: R$ {fmtR(totalGeral)}</p>
-                        </>
+                    <div className="space-y-1.5">
+                      {dpValue > 0 && (
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 flex items-center justify-between">
+                          <p className="text-[9px] font-black uppercase tracking-widest text-amber-700">{dpPm?.name || 'Entrada'}</p>
+                          <p className="text-sm font-black text-amber-700">R$ {fmtR(dpValue)}</p>
+                        </div>
                       )}
+                      <div className="bg-[var(--primary-color)]/10 dark:bg-[var(--primary-color)]/20 rounded-lg p-2.5 border border-[var(--primary-color)]/20">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-[var(--primary-color)] mb-0.5">{pm.name}{dpValue > 0 ? ' — Restante' : ''}</p>
+                        {n === 1 ? (
+                          <p className="text-lg font-black text-[var(--primary-color)]">R$ {fmtR(baseForInstallments)} <span className="text-[10px] font-bold opacity-80 italic">à vista</span></p>
+                        ) : (
+                          <>
+                            <p className="text-lg font-black text-[var(--primary-color)]">{n}x de R$ {fmtR(installmentValue)}</p>
+                            <p className="text-[10px] text-[var(--primary-color)]/70 font-bold mt-0.5">Restante: R$ {fmtR(baseForInstallments)}</p>
+                          </>
+                        )}
+                        {dpValue > 0 && (
+                          <p className="text-[9px] text-[var(--primary-color)]/60 font-bold mt-1 border-t border-[var(--primary-color)]/10 pt-1">
+                            Total do pedido: R$ {fmtR(totalGeral)}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   );
                 })()}

@@ -307,6 +307,10 @@ export interface OrderService {
   paymentMethodName?: string;
   paymentInstallments?: number;
   firstDueDate?: string;
+  downPaymentValue?: number;
+  downPaymentMethodId?: string;
+  downPaymentMethodName?: string;
+  downPaymentDueDate?: string;
   deliveryDeadline?: string;
   totals?: {
     vendas: number;

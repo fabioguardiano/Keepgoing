@@ -127,17 +127,17 @@ const App: React.FC = () => {
     if (s.status === 'Orçamento' && s.id) {
       const previousSale = sales.find(x => x.id === s.id);
       if (previousSale?.status === 'Pedido') {
-        const linkedAR = receivables.find(r => r.saleId === s.id && r.status !== 'cancelado');
-        if (linkedAR) {
-          const hasPaid = linkedAR.installments.some(i => i.status === 'pago');
-          if (hasPaid) {
-            throw new Error(
-              'Este pedido possui pagamentos registrados no Contas a Receber. ' +
-              'Estorne os pagamentos antes de retornar para Orçamento.'
-            );
-          }
-          // Nenhum pagamento recebido — cancela o AR (mantém histórico)
-          await handleSaveReceivable({ ...linkedAR, status: 'cancelado' });
+        // Cancela TODOS os ARs vinculados (entrada + parcelas regulares)
+        const linkedARs = receivables.filter(r => r.saleId === s.id && r.status !== 'cancelado');
+        const hasPaid = linkedARs.some(ar => ar.installments.some(i => i.status === 'pago'));
+        if (hasPaid) {
+          throw new Error(
+            'Este pedido possui pagamentos registrados no Contas a Receber. ' +
+            'Estorne os pagamentos antes de retornar para Orçamento.'
+          );
+        }
+        for (const ar of linkedARs) {
+          await handleSaveReceivable({ ...ar, status: 'cancelado' });
         }
       }
     }
@@ -147,51 +147,89 @@ const App: React.FC = () => {
       const savedSale = await saveSaleBase(s);
       const saleId = (savedSale as any)?.id || s.id;
 
-      // Auto-cria Conta a Receber quando venda vira Pedido com forma de pagamento
-      if (s.status === 'Pedido' && s.paymentMethodId && s.firstDueDate) {
-        // Ignora ARs cancelados para permitir recriação após retorno de orçamento
-        const existingAR = receivables.find(r => r.saleId === saleId && r.status !== 'cancelado');
-        if (!existingAR) {
-          const pm = paymentMethods.find(p => p.id === s.paymentMethodId);
-          const total = s.totals?.geral ?? s.totalValue ?? 0;
-          const n = s.paymentInstallments || 1;
-          const firstDate = new Date(s.firstDueDate + 'T12:00:00');
-          // Desconta a taxa da operadora: ela cobra installmentFee% por parcela (exceto a 1ª)
-          const fee = (pm?.installmentFee ?? 0);
-          const netTotal = fee > 0 && n > 1
-            ? Math.round(total * (1 - (fee * (n - 1)) / 100) * 100) / 100
-            : total;
-          const baseValue = Math.floor((netTotal / n) * 100) / 100;
-          const diff = Math.round((netTotal - baseValue * n) * 100) / 100;
-          const installments = Array.from({ length: n }, (_, i) => ({
-            id: crypto.randomUUID(),
-            number: i + 1,
-            dueDate: new Date(firstDate.getFullYear(), firstDate.getMonth() + i, firstDate.getDate()).toISOString().split('T')[0],
-            value: i === 0 ? baseValue + diff : baseValue,
-            status: 'pendente' as const,
-          }));
-          const feeNote = fee > 0 && n > 1
-            ? ` | Taxa operadora: ${fee}% × ${n - 1} = ${(fee * (n - 1)).toFixed(2)}% | Líquido: R$ ${netTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-            : '';
-          await handleSaveReceivable({
-            id: undefined as any,
-            description: `Venda ${s.orderNumber} — ${s.clientName}${feeNote}`,
-            clientId: s.clientId,
-            clientName: s.clientName || '',
-            saleId,
-            orderNumber: s.orderNumber || '',
-            totalValue: netTotal,
-            paidValue: 0,
-            installments,
-            paymentMethodId: s.paymentMethodId,
-            paymentMethodName: pm?.name || s.paymentMethodName || '',
-            category: 'Venda',
-            dueDate: s.firstDueDate,
-            notes: s.paymentConditions || '',
-            status: 'pendente',
-            companyId: activeCompanyId || '',
-            createdAt: new Date().toISOString(),
-          } as any);
+      // Auto-cria Conta(s) a Receber quando venda vira Pedido
+      if (s.status === 'Pedido') {
+        const existingARs = receivables.filter(r => r.saleId === saleId && r.status !== 'cancelado');
+
+        // ── AR de Entrada ──
+        if (s.downPaymentValue && s.downPaymentValue > 0 && s.downPaymentDueDate) {
+          const hasDownAR = existingARs.some(r => r.category === 'Entrada');
+          if (!hasDownAR) {
+            const dpPm = paymentMethods.find(p => p.id === s.downPaymentMethodId);
+            await handleSaveReceivable({
+              id: undefined as any,
+              description: `Entrada — Venda ${s.orderNumber} — ${s.clientName}`,
+              clientId: s.clientId,
+              clientName: s.clientName || '',
+              saleId,
+              orderNumber: s.orderNumber || '',
+              totalValue: s.downPaymentValue,
+              paidValue: 0,
+              remainingValue: s.downPaymentValue,
+              installments: [{
+                id: crypto.randomUUID(),
+                number: 1,
+                dueDate: s.downPaymentDueDate,
+                value: s.downPaymentValue,
+                status: 'pendente' as const,
+              }],
+              paymentMethodId: s.downPaymentMethodId,
+              paymentMethodName: dpPm?.name || s.downPaymentMethodName || '',
+              category: 'Entrada',
+              dueDate: s.downPaymentDueDate,
+              notes: '',
+              status: 'pendente',
+              companyId: activeCompanyId || '',
+              createdAt: new Date().toISOString(),
+            } as any);
+          }
+        }
+
+        // ── AR de Parcelas Regulares ──
+        if (s.paymentMethodId && s.firstDueDate) {
+          const hasRegularAR = existingARs.some(r => r.category === 'Venda');
+          if (!hasRegularAR) {
+            const pm = paymentMethods.find(p => p.id === s.paymentMethodId);
+            const grossTotal = s.totals?.geral ?? s.totalValue ?? 0;
+            const total = grossTotal - (s.downPaymentValue || 0);
+            const n = s.paymentInstallments || 1;
+            const firstDate = new Date(s.firstDueDate + 'T12:00:00');
+            const fee = (pm?.installmentFee ?? 0);
+            const netTotal = fee > 0 && n > 1
+              ? Math.round(total * (1 - (fee * (n - 1)) / 100) * 100) / 100
+              : total;
+            const baseValue = Math.floor((netTotal / n) * 100) / 100;
+            const diff = Math.round((netTotal - baseValue * n) * 100) / 100;
+            const installments = Array.from({ length: n }, (_, i) => ({
+              id: crypto.randomUUID(),
+              number: i + 1,
+              dueDate: new Date(firstDate.getFullYear(), firstDate.getMonth() + i, firstDate.getDate()).toISOString().split('T')[0],
+              value: i === 0 ? baseValue + diff : baseValue,
+              status: 'pendente' as const,
+            }));
+            const feeNote = fee > 0 && n > 1
+              ? ` | Taxa operadora: ${fee}% × ${n - 1} = ${(fee * (n - 1)).toFixed(2)}% | Líquido: R$ ${netTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+              : '';
+            await handleSaveReceivable({
+              id: undefined as any,
+              description: `Venda ${s.orderNumber} — ${s.clientName}${feeNote}`,
+              clientId: s.clientId,
+              clientName: s.clientName || '',
+              saleId,
+              orderNumber: s.orderNumber || '',
+              totalValue: netTotal,
+              paidValue: 0,
+              installments,
+              paymentMethodId: s.paymentMethodId,
+              paymentMethodName: pm?.name || s.paymentMethodName || '',
+              category: 'Venda',
+              dueDate: s.firstDueDate,
+              notes: s.paymentConditions || '',
+              status: 'pendente',
+              companyId: activeCompanyId || '',
+              createdAt: new Date().toISOString(),
+            } as any);
+          }
         }
       }
 
