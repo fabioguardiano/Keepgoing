@@ -1404,8 +1404,16 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
       {isClientModalOpen && (
         <ClientSelectModal 
           clients={clients} 
-          onSelect={(c) => { setSelectedClient(c); setIsClientModalOpen(false); }}
-          onClose={() => setIsClientModalOpen(false)}
+          onSelect={(c) => { 
+            setSelectedClient(c); 
+            setIsClientModalOpen(false); 
+            // Return focus and move to next
+            setTimeout(() => clientBtnRef.current?.focus(), 100);
+          }}
+          onClose={() => {
+            setIsClientModalOpen(false);
+            setTimeout(() => clientBtnRef.current?.focus(), 100);
+          }}
         />
       )}
       {printingSale && createPortal(
@@ -1582,7 +1590,10 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 <h2 className="text-base font-black text-slate-800 dark:text-white tracking-tight">Selecionar Produto / Serviço</h2>
                 <p className="text-xs text-slate-500 font-medium">Pesquise e clique para selecionar</p>
               </div>
-              <button onClick={() => setProductPickerOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 rounded-xl transition-colors">
+              <button onClick={() => {
+                setProductPickerOpen(false);
+                setTimeout(() => itemDescRef.current?.focus(), 100);
+              }} className="p-2 text-slate-400 hover:text-slate-600 rounded-xl transition-colors">
                 <X size={20} />
               </button>
             </div>
@@ -1609,6 +1620,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                       onClick={() => {
                         setItemDesc(item.label);
                         setProductPickerOpen(false);
+                        setTimeout(() => materialRef.current?.focus(), 100);
                       }}
                       className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-[var(--primary-color)] hover:bg-orange-50 dark:hover:bg-[var(--primary-color)]/5 transition-all text-left group"
                     >
@@ -1636,7 +1648,10 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 <h2 className="text-base font-black text-slate-800 dark:text-white tracking-tight">Selecionar Material</h2>
                 <p className="text-xs text-slate-500 font-medium">Matéria Prima, Acabamentos e Produtos de Revenda</p>
               </div>
-              <button onClick={() => setMaterialPickerOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 rounded-xl transition-colors">
+              <button onClick={() => {
+                setMaterialPickerOpen(false);
+                setTimeout(() => materialRef.current?.focus(), 100);
+              }} className="p-2 text-slate-400 hover:text-slate-600 rounded-xl transition-colors">
                 <X size={20} />
               </button>
             </div>
@@ -1675,6 +1690,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                           setItemWidth(0);
                         }
                         setMaterialPickerOpen(false);
+                        setTimeout(() => qtyRef.current?.focus(), 100);
                       }}
                       className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-[var(--primary-color)] hover:bg-orange-50 dark:hover:bg-[var(--primary-color)]/5 transition-all text-left group"
                     >
