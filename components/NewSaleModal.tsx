@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, User, ShoppingBag, Plus, Trash2, Calculator, Save, FileText, Search, Tag, Users, Printer, Edit2, RotateCcw, Check, GripVertical, PlusCircle, Copy, Pencil, Lock, AlertTriangle, Eye, ClipboardList } from 'lucide-react';
 import { SalesOrder, OrderItem, Client, Architect, AppUser, SalesChannel, Material, ProductService, CompanyInfo, SalesPhaseConfig, ServiceGroup, PaymentMethod, WorkOrder, DiscountAuthorization } from '../types';
 import { ClientSelectModal } from './ClientSelectModal';
@@ -148,6 +148,17 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const [materialSearch, setMaterialSearch] = useState('');
   const [materialSwap, setMaterialSwap] = useState<{ env: string; newMaterialName: string; toReplace: string[] } | null>(null);
 
+  // Refs for focus management
+  const itemDescRef = useRef<HTMLInputElement>(null);
+  const materialRef = useRef<HTMLInputElement>(null);
+  const qtyRef = useRef<HTMLInputElement>(null);
+  const lengthRef = useRef<HTMLInputElement>(null);
+  const widthRef = useRef<HTMLInputElement>(null);
+  const priceRef = useRef<HTMLInputElement>(null);
+  const serviceRef = useRef<HTMLInputElement>(null);
+  const newEnvRef = useRef<HTMLInputElement>(null);
+  const clientBtnRef = useRef<HTMLButtonElement>(null);
+
   const environments = Array.from(new Set([...items.map(i => i.environment || 'Sem Ambiente'), activeEnvironment, newEnvironmentName].filter(Boolean)));
 
   // True when the selected material is an Acabamento or Produto de Revenda (no dimensions needed)
@@ -253,6 +264,9 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
     setItemPrice(0);
     setItemService(0);
     setItemMaterialId('');
+    
+    // Auto-focus back to description for next item
+    setTimeout(() => itemDescRef.current?.focus(), 100);
   };
 
   const removeItem = (id: string) => {
@@ -287,7 +301,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
     setEditingItemId(null);
   };
 
-  const handleDescKeyDown = (e: React.KeyboardEvent) => {
+  const handleDescKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Tab' && itemDesc) {
       const combined = [
         ...services.map(s => s.description),
@@ -298,9 +312,25 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
         setItemDesc(filtered[0]);
       }
     }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      // If there's a match, use it, otherwise open picker
+      const combined = [
+        ...services.map(s => s.description),
+        ...products.map(p => p.description)
+      ];
+      const filtered = combined.filter(d => d.toLowerCase().includes(itemDesc.toLowerCase()));
+      if (filtered.length === 1) {
+        setItemDesc(filtered[0]);
+        materialRef.current?.focus();
+      } else {
+        setProductSearch(itemDesc);
+        setProductPickerOpen(true);
+      }
+    }
   };
 
-  const handleMaterialKeyDown = (e: React.KeyboardEvent) => {
+  const handleMaterialKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Tab' && itemMaterialId) {
       const filtered = materials.filter(m => m.name.toLowerCase().includes(itemMaterialId.toLowerCase()));
       if (filtered.length === 1 && itemMaterialId !== filtered[0].name) {
@@ -308,6 +338,19 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
         setItemMaterialId(mat.name);
         if (mat.sellingPrice) setItemPrice(mat.sellingPrice);
         if (!itemDesc) setItemDesc(mat.name);
+      }
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const filtered = materials.filter(m => m.name.toLowerCase().includes(itemMaterialId.toLowerCase()));
+      if (filtered.length === 1) {
+        const mat = filtered[0];
+        setItemMaterialId(mat.name);
+        if (mat.sellingPrice) setItemPrice(mat.sellingPrice);
+        qtyRef.current?.focus();
+      } else {
+        setMaterialSearch(itemMaterialId);
+        setMaterialPickerOpen(true);
       }
     }
   };
@@ -688,9 +731,16 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
               <div className="md:col-span-3">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">Cliente</label>
-                <div
+                <button
+                  type="button"
+                  ref={clientBtnRef}
                   onClick={() => setIsClientModalOpen(true)}
-                  className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent hover:border-[var(--primary-color)] rounded-xl cursor-pointer transition-all group"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ' || e.key.length === 1) {
+                      setIsClientModalOpen(true);
+                    }
+                  }}
+                  className="flex items-center justify-between w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent hover:border-[var(--primary-color)] focus:border-[var(--primary-color)] rounded-xl cursor-pointer transition-all group outline-none"
                 >
                   <div className="flex items-center gap-2">
                     <User size={16} className="text-slate-400 group-hover:text-[var(--primary-color)]" />
@@ -699,7 +749,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     </span>
                   </div>
                   <Search size={16} className="text-slate-400" />
-                </div>
+                </button>
               </div>
             </div>
 
@@ -950,55 +1000,104 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                               {/* Add Item Row per Environment */}
                               <tr className="bg-slate-50/30 dark:bg-slate-800/20">
                                 <td className="p-1.5 pl-4">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setActiveEnvironment(env === 'Sem Ambiente' ? '' : env);
-                                      setProductSearch('');
-                                      setProductPickerOpen(true);
-                                    }}
-                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none hover:border-[var(--primary-color)] transition-colors text-left truncate"
-                                  >
-                                    {activeEnvironment === (env === 'Sem Ambiente' ? '' : env) && itemDesc
-                                      ? <span className="text-slate-800 dark:text-white">{itemDesc}</span>
-                                      : <span className="text-slate-400">Descrição...</span>
-                                    }
-                                  </button>
+                                  <div className="relative group">
+                                    <input
+                                      type="text"
+                                      ref={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemDescRef : null}
+                                      placeholder="Descrição..."
+                                      value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemDesc : ''}
+                                      onChange={e => {
+                                        setActiveEnvironment(env === 'Sem Ambiente' ? '' : env);
+                                        setItemDesc(e.target.value);
+                                      }}
+                                      onKeyDown={handleDescKeyDown}
+                                      onFocus={() => setActiveEnvironment(env === 'Sem Ambiente' ? '' : env)}
+                                      autoComplete="off"
+                                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] transition-colors pr-8"
+                                    />
+                                    <button
+                                      type="button"
+                                      tabIndex={-1}
+                                      onClick={() => {
+                                        setActiveEnvironment(env === 'Sem Ambiente' ? '' : env);
+                                        setProductSearch(itemDesc);
+                                        setProductPickerOpen(true);
+                                      }}
+                                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-300 hover:text-[var(--primary-color)] p-1"
+                                    >
+                                      <Search size={14} />
+                                    </button>
+                                  </div>
                                 </td>
                                 <td className="p-1.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setActiveEnvironment(env === 'Sem Ambiente' ? '' : env);
-                                      setMaterialSearch('');
-                                      setMaterialPickerOpen(true);
-                                    }}
-                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none hover:border-[var(--primary-color)] transition-colors text-left truncate"
-                                  >
-                                    {activeEnvironment === (env === 'Sem Ambiente' ? '' : env) && itemMaterialId
-                                      ? <span className="text-slate-800 dark:text-white">{itemMaterialId}</span>
-                                      : <span className="text-slate-400">Matéria Prima...</span>
-                                    }
-                                  </button>
+                                  <div className="relative group">
+                                    <input
+                                      type="text"
+                                      ref={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? materialRef : null}
+                                      placeholder="Matéria Prima..."
+                                      value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemMaterialId : ''}
+                                      onChange={e => {
+                                        setActiveEnvironment(env === 'Sem Ambiente' ? '' : env);
+                                        setItemMaterialId(e.target.value);
+                                      }}
+                                      onKeyDown={handleMaterialKeyDown}
+                                      onFocus={() => setActiveEnvironment(env === 'Sem Ambiente' ? '' : env)}
+                                      autoComplete="off"
+                                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] transition-colors pr-8"
+                                    />
+                                    <button
+                                      type="button"
+                                      tabIndex={-1}
+                                      onClick={() => {
+                                        setActiveEnvironment(env === 'Sem Ambiente' ? '' : env);
+                                        setMaterialSearch(itemMaterialId);
+                                        setMaterialPickerOpen(true);
+                                      }}
+                                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-300 hover:text-[var(--primary-color)] p-1"
+                                    >
+                                      <Search size={14} />
+                                    </button>
+                                  </div>
                                 </td>
-                                <td className="p-1.5"><input type="number" step="1" value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemQty : 1} onChange={e => setItemQty(parseFloat(e.target.value))} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" /></td>
+                                <td className="p-1.5"><input type="number" step="1" ref={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? qtyRef : null} value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemQty : 1} onFocus={() => setActiveEnvironment(env === 'Sem Ambiente' ? '' : env)} onChange={e => setItemQty(parseFloat(e.target.value))} onKeyDown={e => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    const next = isProductMaterial ? priceRef.current : lengthRef.current;
+                                    next ? next.focus() : addItem();
+                                  }
+                                }} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" /></td>
                                 <td className="p-1.5">
                                   {isProductMaterial && activeEnvironment === (env === 'Sem Ambiente' ? '' : env)
                                     ? <div className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] text-slate-400 text-center">—</div>
-                                    : <input type="number" step="0.001" value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemLength : 0} onChange={e => setItemLength(parseFloat(e.target.value))} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" />
+                                    : <input type="number" step="0.001" ref={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? lengthRef : null} value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemLength : 0} onChange={e => setItemLength(parseFloat(e.target.value))} onKeyDown={e => {
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          widthRef.current?.focus();
+                                        }
+                                      }} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" />
                                   }
                                 </td>
                                 <td className="p-1.5">
                                   {isProductMaterial && activeEnvironment === (env === 'Sem Ambiente' ? '' : env)
                                     ? <div className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] text-slate-400 text-center">—</div>
-                                    : <input type="number" step="0.001" value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemWidth : 0} onChange={e => setItemWidth(parseFloat(e.target.value))} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" />
+                                    : <input type="number" step="0.001" ref={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? widthRef : null} value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemWidth : 0} onChange={e => setItemWidth(parseFloat(e.target.value))} onKeyDown={e => {
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          priceRef.current?.focus();
+                                        }
+                                      }} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" />
                                   }
                                 </td>
                                 <td className="p-1.5 text-center text-[10px] font-black text-slate-400">
                                   {isProductMaterial && activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? '—' : activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? calculateM2(itemLength, itemWidth, itemQty).toFixed(2) : '0.00'}
                                 </td>
-                                <td className="p-1.5"><input type="number" step="0.01" value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemPrice : 0} onChange={e => setItemPrice(parseFloat(e.target.value))} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-right" /></td>
-                                <td className="p-1.5"><input type="number" step="0.1" value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemService : 0} onChange={e => setItemService(parseFloat(e.target.value))} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" /></td>
+                                <td className="p-1.5"><input type="number" step="0.01" ref={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? priceRef : null} value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemPrice : 0} onChange={e => setItemPrice(parseFloat(e.target.value))} onKeyDown={e => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    serviceRef.current?.focus();
+                                  }
+                                }} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-right" /></td>
+                                <td className="p-1.5"><input type="number" step="0.1" ref={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? serviceRef : null} value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemService : 0} onChange={e => setItemService(parseFloat(e.target.value))} onKeyDown={e => e.key === 'Enter' && addItem()} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" /></td>
                                 <td className="p-1.5 text-right text-[10px] font-black text-[var(--primary-color)] whitespace-nowrap">
                                   R$ {activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? (calculateItemTotal() || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}
                                 </td>
@@ -1028,17 +1127,29 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 <div className="flex-1">
                   <input
                     type="text"
+                    ref={newEnvRef}
                     placeholder="Nome do Novo Ambiente (ex: Lavanderia, Suíte Master...)"
                     value={newEnvironmentName}
                     onChange={e => setNewEnvironmentName(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && newEnvironmentName.trim()) {
+                        const envName = newEnvironmentName.trim();
+                        setActiveEnvironment(envName);
+                        setNewEnvironmentName('');
+                        // Focus the first item field of the newly created environment table
+                        setTimeout(() => itemDescRef.current?.focus(), 100);
+                      }
+                    }}
                     className="w-full p-2.5 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-xl outline-none font-bold text-sm text-slate-800 dark:text-white focus:border-[var(--primary-color)] transition-all"
                   />
                 </div>
                 <button
                   onClick={() => {
                     if (newEnvironmentName.trim()) {
-                      setActiveEnvironment(newEnvironmentName.trim());
+                      const envName = newEnvironmentName.trim();
+                      setActiveEnvironment(envName);
                       setNewEnvironmentName('');
+                      setTimeout(() => itemDescRef.current?.focus(), 100);
                     }
                   }}
                   className="px-5 py-2.5 bg-white dark:bg-slate-800 text-[var(--primary-color)] border-2 border-orange-100 dark:border-slate-700 rounded-xl font-black text-sm hover:bg-orange-50 transition-all flex items-center gap-2 shadow-sm"

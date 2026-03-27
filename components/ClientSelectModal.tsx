@@ -40,6 +40,11 @@ export const ClientSelectModal: React.FC<ClientSelectModalProps> = ({ clients, o
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-2xl outline-none transition-all font-medium text-slate-800 dark:text-white"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && filteredClients.length > 0) {
+                  onSelect(filteredClients[0]);
+                }
+              }}
             />
           </div>
 
