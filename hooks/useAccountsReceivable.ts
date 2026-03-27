@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { AccountReceivable } from '../types';
+import { AccountReceivable, ActivityLog } from '../types';
+
+type LogFn = (action: ActivityLog['action'], details: string, referenceId?: string, orderNumber?: string, module?: string, entityType?: string) => Promise<void>;
 
 const map = (r: any): AccountReceivable => ({
   id: r.id,
@@ -23,7 +25,7 @@ const map = (r: any): AccountReceivable => ({
   createdAt: r.created_at,
 });
 
-export const useAccountsReceivable = (companyId?: string) => {
+export const useAccountsReceivable = (companyId?: string, logActivity?: LogFn) => {
   const [receivables, setReceivables] = useState<AccountReceivable[]>([]);
   const [loadingAR, setLoadingAR] = useState(true);
 
@@ -50,6 +52,7 @@ export const useAccountsReceivable = (companyId?: string) => {
 
   const handleSaveReceivable = async (ar: Omit<AccountReceivable, 'remainingValue'> & { id?: string }) => {
     if (!companyId) return;
+    const isNew = !ar.id || ar.id.length <= 20;
     const paidValue = ar.paidValue ?? 0;
     const payload: any = {
       id: ar.id && ar.id.length > 20 ? ar.id : undefined,
@@ -77,13 +80,27 @@ export const useAccountsReceivable = (companyId?: string) => {
         ? prev.map(x => x.id === saved.id ? saved : x)
         : [saved, ...prev]
     );
+    if (logActivity) {
+      await logActivity(
+        isNew ? 'create' : 'update',
+        `${isNew ? 'Criou' : 'Atualizou'} conta a receber: ${ar.description} (${ar.clientName || 'sem cliente'})`,
+        saved.id,
+        undefined,
+        'financeiro',
+        'account_receivable',
+      );
+    }
     return saved;
   };
 
   const deleteReceivable = async (id: string) => {
+    const rec = receivables.find(x => x.id === id);
     const { error } = await supabase.from('accounts_receivable').delete().eq('id', id);
     if (error) throw error;
     setReceivables(prev => prev.filter(x => x.id !== id));
+    if (logActivity && rec) {
+      await logActivity('delete', `Excluiu conta a receber: ${rec.description}`, id, undefined, 'financeiro', 'account_receivable');
+    }
   };
 
   // Registra pagamento de uma parcela — busca registro fresco para evitar race condition
@@ -105,6 +122,9 @@ export const useAccountsReceivable = (companyId?: string) => {
       : totalPaid > 0 ? 'parcial'
       : 'pendente';
     await handleSaveReceivable({ ...ar, installments: updatedInstallments, paidValue: totalPaid, status: newStatus });
+    if (logActivity) {
+      await logActivity('update', `Registrou pagamento de parcela: ${ar.description} — R$ ${paidValue.toFixed(2)}`, arId, undefined, 'financeiro', 'account_receivable');
+    }
   };
 
   const unpayInstallment = async (arId: string, installmentId: string) => {
@@ -125,6 +145,9 @@ export const useAccountsReceivable = (companyId?: string) => {
       : totalPaid > 0 ? 'parcial'
       : 'pendente';
     await handleSaveReceivable({ ...ar, installments: updatedInstallments, paidValue: totalPaid, status: newStatus });
+    if (logActivity) {
+      await logActivity('update', `Estornou pagamento de parcela: ${ar.description}`, arId, undefined, 'financeiro', 'account_receivable');
+    }
   };
 
   return { receivables, loadingAR, handleSaveReceivable, deleteReceivable, payInstallment, unpayInstallment, refreshAR: fetchReceivables };

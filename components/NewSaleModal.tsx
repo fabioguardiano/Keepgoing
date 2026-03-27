@@ -12,7 +12,7 @@ import { supabase } from '../lib/supabase';
 
 interface NewSaleModalProps {
   onClose: () => void;
-  onSave: (sale: SalesOrder) => void;
+  onSave: (sale: SalesOrder, keepOpen?: boolean) => void;
   clients: Client[];
   architects: Architect[];
   appUsers: AppUser[];
@@ -159,6 +159,31 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const serviceRef = useRef<HTMLInputElement>(null);
   const newEnvRef = useRef<HTMLInputElement>(null);
   const clientBtnRef = useRef<HTMLButtonElement>(null);
+  const [hasStartedEditing, setHasStartedEditing] = useState(false);
+
+  // Prevent accidental close/refresh
+  useEffect(() => {
+    const hasUnsavedChanges = items.length > 0;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = ''; 
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [items.length]);
+
+  const handleClose = () => {
+    if (items.length > 0) {
+      if (confirm('Existem itens no orçamento que podem ser perdidos. Tem certeza que deseja fechar?')) {
+        onClose();
+      }
+    } else {
+      onClose();
+    }
+  };
 
   const environments = Array.from(new Set([...items.map(i => i.environment || 'Sem Ambiente'), activeEnvironment, newEnvironmentName].filter(Boolean)));
 
@@ -472,8 +497,9 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const safeDiscVal = isFinite(discountValue)      ? discountValue      : 0;
   const calculatedDiscount = safeDiscPct > 0 ? (subtotal * (safeDiscPct / 100)) : safeDiscVal;
   const totalGeral = subtotal - calculatedDiscount;
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async (keepOpen: boolean = false) => {
     if (!selectedClient) {
       alert('Selecione um cliente');
       return;
@@ -576,8 +602,17 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
       imageUrls: initialData?.imageUrls || []
     };
 
-    onSave(newSale);
-    onClose();
+    setIsSaving(true);
+    try {
+      await onSave(newSale, keepOpen);
+      if (keepOpen) {
+        alert('Orçamento gravado com sucesso!');
+      } else {
+        onClose();
+      }
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleRevertConfirm = async () => {
@@ -1380,12 +1415,22 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                       <Eye size={14} /> Somente leitura — use "Reverter para Orçamento" para editar
                     </div>
                   ) : (
-                    <button
-                      onClick={handleSave}
-                      className="px-4 py-2.5 bg-[var(--primary-color)] text-white rounded-xl font-black shadow-xl shadow-[var(--primary-color)]/30 hover:opacity-90 transition-all flex items-center gap-2 text-xs"
-                    >
-                      <Save size={16} /> Gravar {saleType}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleSave(true)}
+                        disabled={isSaving}
+                        className="px-4 py-2.5 bg-white dark:bg-slate-800 border-2 border-[var(--primary-color)] text-[var(--primary-color)] rounded-xl font-black hover:bg-orange-50 dark:hover:bg-slate-700 transition-all flex items-center gap-2 text-xs disabled:opacity-50"
+                      >
+                        {isSaving ? 'Gravando...' : 'Gravar'}
+                      </button>
+                      <button
+                        onClick={() => handleSave(false)}
+                        disabled={isSaving}
+                        className="px-4 py-2.5 bg-[var(--primary-color)] text-white rounded-xl font-black shadow-xl shadow-[var(--primary-color)]/30 hover:opacity-90 transition-all flex items-center gap-2 text-xs disabled:opacity-50"
+                      >
+                        {isSaving ? 'Gravando...' : 'Gravar e Sair'}
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -1396,7 +1441,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
             {initialData?.id && (
               <CRMSection 
                 sale={initialData} 
-                onSaveSale={onSave} 
+                onSaveSale={(sale) => onSave(sale, true)} 
                 currentUser={appUsers.find(u => u.name === seller) || null}
               />
             )}

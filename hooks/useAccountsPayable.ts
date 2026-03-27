@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { AccountPayable } from '../types';
+import { AccountPayable, ActivityLog } from '../types';
+
+type LogFn = (action: ActivityLog['action'], details: string, referenceId?: string, orderNumber?: string, module?: string, entityType?: string) => Promise<void>;
 
 const map = (r: any): AccountPayable => ({
   id: r.id,
@@ -25,7 +27,7 @@ const map = (r: any): AccountPayable => ({
   createdAt: r.created_at,
 });
 
-export const useAccountsPayable = (companyId?: string) => {
+export const useAccountsPayable = (companyId?: string, logActivity?: LogFn) => {
   const [payables, setPayables] = useState<AccountPayable[]>([]);
   const [loadingAP, setLoadingAP] = useState(true);
 
@@ -52,6 +54,7 @@ export const useAccountsPayable = (companyId?: string) => {
 
   const handleSavePayable = async (ap: Omit<AccountPayable, 'remainingValue'> & { id?: string }) => {
     if (!companyId) return;
+    const isNew = !ap.id || ap.id.length <= 20;
     const paidValue = ap.paidValue ?? 0;
     const payload: any = {
       id: ap.id && ap.id.length > 20 ? ap.id : undefined,
@@ -80,13 +83,27 @@ export const useAccountsPayable = (companyId?: string) => {
         ? prev.map(x => x.id === saved.id ? saved : x)
         : [saved, ...prev]
     );
+    if (logActivity) {
+      await logActivity(
+        isNew ? 'create' : 'update',
+        `${isNew ? 'Criou' : 'Atualizou'} conta a pagar: ${ap.description} (${ap.supplierName || 'sem fornecedor'})`,
+        saved.id,
+        undefined,
+        'financeiro',
+        'account_payable',
+      );
+    }
     return saved;
   };
 
   const deletePayable = async (id: string) => {
+    const bill = payables.find(x => x.id === id);
     const { error } = await supabase.from('accounts_payable').delete().eq('id', id);
     if (error) throw error;
     setPayables(prev => prev.filter(x => x.id !== id));
+    if (logActivity && bill) {
+      await logActivity('delete', `Excluiu conta a pagar: ${bill.description}`, id, undefined, 'financeiro', 'account_payable');
+    }
   };
 
   const payInstallment = async (apId: string, installmentId: string, paidValue: number, paidDate: string) => {
@@ -107,6 +124,9 @@ export const useAccountsPayable = (companyId?: string) => {
       : totalPaid > 0 ? 'parcial'
       : 'pendente';
     await handleSavePayable({ ...ap, installments: updatedInstallments, paidValue: totalPaid, status: newStatus });
+    if (logActivity) {
+      await logActivity('update', `Registrou pagamento de parcela: ${ap.description} — R$ ${paidValue.toFixed(2)}`, apId, undefined, 'financeiro', 'account_payable');
+    }
   };
 
   const unpayInstallment = async (apId: string, installmentId: string) => {
@@ -127,13 +147,16 @@ export const useAccountsPayable = (companyId?: string) => {
       : totalPaid > 0 ? 'parcial'
       : 'pendente';
     await handleSavePayable({ ...ap, installments: updatedInstallments, paidValue: totalPaid, status: newStatus });
+    if (logActivity) {
+      await logActivity('update', `Estornou pagamento de parcela: ${ap.description}`, apId, undefined, 'financeiro', 'account_payable');
+    }
   };
 
   const settleBill = async (
     id: string,
     tx: {
       date: string;
-      paidValue: number;  // cash total saindo (inclui juros)
+      paidValue: number;
       interest: number;
       discount: number;
       paymentMethodId?: string;
@@ -147,7 +170,6 @@ export const useAccountsPayable = (companyId?: string) => {
     if (error || !fresh) return false;
     const bill = map(fresh);
 
-    // principal reduction = cash paid minus interest (already included) + discount applied
     const principalApplied = Math.min(tx.paidValue - tx.interest + tx.discount, bill.remainingValue);
     const newPaidValue = Math.min(bill.paidValue + principalApplied, bill.totalValue);
     const newStatus: AccountPayable['status'] =
@@ -173,16 +195,24 @@ export const useAccountsPayable = (companyId?: string) => {
       status: newStatus,
       transactions,
     } : p));
+
+    if (logActivity) {
+      await logActivity('update', `Liquidou conta a pagar: ${bill.description} — R$ ${tx.paidValue.toFixed(2)}`, id, undefined, 'financeiro', 'account_payable');
+    }
     return true;
   };
 
   const cancelBill = async (id: string): Promise<boolean> => {
     if (!companyId) return false;
+    const bill = payables.find(x => x.id === id);
     const { error } = await supabase.from('accounts_payable')
       .update({ status: 'cancelado' })
       .eq('id', id).eq('company_id', companyId);
     if (error) return false;
     setPayables(prev => prev.map(p => p.id === id ? { ...p, status: 'cancelado' } : p));
+    if (logActivity && bill) {
+      await logActivity('update', `Cancelou conta a pagar: ${bill.description}`, id, undefined, 'financeiro', 'account_payable');
+    }
     return true;
   };
 

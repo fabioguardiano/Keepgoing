@@ -4,7 +4,8 @@ import * as XLSX from 'xlsx';
 import { PaymentTypesView } from './PaymentTypesView';
 import { PaymentMethodsView } from './PaymentMethodsView';
 import { PermissionsTab } from './PermissionsTab';
-import { PhaseConfig, CompanyInfo, SalesPhaseConfig, PaymentMethod, PaymentType, PermissionProfile, AppUser, PayablePaymentMethod } from '../types';
+import { AuditLogView } from './AuditLogView';
+import { PhaseConfig, CompanyInfo, SalesPhaseConfig, PaymentMethod, PaymentType, PermissionProfile, AppUser, PayablePaymentMethod, ActivityLog, User } from '../types';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
 // ─── FinanceiroTabContent ─────────────────────────────────────────────────────
@@ -233,11 +234,15 @@ interface SettingsViewProps {
     onSetDeadlineUrgentDays: (v: number) => void;
     idleTimeoutMinutes: number;
     onSetIdleTimeoutMinutes: (v: number) => void;
-    initialTab?: 'fluxo' | 'vendas' | 'empresa' | 'dados' | 'financeiro' | 'geral' | 'permissoes';
+    initialTab?: 'fluxo' | 'vendas' | 'empresa' | 'dados' | 'financeiro' | 'geral' | 'permissoes' | 'auditoria';
     payablePMs: PayablePaymentMethod[];
     onSavePayablePM: (pm: Omit<PayablePaymentMethod, 'id' | 'createdAt'> & { id?: string }) => Promise<any>;
     onDeletePayablePM: (id: string) => Promise<void>;
     onTogglePayablePM: (id: string) => Promise<void>;
+    currentUser?: User;
+    activities?: ActivityLog[];
+    loadingActivities?: boolean;
+    refreshActivities?: () => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -278,8 +283,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     onSavePayablePM,
     onDeletePayablePM,
     onTogglePayablePM,
+    currentUser,
+    activities = [],
+    loadingActivities = false,
+    refreshActivities = () => {},
 }) => {
-    const [activeTab, setActiveTab] = useState<'fluxo' | 'vendas' | 'empresa' | 'dados' | 'financeiro' | 'geral' | 'permissoes'>(initialTab || 'fluxo');
+    const [activeTab, setActiveTab] = useState<'fluxo' | 'vendas' | 'empresa' | 'dados' | 'financeiro' | 'geral' | 'permissoes' | 'auditoria'>(initialTab || 'fluxo');
     const [newPhaseName, setNewPhaseName] = useState('');
     const [editingPhase, setEditingPhase] = useState<string | null>(null);
     const [editingLostReasonIdx, setEditingLostReasonIdx] = useState<number | null>(null);
@@ -391,11 +400,29 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         </div>
                         <ChevronRight size={14} />
                     </button>
+                    {currentUser?.role === 'admin' && (
+                        <button
+                            onClick={() => setActiveTab('auditoria')}
+                            className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-sm font-bold border transition-all ${activeTab === 'auditoria' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
+                        >
+                            <div className="flex items-center gap-3">
+                                <Shield size={18} />
+                                Auditoria
+                            </div>
+                            <ChevronRight size={14} />
+                        </button>
+                    )}
                 </div>
 
                 {/* Content Area */}
                 <div className="lg:col-span-2 space-y-6">
-                    {activeTab === 'permissoes' ? (
+                    {activeTab === 'auditoria' ? (
+                        <AuditLogView
+                            activities={activities}
+                            loadingActivities={loadingActivities}
+                            refreshActivities={refreshActivities}
+                        />
+                    ) : activeTab === 'permissoes' ? (
                         <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
                             <div className="p-5 border-b border-slate-100">
                                 <h2 className="text-base font-bold text-slate-800">Perfis de Permissão</h2>

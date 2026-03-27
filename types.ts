@@ -98,10 +98,12 @@ export interface ActivityLog {
   id: string;
   timestamp: string;
   userName: string;
-  action: 'create' | 'update' | 'delete' | 'move' | 'upload';
+  action: 'create' | 'update' | 'delete' | 'move' | 'upload' | 'login' | 'logout';
   details: string;
   orderId?: string;
   orderNumber?: string;
+  module?: string;
+  entityType?: string;
 }
 
 export interface PhaseRecord {

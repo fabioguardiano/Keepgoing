@@ -15,19 +15,21 @@ export const useActivities = (user: User | null) => {
         .select('*')
         .eq('company_id', user.company_id)
         .order('created_at', { ascending: false })
-        .limit(100);
-      
+        .limit(500);
+
       if (error) throw error;
       if (data) {
         const mapped = data.map(l => ({
           id: l.id,
           timestamp: l.created_at,
           userName: l.user_name,
-          action: l.type as any,
+          action: l.type as ActivityLog['action'],
           details: l.message,
-          orderId: l.reference_id
+          orderId: l.reference_id,
+          module: l.module ?? undefined,
+          entityType: l.entity_type ?? undefined,
         }));
-        setActivities(mapped as ActivityLog[]);
+        setActivities(mapped);
       }
     } catch (err) {
       console.error('Erro ao carregar logs do Supabase:', err);
@@ -42,9 +44,16 @@ export const useActivities = (user: User | null) => {
     fetchActivities();
   }, [user?.company_id]);
 
-  const logActivity = async (action: ActivityLog['action'], details: string, referenceId?: string, orderNumber?: string) => {
+  const logActivity = async (
+    action: ActivityLog['action'],
+    details: string,
+    referenceId?: string,
+    orderNumber?: string,
+    module?: string,
+    entityType?: string,
+  ) => {
     if (!user) return;
-    
+
     const message = orderNumber ? `${details} (OS: ${orderNumber})` : details;
 
     try {
@@ -55,34 +64,38 @@ export const useActivities = (user: User | null) => {
           type: action,
           message: message,
           reference_id: referenceId,
-          user_name: user.name
+          user_name: user.name,
+          module: module ?? null,
+          entity_type: entityType ?? null,
         })
         .select()
         .single();
-      
+
       if (error) throw error;
 
       const newLog: ActivityLog = {
         id: data.id,
         timestamp: data.created_at,
         userName: data.user_name,
-        action: data.type as any,
+        action: data.type as ActivityLog['action'],
         details: data.message,
-        orderId: data.reference_id
+        orderId: data.reference_id,
+        module: data.module ?? undefined,
+        entityType: data.entity_type ?? undefined,
       };
-      
-      setActivities(prev => [newLog, ...prev].slice(0, 100));
-      localStorage.setItem('marmo_activities', JSON.stringify([newLog, ...activities].slice(0, 100)));
+
+      setActivities(prev => [newLog, ...prev].slice(0, 500));
+      localStorage.setItem('marmo_activities', JSON.stringify([newLog, ...activities].slice(0, 500)));
     } catch (err) {
       console.error('Erro ao registrar atividade:', err);
     }
   };
 
-  return { 
-    activities, 
-    loadingActivities, 
-    logActivity, 
+  return {
+    activities,
+    loadingActivities,
+    logActivity,
     setActivities,
-    refreshActivities: fetchActivities 
+    refreshActivities: fetchActivities
   };
 };

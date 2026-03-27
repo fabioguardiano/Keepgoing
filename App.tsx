@@ -65,7 +65,7 @@ const App: React.FC = () => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   // 2. Logs de Atividade
-  const { activities, logActivity } = useActivities(user);
+  const { activities, logActivity, loadingActivities, refreshActivities } = useActivities(user);
 
   // 3. Cotações
   const exchangeRates = useExchangeRates();
@@ -81,8 +81,8 @@ const App: React.FC = () => {
   const { suppliers, handleSaveSupplier, deleteSupplier, setSuppliers } = useSuppliers(activeCompanyId, logActivity);
   const { architects, handleSaveArchitect, deleteArchitect, setArchitects } = useArchitects(activeCompanyId, logActivity);
   const { products, handleSaveProduct } = useProducts(activeCompanyId, logActivity);
-  const { receivables, handleSaveReceivable, deleteReceivable, payInstallment: payReceivableInstallment, unpayInstallment: unpayReceivableInstallment } = useAccountsReceivable(activeCompanyId);
-  const { payables, handleSavePayable, deletePayable, settleBill, cancelBill } = useAccountsPayable(activeCompanyId);
+  const { receivables, handleSaveReceivable, deleteReceivable, payInstallment: payReceivableInstallment, unpayInstallment: unpayReceivableInstallment } = useAccountsReceivable(activeCompanyId, logActivity);
+  const { payables, handleSavePayable, deletePayable, settleBill, cancelBill } = useAccountsPayable(activeCompanyId, logActivity);
   const { categories: billCategories, saveCategory: saveBillCategory, deleteCategory: deleteBillCategory } = useBillCategories(activeCompanyId);
   const { paymentMethods, handleSavePaymentMethod, deletePaymentMethod, toggleActive } = usePaymentMethods(activeCompanyId);
   const { paymentTypes, handleSavePaymentType, deletePaymentType: handleDeletePaymentType } = usePaymentTypes(activeCompanyId);
@@ -432,6 +432,10 @@ const App: React.FC = () => {
             onSavePayablePM={handleSavePayablePM}
             onDeletePayablePM={deletePayablePM}
             onTogglePayablePM={togglePayablePM}
+            currentUser={user ?? undefined}
+            activities={activities}
+            loadingActivities={loadingActivities}
+            refreshActivities={refreshActivities}
           />
         );
       case 'Clientes':

@@ -729,12 +729,17 @@ export const SalesView: React.FC<SalesViewProps> = ({
           getEnvironmentOSMap={getEnvironmentOSMap}
           onRequestDiscount={onRequestDiscount}
           canEditPrice={currentUser?.role === 'admin' || currentUser?.role === 'manager'}
-          onSave={(sale) => {
+          onSave={async (sale, keepOpen) => {
             const wasOrcamento = editingSale?.status === 'Orçamento' || !editingSale;
-            onSaveSale(sale);
+            await onSaveSale(sale);
             if (wasOrcamento && sale.status === 'Pedido') fireConfetti(true);
-            setIsNewSaleModalOpen(false);
-            setEditingSale(null);
+            
+            if (!keepOpen) {
+              setIsNewSaleModalOpen(false);
+              setEditingSale(null);
+            } else {
+              setEditingSale(sale);
+            }
           }}
           onClose={() => {
             setIsNewSaleModalOpen(false);
