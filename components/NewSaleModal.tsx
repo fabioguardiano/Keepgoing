@@ -30,11 +30,12 @@ interface NewSaleModalProps {
   createWorkOrders?: (orders: any[]) => Promise<boolean>;
   getEnvironmentOSMap?: (saleId: string) => Record<string, WorkOrder[]>;
   onRequestDiscount?: (admin: AppUser, requestedPct: number, maxPct: number) => void;
+  canEditPrice?: boolean;
 }
 
 export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   onClose, onSave, clients, architects, appUsers, materials, products, services, salesChannels, paymentMethods, initialData, companyInfo, nextOrderNumber, salesPhases, readOnly = false,
-  companyId, createWorkOrders, getEnvironmentOSMap, onRequestDiscount
+  companyId, createWorkOrders, getEnvironmentOSMap, onRequestDiscount, canEditPrice = true
 }) => {
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [printingSale, setPrintingSale] = useState<SalesOrder | null>(null);
@@ -1096,7 +1097,9 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                     e.preventDefault();
                                     serviceRef.current?.focus();
                                   }
-                                }} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-right" /></td>
+                                }} 
+                                readOnly={!canEditPrice && !!itemMaterialId}
+                                className={`w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-right transition-all ${!canEditPrice && !!itemMaterialId ? 'opacity-50 cursor-not-allowed grayscale' : ''}`} /></td>
                                 <td className="p-1.5"><input type="number" step="0.1" ref={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? serviceRef : null} value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemService : 0} onChange={e => setItemService(parseFloat(e.target.value))} onKeyDown={e => e.key === 'Enter' && addItem()} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" /></td>
                                 <td className="p-1.5 text-right text-[10px] font-black text-[var(--primary-color)] whitespace-nowrap">
                                   R$ {activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? (calculateItemTotal() || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}

@@ -728,6 +728,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
           createWorkOrders={createWorkOrders}
           getEnvironmentOSMap={getEnvironmentOSMap}
           onRequestDiscount={onRequestDiscount}
+          canEditPrice={currentUser?.role === 'admin' || currentUser?.role === 'manager'}
           onSave={(sale) => {
             const wasOrcamento = editingSale?.status === 'Orçamento' || !editingSale;
             onSaveSale(sale);
