@@ -60,6 +60,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedMeasurementId, setSelectedMeasurementId] = useState<string | null>(null);
   const [showWeekends, setShowWeekends] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(60);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMeasurementId, setEditingMeasurementId] = useState<string | null>(null);
   const [activeMobileView, setActiveMobileView] = useState<'list' | 'map'>('list');
@@ -176,6 +177,14 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
 
   const hours = Array.from({ length: 14 }, (_, i) => i + 8); // 08:00 to 21:00
 
+  const handleZoom = (e: React.WheelEvent) => {
+    if (e.ctrlKey) {
+       e.preventDefault();
+       const delta = e.deltaY > 0 ? -5 : 5;
+       setZoomLevel(prev => Math.min(Math.max(30, prev + delta), 150));
+    }
+  };
+
   const changeWeek = (direction: 'prev' | 'next') => {
     const d = new Date(selectedDate + 'T12:00:00');
     d.setDate(d.getDate() + (direction === 'next' ? 7 : -7));
@@ -188,8 +197,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
   const getTimePosition = (timeStr: string) => {
     const [h, m] = timeStr.split(':').map(Number);
     const startHour = hours[0];
-    const hourHeight = 45; // reduced pixels per hour from 60 to 45
-    return (h - startHour) * hourHeight + (m / 60) * hourHeight;
+    return (h - startHour) * zoomLevel + (m / 60) * zoomLevel;
   };
 
   const handleAddMeasurement = async (e: React.FormEvent) => {
@@ -293,6 +301,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                className="w-4 h-4 text-blue-600 rounded-md border-slate-300 focus:ring-blue-500 cursor-pointer"
              />
           </div>
+          <div className="px-2 py-1 text-[8px] font-bold text-slate-400 border border-dashed rounded-lg">Ctrl + Scroll p/ Zoom</div>
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -316,12 +325,15 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
       </div>
 
       <div className="flex-1 overflow-hidden flex flex-col">
-        {/* Weekly Calendar with FORCED Scrollbar Visibility */}
-        <div className="flex-1 overflow-y-scroll scroll-sidebar bg-white">
+        {/* Weekly Calendar with Dynamic Zoom & Forced Scrollbar */}
+        <div 
+          onWheel={handleZoom}
+          className="flex-1 overflow-y-scroll scroll-sidebar bg-white select-none"
+        >
           <div className="min-w-[800px] flex flex-col relative">
             {/* Days Header */}
             <div className="flex sticky top-0 z-[1001] bg-white border-b shadow-md">
-               <div className="w-14 shrink-0 border-r py-2.5 px-1 text-center text-[9px] font-black uppercase text-slate-400 bg-slate-50">H</div>
+               <div className="w-16 shrink-0 border-r py-2.5 px-1 text-center text-[10px] font-black uppercase text-slate-400 bg-slate-50">HORA</div>
                {weekDays.map(dayStr => {
                  const dayDate = new Date(dayStr + 'T12:00:00');
                  const isSelected = dayStr === selectedDate;
@@ -329,12 +341,12 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                    <div 
                      key={dayStr}
                      onClick={() => setSelectedDate(dayStr)}
-                     className={`flex-1 py-1.5 text-center border-r last:border-r-0 cursor-pointer transition-all ${isSelected ? 'bg-blue-600 text-white shadow-inner' : 'hover:bg-slate-50'}`}
+                     className={`flex-1 py-2 text-center border-r last:border-r-0 cursor-pointer transition-all ${isSelected ? 'bg-blue-600 text-white shadow-inner' : 'hover:bg-slate-50'}`}
                    >
-                     <p className={`text-[8px] font-black uppercase tracking-tighter ${isSelected ? 'text-blue-100' : 'text-slate-400'}`}>
+                     <p className={`text-[9px] font-black uppercase tracking-tight ${isSelected ? 'text-blue-100' : 'text-slate-400'}`}>
                        {dayDate.toLocaleDateString('pt-BR', { weekday: 'short' })}
                      </p>
-                     <p className="text-sm font-black leading-none">{dayDate.getDate()}</p>
+                     <p className="text-lg font-black leading-none">{dayDate.getDate()}</p>
                    </div>
                  );
                })}
@@ -343,10 +355,10 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
             {/* Hours Grid */}
             <div className="flex relative">
                {/* Hour Labels */}
-               <div className="w-14 shrink-0 border-r bg-slate-50/50">
+               <div className="w-16 shrink-0 border-r bg-slate-50/50">
                   {hours.map(h => (
-                    <div key={h} className="h-[45px] flex items-start justify-center pt-1 border-b last:border-b-0">
-                       <span className="text-[9px] font-black text-slate-400">{h.toString().padStart(2, '0')}h</span>
+                    <div key={h} className="flex items-start justify-center pt-2 border-b last:border-b-0" style={{ height: `${zoomLevel}px` }}>
+                       <span className="text-[11px] font-black text-slate-500">{h.toString().padStart(2, '0')}:00</span>
                     </div>
                   ))}
                </div>
@@ -361,16 +373,17 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                       <div 
                         key={dayStr} 
                         onClick={() => setSelectedDate(dayStr)}
-                        className={`flex-1 border-r last:border-r-0 relative min-h-[630px] transition-all ${isSelected ? 'bg-blue-50/20 shadow-inner' : ''}`}
+                        className={`flex-1 border-r last:border-r-0 relative transition-all ${isSelected ? 'bg-blue-50/20 shadow-inner' : ''}`}
+                        style={{ minHeight: `${hours.length * zoomLevel}px` }}
                       >
                          {/* Hour Dividers */}
                          {hours.map(h => (
-                           <div key={h} className="h-[45px] border-b last:border-b-0 w-full opacity-20 flex items-center justify-center group/slot">
+                           <div key={h} className="border-b last:border-b-0 w-full opacity-20 flex items-center justify-center group/slot" style={{ height: `${zoomLevel}px` }}>
                               <button 
                                 onClick={(e) => { e.stopPropagation(); setSelectedDate(dayStr); setNewMeasurement({...newMeasurement, date: dayStr, time: `${h.toString().padStart(2, '0')}:00`}); setIsModalOpen(true); }}
-                                className="opacity-0 group-hover/slot:opacity-100 p-1 bg-blue-100 text-blue-600 rounded-full transition-all shadow-sm"
+                                className="opacity-0 group-hover/slot:opacity-100 p-1.5 bg-blue-100 text-blue-600 rounded-full transition-all shadow-sm"
                               >
-                                <Plus size={12} strokeWidth={3} />
+                                <Plus size={14} strokeWidth={3} />
                               </button>
                            </div>
                          ))}
@@ -382,18 +395,21 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                               <div 
                                 key={m.id}
                                 onClick={(e) => { e.stopPropagation(); setSelectedMeasurementId(m.id); setSelectedDate(m.date); }}
-                                className={`absolute left-0.5 right-0.5 p-1.5 rounded-xl border transition-all cursor-pointer shadow-sm items-start flex flex-col ${
+                                className={`absolute left-0.5 right-0.5 p-2 rounded-xl border transition-all cursor-pointer shadow-sm items-start flex flex-col ${
                                   selectedMeasurementId === m.id 
                                     ? 'bg-blue-600 border-blue-400 text-white z-40 shadow-xl' 
                                     : 'bg-white border-slate-100 text-slate-900 border hover:border-blue-200 z-10'
                                 }`}
-                                style={{ top: `${top}px`, height: '42px' }}
+                                style={{ top: `${top}px`, height: `${Math.max(45, zoomLevel * 0.8)}px` }}
                               >
-                                 <div className="flex items-center justify-between w-full mb-0.5">
-                                    <span className={`text-[8px] font-black leading-tight ${selectedMeasurementId === m.id ? 'text-blue-100' : 'text-blue-600'}`}>{m.time}</span>
-                                    {m.status === 'Concluída' && <CheckCircle2 size={10} className={selectedMeasurementId === m.id ? 'text-blue-200' : 'text-emerald-500'} />}
+                                 <div className="flex items-center justify-between w-full mb-1">
+                                    <span className={`text-[10px] font-black leading-tight ${selectedMeasurementId === m.id ? 'text-blue-100' : 'text-blue-600'}`}>{m.time}</span>
+                                    {m.status === 'Concluída' && <CheckCircle2 size={12} className={selectedMeasurementId === m.id ? 'text-blue-200' : 'text-emerald-500'} />}
                                  </div>
-                                 <p className="text-[10px] font-black truncate uppercase tracking-tight leading-none w-full">{m.clientName}</p>
+                                 <p className="text-[11px] font-black truncate uppercase tracking-tight leading-none w-full">{m.clientName}</p>
+                                 {zoomLevel > 80 && (
+                                   <p className={`text-[9px] font-bold mt-1 truncate opacity-70 ${selectedMeasurementId === m.id ? 'text-blue-50' : 'text-slate-500'}`}>{m.measurerName}</p>
+                                 )}
                               </div>
                             );
                          })}
