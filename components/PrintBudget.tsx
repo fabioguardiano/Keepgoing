@@ -56,7 +56,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
       style={{ fontFamily: '"Calibri", "Arial", sans-serif', fontSize: '11px', lineHeight: '1.35' }}
     >
       {/* ── CABEÇALHO ────────────────────────────────────────── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingBottom: '0', marginBottom: '0' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingBottom: '6px', marginBottom: '5px' }}>
         {/* Logo / Nome */}
         <div style={{ width: '55%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'flex-start' }}>
           {companyInfo.printLogoUrl || companyInfo.logoUrl ? (
