@@ -371,16 +371,18 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                               <div 
                                 key={m.id}
                                 onClick={(e) => { e.stopPropagation(); setSelectedMeasurementId(m.id); setSelectedDate(m.date); }}
-                                className={`absolute left-0.5 right-0.5 p-1 rounded-lg border-1.5 transition-all cursor-pointer shadow items-start flex flex-col ${
+                                className={`absolute left-0.5 right-0.5 p-1.5 rounded-xl border transition-all cursor-pointer shadow-sm items-start flex flex-col ${
                                   selectedMeasurementId === m.id 
-                                    ? 'bg-blue-600 border-blue-400 text-white z-40' 
+                                    ? 'bg-blue-600 border-blue-400 text-white z-40 shadow-xl' 
                                     : 'bg-white border-slate-100 text-slate-900 border hover:border-blue-200 z-10'
                                 }`}
-                                style={{ top: `${top}px`, height: '40px' }}
+                                style={{ top: `${top}px`, height: '42px' }}
                               >
-                                 <span className={`text-[8px] font-black leading-tight mb-0.5 ${selectedMeasurementId === m.id ? 'text-blue-100' : 'text-blue-600'}`}>{m.time}</span>
-                                 <p className="text-[9px] font-black truncate uppercase tracking-tighter leading-none w-full">{m.clientName}</p>
-                                 <p className={`text-[7px] font-bold truncate opacity-80 leading-tight w-full ${selectedMeasurementId === m.id ? 'text-white' : 'text-slate-500'}`}>{m.measurerName || 'Sem medidor'}</p>
+                                 <div className="flex items-center justify-between w-full mb-0.5">
+                                    <span className={`text-[8px] font-black leading-tight ${selectedMeasurementId === m.id ? 'text-blue-100' : 'text-blue-600'}`}>{m.time}</span>
+                                    {m.status === 'Concluída' && <CheckCircle2 size={10} className={selectedMeasurementId === m.id ? 'text-blue-200' : 'text-emerald-500'} />}
+                                 </div>
+                                 <p className="text-[10px] font-black truncate uppercase tracking-tight leading-none w-full">{m.clientName}</p>
                               </div>
                             );
                          })}
@@ -392,42 +394,45 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
           </div>
         </div>
 
-        {/* Improved Action Bar & Map Strip - More Height for the Map */}
-        <div className="h-[400px] shrink-0 flex flex-col lg:flex-row relative bg-slate-200 border-t shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+        {/* Action Bar & Map Strip - More Height as Requested (500px) */}
+        <div className="h-[500px] shrink-0 flex flex-col lg:flex-row relative bg-slate-200 border-t shadow-[0_-15px_30px_rgba(0,0,0,0.1)]">
            {/* Daily Focus Summary */}
            <div className="w-80 bg-white border-r flex flex-col shrink-0 overflow-y-auto hidden lg:flex">
-                <div className="p-3 border-b bg-slate-50 flex items-center justify-between">
+                <div className="p-4 border-b bg-slate-50 flex items-center justify-between">
                    <div>
-                      <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Resumo do Dia</h4>
-                      <p className="text-[12px] font-black text-slate-900">{new Date(selectedDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}</p>
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Compromissos do Dia</h4>
+                      <p className="text-[14px] font-black text-slate-900">{new Date(selectedDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}</p>
                    </div>
-                   <Navigation size={14} className="text-blue-600" />
+                   <Navigation size={18} className="text-blue-600" />
                 </div>
-                <div className="flex-1 p-2 space-y-1.5">
+                <div className="flex-1 p-3 space-y-2">
                    {mapMeasurements.length === 0 ? (
-                      <div className="py-12 text-center opacity-30"><p className="text-[10px] font-black uppercase text-slate-400">Nada agendado</p></div>
+                      <div className="py-20 text-center opacity-30">
+                        <CalendarIcon size={40} className="mx-auto mb-2 text-slate-300" />
+                        <p className="text-[10px] font-black uppercase text-slate-400">Nenhuma medição</p>
+                      </div>
                    ) : mapMeasurements.sort((a,b) => a.time.localeCompare(b.time)).map((m, i) => (
-                      <div key={m.id} onClick={() => setSelectedMeasurementId(m.id)} className={`p-2 rounded-lg border transition-all cursor-pointer flex items-center gap-2 ${selectedMeasurementId === m.id ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-white border-slate-100 hover:bg-slate-50'}`}>
-                         <div className={`w-5 h-5 rounded text-[9px] font-black flex items-center justify-center shrink-0 ${selectedMeasurementId === m.id ? 'bg-white text-blue-600' : 'bg-blue-600 text-white'}`}>
+                      <div key={m.id} onClick={() => setSelectedMeasurementId(m.id)} className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center gap-3 ${selectedMeasurementId === m.id ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-white border-slate-100 hover:bg-slate-50'}`}>
+                         <div className={`w-6 h-6 rounded-lg text-[10px] font-black flex items-center justify-center shrink-0 ${selectedMeasurementId === m.id ? 'bg-white text-blue-600' : 'bg-blue-600 text-white'}`}>
                             {i+1}
                          </div>
                          <div className="min-w-0">
-                            <p className="text-[10px] font-black truncate tracking-tighter mb-0">{m.clientName}</p>
-                            <p className="text-[8px] font-bold opacity-70">{m.time} • {m.measurerName || '---'}</p>
+                            <p className="text-[11px] font-black truncate tracking-tight mb-0.5 uppercase">{m.clientName}</p>
+                            <p className="text-[9px] font-bold opacity-70">{m.time} • {m.measurerName || 'Sem medidor'}</p>
                          </div>
                       </div>
                    ))}
                 </div>
-                <div className="p-2 border-t">
+                <div className="p-4 border-t bg-slate-50">
                    <button 
                      onClick={() => {
                         const destination = mapMeasurements.length > 0 ? mapMeasurements[mapMeasurements.length - 1].address : '';
                         const waypoints = mapMeasurements.slice(0, -1).map(m => m.address).join('/');
                         window.open(`https://www.google.com/maps/dir/${encodeURIComponent(companyAddress)}/${waypoints ? encodeURIComponent(waypoints) + '/' : ''}${encodeURIComponent(destination)}`, '_blank');
                      }}
-                     className="w-full py-2 bg-slate-900 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2"
+                     className="w-full py-3 bg-slate-900 text-white rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2 shadow-xl"
                    >
-                     <Navigation size={12} /> Rota no Maps
+                     <Navigation size={14} /> Rota Completa no Maps
                    </button>
                 </div>
            </div>
