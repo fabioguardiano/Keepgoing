@@ -748,27 +748,45 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                 </div>
               </div>
 
-              <div className="pt-4 flex items-center gap-3">
-                <button 
-                  type="button"
-                  onClick={() => {
-                    setIsModalOpen(false);
-                    setEditingMeasurementId(null);
-                    setNewMeasurement({ 
-                      clientName: '', address: '', cep: '', date: selectedDate, time: '08:00', description: '', measurerName: '', status: 'Pendente', osId: '', osNumber: '',
-                      addressComplement: '', clientPhone: '', sellerName: ''
-                    });
-                  }}
-                  className="flex-1 py-4 font-black uppercase tracking-widest text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button 
-                  type="submit"
-                  className="flex-[2] bg-blue-600 text-white font-black uppercase tracking-widest py-4 rounded-2xl shadow-xl shadow-blue-600/20 hover:bg-blue-700 transition-all transform active:scale-95"
-                >
-                  {editingMeasurementId ? 'Salvar Alterações' : 'Confirmar Agendamento'}
-                </button>
+              <div className="pt-4 flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setEditingMeasurementId(null);
+                      setNewMeasurement({ 
+                        clientName: '', address: '', cep: '', date: selectedDate, time: '08:00', description: '', measurerName: '', status: 'Pendente', osId: '', osNumber: '',
+                        addressComplement: '', clientPhone: '', sellerName: ''
+                      });
+                    }}
+                    className="flex-1 py-4 font-black uppercase tracking-widest text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    type="submit"
+                    className="flex-[2] bg-blue-600 text-white font-black uppercase tracking-widest py-4 rounded-2xl shadow-xl shadow-blue-600/20 hover:bg-blue-700 transition-all transform active:scale-95"
+                  >
+                    {editingMeasurementId ? 'Salvar Alterações' : 'Confirmar Agendamento'}
+                  </button>
+                </div>
+
+                {editingMeasurementId && onDeleteMeasurement && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (window.confirm('Tem certeza que deseja EXCLUIR este agendamento? Esta ação não pode ser desfeita.')) {
+                        await onDeleteMeasurement(editingMeasurementId);
+                        setIsModalOpen(false);
+                        setEditingMeasurementId(null);
+                      }
+                    }}
+                    className="w-full py-3 bg-red-50 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-100 transition-all flex items-center justify-center gap-2 border border-red-100"
+                  >
+                    <Trash2 size={14} /> Excluir Agendamento
+                  </button>
+                )}
               </div>
             </form>
           </div>
