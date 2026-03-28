@@ -407,7 +407,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
       {/* ── ASSINATURAS ──────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', marginTop: '36px', pageBreakInside: 'avoid' }}>
         {/* Vendedor */}
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ textAlign: 'left' }}>
           <div style={{ borderTop: '1px solid #000', paddingTop: '8px' }}>
             <div style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: '11px', color: '#000' }}>{sale.seller || companyInfo.name}</div>
             <div style={{ fontSize: '9px', color: '#000' }}>
@@ -423,7 +423,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
           </div>
         </div>
         {/* Cliente */}
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ textAlign: 'left' }}>
           <div style={{ borderTop: '1px solid #000', paddingTop: '8px' }}>
             <div style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: '11px', color: '#000' }}>
               {client?.tradingName || client?.legalName || sale.clientName}
