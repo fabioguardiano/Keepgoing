@@ -591,7 +591,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                 </div>
 
                 {/* Map Preview in Modal */}
-                <div className="sm:col-span-2 h-32 rounded-2xl overflow-hidden border border-gray-100 relative grayscale hover:grayscale-0 transition-all">
+                <div className="sm:col-span-2 h-32 rounded-2xl overflow-hidden border border-gray-100 relative">
                    <MapContainer 
                      key={`modal-map-${mapCenter[0]}-${mapCenter[1]}`}
                      center={mapCenter} 
