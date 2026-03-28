@@ -948,7 +948,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                     </div>
                                                     <div>
                                                         <p className="text-[10px] font-bold text-slate-800 leading-tight">Logo Sidebar</p>
-                                                        <p className="text-[8px] text-slate-400 font-medium">Menu Lateral</p>
+                                                        <p className="text-[8px] text-slate-400 font-medium">Menu Lateral (Ex: 500x500px)</p>
                                                     </div>
                                                 </div>
                                                 <label className="block px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[9px] font-black text-slate-600 text-center cursor-pointer hover:bg-slate-100 transition-all uppercase">
@@ -969,7 +969,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                     </div>
                                                     <div>
                                                         <p className="text-[10px] font-bold text-slate-800 leading-tight">Logo Impressão</p>
-                                                        <p className="text-[8px] text-slate-400 font-medium">Doc. e Pedidos</p>
+                                                        <p className="text-[8px] text-slate-400 font-medium">Doc. e Pedidos (Ex: 200x80px)</p>
                                                     </div>
                                                 </div>
                                                 <label className="block px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[9px] font-black text-slate-600 text-center cursor-pointer hover:bg-slate-100 transition-all uppercase">
@@ -990,7 +990,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                     </div>
                                                     <div>
                                                         <p className="text-[10px] font-bold text-slate-800 leading-tight">Ícone (Favicon)</p>
-                                                        <p className="text-[8px] text-slate-400 font-medium">Aba do Chrome</p>
+                                                        <p className="text-[8px] text-slate-400 font-medium">Aba do Chrome (Ex: 32x32px)</p>
                                                     </div>
                                                 </div>
                                                 <label className="block px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[9px] font-black text-slate-600 text-center cursor-pointer hover:bg-slate-100 transition-all uppercase">
