@@ -59,6 +59,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedMeasurementId, setSelectedMeasurementId] = useState<string | null>(null);
+  const [showWeekends, setShowWeekends] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMeasurementId, setEditingMeasurementId] = useState<string | null>(null);
   const [activeMobileView, setActiveMobileView] = useState<'list' | 'map'>('list');
@@ -158,15 +159,21 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
     const day = d.getDay();
     const diff = d.getDate() - day + (day === 0 ? -6 : 1);
     const monday = new Date(d.setDate(diff));
-    
-    return Array.from({ length: 7 }, (_, i) => {
-      const dayDate = new Date(monday);
-      dayDate.setDate(monday.getDate() + i);
-      return dayDate.toISOString().split('T')[0];
-    });
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(monday);
+      day.setDate(monday.getDate() + i);
+      days.push(day.toISOString().split('T')[0]);
+    }
+    return days;
   };
 
-  const weekDays = getWeekDays(selectedDate);
+  const weekDays = getWeekDays(selectedDate).filter(dayStr => {
+    if (showWeekends) return true;
+    const day = new Date(dayStr + 'T12:00:00').getDay();
+    return day !== 0 && day !== 6; // Filter out Sat (6) and Sun (0)
+  });
+
   const hours = Array.from({ length: 14 }, (_, i) => i + 8); // 08:00 to 21:00
 
   const changeWeek = (direction: 'prev' | 'next') => {
@@ -252,7 +259,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-slate-50 overflow-hidden font-sans">
-      {/* Top Header / Navigation - More Compact */}
+      {/* Top Header / Navigation - With Weekend Toggle */}
       <div className="bg-white border-b px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0 shadow-sm relative z-[2000]">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2.5">
@@ -260,26 +267,31 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
               <CalendarIcon size={20} />
             </div>
             <div>
-              <h1 className="text-md font-black text-slate-900 uppercase">Agenda</h1>
+              <h1 className="text-md font-black text-slate-900 uppercase">Agenda de Medição</h1>
             </div>
           </div>
 
           <div className="hidden lg:flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200">
-            <button 
-              onClick={() => changeWeek('prev')}
-              className="p-1.5 hover:bg-white rounded-lg transition-all text-slate-600 active:scale-90"
-            >
+            <button onClick={() => changeWeek('prev')} className="p-1.5 hover:bg-white rounded-lg transition-all text-slate-600 active:scale-90">
               <ChevronLeft size={16} />
             </button>
             <div className="px-4 py-1 text-[11px] font-black text-slate-800 uppercase min-w-[180px] text-center">
-              {new Date(weekDays[0]).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} - {new Date(weekDays[6]).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+              {new Date(getWeekDays(selectedDate)[0]).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} - {new Date(getWeekDays(selectedDate)[6]).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
             </div>
-            <button 
-              onClick={() => changeWeek('next')}
-              className="p-1.5 hover:bg-white rounded-lg transition-all text-slate-600 active:scale-90"
-            >
+            <button onClick={() => changeWeek('next')} className="p-1.5 hover:bg-white rounded-lg transition-all text-slate-600 active:scale-90">
               <ChevronRight size={16} />
             </button>
+          </div>
+
+          <div className="flex items-center gap-2 ml-4 px-3 py-1.5 bg-slate-100 rounded-xl border border-slate-200 shadow-inner">
+             <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest cursor-pointer select-none" htmlFor="weekend-toggle">Finais de Semana</label>
+             <input 
+               id="weekend-toggle"
+               type="checkbox" 
+               checked={showWeekends} 
+               onChange={() => setShowWeekends(!showWeekends)}
+               className="w-4 h-4 text-blue-600 rounded-md border-slate-300 focus:ring-blue-500 cursor-pointer"
+             />
           </div>
         </div>
 
@@ -296,7 +308,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
           </div>
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-1 px-5 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider"
+            className="flex items-center gap-1 px-5 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg shadow-blue-600/20 active:scale-95"
           >
             <Plus size={16} strokeWidth={3} /> Agendar
           </button>
@@ -304,21 +316,20 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
       </div>
 
       <div className="flex-1 overflow-hidden flex flex-col">
-        {/* Compact Weekly Calendar */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar bg-white">
+        {/* Weekly Calendar with FORCED Scrollbar Visibility */}
+        <div className="flex-1 overflow-y-scroll scroll-sidebar bg-white">
           <div className="min-w-[800px] flex flex-col relative">
             {/* Days Header */}
-            <div className="flex sticky top-0 z-[1001] bg-white border-b shadow-sm">
-               <div className="w-14 shrink-0 border-r py-2.5 px-1 text-center text-[9px] font-black uppercase text-slate-400">H</div>
+            <div className="flex sticky top-0 z-[1001] bg-white border-b shadow-md">
+               <div className="w-14 shrink-0 border-r py-2.5 px-1 text-center text-[9px] font-black uppercase text-slate-400 bg-slate-50">H</div>
                {weekDays.map(dayStr => {
                  const dayDate = new Date(dayStr + 'T12:00:00');
-                 const isToday = dayStr === new Date().toISOString().split('T')[0];
                  const isSelected = dayStr === selectedDate;
                  return (
                    <div 
                      key={dayStr}
                      onClick={() => setSelectedDate(dayStr)}
-                     className={`flex-1 py-1.5 text-center border-r last:border-r-0 cursor-pointer transition-all ${isSelected ? 'bg-blue-600 text-white' : 'hover:bg-slate-50'}`}
+                     className={`flex-1 py-1.5 text-center border-r last:border-r-0 cursor-pointer transition-all ${isSelected ? 'bg-blue-600 text-white shadow-inner' : 'hover:bg-slate-50'}`}
                    >
                      <p className={`text-[8px] font-black uppercase tracking-tighter ${isSelected ? 'text-blue-100' : 'text-slate-400'}`}>
                        {dayDate.toLocaleDateString('pt-BR', { weekday: 'short' })}
@@ -350,14 +361,14 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                       <div 
                         key={dayStr} 
                         onClick={() => setSelectedDate(dayStr)}
-                        className={`flex-1 border-r last:border-r-0 relative min-h-[630px] transition-all ${isSelected ? 'bg-blue-50/10' : ''}`}
+                        className={`flex-1 border-r last:border-r-0 relative min-h-[630px] transition-all ${isSelected ? 'bg-blue-50/20 shadow-inner' : ''}`}
                       >
                          {/* Hour Dividers */}
                          {hours.map(h => (
-                           <div key={h} className="h-[45px] border-b last:border-b-0 w-full opacity-20 flex items-center justify-center">
+                           <div key={h} className="h-[45px] border-b last:border-b-0 w-full opacity-20 flex items-center justify-center group/slot">
                               <button 
                                 onClick={(e) => { e.stopPropagation(); setSelectedDate(dayStr); setNewMeasurement({...newMeasurement, date: dayStr, time: `${h.toString().padStart(2, '0')}:00`}); setIsModalOpen(true); }}
-                                className="opacity-0 hover:opacity-100 p-1 bg-blue-100 text-blue-600 rounded-full transition-all"
+                                className="opacity-0 group-hover/slot:opacity-100 p-1 bg-blue-100 text-blue-600 rounded-full transition-all shadow-sm"
                               >
                                 <Plus size={12} strokeWidth={3} />
                               </button>
@@ -397,10 +408,10 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
         {/* Action Bar & Map Strip - More Height as Requested (500px) */}
         <div className="h-[500px] shrink-0 flex flex-col lg:flex-row relative bg-slate-200 border-t shadow-[0_-15px_30px_rgba(0,0,0,0.1)]">
            {/* Daily Focus Summary */}
-           <div className="w-80 bg-white border-r flex flex-col shrink-0 overflow-y-auto hidden lg:flex">
+           <div className="w-80 bg-white border-r flex flex-col shrink-0 overflow-y-auto hidden lg:flex scroll-sidebar">
                 <div className="p-4 border-b bg-slate-50 flex items-center justify-between">
                    <div>
-                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Compromissos do Dia</h4>
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Resumo do Dia</h4>
                       <p className="text-[14px] font-black text-slate-900">{new Date(selectedDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}</p>
                    </div>
                    <Navigation size={18} className="text-blue-600" />
@@ -430,9 +441,9 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                         const waypoints = mapMeasurements.slice(0, -1).map(m => m.address).join('/');
                         window.open(`https://www.google.com/maps/dir/${encodeURIComponent(companyAddress)}/${waypoints ? encodeURIComponent(waypoints) + '/' : ''}${encodeURIComponent(destination)}`, '_blank');
                      }}
-                     className="w-full py-3 bg-slate-900 text-white rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2 shadow-xl"
+                     className="w-full py-3 bg-slate-900 text-white rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2 shadow-xl focus:ring-4 focus:ring-slate-900/20"
                    >
-                     <Navigation size={14} /> Rota Completa no Maps
+                     <Navigation size={14} /> Rota no Maps
                    </button>
                 </div>
            </div>
