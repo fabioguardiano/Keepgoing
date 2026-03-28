@@ -167,7 +167,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
   };
 
   const weekDays = getWeekDays(selectedDate);
-  const hours = Array.from({ length: 14 }, (_, i) => i + 7); // 08:00 to 21:00
+  const hours = Array.from({ length: 14 }, (_, i) => i + 8); // 08:00 to 21:00
 
   const changeWeek = (direction: 'prev' | 'next') => {
     const d = new Date(selectedDate + 'T12:00:00');
@@ -178,17 +178,11 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
   const weekMeasurements = measurements.filter(m => weekDays.includes(m.date));
   const mapMeasurements = measurements.filter(m => m.date === selectedDate);
 
-  const getDayMeasurements = (dayStr: string) => {
-    return weekMeasurements.filter(m => m.date === dayStr).sort((a, b) => a.time.localeCompare(b.time));
-  };
-
   const getTimePosition = (timeStr: string) => {
     const [h, m] = timeStr.split(':').map(Number);
     const startHour = hours[0];
-    const endHour = hours[hours.length - 1] + 1;
-    const totalMinutes = (endHour - startHour) * 60;
-    const currentMinutes = (h - startHour) * 60 + m;
-    return (currentMinutes / totalMinutes) * 100;
+    const hourHeight = 60; // pixels per hour
+    return (h - startHour) * hourHeight + (m / 60) * hourHeight;
   };
 
   const handleAddMeasurement = async (e: React.FormEvent) => {
@@ -257,21 +251,17 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
   });
 
   return (
-    <div className="flex flex-col h-full bg-slate-100 overflow-hidden font-sans">
+    <div className="flex flex-col h-full bg-slate-50 overflow-hidden font-sans">
       {/* Top Header / Navigation */}
-      <div className="bg-white border-b px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0 shadow-md relative z-50">
+      <div className="bg-white border-b px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0 shadow-sm relative z-[2000]">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-blue-600 rounded-xl text-white shadow-xl shadow-blue-600/20">
               <CalendarIcon size={28} />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-none uppercase">Agenda de Medição</h1>
-              <div className="flex items-center gap-2 mt-1">
-                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Linha do Tempo Semanal</p>
-                 <span className="w-1 h-1 bg-slate-300 rounded-full" />
-                 <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Outlook Schedule View</p>
-              </div>
+              <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none uppercase">Agenda de Medição</h1>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Visão Semanal de Agenda</p>
             </div>
           </div>
 
@@ -299,15 +289,15 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input
               type="text"
-              placeholder="Buscar cliente, medidor ou O.S..."
-              className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-600/5 focus:bg-white transition-all outline-none"
+              placeholder="Buscar cliente ou O.S..."
+              className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-600/5 transition-all outline-none"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-2xl text-sm font-black uppercase tracking-widest shadow-2xl shadow-blue-600/40 hover:bg-blue-700 active:scale-95 transition-all shrink-0"
+            className="flex items-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-2xl text-sm font-black uppercase tracking-widest shadow-2xl shadow-blue-600/30 hover:bg-blue-700 active:scale-95 transition-all shrink-0"
           >
             <Plus size={20} strokeWidth={3} /> Agendar
           </button>
@@ -315,148 +305,145 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
       </div>
 
       <div className="flex-1 overflow-hidden flex flex-col">
-        {/* Weekly Timeline View - Horizontal Hours */}
-        <div className="bg-white border-b overflow-x-auto custom-scrollbar shrink-0 shadow-inner">
-          <div className="min-w-[1200px] flex flex-col">
-             {/* Timeline Header (Hours) */}
-             <div className="flex border-b bg-slate-50/50">
-                <div className="w-48 shrink-0 py-3 px-6 border-r text-[10px] font-black uppercase text-slate-400 tracking-widest bg-white sticky left-0 z-40 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
-                  Dia da Semana
-                </div>
-                <div className="flex-1 flex relative">
-                   {hours.map(h => (
-                     <div key={h} className="flex-1 min-w-[80px] py-3 text-center border-r last:border-r-0">
-                        <span className="text-[10px] font-black text-slate-500">{h.toString().padStart(2, '0')}:00</span>
+        {/* Modern Weekly Calendar - Days Horizontal / Hours Vertical */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar bg-white">
+          <div className="min-w-[1000px] flex flex-col relative">
+            {/* Days Header */}
+            <div className="flex sticky top-0 z-[1001] bg-white border-b shadow-sm">
+               <div className="w-20 shrink-0 border-r py-4 px-2 text-center text-[10px] font-black uppercase text-slate-400">Hora</div>
+               {weekDays.map(dayStr => {
+                 const dayDate = new Date(dayStr + 'T12:00:00');
+                 const isToday = dayStr === new Date().toISOString().split('T')[0];
+                 const isSelected = dayStr === selectedDate;
+                 return (
+                   <div 
+                     key={dayStr}
+                     onClick={() => setSelectedDate(dayStr)}
+                     className={`flex-1 py-4 text-center border-r last:border-r-0 cursor-pointer transition-all ${isSelected ? 'bg-blue-600 text-white' : 'hover:bg-slate-50'}`}
+                   >
+                     <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-blue-100' : 'text-slate-400'}`}>
+                       {dayDate.toLocaleDateString('pt-BR', { weekday: 'short' })}
+                     </span>
+                     <div className="flex items-center justify-center gap-2 mt-1">
+                        <span className="text-lg font-black">{dayDate.getDate()}</span>
+                        {isToday && <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white animate-pulse' : 'bg-blue-600 animate-pulse'}`} />}
                      </div>
-                   ))}
-                </div>
-             </div>
+                   </div>
+                 );
+               })}
+            </div>
 
-             {/* Days Rows */}
-             {weekDays.map(dayStr => {
-               const dayDate = new Date(dayStr + 'T12:00:00');
-               const isToday = dayStr === new Date().toISOString().split('T')[0];
-               const isSelected = dayStr === selectedDate;
-               const dayMeasurements = getDayMeasurements(dayStr);
-
-               return (
-                 <div key={dayStr} className={`flex border-b last:border-b-0 min-h-[60px] group transition-all ${isToday ? 'bg-blue-50/20' : ''}`}>
-                    <div 
-                      onClick={() => setSelectedDate(dayStr)}
-                      className={`w-48 shrink-0 p-4 border-r sticky left-0 z-40 cursor-pointer transition-all flex flex-col justify-center ${isSelected ? 'bg-blue-600 text-white shadow-xl' : 'bg-white group-hover:bg-slate-50'}`}
-                    >
-                       <div className="flex items-center justify-between gap-2">
-                          <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-blue-100' : 'text-slate-400'}`}>
-                            {dayDate.toLocaleDateString('pt-BR', { weekday: 'short' })}
-                          </span>
-                          {isToday && <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase ${isSelected ? 'bg-white text-blue-600' : 'bg-blue-600 text-white'}`}>Hoje</span>}
-                       </div>
-                       <span className="text-lg font-black leading-tight">{dayDate.getDate()} {dayDate.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')}</span>
+            {/* Hours Grid */}
+            <div className="flex relative">
+               {/* Hour Labels */}
+               <div className="w-20 shrink-0 border-r bg-slate-50/50">
+                  {hours.map(h => (
+                    <div key={h} className="h-[60px] flex items-start justify-center pt-2 border-b last:border-b-0">
+                       <span className="text-[10px] font-black text-slate-400">{h.toString().padStart(2, '0')}:00</span>
                     </div>
+                  ))}
+               </div>
 
-                    <div className="flex-1 flex relative items-center p-2 min-h-[80px]">
-                       {/* Grid vertical lines */}
-                       <div className="absolute inset-0 flex pointer-events-none">
-                          {hours.map(h => <div key={h} className="flex-1 border-r border-slate-100 last:border-r-0" />)}
-                       </div>
+               {/* Grid Columns for Days */}
+               <div className="flex-1 flex relative">
+                  {weekDays.map(dayStr => {
+                    const isSelected = dayStr === selectedDate;
+                    const dayMeasurements = weekMeasurements.filter(m => m.date === dayStr);
+                    
+                    return (
+                      <div 
+                        key={dayStr} 
+                        onClick={() => setSelectedDate(dayStr)}
+                        className={`flex-1 border-r last:border-r-0 relative min-h-[840px] transition-all ${isSelected ? 'bg-blue-50/20' : ''}`}
+                      >
+                         {/* Hour Dividers inside column */}
+                         {hours.map(h => (
+                           <div key={h} className="h-[60px] border-b last:border-b-0 w-full opacity-30 flex items-center justify-center">
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); setSelectedDate(dayStr); setNewMeasurement({...newMeasurement, date: dayStr, time: `${h.toString().padStart(2, '0')}:00`}); setIsModalOpen(true); }}
+                                className="opacity-0 hover:opacity-100 p-1 bg-blue-100 text-blue-600 rounded-full transition-all"
+                              >
+                                <Plus size={16} strokeWidth={3} />
+                              </button>
+                           </div>
+                         ))}
 
-                       {/* Current time indicator line if today */}
-                       {isToday && (
-                         <div 
-                           className="absolute top-0 bottom-0 w-0.5 bg-red-400 z-30 opacity-50 pointer-events-none"
-                           style={{ left: `${getTimePosition(new Date().toLocaleTimeString('pt-BR', { hour12: false, hour: '2-digit', minute: '2-digit' }))}%` }}
-                         />
-                       )}
-
-                       {/* Measurements Markers on Timeline */}
-                       <div className="relative w-full h-full flex items-center">
-                          {dayMeasurements.length === 0 ? (
-                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                               <button 
-                                 onClick={() => { setSelectedDate(dayStr); setIsModalOpen(true); }}
-                                 className="flex items-center gap-2 text-[10px] font-black text-slate-300 uppercase tracking-widest hover:text-blue-600 transition-colors"
-                               >
-                                 <Plus size={14} /> Agendar neste dia
-                               </button>
-                            </div>
-                          ) : (
-                            dayMeasurements.map((m, idx) => {
-                               const pos = getTimePosition(m.time);
-                               return (
-                                 <div 
-                                   key={m.id}
-                                   onClick={(e) => { e.stopPropagation(); setSelectedMeasurementId(m.id); setSelectedDate(m.date); }}
-                                   className={`absolute h-12 min-w-[120px] max-w-[200px] p-2.5 rounded-xl border-2 transition-all cursor-pointer shadow-sm flex flex-col justify-center z-10 ${
-                                     selectedMeasurementId === m.id 
-                                       ? 'bg-blue-600 border-blue-400 text-white z-20 scale-105 shadow-xl shadow-blue-600/30' 
-                                       : 'bg-white border-slate-100 text-slate-900 hover:border-blue-300 hover:shadow-md'
-                                   }`}
-                                   style={{ 
-                                     left: `${pos}%`, 
-                                     transform: `translateX(-5%) translateY(${dayMeasurements.length > 2 ? (idx % 2 === 0 ? '-10px' : '10px') : '0'})`,
-                                   }}
-                                 >
-                                    <div className="flex items-center justify-between gap-1 mb-0.5">
-                                       <span className={`text-[9px] font-black ${selectedMeasurementId === m.id ? 'text-blue-100' : 'text-blue-600'}`}>
-                                         {m.time}
-                                       </span>
-                                       <button onClick={(e) => { e.stopPropagation(); handleEditClick(m); }} className={`p-1 rounded-lg ${selectedMeasurementId === m.id ? 'hover:bg-blue-500' : 'hover:bg-slate-100 text-slate-400'}`}>
-                                         <Edit2 size={10} />
-                                       </button>
-                                    </div>
-                                    <p className="text-[10px] font-black truncate leading-none mb-1 uppercase tracking-tight">{m.clientName}</p>
-                                    <p className={`text-[8px] font-bold truncate opacity-80 ${selectedMeasurementId === m.id ? 'text-white' : 'text-slate-500'}`}>
-                                       {m.measurerName || 'Sem medidor'}
-                                    </p>
+                         {/* Measurements in this day */}
+                         {dayMeasurements.map((m, idx) => {
+                            const top = getTimePosition(m.time);
+                            return (
+                              <div 
+                                key={m.id}
+                                onClick={(e) => { e.stopPropagation(); setSelectedMeasurementId(m.id); setSelectedDate(m.date); }}
+                                className={`absolute left-1 right-1 p-2 rounded-xl border-2 transition-all cursor-pointer shadow-lg overflow-hidden flex flex-col ${
+                                  selectedMeasurementId === m.id 
+                                    ? 'bg-blue-600 border-blue-400 text-white z-40 scale-105 ring-4 ring-blue-600/10' 
+                                    : 'bg-white border-slate-100 text-slate-900 hover:border-blue-300 z-10'
+                                }`}
+                                style={{ top: `${top}px`, height: '55px' }}
+                              >
+                                 <div className="flex items-center justify-between mb-0.5">
+                                    <span className={`text-[9px] font-black ${selectedMeasurementId === m.id ? 'text-blue-100' : 'text-blue-600'}`}>{m.time}</span>
+                                    <button onClick={(e) => { e.stopPropagation(); handleEditClick(m); }} className={`p-1 rounded ${selectedMeasurementId === m.id ? 'hover:bg-blue-500' : 'hover:bg-slate-50 text-slate-400'}`}>
+                                      <Edit2 size={10} />
+                                    </button>
                                  </div>
-                               );
-                            })
-                          )}
-                       </div>
-                    </div>
-                 </div>
-               );
-             })}
+                                 <p className="text-[10px] font-black truncate uppercase tracking-tight leading-none mb-1">{m.clientName}</p>
+                                 <p className={`text-[8px] font-bold truncate opacity-70 ${selectedMeasurementId === m.id ? 'text-white' : 'text-slate-500'}`}>{m.measurerName || 'Sem medidor'}</p>
+                                 {m.status === 'Concluída' && <CheckCircle2 size={10} className={`absolute bottom-2 right-2 ${selectedMeasurementId === m.id ? 'text-blue-200' : 'text-emerald-500'}`} />}
+                              </div>
+                            );
+                         })}
+                      </div>
+                    );
+                  })}
+               </div>
+            </div>
           </div>
         </div>
 
-        {/* Bottom Section - Map & Action Bar */}
-        <div className="flex-1 flex flex-col relative bg-slate-200">
-           <div className="flex-1 relative z-0">
-             {/* Floating Info Over Map */}
-             <div className="absolute top-4 left-4 z-[1000] space-y-2 pointer-events-none">
-                <div className="bg-white/90 backdrop-blur p-4 rounded-2xl shadow-2xl border pointer-events-auto min-w-[240px]">
-                   <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Foco do Dia</h4>
-                      <span className="px-2 py-0.5 bg-blue-50 text-[9px] font-black text-blue-600 rounded-full uppercase">
-                        {mapMeasurements.length} Atendimentos
-                      </span>
+        {/* Action Bar & Map Strip (Minimal at bottom for better flow) */}
+        <div className="h-[280px] shrink-0 flex flex-col lg:flex-row relative bg-slate-200 border-t">
+           {/* Summary Sidebar at Map level */}
+           <div className="w-80 bg-white border-r flex flex-col shrink-0 overflow-y-auto hidden lg:flex">
+                <div className="p-4 border-b bg-slate-50/50 flex items-center justify-between">
+                   <div>
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Compromissos do Dia</h4>
+                      <p className="text-sm font-black text-slate-900">{new Date(selectedDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}</p>
                    </div>
-                   <p className="text-sm font-black text-slate-900 leading-none mb-1">
-                     {new Date(selectedDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
-                   </p>
-                   <div className="flex items-center gap-2 mb-4">
-                      <div className={`w-2 h-2 rounded-full ${Object.keys(driverTrackingLocations).length > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
-                      <span className="text-[10px] font-black uppercase text-slate-500">
-                        {Object.keys(driverTrackingLocations).length} Medidores em Rota
-                      </span>
-                   </div>
-
+                   <Navigation size={18} className="text-blue-600" />
+                </div>
+                <div className="flex-1 p-3 space-y-2">
+                   {mapMeasurements.length === 0 ? (
+                      <div className="py-8 text-center opacity-50"><p className="text-[10px] font-black uppercase text-slate-400 tracking-tighter">Nenhuma medição hoje</p></div>
+                   ) : mapMeasurements.sort((a,b) => a.time.localeCompare(b.time)).map((m, i) => (
+                      <div key={m.id} onClick={() => setSelectedMeasurementId(m.id)} className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center gap-3 ${selectedMeasurementId === m.id ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-100 hover:bg-slate-50'}`}>
+                         <div className={`w-6 h-6 rounded-lg text-[10px] font-black flex items-center justify-center shrink-0 ${selectedMeasurementId === m.id ? 'bg-white text-blue-600' : 'bg-blue-600 text-white'}`}>
+                            {i+1}
+                         </div>
+                         <div className="min-w-0">
+                            <p className="text-[11px] font-black truncate tracking-tight mb-0.5">{m.clientName}</p>
+                            <p className="text-[9px] font-bold opacity-70">{m.time} • {m.measurerName || '---'}</p>
+                         </div>
+                      </div>
+                   ))}
+                </div>
+                <div className="p-3 border-t">
                    <button 
                      onClick={() => {
-                       const destination = mapMeasurements.length > 0 ? mapMeasurements[mapMeasurements.length - 1].address : '';
-                       const waypoints = mapMeasurements.slice(0, -1).map(m => m.address).join('/');
-                       window.open(`https://www.google.com/maps/dir/${encodeURIComponent(companyAddress)}/${waypoints ? encodeURIComponent(waypoints) + '/' : ''}${encodeURIComponent(destination)}`, '_blank');
+                        const destination = mapMeasurements.length > 0 ? mapMeasurements[mapMeasurements.length - 1].address : '';
+                        const waypoints = mapMeasurements.slice(0, -1).map(m => m.address).join('/');
+                        window.open(`https://www.google.com/maps/dir/${encodeURIComponent(companyAddress)}/${waypoints ? encodeURIComponent(waypoints) + '/' : ''}${encodeURIComponent(destination)}`, '_blank');
                      }}
-                     className="w-full py-3.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-2xl hover:bg-black transition-all flex items-center justify-center gap-2 group pointer-events-auto cursor-pointer"
+                     className="w-full py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-black transition-all flex items-center justify-center gap-2 group"
                    >
-                     <Navigation size={14} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> 
-                     Iniciar Rota no Maps
+                     <Navigation size={12} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> Rota no Maps
                    </button>
                 </div>
-             </div>
+           </div>
 
-             <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }} scrollWheelZoom={true}>
+           <div className="flex-1 relative z-0">
+              <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }} scrollWheelZoom={true}>
                  <TileLayer
                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
