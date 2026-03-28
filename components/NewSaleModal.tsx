@@ -192,7 +192,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
   // True when the selected material is an Acabamento or Produto de Revenda (no dimensions needed)
   const isProductMaterial = products.some(
-    p => (p.type === 'Acabamentos' || p.type === 'Produtos de Revenda') && p.description === itemMaterialId
+    p => p.description === itemMaterialId
   );
 
   const calculateM2 = (l: number, w: number, q: number) => {
@@ -224,13 +224,16 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
       return;
     }
 
-    // Find material in materials table OR in products (Acabamentos / Produtos de Revenda)
+    // Find material in materials table OR in products
     const matFromMaterials = materials.find(m => m.name === itemMaterialId || m.id === itemMaterialId);
-    const matFromProducts = products.find(p =>
-      (p.type === 'Acabamentos' || p.type === 'Produtos de Revenda') && p.description === itemMaterialId
-    );
-    const resolvedMaterialId = matFromMaterials?.id || matFromProducts?.id || '';
-    const resolvedMaterialName = matFromMaterials?.name || matFromProducts?.description || '';
+    const matFromProducts = products.find(p => p.description === itemMaterialId || p.id === itemMaterialId);
+    
+    // During edit, if the name matches the existing material name, we use the existing material ID as fallback
+    const originalItem = items.find(i => i.id === editingItemId);
+    const isSameMaterial = originalItem?.materialName === itemMaterialId;
+
+    const resolvedMaterialId = matFromMaterials?.id || matFromProducts?.id || (isSameMaterial ? originalItem?.materialId : '');
+    const resolvedMaterialName = matFromMaterials?.name || matFromProducts?.description || (isSameMaterial ? originalItem?.materialName : '');
 
     if (!resolvedMaterialId) {
       alert('Por favor, selecione uma Matéria Prima válida da lista.');
