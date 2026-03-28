@@ -153,8 +153,32 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
     }
   }, [newMeasurement.address, coords, companyAddress]);
 
-  // Filtrar medições pela data selecionada e termo de busca
-  const filteredMeasurements = measurements.filter(m => {
+  const getWeekDays = (baseDate: string) => {
+    const d = new Date(baseDate + 'T12:00:00');
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(d.setDate(diff));
+    
+    return Array.from({ length: 7 }, (_, i) => {
+      const dayDate = new Date(monday);
+      dayDate.setDate(monday.getDate() + i);
+      return dayDate.toISOString().split('T')[0];
+    });
+  };
+
+  const weekDays = getWeekDays(selectedDate);
+
+  const changeWeek = (direction: 'prev' | 'next') => {
+    const d = new Date(selectedDate + 'T12:00:00');
+    d.setDate(d.getDate() + (direction === 'next' ? 7 : -7));
+    setSelectedDate(d.toISOString().split('T')[0]);
+  };
+
+  // Filtrar medições da semana para o calendário
+  const weekMeasurements = measurements.filter(m => weekDays.includes(m.date));
+
+  // Filtrar medições para o mapa (apenas o dia selecionado para manter o foco da rota)
+  const mapMeasurements = measurements.filter(m => {
     const matchesDate = m.date === selectedDate;
     const matchesSearch = m.clientName.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           m.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -164,7 +188,6 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
 
   const handleAddMeasurement = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Original measurement to save:', newMeasurement);
     try {
       if (editingMeasurementId) {
         await onUpdateMeasurement(editingMeasurementId, newMeasurement);
@@ -174,23 +197,12 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
       setIsModalOpen(false);
       setEditingMeasurementId(null);
       setNewMeasurement({ 
-        clientName: '', 
-        address: '', 
-        cep: '',
-        date: selectedDate, 
-        time: '08:00', 
-        description: '', 
-        measurerName: '', 
-        status: 'Pendente', 
-        osId: '', 
-        osNumber: '',
-        addressComplement: '',
-        clientPhone: '',
-        sellerName: ''
+        clientName: '', address: '', cep: '', date: selectedDate, time: '08:00', description: '', measurerName: '', status: 'Pendente', osId: '', osNumber: '',
+        addressComplement: '', clientPhone: '', sellerName: ''
       });
     } catch (error) {
       console.error('Erro ao salvar medição:', error);
-      alert('Houve um erro ao salvar a medição. Por favor verifique o console ou tente novamente.');
+      alert('Houve um erro ao salvar a medição.');
     }
   };
 
@@ -216,15 +228,15 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
 
   const createNumberedIcon = (number: number, color: string) => L.divIcon({
     className: 'custom-div-icon',
-    html: `<div style="background-color: ${color}; color: white; border: 2px solid white; border-radius: 50%; width: 28px; height: 28px; display: flex; items: center; justify-content: center; font-weight: bold; font-size: 14px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); transform: translateY(-50%);">${number}</div>`,
+    html: `<div style="background-color: ${color}; color: white; border: 2px solid white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); transform: translateY(-50%);">${number}</div>`,
     iconSize: [28, 28],
     iconAnchor: [14, 0]
   });
 
   const createCompanyIcon = () => L.divIcon({
     className: 'custom-div-icon',
-    html: `<div style="background-color: #1f2937; color: white; border: 2px solid white; border-radius: 8px; width: 34px; height: 34px; display: flex; items: center; justify-content: center; font-weight: bold; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); transform: translateY(-50%);">
-            ${companyLogoUrl ? `<img src="${companyLogoUrl}" style="width: 24px; height: 24px; border-radius: 4px; object-cover" />` : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M16 18h.01"/></svg>'}
+    html: `<div style="background-color: #1f2937; color: white; border: 2px solid white; border-radius: 8px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); transform: translateY(-50%);">
+            ${companyLogoUrl ? `<img src="${companyLogoUrl}" style="width: 24px; height: 24px; border-radius: 4px; object-fit: cover" />` : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M16 18h.01"/></svg>'}
            </div>`,
     iconSize: [34, 34],
     iconAnchor: [17, 0]
@@ -232,7 +244,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
 
   const createMeasurerIcon = () => L.divIcon({
     className: 'custom-div-icon',
-    html: `<div style="background-color: #10b981; color: white; border: 2px solid white; border-radius: 50%; width: 32px; height: 32px; display: flex; items: center; justify-content: center; font-weight: bold; font-size: 14px; box-shadow: 0 0 15px rgba(16, 185, 129, 0.5); border: 3px solid white; animation: pulse 2s infinite; transform: translateY(-50%);">
+    html: `<div style="background-color: #10b981; color: white; border: 2px solid white; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; box-shadow: 0 0 15px rgba(16, 185, 129, 0.5); border: 3px solid white; animation: pulse 2s infinite; transform: translateY(-50%);">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
            </div>`,
     iconSize: [32, 32],
@@ -240,241 +252,282 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
   });
 
   return (
-    <div className="flex flex-col lg:flex-row h-full bg-gray-50 overflow-hidden font-sans relative">
-      {/* Mobile Nav Switcher */}
-      <div className="lg:hidden flex border-b bg-white relative z-[1001]">
-        <button 
-          onClick={() => setActiveMobileView('list')}
-          className={`flex-1 py-3 text-xs font-black uppercase tracking-widest transition-all ${activeMobileView === 'list' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400'}`}
-        >
-          Lista de Medições
-        </button>
-        <button 
-          onClick={() => setActiveMobileView('map')}
-          className={`flex-1 py-3 text-xs font-black uppercase tracking-widest transition-all ${activeMobileView === 'map' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400'}`}
-        >
-          Mapa / Rota
-        </button>
-      </div>
+    <div className="flex flex-col h-full bg-slate-50 overflow-hidden font-sans">
+      {/* Top Header / Navigation */}
+      <div className="bg-white border-b px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0 shadow-sm relative z-50">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-600 rounded-xl text-white shadow-lg shadow-blue-600/20">
+              <CalendarIcon size={24} />
+            </div>
+            <div>
+              <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none uppercase">Agenda de Medição</h1>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Exibição de Calendário Semanal</p>
+            </div>
+          </div>
 
-      {/* Sidebar - Measurement List */}
-      <div className={`${activeMobileView === 'list' ? 'flex' : 'hidden'} lg:flex w-full lg:w-96 border-r bg-white flex-col shrink-0 overflow-y-auto`}>
-        <div className="p-6 border-b space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-900">Agenda de Medição</h2>
+          <div className="hidden md:flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
             <button 
-              onClick={() => setIsModalOpen(true)}
-              className="p-2 bg-[var(--primary-color)] text-white rounded-lg hover:bg-[var(--secondary-color)] transition-colors"
+              onClick={() => changeWeek('prev')}
+              className="p-2 hover:bg-white hover:shadow-sm rounded-lg transition-all text-slate-600"
             >
-              <Plus size={20} />
+              <ChevronLeft size={18} />
+            </button>
+            <div className="px-4 py-2 text-sm font-black text-slate-700 uppercase min-w-[180px] text-center">
+              {new Date(weekDays[0]).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+            </div>
+            <button 
+              onClick={() => changeWeek('next')}
+              className="p-2 hover:bg-white hover:shadow-sm rounded-lg transition-all text-slate-600"
+            >
+              <ChevronRight size={18} />
             </button>
           </div>
+        </div>
 
-          {/* Date Picker (Small Calendar Context) */}
-          <div className="flex items-center gap-2 bg-gray-100 p-2 rounded-xl">
-             <CalendarIcon size={18} className="text-gray-400 shrink-0" />
-             <input 
-               type="date"
-               className="bg-transparent border-none text-sm font-bold text-gray-700 w-full focus:ring-0 outline-none"
-               value={selectedDate}
-               onChange={(e) => setSelectedDate(e.target.value)}
-             />
-          </div>
-
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input
               type="text"
-              placeholder="Buscar cliente, endereço ou O.S..."
-              className="w-full pl-10 pr-4 py-2 bg-gray-100 border-none rounded-xl text-sm focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all font-medium"
+              placeholder="Buscar cliente ou O.S..."
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-100 border-none rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-600/10 transition-all"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          <div className="flex items-center justify-between px-2 mb-2">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Agendados para Hoje</span>
-            <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-              {filteredMeasurements.length} medições
-            </span>
-          </div>
-          
-          {filteredMeasurements.length === 0 ? (
-            <div className="text-center py-12 px-6">
-              <CalendarIcon className="mx-auto text-gray-200 mb-4" size={48} />
-              <p className="text-gray-500 font-medium">Nenhuma medição para esta data</p>
-              <p className="text-xs text-gray-400 mt-1">Clique no + para agendar uma nova medição</p>
-            </div>
-          ) : (
-            filteredMeasurements.map((m, i) => (
-              <div 
-                key={m.id} 
-                className={`p-4 rounded-2xl border transition-all group cursor-pointer shadow-sm ${selectedMeasurementId === m.id ? 'border-blue-600 bg-blue-50/50' : 'border-gray-100 bg-white hover:border-blue-300'}`}
-                onClick={() => {
-                  setSelectedMeasurementId(m.id);
-                  if (coords[m.address]) setMapCenter(coords[m.address]);
-                }}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-black text-xs shadow-md">
-                      {i + 1}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-gray-900 line-clamp-1">{m.clientName}</h3>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold text-blue-600">{m.time}</span>
-                        {m.osNumber && <span className="text-[10px] font-bold text-gray-400">O.S. {m.osNumber}</span>}
-                        {m.sellerName && <span className="text-[10px] font-bold text-emerald-600">| Ved: {m.sellerName}</span>}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={(e) => { e.stopPropagation(); handleEditClick(m); }} className="p-1.5 text-gray-400 hover:text-blue-600 bg-gray-50 rounded-lg">
-                      <Edit2 size={14} />
-                    </button>
-                    <button onClick={(e) => { e.stopPropagation(); if(confirm('Excluir esta medição?')) onDeleteMeasurement(m.id); }} className="p-1.5 text-gray-400 hover:text-red-600 bg-gray-50 rounded-lg">
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2 text-xs text-gray-500">
-                  <MapPin size={14} className="mt-0.5 shrink-0" />
-                  <p className="line-clamp-2">{m.address}</p>
-                </div>
-                {m.measurerName && (
-                  <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <UserIcon size={12} className="text-gray-400" />
-                      <span className="text-[10px] font-bold text-gray-600 uppercase tracking-tight">Medidor: {m.measurerName}</span>
-                    </div>
-                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase ${
-                        m.status === 'Concluída' ? 'bg-green-100 text-green-700' : 
-                        m.status === 'Cancelada' ? 'bg-red-100 text-red-700' : 
-                        'bg-blue-100 text-blue-700'
-                    }`}>
-                      {m.status}
-                    </span>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-black uppercase tracking-widest shadow-lg shadow-blue-600/30 hover:bg-blue-700 active:scale-95 transition-all shrink-0"
+          >
+            <Plus size={18} strokeWidth={3} /> <span className="hidden sm:inline">Agendar</span>
+          </button>
         </div>
       </div>
 
-      {/* Main Content - Map View */}
-      <div className={`${activeMobileView === 'map' ? 'flex' : 'hidden'} lg:flex flex-1 relative bg-gray-200 min-h-[400px]`}>
-        <div className="absolute inset-0 bg-[#f8f9fa] flex flex-col">
-          <div className="p-3 lg:p-4 bg-white/80 backdrop-blur-md border-b flex flex-col sm:flex-row items-center justify-between gap-3 z-[1000] absolute top-0 left-0 right-0">
-            <div className="flex items-center gap-4">
-               <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border shadow-sm text-sm font-bold text-gray-700">
-                 <CalendarIcon size={16} className="text-blue-600" /> {new Date(selectedDate).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
-               </div>
-               <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-lg border border-green-100 shadow-sm text-[11px] font-black uppercase text-green-700">
-                 <div className={`w-2 h-2 rounded-full ${Object.keys(driverTrackingLocations).length > 0 ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-                 {Object.keys(driverTrackingLocations).length} Medidores Online (GPS)
-               </div>
-            </div>
-            <div className="flex items-center gap-2">
-               <button 
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-black transition-all"
-                  onClick={() => alert('Download do roteiro de medição iniciado...')}
+      <div className="flex-1 overflow-hidden flex flex-col">
+        {/* Weekly Calendar Grid */}
+        <div className="bg-white border-b overflow-x-auto custom-scrollbar shrink-0">
+          <div className="min-w-[1000px] grid grid-cols-7 border-l">
+            {weekDays.map((dayStr) => {
+              const dayDate = new Date(dayStr + 'T12:00:00');
+              const isToday = dayStr === new Date().toISOString().split('T')[0];
+              const isSelected = dayStr === selectedDate;
+              const dayMeasurements = weekMeasurements.filter(m => m.date === dayStr)
+                .sort((a, b) => a.time.localeCompare(b.time));
+
+              return (
+                <div 
+                  key={dayStr}
+                  onClick={() => setSelectedDate(dayStr)}
+                  className={`min-h-[220px] border-r border-b group cursor-pointer transition-all ${isSelected ? 'bg-blue-50/30' : 'hover:bg-slate-50'}`}
                 >
-                  <FileDown size={18} /> Baixar Roteiro
-               </button>
-               <button 
-                onClick={() => {
-                   const destination = filteredMeasurements.length > 0 ? filteredMeasurements[filteredMeasurements.length - 1].address : '';
-                   const waypoints = filteredMeasurements.slice(0, -1).map(m => m.address).join('/');
-                   window.open(`https://www.google.com/maps/dir/${encodeURIComponent(companyAddress)}/${waypoints ? encodeURIComponent(waypoints) + '/' : ''}${encodeURIComponent(destination)}`, '_blank');
-                 }}
-                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all"
-               >
-                 <Navigation size={18} /> Rota no Maps
-               </button>
-            </div>
-          </div>
-          
-          <div className="flex-1 relative z-0">
-            <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }} scrollWheelZoom={true}>
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              <MapController center={mapCenter} />
-              
-              {/* Company Home Marker */}
-              {coords[companyAddress] && !isNaN(coords[companyAddress][0]) && (
-                <Marker position={coords[companyAddress] as L.LatLngTuple} icon={createCompanyIcon()}>
-                  <Popup>
-                    <div className="p-1">
-                      <p className="font-black text-xs uppercase text-gray-400 mb-1">Sede / Ponto de Saída</p>
-                      <p className="font-bold text-sm">{companyName}</p>
+                  <div className={`p-3 border-b flex items-center justify-between ${isSelected ? 'bg-blue-600/5' : 'bg-slate-50/50'}`}>
+                    <div className="flex flex-col">
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-blue-600' : 'text-slate-400'}`}>
+                        {dayDate.toLocaleDateString('pt-BR', { weekday: 'short' })}
+                      </span>
+                      <span className={`text-lg font-black ${isSelected ? 'text-blue-600' : 'text-slate-700'}`}>
+                        {dayDate.getDate()}
+                      </span>
                     </div>
-                  </Popup>
-                </Marker>
-              )}
+                    {isToday && (
+                      <span className="px-2 py-0.5 bg-blue-600 text-[9px] font-black text-white rounded-full uppercase">Hoje</span>
+                    )}
+                  </div>
 
-              {/* Measurement Markers */}
-              {filteredMeasurements.map((m, i) => (
-                coords[m.address] && !isNaN(coords[m.address][0]) && (
-                  <Marker 
-                    key={m.id} 
-                    position={coords[m.address] as L.LatLngTuple} 
-                    icon={createNumberedIcon(i + 1, '#2563eb')}
-                    eventHandlers={{ click: () => setSelectedMeasurementId(m.id) }}
-                  >
-                    <Popup>
-                      <div className="p-1 min-w-[150px]">
-                        <p className="font-black text-[10px] uppercase text-gray-400 mb-1">Medição {i + 1}</p>
-                        <p className="font-bold text-sm text-gray-900">{m.clientName}</p>
-                        <p className="text-xs text-blue-600 font-bold mb-1">{m.time}</p>
-                        <p className="text-[10px] text-gray-500 line-clamp-2">{m.address}</p>
-                        {m.description && <p className="mt-2 text-[10px] bg-gray-50 p-1.5 rounded italic opacity-70">"{m.description}"</p>}
+                  <div className="p-2 space-y-1 max-h-[160px] overflow-y-auto custom-scrollbar">
+                    {dayMeasurements.length === 0 ? (
+                      <div className="py-8 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Plus size={16} className="mx-auto text-slate-300" />
                       </div>
-                    </Popup>
-                  </Marker>
-                )
-              ))}
+                    ) : (
+                      dayMeasurements.map(m => (
+                        <div 
+                          key={m.id}
+                          onClick={(e) => { e.stopPropagation(); setSelectedMeasurementId(m.id); setSelectedDate(m.date); }}
+                          className={`p-2 rounded-lg border text-left transition-all relative overflow-hidden ${
+                            selectedMeasurementId === m.id 
+                              ? 'border-blue-600 bg-blue-600 text-white shadow-md' 
+                              : 'border-slate-100 bg-white hover:border-blue-300 shadow-sm'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-1 mb-0.5">
+                            <span className={`text-[9px] font-black ${selectedMeasurementId === m.id ? 'text-blue-100' : 'text-blue-600'}`}>
+                              {m.time}
+                            </span>
+                            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100">
+                               <button 
+                                 onClick={(e) => { e.stopPropagation(); handleEditClick(m); }}
+                                 className={`p-1 rounded ${selectedMeasurementId === m.id ? 'hover:bg-blue-500' : 'hover:bg-slate-100 text-slate-400 hover:text-blue-600'}`}
+                               >
+                                 <Edit2 size={10} />
+                               </button>
+                            </div>
+                          </div>
+                          <p className="text-[10px] font-bold truncate leading-tight">{m.clientName}</p>
+                          <p className={`text-[9px] truncate opacity-70 ${selectedMeasurementId === m.id ? 'text-white' : 'text-slate-500'}`}>
+                            {m.measurerName || 'Sem medidor'}
+                          </p>
+                          {m.status === 'Concluída' && (
+                            <div className="absolute top-1 right-1">
+                              <CheckCircle2 size={10} className={selectedMeasurementId === m.id ? 'text-blue-200' : 'text-emerald-500'} />
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
-              {/* Route Path Line */}
-              {filteredMeasurements.length > 0 && (
-                <Polyline 
-                  positions={[
-                    coords[companyAddress] as [number, number],
-                    ...filteredMeasurements.filter(m => coords[m.address]).map(m => coords[m.address] as [number, number])
-                  ]}
-                  color="#2563eb"
-                  weight={3}
-                  opacity={0.5}
-                  dashArray="5, 10"
-                />
-              )}
-
-              {/* Real-time Tracking Markers */}
-              {Object.entries(driverTrackingLocations).map(([name, location]) => (
-                <Marker 
-                  key={name}
-                  position={[location.lat, location.lng]} 
-                  icon={createMeasurerIcon()}
+        {/* Bottom Section - Map & Details */}
+        <div className="flex-1 flex flex-col lg:flex-row relative bg-slate-100 overflow-hidden">
+           {/* Details Panel - Optional/Integrated */}
+           <div className="w-full lg:w-80 bg-white border-r flex flex-col shrink-0 overflow-y-auto hidden lg:flex">
+             <div className="p-5 border-b bg-slate-50/50">
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                  <Navigation size={16} className="text-blue-600" /> Roteiro do Dia
+                </h3>
+                <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase">
+                  {new Date(selectedDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
+                </p>
+             </div>
+             <div className="flex-1 p-4 space-y-3">
+               {mapMeasurements.length === 0 ? (
+                 <div className="py-12 text-center">
+                    <AlertCircle size={32} className="mx-auto text-slate-200 mb-3" />
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Nenhuma medição</p>
+                 </div>
+               ) : (
+                 mapMeasurements.map((m, i) => (
+                   <div 
+                     key={m.id}
+                     onClick={() => setSelectedMeasurementId(m.id)}
+                     className={`p-3 rounded-xl border transition-all cursor-pointer ${selectedMeasurementId === m.id ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-100 bg-white hover:bg-slate-50'}`}
+                   >
+                     <div className="flex items-center gap-3">
+                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black ${selectedMeasurementId === m.id ? 'bg-white text-blue-600' : 'bg-blue-600 text-white'}`}>
+                          {i + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold truncate leading-none mb-1">{m.clientName}</p>
+                          <p className={`text-[9px] truncate opacity-70 ${selectedMeasurementId === m.id ? 'text-white' : 'text-slate-500'}`}>
+                            {m.time} • O.S. {m.osNumber || '---'}
+                          </p>
+                        </div>
+                     </div>
+                   </div>
+                 ))
+               )}
+             </div>
+             <div className="p-4 border-t bg-slate-50">
+                <button 
+                  onClick={() => {
+                    const destination = mapMeasurements.length > 0 ? mapMeasurements[mapMeasurements.length - 1].address : '';
+                    const waypoints = mapMeasurements.slice(0, -1).map(m => m.address).join('/');
+                    window.open(`https://www.google.com/maps/dir/${encodeURIComponent(companyAddress)}/${waypoints ? encodeURIComponent(waypoints) + '/' : ''}${encodeURIComponent(destination)}`, '_blank');
+                  }}
+                  className="w-full py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-black transition-all flex items-center justify-center gap-2"
                 >
-                  <Popup>
-                    <div className="p-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                        <p className="font-black text-xs uppercase text-green-600">Medidor Online</p>
-                      </div>
-                      <p className="font-bold text-sm">{name}</p>
-                      <p className="text-[10px] text-gray-500 font-medium tracking-tight">Visto às: {location.lastUpdate}</p>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-            </MapContainer>
-          </div>
+                  <Navigation size={14} /> Abrir no Google Maps
+                </button>
+             </div>
+           </div>
+
+           {/* Map View */}
+           <div className="flex-1 relative">
+             <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-[1000] pointer-events-none">
+                <div className="px-4 py-2 bg-white/90 backdrop-blur rounded-xl border shadow-lg pointer-events-auto flex items-center gap-3">
+                   <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${Object.keys(driverTrackingLocations).length > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
+                      <span className="text-[10px] font-black uppercase text-slate-600">
+                        {Object.keys(driverTrackingLocations).length} Medidores Online
+                      </span>
+                   </div>
+                </div>
+             </div>
+
+             <div className="h-full w-full relative z-0">
+               <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }} scrollWheelZoom={true}>
+                 <TileLayer
+                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                 />
+                 <MapController center={mapCenter} />
+                 
+                 {/* Company Home Marker */}
+                 {coords[companyAddress] && !isNaN(coords[companyAddress][0]) && (
+                   <Marker position={coords[companyAddress] as L.LatLngTuple} icon={createCompanyIcon()}>
+                     <Popup>
+                       <div className="p-1">
+                         <p className="font-black text-xs uppercase text-slate-400 mb-1">Sede / Ponto de Saída</p>
+                         <p className="font-bold text-sm">{companyName}</p>
+                       </div>
+                     </Popup>
+                   </Marker>
+                 )}
+   
+                 {/* Measurement Markers */}
+                 {mapMeasurements.map((m, i) => (
+                   coords[m.address] && !isNaN(coords[m.address][0]) && (
+                     <Marker 
+                       key={m.id} 
+                       position={coords[m.address] as L.LatLngTuple} 
+                       icon={createNumberedIcon(i + 1, '#2563eb')}
+                       eventHandlers={{ click: () => setSelectedMeasurementId(m.id) }}
+                     >
+                       <Popup>
+                         <div className="p-1 min-w-[150px]">
+                           <p className="font-black text-[10px] uppercase text-slate-400 mb-1">Medição {i + 1}</p>
+                           <p className="font-bold text-sm text-slate-900">{m.clientName}</p>
+                           <p className="text-xs text-blue-600 font-bold mb-1">{m.time}</p>
+                           <p className="text-[10px] text-slate-500 line-clamp-2">{m.address}</p>
+                         </div>
+                       </Popup>
+                     </Marker>
+                   )
+                 ))}
+   
+                 {/* Route Path Line */}
+                 {mapMeasurements.length > 0 && (
+                   <Polyline 
+                     positions={[
+                       coords[companyAddress] as [number, number],
+                       ...mapMeasurements.filter(m => coords[m.address]).map(m => coords[m.address] as [number, number])
+                     ]}
+                     color="#2563eb"
+                     weight={3}
+                     opacity={0.5}
+                     dashArray="5, 10"
+                   />
+                 )}
+   
+                 {/* Real-time Tracking Markers */}
+                 {Object.entries(driverTrackingLocations).map(([name, location]) => (
+                   <Marker 
+                     key={name}
+                     position={[location.lat, location.lng]} 
+                     icon={createMeasurerIcon()}
+                   >
+                     <Popup>
+                       <div className="p-1">
+                         <div className="flex items-center gap-2 mb-1">
+                           <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                           <p className="font-black text-xs uppercase text-emerald-600">Medidor Online</p>
+                         </div>
+                         <p className="font-bold text-sm tracking-tight">{name}</p>
+                         <p className="text-[10px] text-slate-500 font-medium">Visto às: {location.lastUpdate}</p>
+                       </div>
+                     </Popup>
+                   </Marker>
+                 ))}
+               </MapContainer>
+             </div>
+           </div>
         </div>
       </div>
 
