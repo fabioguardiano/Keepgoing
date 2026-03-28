@@ -66,12 +66,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
             {companyInfo.name}
           </div>
           )}
-          <div style={{ fontSize: '9px', marginTop: '6px', color: '#333' }}>
-            {companyInfo.document && <span>CNPJ: {companyInfo.document} &nbsp;|&nbsp; </span>}
-            {companyInfo.address && <span>{companyInfo.address} &nbsp;|&nbsp; </span>}
-            {companyInfo.phone && <span>Fone: {companyInfo.phone} &nbsp;|&nbsp; </span>}
-            {companyInfo.email && <span>{companyInfo.email}</span>}
-          </div>
+          {/* Dados da empresa removidos a pedido do usuário */}
         </div>
 
         {/* Bloco doc info */}
