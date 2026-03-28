@@ -315,8 +315,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
     setItemPrice(item.unitPrice);
     setItemService(item.servicePercentage || 0);
     setActiveEnvironment(item.environment || '');
-    const mat = materials.find(m => m.id === item.materialId);
-    setItemMaterialId(mat ? mat.name : '');
+    // Preserve the material name already stored in the item
+    setItemMaterialId(item.materialName || '');
   };
 
   const resetItemForm = () => {
