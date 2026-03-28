@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { PaymentType } from '../types';
+import { up } from '../lib/uppercase';
 
 const map = (r: any): PaymentType => ({
   id: r.id,
@@ -42,7 +43,7 @@ export const usePaymentTypes = (companyId?: string) => {
       id: pt.id && pt.id.length > 20 ? pt.id : undefined,
       company_id: companyId,
       code: pt.code,
-      name: pt.name,
+      name: up(pt.name),
       status: pt.status || 'ativo',
     };
     const { data, error } = await supabase.from('payment_types').upsert(payload).select().single();

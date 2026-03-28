@@ -98,7 +98,7 @@ const App: React.FC = () => {
     appUsers, handleSaveUser, handleDeleteUser,
     staff, handleSaveStaff, handleDeleteStaff,
     phases, addPhase, renamePhase, deletePhase, reorderPhases, togglePhaseRequirement,
-    salesPhases, addSalesPhase, renameSalesPhase, deleteSalesPhase, reorderSalesPhases,
+    salesPhases, addSalesPhase, renameSalesPhase, deleteSalesPhase, updateSalesPhase, reorderSalesPhases,
     brands, handleSaveBrand, handleDeleteBrand,
     productGroups, handleSaveProductGroup, handleDeleteProductGroup,
     serviceGroups, handleSaveServiceGroup, handleDeleteServiceGroup,
@@ -108,7 +108,7 @@ const App: React.FC = () => {
     deadlineWarningDays, setDeadlineWarningDays,
     deadlineUrgentDays, setDeadlineUrgentDays,
     idleTimeoutMinutes, setIdleTimeoutMinutes,
-  } = useSettings(setOrders, setSales);
+  } = useSettings(setOrders, setSales, activeCompanyId);
 
   // Idle session timer
   const { isWarning: idleWarning, secondsLeft: idleSecondsLeft, reset: resetIdleTimer } = useIdleTimer({
@@ -389,6 +389,7 @@ const App: React.FC = () => {
             staff={staff}
             onSaveStaff={handleSaveStaff}
             onDeleteStaff={handleDeleteStaff}
+            permissionProfiles={permissionProfiles}
           />
         );
       case 'Relatórios':
@@ -406,6 +407,7 @@ const App: React.FC = () => {
             onAddSalesPhase={addSalesPhase}
             onRenameSalesPhase={renameSalesPhase}
             onDeleteSalesPhase={deleteSalesPhase}
+            onUpdateSalesPhase={updateSalesPhase}
             onReorderSalesPhases={reorderSalesPhases}
             companyInfo={companyInfo}
             onUpdateCompany={setCompanyInfo}

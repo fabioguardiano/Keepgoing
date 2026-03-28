@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { OrderService, ProductionPhase } from '../types';
 import { supabase } from '../lib/supabase';
+import { up } from '../lib/uppercase';
 
 const fromRow = (o: any): OrderService => ({
   ...o,
@@ -35,9 +36,9 @@ const toPayload = (o: OrderService, companyId: string) => ({
   company_id: companyId,
   os_number: o.osNumber,
   order_number: o.orderNumber,
-  client_name: o.clientName,
-  project_description: o.projectDescription,
-  material: o.material,
+  client_name: up(o.clientName),
+  project_description: up(o.projectDescription),
+  material: up(o.material),
   material_area: o.materialArea,
   phase: o.phase,
   seller: o.seller,
@@ -45,11 +46,11 @@ const toPayload = (o: OrderService, companyId: string) => ({
   priority: o.priority,
   client_id: o.clientId,
   architect_id: o.architectId,
-  architect_name: o.architectName,
+  architect_name: up(o.architectName),
   total_value: o.totalValue,
   remaining_value: o.remainingValue,
-  observations: o.observations,
-  internal_observations: o.internalObservations,
+  observations: up(o.observations),
+  internal_observations: up(o.internalObservations),
   image_urls: o.imageUrls,
   items: o.items,
   payments: o.payments,
@@ -65,8 +66,8 @@ const toPayload = (o: OrderService, companyId: string) => ({
   payment_conditions: o.paymentConditions,
   delivery_deadline: o.deliveryDeadline,
   totals: o.totals,
-  lost_reason: o.lostReason,
-  lost_details: o.lostDetails,
+  lost_reason: up(o.lostReason),
+  lost_details: up(o.lostDetails),
   crm_notes: o.crmNotes,
 });
 

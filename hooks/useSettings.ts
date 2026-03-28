@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import { up } from '../lib/uppercase';
 
 // ─── useLocalStorage ────────────────────────────────────────────────────────
 // Substitui o padrão repetitivo useState + useEffect para localStorage.
@@ -42,7 +44,8 @@ const INITIAL_STAFF: ProductionStaff[] = [
 
 export const useSettings = (
   setOrders?: (update: (prev: any[]) => any[]) => void,
-  setSales?: (update: (prev: any[]) => any[]) => void
+  setSales?: (update: (prev: any[]) => any[]) => void,
+  companyId?: string
 ) => {
   // App Users
   const [appUsers, setAppUsers] = useLocalStorage<AppUser[]>('marmo_app_users', INITIAL_APP_USERS);
@@ -62,7 +65,9 @@ export const useSettings = (
 
   // Sales Phases
   const DEFAULT_SALES_PHASES: SalesPhaseConfig[] = [
-    { name: 'Oportunidade' }, { name: 'Orçamento' }, { name: 'Negociação' }, { name: 'Pedido/Ganho' },
+    { name: 'Oportunidade', code: '10', desirableDays: 2, alertDays: 1 },
+    { name: 'Orçamento', code: '20', desirableDays: 2, alertDays: 1 },
+    { name: 'Negociação', code: '30', desirableDays: 5, alertDays: 1 },
   ];
   const [salesPhases, setSalesPhases] = useLocalStorage<SalesPhaseConfig[]>('marmo_sales_phases', DEFAULT_SALES_PHASES);
 
@@ -78,34 +83,69 @@ export const useSettings = (
   const [serviceGroups, setServiceGroups] = useLocalStorage<ServiceGroup[]>('marmo_service_groups', []);
   const [salesChannels, setSalesChannels] = useLocalStorage<SalesChannel[]>('marmo_sales_channels', DEFAULT_SALES_CHANNELS);
 
-  // Company Info
-  const [companyInfo, setCompanyInfo] = useState<CompanyInfo>(() => {
-    const defaultData = {
-      name: 'Tok de Art',
-      document: '14.092.404/0001-67',
-      address: 'Rua Américo Brasiliense, 1853 - Vila Seixas - Ribeirão Preto - SP',
-      phone: '(16) 3636-0114',
-      email: 'vendas@tokdeart.com.br',
-      logoUrl: '',
-      lostReasonOptions: ['Tinha preço menor', 'Prazo de entrega melhor', 'Desistiu de fazer', 'Não aprovaram o material', 'Distância da obra'],
-      buttonColor: '#ec5b13',
-      sidebarColor: '#0f172a',
-      sidebarTextColor: '#cbd5e1'
-    };
+  // Company Info — fonte de verdade: Supabase. localStorage é apenas cache inicial.
+  const defaultCompanyData: CompanyInfo = {
+    name: 'Tok de Art',
+    document: '14.092.404/0001-67',
+    address: 'Rua Américo Brasiliense, 1853 - Vila Seixas - Ribeirão Preto - SP',
+    phone: '(16) 3636-0114',
+    email: 'vendas@tokdeart.com.br',
+    logoUrl: '',
+    lostReasonOptions: ['Tinha preço menor', 'Prazo de entrega melhor', 'Desistiu de fazer', 'Não aprovaram o material', 'Distância da obra'],
+    buttonColor: '#ec5b13',
+    sidebarColor: '#0f172a',
+    sidebarTextColor: '#cbd5e1',
+  };
+
+  const [companyInfo, setCompanyInfoState] = useState<CompanyInfo>(() => {
     try {
       const saved = localStorage.getItem('marmo_company');
-      if (!saved) return defaultData;
+      if (!saved) return defaultCompanyData;
       const parsed = JSON.parse(saved) || {};
-      return { ...defaultData, ...parsed };
+      return { ...defaultCompanyData, ...parsed };
     } catch {
-      return defaultData;
+      return defaultCompanyData;
     }
   });
 
+  // Busca do Supabase quando companyId estiver disponível
   useEffect(() => {
-    localStorage.setItem('marmo_company', JSON.stringify(companyInfo));
-    
-    // Theme sync
+    if (!companyId) return;
+    const fetchCompany = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('companies')
+          .select('*')
+          .eq('id', companyId)
+          .single();
+        if (error) throw error;
+        if (data) {
+          const info: CompanyInfo = {
+            name: data.name || '',
+            document: data.document || '',
+            address: data.address || '',
+            phone: data.phone || '',
+            email: data.email || '',
+            logoUrl: data.logo_url || '',
+            sidebarColor: data.sidebar_color || '#0f172a',
+            sidebarTextColor: data.sidebar_text_color || '#cbd5e1',
+            buttonColor: data.button_color || '#ec5b13',
+            lostReasonOptions: data.lost_reason_options || [],
+            legalNote: data.legal_note || undefined,
+            maxDiscountPct: data.max_discount_pct ?? undefined,
+          };
+          setCompanyInfoState(info);
+          localStorage.setItem('marmo_company', JSON.stringify(info));
+        }
+      } catch (err) {
+        console.error('Erro ao carregar dados da empresa:', err);
+      }
+    };
+    fetchCompany();
+  }, [companyId]);
+
+  // Sincroniza variáveis CSS de tema sempre que companyInfo mudar
+  useEffect(() => {
     const root = document.documentElement;
     const primary = companyInfo.buttonColor || '#ec5b13';
     root.style.setProperty('--primary-color', primary);
@@ -122,6 +162,32 @@ export const useSettings = (
     };
     root.style.setProperty('--secondary-color', darken(primary, 10));
   }, [companyInfo]);
+
+  // Salva no Supabase + atualiza estado local e cache
+  const setCompanyInfo = async (info: CompanyInfo) => {
+    setCompanyInfoState(info);
+    localStorage.setItem('marmo_company', JSON.stringify(info));
+    if (!companyId) return;
+    try {
+      const { error } = await supabase.from('companies').update({
+        name: up(info.name) ?? info.name,
+        document: info.document || null,
+        address: up(info.address) ?? info.address ?? null,
+        phone: info.phone || null,
+        email: info.email || null,
+        logo_url: info.logoUrl || null,
+        sidebar_color: info.sidebarColor || null,
+        sidebar_text_color: info.sidebarTextColor || null,
+        button_color: info.buttonColor || null,
+        lost_reason_options: info.lostReasonOptions || [],
+        legal_note: info.legalNote || null,
+        max_discount_pct: info.maxDiscountPct ?? null,
+      }).eq('id', companyId);
+      if (error) throw error;
+    } catch (err) {
+      console.error('Erro ao salvar dados da empresa:', err);
+    }
+  };
 
   // Handlers
   const handleSaveUser = (u: AppUser) => setAppUsers(prev => prev.find(x => x.id === u.id) ? prev.map(x => x.id === u.id ? u : x) : [...prev, u]);
@@ -161,7 +227,31 @@ export const useSettings = (
       setSales(prev => prev.map(s => s.salesPhase === oldName ? { ...s, salesPhase: newName } : s));
     }
   };
-  const deleteSalesPhase = (name: string) => setSalesPhases(prev => prev.filter(p => p.name !== name));
+  const deleteSalesPhase = (name: string) => setSalesPhases(prev => {
+    const phase = prev.find(p => p.name === name);
+    if (phase?.code === '10' || phase?.code === '20' || phase?.code === '30') {
+      alert('Esta fase é obrigatória do sistema e não pode ser excluída.');
+      return prev;
+    }
+    return prev.filter(p => p.name !== name);
+  });
+
+  // Migração/Garantia de códigos para fases padrão
+  useEffect(() => {
+    setSalesPhases(prev => {
+      let changed = false;
+      const next = prev.map(p => {
+        if (p.name === 'Oportunidade' && !p.code) { changed = true; return { ...p, code: '10' }; }
+        if (p.name === 'Orçamento' && !p.code)    { changed = true; return { ...p, code: '20' }; }
+        if (p.name === 'Negociação' && !p.code)   { changed = true; return { ...p, code: '30' }; }
+        return p;
+      });
+      return changed ? next : prev;
+    });
+  }, []);
+  const updateSalesPhase = (name: string, updates: Partial<SalesPhaseConfig>) => {
+    setSalesPhases(prev => prev.map(p => p.name === name ? { ...p, ...updates } : p));
+  };
   const reorderSalesPhases = (startIndex: number, endIndex: number) => {
     const result = Array.from(salesPhases);
     const [removed] = result.splice(startIndex, 1);
@@ -194,23 +284,23 @@ export const useSettings = (
   const handleDeleteProfile = (id: string) =>
     setPermissionProfiles(prev => prev.filter(p => p.id !== id && !p.isDefault));
 
-  const handleSaveBrand = (b: Brand) => setBrands(prev => prev.find(x => x.id === b.id) ? prev.map(x => x.id === b.id ? b : x) : [b, ...prev]);
+  const handleSaveBrand = (b: Brand) => setBrands(prev => { const u = { ...b, description: up(b.description) ?? b.description }; return prev.find(x => x.id === b.id) ? prev.map(x => x.id === b.id ? u : x) : [u, ...prev]; });
   const handleDeleteBrand = (id: string) => setBrands(prev => prev.map(x => x.id === id ? { ...x, status: 'inativo' as const } : x));
 
-  const handleSaveProductGroup = (g: ProductGroup) => setProductGroups(prev => prev.find(x => x.id === g.id) ? prev.map(x => x.id === g.id ? g : x) : [g, ...prev]);
+  const handleSaveProductGroup = (g: ProductGroup) => setProductGroups(prev => { const u = { ...g, description: up(g.description) ?? g.description }; return prev.find(x => x.id === g.id) ? prev.map(x => x.id === g.id ? u : x) : [u, ...prev]; });
   const handleDeleteProductGroup = (id: string) => setProductGroups(prev => prev.map(x => x.id === id ? { ...x, status: 'inativo' as const } : x));
 
-  const handleSaveServiceGroup = (g: ServiceGroup) => setServiceGroups(prev => prev.find(x => x.id === g.id) ? prev.map(x => x.id === g.id ? g : x) : [g, ...prev]);
+  const handleSaveServiceGroup = (g: ServiceGroup) => setServiceGroups(prev => { const u = { ...g, description: up(g.description) ?? g.description }; return prev.find(x => x.id === g.id) ? prev.map(x => x.id === g.id ? u : x) : [u, ...prev]; });
   const handleDeleteServiceGroup = (id: string) => setServiceGroups(prev => prev.map(x => x.id === id ? { ...x, status: 'inativo' as const } : x));
 
-  const handleSaveSalesChannel = (c: SalesChannel) => setSalesChannels(prev => prev.find(x => x.id === c.id) ? prev.map(x => x.id === c.id ? c : x) : [...prev, c]);
+  const handleSaveSalesChannel = (c: SalesChannel) => setSalesChannels(prev => { const u = { ...c, name: up(c.name) ?? c.name }; return prev.find(x => x.id === c.id) ? prev.map(x => x.id === c.id ? u : x) : [...prev, u]; });
   const handleDeleteSalesChannel = (id: string) => setSalesChannels(prev => prev.map(x => x.id === id ? { ...x, status: 'inativo' as const } : x));
 
   return {
     appUsers, handleSaveUser, handleDeleteUser,
     staff, handleSaveStaff, handleDeleteStaff,
     phases, addPhase, renamePhase, deletePhase, reorderPhases, togglePhaseRequirement,
-    salesPhases, addSalesPhase, renameSalesPhase, deleteSalesPhase, reorderSalesPhases,
+    salesPhases, addSalesPhase, renameSalesPhase, deleteSalesPhase, updateSalesPhase, reorderSalesPhases,
     brands, handleSaveBrand, handleDeleteBrand,
     productGroups, handleSaveProductGroup, handleDeleteProductGroup,
     serviceGroups, handleSaveServiceGroup, handleDeleteServiceGroup,

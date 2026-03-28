@@ -212,6 +212,7 @@ interface SettingsViewProps {
     onAddSalesPhase: (name: string) => void;
     onRenameSalesPhase: (oldName: string, newName: string) => void;
     onDeleteSalesPhase: (name: string) => void;
+    onUpdateSalesPhase: (name: string, updates: Partial<SalesPhaseConfig>) => void;
     onReorderSalesPhases: (startIndex: number, endIndex: number) => void;
     companyInfo: CompanyInfo;
     onUpdateCompany: (info: CompanyInfo) => void;
@@ -256,6 +257,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     onAddSalesPhase,
     onRenameSalesPhase,
     onDeleteSalesPhase,
+    onUpdateSalesPhase,
     onReorderSalesPhases,
     companyInfo,
     onUpdateCompany,
@@ -740,7 +742,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                                                         setEditingPhase(null);
                                                                                     }
                                                                                 }}
-                                                                                className="w-full bg-white border border-[var(--primary-color)] rounded-lg px-2 py-1 text-xs font-bold focus:outline-none"
+                                                                                className="w-full bg-white border border-primary rounded-lg px-2 py-1 text-xs font-bold focus:outline-none"
                                                                             />
                                                                         </div>
                                                                     ) : (
@@ -748,19 +750,62 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                                     )}
                                                                 </div>
 
-                                                                <div className="flex items-center gap-1">
-                                                                    <button
-                                                                        onClick={() => { setEditingPhase(phase.name); setTempName(phase.name); }}
-                                                                        className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
-                                                                    >
-                                                                        <Edit2 size={16} />
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => onDeleteSalesPhase(phase.name)}
-                                                                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                                                                    >
-                                                                        <Trash2 size={16} />
-                                                                    </button>
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Código</label>
+                                                                        <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2 py-1">
+                                                                            <input
+                                                                                type="text"
+                                                                                value={phase.code ?? ''}
+                                                                                onChange={e => onUpdateSalesPhase(phase.name, { code: e.target.value })}
+                                                                                placeholder="--"
+                                                                                className="w-10 text-xs font-bold text-slate-700 bg-transparent focus:outline-none text-center"
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Tempo Desejável</label>
+                                                                        <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2 py-1">
+                                                                            <input
+                                                                                type="number"
+                                                                                min={1}
+                                                                                value={phase.desirableDays ?? ''}
+                                                                                onChange={e => onUpdateSalesPhase(phase.name, { desirableDays: parseInt(e.target.value) || undefined })}
+                                                                                placeholder="--"
+                                                                                className="w-10 text-xs font-bold text-slate-700 bg-transparent focus:outline-none text-center"
+                                                                            />
+                                                                            <span className="text-[10px] font-bold text-slate-400">dias</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Alerta</label>
+                                                                        <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2 py-1">
+                                                                            <input
+                                                                                type="number"
+                                                                                min={1}
+                                                                                value={phase.alertDays ?? ''}
+                                                                                onChange={e => onUpdateSalesPhase(phase.name, { alertDays: parseInt(e.target.value) || undefined })}
+                                                                                placeholder="--"
+                                                                                className="w-10 text-xs font-bold text-slate-700 bg-transparent focus:outline-none text-center"
+                                                                            />
+                                                                            <span className="text-[10px] font-bold text-slate-400">dias</span>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="flex items-center gap-1">
+                                                                        <button
+                                                                            onClick={() => { setEditingPhase(phase.name); setTempName(phase.name); }}
+                                                                            className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
+                                                                        >
+                                                                            <Edit2 size={16} />
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => onDeleteSalesPhase(phase.name)}
+                                                                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                                                        >
+                                                                            <Trash2 size={16} />
+                                                                        </button>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         )}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { SalesOrder } from '../types';
+import { up } from '../lib/uppercase';
 
 export const useSales = (companyId?: string, logActivity?: (action: any, details: string, referenceId?: string, orderNumber?: string) => Promise<void>) => {
   const [sales, setSales] = useState<SalesOrder[]>([]);
@@ -49,7 +50,8 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
             desconto: Number(s.discount_value || s.discount || 0),
             geral: Number(s.total)
           },
-          crmNotes: s.crm_notes || []
+          crmNotes: s.crm_notes || [],
+          lastInteractionAt: s.last_interaction_at
         }));
         setSales(mapped as SalesOrder[]);
         localStorage.setItem(`marmo_sales_${companyId || 'legacy'}`, JSON.stringify(mapped));
@@ -65,6 +67,23 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
 
   useEffect(() => {
     fetchSales();
+    if (!companyId) return;
+
+    const channel = supabase
+      .channel('sales_realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'sales',
+        filter: `company_id=eq.${companyId}`
+      }, () => {
+        fetchSales();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [companyId]);
 
   const handleSaveSale = async (s: SalesOrder) => {
@@ -76,7 +95,7 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
         order_number: s.orderNumber,
         os_number: s.osNumber,
         client_id: s.clientId || null,
-        client_name: s.clientName,
+        client_name: up(s.clientName),
         status: s.status,
         items: s.items,
         subtotal: s.totals?.vendas || 0,
@@ -85,14 +104,14 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
         discount_percentage: s.discountPercentage || 0,
         total: s.totals?.geral || s.totalValue || 0,
         delivery_days: parseInt(s.deliveryDeadline as string) > 0 ? parseInt(s.deliveryDeadline as string) : null,
-        seller_name: s.seller,
-        notes: s.observations,
+        seller_name: up(s.seller),
+        notes: up(s.observations),
         is_os_generated: s.isOsGenerated,
         sales_phase: s.salesPhase || null,
         sales_channel: s.salesChannel || null,
         architect_id: s.architectId || null,
-        architect_name: s.architectName || null,
-        payment_conditions: s.paymentConditions || null,
+        architect_name: up(s.architectName) || null,
+        payment_conditions: up(s.paymentConditions) || null,
         payment_method_id: s.paymentMethodId || null,
         payment_method_name: s.paymentMethodName || null,
         payment_installments: s.paymentInstallments || null,
@@ -101,7 +120,8 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
         down_payment_method_id: s.downPaymentMethodId || null,
         down_payment_method_name: s.downPaymentMethodName || null,
         down_payment_due_date: s.downPaymentDueDate || null,
-        crm_notes: s.crmNotes || null
+        crm_notes: s.crmNotes || null,
+        last_interaction_at: s.lastInteractionAt || null
       };
 
       const { data, error } = await supabase
@@ -140,6 +160,7 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
         downPaymentDueDate: savedRow.down_payment_due_date || undefined,
         discountValue: Number(savedRow.discount_value || savedRow.discount || 0),
         discountPercentage: Number(savedRow.discount_percentage || 0),
+        lastInteractionAt: savedRow.last_interaction_at,
         totals: {
           vendas: Number(savedRow.subtotal),
           desconto: Number(savedRow.discount_value || savedRow.discount || 0),

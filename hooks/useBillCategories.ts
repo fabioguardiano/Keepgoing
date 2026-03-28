@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { BillCategory } from '../types';
+import { up } from '../lib/uppercase';
 
 const DEFAULT_CATEGORIES: Omit<BillCategory, 'companyId' | 'createdAt'>[] = [
   { id: 'dc-fornecedor', name: 'Fornecedor',   color: '#6366F1', nature: 'Variável' },
@@ -68,11 +69,11 @@ export const useBillCategories = (companyId?: string) => {
     if (!companyId || useDefaults) return;
     if (cat.id && !cat.id.startsWith('dc-')) {
       await supabase.from('bill_categories')
-        .update({ name: cat.name, color: cat.color, nature: cat.nature })
+        .update({ name: up(cat.name), color: cat.color, nature: cat.nature })
         .eq('id', cat.id).eq('company_id', companyId);
     } else {
       await supabase.from('bill_categories')
-        .insert({ company_id: companyId, name: cat.name, color: cat.color, nature: cat.nature });
+        .insert({ company_id: companyId, name: up(cat.name), color: cat.color, nature: cat.nature });
     }
     await fetchCategories();
   };

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Architect } from '../types';
+import { up } from '../lib/uppercase';
 
 export const useArchitects = (companyId?: string, logActivity?: any) => {
   const [architects, setArchitects] = useState<Architect[]>([]);
@@ -52,14 +53,14 @@ export const useArchitects = (companyId?: string, logActivity?: any) => {
         company_id: finalCompanyId,
         type: a.type,
         document: a.document,
-        legal_name: a.legalName,
-        trading_name: a.tradingName,
-        contact_name: a.contactName,
+        legal_name: up(a.legalName),
+        trading_name: up(a.tradingName),
+        contact_name: up(a.contactName),
         email: a.email,
         phone: a.phone,
         cellphone: a.cellphone,
         address: a.address,
-        observations: a.observations,
+        observations: up(a.observations),
         rg_insc: a.rgInsc,
         architect_code: a.code
       };

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { AccountReceivable, ActivityLog } from '../types';
+import { up } from '../lib/uppercase';
 
 type LogFn = (action: ActivityLog['action'], details: string, referenceId?: string, orderNumber?: string, module?: string, entityType?: string) => Promise<void>;
 
@@ -57,9 +58,9 @@ export const useAccountsReceivable = (companyId?: string, logActivity?: LogFn) =
     const payload: any = {
       id: ar.id && ar.id.length > 20 ? ar.id : undefined,
       company_id: companyId,
-      description: ar.description,
+      description: up(ar.description),
       client_id: ar.clientId || null,
-      client_name: ar.clientName || '',
+      client_name: up(ar.clientName) || '',
       sale_id: ar.saleId || null,
       order_number: ar.orderNumber || '',
       total_value: ar.totalValue,
@@ -69,7 +70,7 @@ export const useAccountsReceivable = (companyId?: string, logActivity?: LogFn) =
       payment_method_name: ar.paymentMethodName || '',
       category: ar.category || 'Venda',
       due_date: ar.dueDate,
-      notes: ar.notes || '',
+      notes: up(ar.notes) || '',
       status: ar.status,
     };
     const { data, error } = await supabase.from('accounts_receivable').upsert(payload).select().single();

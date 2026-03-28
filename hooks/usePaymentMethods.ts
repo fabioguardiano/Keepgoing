@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { PaymentMethod } from '../types';
+import { up } from '../lib/uppercase';
 
 const map = (r: any): PaymentMethod => ({
   id: r.id,
@@ -46,7 +47,7 @@ export const usePaymentMethods = (companyId?: string) => {
       id: pm.id && pm.id.length > 20 ? pm.id : undefined,
       company_id: companyId,
       code: pm.code ?? null,
-      name: pm.name,
+      name: up(pm.name),
       category: pm.category,
       type: pm.type,
       installments: pm.installments ?? 1,

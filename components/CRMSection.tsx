@@ -60,7 +60,12 @@ export const CRMSection: React.FC<CRMSectionProps> = ({ sale, onSaveSale, curren
         text: newCrmNote.trim()
       };
       const updatedNotes = [...allNotes, newNote];
-      await onSaveSale({ ...sale, crmNotes: updatedNotes });
+      const now = new Date().toISOString();
+      await onSaveSale({ 
+        ...sale, 
+        crmNotes: updatedNotes,
+        lastInteractionAt: now
+      });
       setNewCrmNote('');
     } finally {
       setIsSaving(false);

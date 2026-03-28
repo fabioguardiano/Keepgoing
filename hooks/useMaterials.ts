@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Material } from '../types';
+import { up } from '../lib/uppercase';
 
 export const useMaterials = (companyId?: string, logActivity?: (action: any, details: string, referenceId?: string, orderNumber?: string) => Promise<void>) => {
   const [materials, setMaterials] = useState<Material[]>([]);
@@ -66,7 +67,7 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
         id: (m.id && m.id.length > 20) ? m.id : undefined,
         company_id: finalCompanyId,
         code: m.code,
-        name: m.name,
+        name: up(m.name),
         type: m.type,
         status: m.status,
         product_group: m.group,
@@ -75,8 +76,8 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
         min_stock: m.minStock,
         stock_quantity: m.stockQuantity,
         registration_date: m.registrationDate,
-        brand: m.brand,
-        supplier: m.supplier,
+        brand: up(m.brand),
+        supplier: up(m.supplier),
         difal: m.difal,
         freight_cost: m.freightCost,
         special_table_margin: m.specialTableMargin,

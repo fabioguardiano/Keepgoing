@@ -630,6 +630,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
         await (onSave as (sale: SalesOrder) => Promise<any>)({
           ...initialData,
           status: 'Orçamento',
+          salesPhase: 'Negociação',
           observations: `[RETORNO] ${revertJustification}${initialData.observations ? '\n' + initialData.observations : ''}`
         });
       }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Users, Shield, HardHat, Plus, X, Mail, Edit2, Trash2, ChevronDown, Search, PowerOff } from 'lucide-react';
-import { AppUser, ProductionStaff, StaffPosition } from '../types';
+import { AppUser, ProductionStaff, StaffPosition, PermissionProfile } from '../types';
 
 const POSITION_LABELS: Record<StaffPosition, string> = {
   serrador: 'Serrador',
@@ -44,14 +44,16 @@ const formatDateBR = (dateStr: string) => {
 
 interface UserFormProps {
   initial?: Partial<AppUser>;
+  profiles: PermissionProfile[];
   onSave: (u: AppUser) => void;
   onClose: () => void;
 }
 
-const UserForm: React.FC<UserFormProps> = ({ initial, onSave, onClose }) => {
+const UserForm: React.FC<UserFormProps> = ({ initial, profiles, onSave, onClose }) => {
   const [name, setName] = useState(initial?.name ?? '');
   const [email, setEmail] = useState(initial?.email ?? '');
   const [role, setRole] = useState<AppUser['role']>(initial?.role ?? 'seller');
+  const [profileId, setProfileId] = useState(initial?.profileId ?? '');
   const [password, setPassword] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -59,6 +61,7 @@ const UserForm: React.FC<UserFormProps> = ({ initial, onSave, onClose }) => {
     onSave({
       id: initial?.id || String(Date.now()),
       name, email, role,
+      profileId: profileId || undefined,
       status: initial?.status || 'ativo',
       createdAt: initial?.createdAt || new Date().toISOString().slice(0, 10),
     });
@@ -84,11 +87,11 @@ const UserForm: React.FC<UserFormProps> = ({ initial, onSave, onClose }) => {
         <div className="p-8 space-y-4">
           <div>
             <label className={labelClass}>Nome Completo</label>
-            <input required value={name} onChange={e => setName(e.target.value)} className={inputClass} placeholder="Ex: João Silva" />
+            <input required value={name} onChange={e => setName(e.target.value.toUpperCase())} className={inputClass} placeholder="Ex: JOÃO SILVA" />
           </div>
           <div>
             <label className={labelClass}>Email</label>
-            <input required type="email" value={email} onChange={e => setEmail(e.target.value)} className={inputClass} placeholder="joao@empresa.com" />
+            <input required type="email" value={email} onChange={e => setEmail(e.target.value.toLowerCase())} className={inputClass} placeholder="joao@empresa.com" />
           </div>
           {!initial?.id && (
             <div>
@@ -99,11 +102,27 @@ const UserForm: React.FC<UserFormProps> = ({ initial, onSave, onClose }) => {
           <div>
             <label className={labelClass}>Perfil de Acesso</label>
             <div className="relative">
-              <select value={role} onChange={e => setRole(e.target.value as AppUser['role'])} className={`${inputClass} appearance-none`}>
-                <option value="admin">Administrador</option>
-                <option value="manager">Gerente</option>
-                <option value="seller">Vendedor</option>
-                <option value="driver">Motorista/Entregador</option>
+              <select 
+                value={profileId} 
+                onChange={e => {
+                  const pid = e.target.value;
+                  setProfileId(pid);
+                  // Opcional: Atualiza o role básico para compatibilidade se for um perfil padrão
+                  const profile = profiles.find(p => p.id === pid);
+                  if (profile?.id.startsWith('profile-')) {
+                    const r = pid.replace('profile-', '') as AppUser['role'];
+                    if (['admin', 'manager', 'seller', 'driver', 'viewer'].includes(r)) {
+                      setRole(r);
+                    }
+                  }
+                }} 
+                className={`${inputClass} appearance-none`}
+                required
+              >
+                <option value="">Selecione um perfil...</option>
+                {profiles.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
               </select>
               <ChevronDown className="absolute right-4 top-3.5 text-slate-400 w-4 h-4 pointer-events-none" />
             </div>
@@ -164,7 +183,7 @@ const StaffForm: React.FC<StaffFormProps> = ({ initial, onSave, onClose }) => {
         <div className="p-8 space-y-4">
           <div>
             <label className={labelClass}>Nome Completo</label>
-            <input required value={name} onChange={e => setName(e.target.value)} className={inputClass} placeholder="Ex: João Ferreira" />
+            <input required value={name} onChange={e => setName(e.target.value.toUpperCase())} className={inputClass} placeholder="Ex: JOÃO FERREIRA" />
           </div>
           <div>
             <label className={labelClass}>Função</label>
@@ -204,9 +223,10 @@ interface TeamViewProps {
   staff: ProductionStaff[];
   onSaveStaff: (s: ProductionStaff) => void;
   onDeleteStaff: (id: string) => void;
+  permissionProfiles: PermissionProfile[];
 }
 
-export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDeleteUser, staff, onSaveStaff, onDeleteStaff }) => {
+export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDeleteUser, staff, onSaveStaff, onDeleteStaff, permissionProfiles }) => {
   const [tab, setTab] = useState<Tab>('usuarios');
   const [showUserForm, setShowUserForm] = useState(false);
   const [showStaffForm, setShowStaffForm] = useState(false);
@@ -476,7 +496,7 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
         </div>
       </div>
 
-      {showUserForm && <UserForm initial={editingUser} onSave={onSaveUser} onClose={() => { setShowUserForm(false); setEditingUser(undefined); }} />}
+      {showUserForm && <UserForm initial={editingUser} profiles={permissionProfiles} onSave={onSaveUser} onClose={() => { setShowUserForm(false); setEditingUser(undefined); }} />}
       {showStaffForm && <StaffForm initial={editingStaff} onSave={onSaveStaff} onClose={() => { setShowStaffForm(false); setEditingStaff(undefined); }} />}
     </div>
   );

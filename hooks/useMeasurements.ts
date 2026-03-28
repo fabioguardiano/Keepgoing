@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Measurement } from '../types';
+import { up } from '../lib/uppercase';
 
 /**
  * Hook para gerenciar o ciclo de vida das medições agendadas no Supabase.
@@ -66,19 +67,19 @@ export const useMeasurements = (companyId?: string) => {
         .from('measurements')
         .insert({
           company_id: companyId,
-          client_name: measurement.clientName,
-          address: measurement.address,
+          client_name: up(measurement.clientName),
+          address: up(measurement.address),
           cep: measurement.cep,
           date: measurement.date,
           time: measurement.time,
           status: measurement.status || 'Pendente',
-          description: measurement.description,
-          measurer_name: measurement.measurerName,
+          description: up(measurement.description),
+          measurer_name: up(measurement.measurerName),
           os_id: measurement.osId || null,
           os_number: measurement.osNumber,
-          address_complement: measurement.addressComplement,
+          address_complement: up(measurement.addressComplement),
           client_phone: measurement.clientPhone,
-          seller_name: measurement.sellerName
+          seller_name: up(measurement.sellerName)
         })
         .select()
         .single();
@@ -114,19 +115,19 @@ export const useMeasurements = (companyId?: string) => {
   const updateMeasurement = async (id: string, updates: Partial<Measurement>) => {
     try {
       const payload: any = {};
-      if (updates.clientName !== undefined) payload.client_name = updates.clientName;
-      if (updates.address !== undefined) payload.address = updates.address;
+      if (updates.clientName !== undefined) payload.client_name = up(updates.clientName);
+      if (updates.address !== undefined) payload.address = up(updates.address);
       if (updates.cep !== undefined) payload.cep = updates.cep;
       if (updates.date !== undefined) payload.date = updates.date;
       if (updates.time !== undefined) payload.time = updates.time;
       if (updates.status !== undefined) payload.status = updates.status;
-      if (updates.description !== undefined) payload.description = updates.description;
-      if (updates.measurerName !== undefined) payload.measurer_name = updates.measurerName;
+      if (updates.description !== undefined) payload.description = up(updates.description);
+      if (updates.measurerName !== undefined) payload.measurer_name = up(updates.measurerName);
       if (updates.osId !== undefined) payload.os_id = updates.osId || null;
       if (updates.osNumber !== undefined) payload.os_number = updates.osNumber;
-      if (updates.addressComplement !== undefined) payload.address_complement = updates.addressComplement;
+      if (updates.addressComplement !== undefined) payload.address_complement = up(updates.addressComplement);
       if (updates.clientPhone !== undefined) payload.client_phone = updates.clientPhone;
-      if (updates.sellerName !== undefined) payload.seller_name = updates.sellerName;
+      if (updates.sellerName !== undefined) payload.seller_name = up(updates.sellerName);
 
       const { error } = await supabase
         .from('measurements')

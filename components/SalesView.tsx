@@ -160,7 +160,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
       if (error) throw new Error('Senha incorreta.');
       await (onSaveSale as (sale: SalesOrder) => Promise<any>)({
         ...revertPending.sale,
-        salesPhase: 'Negociação',
+        salesPhase: revertPending.targetPhase,
         status: 'Orçamento',
         observations: `[RETORNO] ${revertJustification}${revertPending.sale.observations ? '\n' + revertPending.sale.observations : ''}`
       });
@@ -628,15 +628,15 @@ export const SalesView: React.FC<SalesViewProps> = ({
                                         setEditingPhase(phase);
                                         setTempPhaseName(phase);
                                       }}
-                                      className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate cursor-pointer hover:text-[var(--primary-color)] transition-colors leading-none mb-1"
+                                      className="text-[13px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest truncate cursor-pointer hover:text-[var(--primary-color)] transition-colors leading-none mb-1.5"
                                     >
                                       {phase}
                                     </h3>
-                                    <span className="text-xs font-black text-slate-700 dark:text-slate-200 tabular-nums leading-none">
+                                    <span className="text-[14px] font-black text-slate-800 dark:text-white tabular-nums leading-none">
                                       R$ {(phaseTotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </span>
                                   </div>
-                                  <span className="bg-slate-100 dark:bg-slate-800 text-[10px] font-black px-2 py-1 rounded-md text-slate-500 min-w-[24px] text-center shrink-0">
+                                  <span className="bg-slate-100 dark:bg-slate-800 text-[12px] font-black px-3 py-1.5 rounded-lg text-slate-500 min-w-[32px] text-center shrink-0 border border-slate-200 dark:border-slate-700">
                                     {phaseSales.length}
                                   </span>
                                 </>
@@ -687,6 +687,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
                                     handleEdit={handleEdit}
                                     onSaveSale={onSaveSale}
                                     phase={phase}
+                                    phaseConfig={phaseConfig}
                                     currentUser={currentUser}
                                     canEdit={canEditSale(sale)}
                                   />
@@ -753,6 +754,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
           companyInfo={companyInfo} 
           materials={materials}
           client={clients.find(c => c.id === printingSale.clientId)}
+          sellerUser={appUsers.find(u => u.name === printingSale.seller || u.email === printingSale.seller)}
         />
       )}
 

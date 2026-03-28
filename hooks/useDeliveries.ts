@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Delivery } from '../types';
+import { up } from '../lib/uppercase';
 
 export const useDeliveries = (companyId?: string, logActivity?: (action: any, details: string, referenceId?: string, orderNumber?: string) => Promise<void>) => {
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
@@ -50,8 +51,8 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
         company_id: finalCompanyId,
         order_id: delivery.orderId,
         os_number: delivery.osNumber,
-        client_name: delivery.clientName,
-        address: delivery.address,
+        client_name: up(delivery.clientName),
+        address: up(delivery.address),
         date: delivery.date,
         time: delivery.time,
         status: delivery.status

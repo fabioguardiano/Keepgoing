@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Supplier } from '../types';
+import { up } from '../lib/uppercase';
 
 export const useSuppliers = (companyId?: string, logActivity?: any) => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -52,16 +53,16 @@ export const useSuppliers = (companyId?: string, logActivity?: any) => {
         company_id: finalCompanyId,
         type: s.type,
         document: s.document,
-        legal_name: s.legalName,
-        trading_name: s.tradingName,
-        contact_name: s.contactName,
+        legal_name: up(s.legalName),
+        trading_name: up(s.tradingName),
+        contact_name: up(s.contactName),
         email: s.email,
         phone: s.phone,
         website: s.website,
         address: s.address,
         rg_insc: s.rgInsc,
         cellphone: s.cellphone,
-        observations: s.observations,
+        observations: up(s.observations),
         supplier_code: s.code
       };
 

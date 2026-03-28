@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { FinanceTransaction } from '../types';
+import { up } from '../lib/uppercase';
 
 export const useFinance = (companyId?: string, logActivity?: (action: any, details: string, referenceId?: string) => Promise<void>) => {
   const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
@@ -53,7 +54,7 @@ export const useFinance = (companyId?: string, logActivity?: (action: any, detai
         value: t.value,
         date: t.date,
         status: t.status,
-        description: t.description
+        description: up(t.description)
       };
 
       const { data, error } = await supabase

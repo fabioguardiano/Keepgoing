@@ -89,7 +89,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value.toLowerCase())}
                   className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-[#221610] border border-slate-200 dark:border-[var(--primary-color)]/20 rounded-lg focus:ring-2 focus:ring-[var(--primary-color)]/50 focus:border-[var(--primary-color)] outline-none transition-all dark:text-white placeholder:text-slate-400"
                   placeholder="seu@email.com"
                   required

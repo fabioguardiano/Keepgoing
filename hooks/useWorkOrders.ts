@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { WorkOrder, WorkOrderLog } from '../types';
+import { up } from '../lib/uppercase';
 
 const mapLog = (r: any): WorkOrderLog => ({
   id: r.id,
@@ -148,13 +149,13 @@ export const useWorkOrders = (companyId?: string) => {
             os_sub_number: nextSub++,
             sale_id: order.saleId,
             sale_order_number: order.saleOrderNumber,
-            client_name: order.clientName || '',
+            client_name: up(order.clientName) || '',
             client_id: order.clientId || null,
-            seller_name: order.sellerName || null,
+            seller_name: up(order.sellerName) || null,
             environments: order.environments,
             sale_item_ids: order.saleItemIds || [],
             status: 'Aguardando',
-            notes: order.notes || '',
+            notes: up(order.notes) || '',
             delivery_deadline: order.deliveryDeadline || null,
             delivery_date: order.deliveryDeadline && parseInt(order.deliveryDeadline) > 0
               ? toISODate(addBusinessDays(new Date(), parseInt(order.deliveryDeadline)))

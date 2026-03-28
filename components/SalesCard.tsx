@@ -1,7 +1,7 @@
 import React from 'react';
 import { Draggable } from '@hello-pangea/dnd';
 import { Calendar, User as UserIcon, DollarSign, CheckCircle2, Lock, GripVertical, ArrowRight, EyeOff } from 'lucide-react';
-import { SalesOrder, AppUser } from '../types';
+import { SalesOrder, AppUser, SalesPhaseConfig } from '../types';
 import { CRMSection } from './CRMSection';
 
 interface SalesCardProps {
@@ -10,11 +10,62 @@ interface SalesCardProps {
   handleEdit: (sale: SalesOrder) => void;
   onSaveSale: (sale: SalesOrder) => void;
   phase: string;
+  phaseConfig?: SalesPhaseConfig;
   currentUser?: AppUser | null;
   canEdit?: boolean;
 }
 
-export const SalesCard: React.FC<SalesCardProps> = ({ sale, index, handleEdit, onSaveSale, phase, currentUser, canEdit = true }) => {
+export const SalesCard: React.FC<SalesCardProps> = ({ 
+  sale, index, handleEdit, onSaveSale, phase, phaseConfig, currentUser, canEdit = true 
+}) => {
+  const daysElapsed = React.useMemo(() => {
+    // 1. Pega a criação ou interação oficial (se a coluna no banco existir)
+    const dates = [new Date(sale.createdAt)];
+    if (sale.lastInteractionAt) dates.push(new Date(sale.lastInteractionAt));
+    
+    // 2. Fallback: Procura a nota de CRM mais recente
+    if (sale.crmNotes && sale.crmNotes.length > 0) {
+      const lastNote = sale.crmNotes
+        .map(n => new Date(n.timestamp).getTime())
+        .sort((a,b) => b - a)[0];
+      if (lastNote) dates.push(new Date(lastNote));
+    }
+
+    // 3. Usa a data da atividade mais recente de todas
+    const referenceDate = new Date(Math.max(...dates.map(d => d.getTime())));
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - referenceDate.getTime());
+    return Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+  }, [sale.createdAt, sale.lastInteractionAt, sale.crmNotes]);
+
+  const deadlineStatus = React.useMemo(() => {
+    if (sale.status === 'Pedido' || sale.status === 'Cancelado') return 'none';
+    
+    const alertDays = phaseConfig?.alertDays || 0;
+    const desirableDays = phaseConfig?.desirableDays || 0;
+
+    if (alertDays === 0 && desirableDays === 0) return 'none';
+
+    // Se o usuário inverter, usamos o maior para o alerta (Vermelho)
+    const lateThreshold = Math.max(alertDays, desirableDays);
+    const warningThreshold = Math.min(alertDays, desirableDays);
+
+    if (daysElapsed >= lateThreshold) return 'alert';
+    if (daysElapsed >= warningThreshold) return 'warning';
+    
+    return 'success';
+  }, [daysElapsed, phaseConfig, sale.status]);
+
+  const statusClasses = {
+    alert: 'border-red-400 dark:border-red-900/50 bg-red-50/10 dark:bg-red-900/10 shadow-red-100 dark:shadow-none shadow-lg',
+    warning: 'border-orange-400 dark:border-orange-900/50 bg-orange-50/10 dark:bg-orange-900/10 shadow-orange-100 dark:shadow-none shadow-md',
+    success: 'border-emerald-400 dark:border-emerald-900/50 bg-emerald-50/10 dark:bg-emerald-900/10 shadow-emerald-50 dark:shadow-none shadow-sm',
+    none: 'border-slate-100 dark:border-slate-800 hover:border-slate-200 shadow-sm'
+  };
+
+  const borderClass = sale.status === 'Pedido' 
+    ? 'border-green-200 dark:border-green-900/50 bg-green-50/30 dark:bg-green-900/10' 
+    : statusClasses[deadlineStatus as keyof typeof statusClasses];
 
   return (
     <Draggable key={sale.id} draggableId={sale.id} index={index}>
@@ -23,7 +74,7 @@ export const SalesCard: React.FC<SalesCardProps> = ({ sale, index, handleEdit, o
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           ref={provided.innerRef}
-          className={`bg-white dark:bg-slate-900 border p-4 rounded-2xl shadow-sm transition-all group ${canEdit ? 'cursor-grab active:cursor-grabbing' : 'cursor-default opacity-80'} ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-[var(--primary-color)] scale-[1.02] z-50' : canEdit ? 'hover:shadow-md' : ''} ${sale.status === 'Pedido' ? 'border-green-200 dark:border-green-900/50 bg-green-50/30 dark:bg-green-900/10' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200'}`}
+          className={`bg-white dark:bg-slate-900 border p-4 rounded-2xl transition-all group ${canEdit ? 'cursor-grab active:cursor-grabbing' : 'cursor-default opacity-80'} ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-[var(--primary-color)] scale-[1.02] z-50' : canEdit ? 'hover:shadow-md' : ''} ${borderClass}`}
           onClick={() => canEdit && handleEdit(sale)}
         >
           <div className="flex justify-between items-start mb-2">
@@ -37,6 +88,14 @@ export const SalesCard: React.FC<SalesCardProps> = ({ sale, index, handleEdit, o
               {sale.status === 'Pedido' && (
                 <span className="bg-green-100 text-green-700 text-[8px] font-black px-1.5 py-0.5 rounded uppercase flex items-center gap-1" title="Pedido confirmado — bloqueado para edição">
                   <Lock size={8} /> Bloqueado
+                </span>
+              )}
+              {deadlineStatus !== 'none' && (
+                <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase flex items-center gap-1 
+                  ${deadlineStatus === 'alert' ? 'bg-red-100 text-red-600 animate-pulse' : 
+                    deadlineStatus === 'warning' ? 'bg-orange-100 text-orange-600' : 
+                    'bg-emerald-100 text-emerald-600'}`}>
+                  {daysElapsed === 0 ? 'Recente' : `${daysElapsed} ${daysElapsed === 1 ? 'Dia' : 'Dias'}`}
                 </span>
               )}
               {!canEdit && (

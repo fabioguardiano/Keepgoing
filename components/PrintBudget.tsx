@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { SalesOrder, CompanyInfo, Client, Material } from '../types';
+import { SalesOrder, CompanyInfo, Client, Material, AppUser } from '../types';
 import { fmt } from '../utils/formatting';
 
 interface PrintBudgetProps {
@@ -9,6 +9,7 @@ interface PrintBudgetProps {
   client?: Client;
   materials: Material[];
   blurMeasurements?: boolean;
+  sellerUser?: AppUser;
 }
 
 const fmtDim = (v?: number) =>
@@ -20,6 +21,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
   client,
   materials,
   blurMeasurements = false,
+  sellerUser,
 }) => {
   const today = new Date().toLocaleDateString('pt-BR');
   const currentTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -60,11 +62,11 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
           {companyInfo.logoUrl ? (
             <img src={companyInfo.logoUrl} alt="Logo" style={{ maxHeight: '150px', maxWidth: '400px', width: 'auto', objectFit: 'contain', display: 'block' }} />
           ) : (
-            <div style={{ fontSize: '34px', fontWeight: 900, letterSpacing: '-1px', color: '#1e293b' }}>
-              {companyInfo.name}
-            </div>
+          <div style={{ fontSize: '34px', fontWeight: 900, letterSpacing: '-1px', color: '#000' }}>
+            {companyInfo.name}
+          </div>
           )}
-          <div style={{ fontSize: '9px', marginTop: '6px', color: '#475569' }}>
+          <div style={{ fontSize: '9px', marginTop: '6px', color: '#333' }}>
             {companyInfo.document && <span>CNPJ: {companyInfo.document} &nbsp;|&nbsp; </span>}
             {companyInfo.address && <span>{companyInfo.address} &nbsp;|&nbsp; </span>}
             {companyInfo.phone && <span>Fone: {companyInfo.phone} &nbsp;|&nbsp; </span>}
@@ -116,7 +118,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
 
       {/* ── DADOS DO CLIENTE ─────────────────────────────────── */}
       <div style={{ border: '1px solid #000', marginBottom: '6px' }}>
-        <div style={{ backgroundColor: '#1e293b', color: '#fff', fontWeight: 900, fontSize: '9px', padding: '2px 6px', letterSpacing: '1px', textTransform: 'uppercase' }}>
+        <div style={{ backgroundColor: '#000', color: '#fff', fontWeight: 900, fontSize: '9px', padding: '2px 6px', letterSpacing: '1px', textTransform: 'uppercase' }}>
           Dados do Cliente
         </div>
         <div style={{ padding: '5px 7px' }}>
@@ -161,7 +163,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
 
       {/* ── ENDEREÇO DE ENTREGA ───────────────────────────────── */}
       <div style={{ border: '1px solid #000', marginBottom: '10px' }}>
-        <div style={{ backgroundColor: '#334155', color: '#fff', fontWeight: 900, fontSize: '9px', padding: '2px 6px', letterSpacing: '1px', textTransform: 'uppercase' }}>
+        <div style={{ backgroundColor: '#333', color: '#fff', fontWeight: 900, fontSize: '9px', padding: '2px 6px', letterSpacing: '1px', textTransform: 'uppercase' }}>
           Endereço de Entrega
         </div>
         <div style={{ padding: '5px 7px' }}>
@@ -207,7 +209,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
         return (
           <div key={env} style={{ marginBottom: '10px', pageBreakInside: 'avoid' }}>
             {/* Cabeçalho do ambiente */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#0f172a', color: '#fff', padding: '3px 8px', marginBottom: '0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#000', color: '#fff', padding: '3px 8px', marginBottom: '0' }}>
               <span style={{ fontWeight: 900, fontSize: '10px', letterSpacing: '1px', textTransform: 'uppercase' }}>
                 {env}
               </span>
@@ -244,7 +246,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
                       <td style={{ padding: '3px 4px', fontWeight: 700, textTransform: 'uppercase' }}>
                         {item.description}
                       </td>
-                      <td style={{ padding: '3px 4px', fontSize: '9px', textTransform: 'uppercase', color: '#334155' }}>
+                      <td style={{ padding: '3px 4px', fontSize: '9px', textTransform: 'uppercase', color: '#000' }}>
                         {matName}
                       </td>
                       <td style={{ padding: '3px 4px', textAlign: 'center', fontFamily: 'monospace', fontSize: '9px' }}>
@@ -313,7 +315,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {/* Observações — campo que o usuário preenche na tela de manutenção */}
               <div style={{ border: '1px solid #000', padding: '6px 8px', flex: 1 }}>
-                <div style={{ fontWeight: 900, fontSize: '9px', textTransform: 'uppercase', marginBottom: '4px', color: '#334155' }}>
+                <div style={{ fontWeight: 900, fontSize: '9px', textTransform: 'uppercase', marginBottom: '4px', color: '#000' }}>
                   Observações
                 </div>
                 <div style={{ fontSize: '10px', minHeight: '40px', whiteSpace: 'pre-wrap' }}>
@@ -325,7 +327,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
               {(() => {
                 const note = companyInfo.legalNote ?? 'Mármores e granitos, por sua natureza, estão sujeitos a variações de tonalidade, veios, buracos, fissuras e/ou manchas, não podendo ser recusados ou devolvidos por essa razão.\nServiços em obra (colagem, calafetagem, polimento etc.) só serão executados se explicitamente inclusos neste orçamento.';
                 return note.trim() ? (
-                  <div style={{ border: '1px solid #000', padding: '6px 8px', fontSize: '8.5px', color: '#475569', whiteSpace: 'pre-wrap' }}>
+                  <div style={{ border: '1px solid #000', padding: '6px 8px', fontSize: '8.5px', color: '#333', whiteSpace: 'pre-wrap' }}>
                     {note}
                   </div>
                 ) : null;
@@ -347,7 +349,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
                     <span style={{ fontWeight: 700 }}>- R$ {fmt(discount)}</span>
                   </div>
                 )}
-                <div style={{ backgroundColor: '#0f172a', color: '#fff', padding: '8px 10px', display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ backgroundColor: '#000', color: '#fff', padding: '8px 10px', display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontWeight: 900, fontSize: '12px' }}>VALOR TOTAL</span>
                   <span style={{ fontWeight: 900, fontSize: '13px' }}>R$ {fmt(total)}</span>
                 </div>
@@ -356,18 +358,18 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
               {/* Condições de Pagamento */}
               {sale.paymentMethodName && (
                 <div style={{ border: '1px solid #000', padding: '6px 8px' }}>
-                  <div style={{ fontWeight: 900, fontSize: '9px', textTransform: 'uppercase', marginBottom: '4px', color: '#334155' }}>
+                  <div style={{ fontWeight: 900, fontSize: '9px', textTransform: 'uppercase', marginBottom: '4px', color: '#000' }}>
                     Condições de Pagamento
                   </div>
                   <div style={{ fontWeight: 700, fontSize: '10px', marginBottom: rows ? '5px' : '0' }}>
                     {sale.paymentMethodName}
                     {n > 1 && (
-                      <span style={{ marginLeft: '6px', fontWeight: 900, color: '#1e293b' }}>
+                      <span style={{ marginLeft: '6px', fontWeight: 900, color: '#000' }}>
                         — {n}x de R$ {fmtR(baseValue)}
                       </span>
                     )}
                     {n === 1 && (
-                      <span style={{ marginLeft: '6px', fontWeight: 900, color: '#1e293b' }}>— à vista</span>
+                      <span style={{ marginLeft: '6px', fontWeight: 900, color: '#000' }}>— à vista</span>
                     )}
                   </div>
                   {rows && (
@@ -395,7 +397,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
 
               {/* Prazo de Entrega — abaixo das condições */}
               <div style={{ border: '1px solid #000', padding: '3px 8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontWeight: 900, fontSize: '9px', textTransform: 'uppercase', color: '#334155' }}>Prazo de Entrega:</span>
+                <span style={{ fontWeight: 900, fontSize: '9px', textTransform: 'uppercase', color: '#000' }}>Prazo de Entrega:</span>
                 <span style={{ fontWeight: 700, fontSize: '10px' }}>
                   {deliveryDays && deliveryDays > 0 ? `${deliveryDays} dias úteis` : <span style={{ fontStyle: 'italic', color: '#94a3b8' }}>A combinar</span>}
                 </span>
@@ -410,24 +412,31 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
         {/* Vendedor */}
         <div style={{ textAlign: 'center' }}>
           <div style={{ borderTop: '1px solid #000', paddingTop: '8px' }}>
-            <div style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: '11px' }}>{sale.seller || companyInfo.name}</div>
-            <div style={{ fontSize: '9px', color: '#475569' }}>Departamento Comercial</div>
-            {companyInfo.email && <div style={{ fontSize: '9px', color: '#475569' }}>{companyInfo.email}</div>}
-            {companyInfo.phone && <div style={{ fontSize: '9px', color: '#475569' }}>{companyInfo.phone}</div>}
+            <div style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: '11px', color: '#000' }}>{sale.seller || companyInfo.name}</div>
+            <div style={{ fontSize: '9px', color: '#000' }}>
+              {sellerUser?.role ? (
+                sellerUser.role === 'admin' ? 'Administrador' :
+                sellerUser.role === 'manager' ? 'Gerente' :
+                sellerUser.role === 'seller' ? 'Vendedor' :
+                'Departamento Comercial'
+              ) : 'Departamento Comercial'}
+            </div>
+            {(sellerUser?.email || companyInfo.email) && <div style={{ fontSize: '9px', color: '#000' }}>{sellerUser?.email || companyInfo.email}</div>}
+            {companyInfo.phone && <div style={{ fontSize: '9px', color: '#000' }}>{companyInfo.phone}</div>}
           </div>
         </div>
         {/* Cliente */}
         <div style={{ textAlign: 'center' }}>
           <div style={{ borderTop: '1px solid #000', paddingTop: '8px' }}>
-            <div style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: '11px' }}>
+            <div style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: '11px', color: '#000' }}>
               {client?.tradingName || client?.legalName || sale.clientName}
             </div>
             {client?.document && (
-              <div style={{ fontSize: '9px', color: '#475569' }}>
+              <div style={{ fontSize: '9px', color: '#000' }}>
                 {client.type === 'Pessoa Jurídica' ? 'CNPJ' : 'CPF'}: {client.document}
               </div>
             )}
-            <div style={{ fontSize: '9px', color: '#475569' }}>Cliente</div>
+            {/* Rótulo "Cliente" removido a pedido do usuário */}
           </div>
         </div>
       </div>

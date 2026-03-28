@@ -19,6 +19,9 @@ export type SalesPhase = string;
 export interface SalesPhaseConfig {
   name: string;
   color?: string;
+  desirableDays?: number;
+  alertDays?: number;
+  code?: string;
 }
 
 export type OrderPhase = ProductionPhase;
@@ -28,6 +31,7 @@ export interface PhaseConfig {
   description?: string;
   isRequired?: boolean;
   requiresResponsible: boolean;
+  code?: string;
 }
 
 export const INITIAL_PHASES: PhaseConfig[] = [
@@ -286,6 +290,7 @@ export interface OrderService {
   phase: ProductionPhase;
   seller: string;
   createdAt: string;
+  lastInteractionAt?: string;
   deadline: string;
   priority: Priority;
   clientId?: string;

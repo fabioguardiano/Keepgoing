@@ -14,6 +14,8 @@ export const useIdleTimer = ({ timeoutMinutes, onLogout, enabled }: UseIdleTimer
 
   const idleTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
   const warningTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Ref para evitar isWarning nas deps do useEffect principal
+  const isWarningRef = useRef(false);
 
   const clearTimers = () => {
     if (idleTimerRef.current)    clearTimeout(idleTimerRef.current);
@@ -22,6 +24,7 @@ export const useIdleTimer = ({ timeoutMinutes, onLogout, enabled }: UseIdleTimer
 
   const startWarningCountdown = useCallback(() => {
     setIsWarning(true);
+    isWarningRef.current = true;
     setSecondsLeft(WARNING_SECONDS);
 
     warningTimerRef.current = setInterval(() => {
@@ -40,6 +43,7 @@ export const useIdleTimer = ({ timeoutMinutes, onLogout, enabled }: UseIdleTimer
     if (!enabled) return;
     clearTimers();
     setIsWarning(false);
+    isWarningRef.current = false;
     setSecondsLeft(WARNING_SECONDS);
 
     // timeout total - 60s de aviso
@@ -53,7 +57,7 @@ export const useIdleTimer = ({ timeoutMinutes, onLogout, enabled }: UseIdleTimer
 
     const events = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'];
     const handleActivity = () => {
-      if (!isWarning) reset(); // não reseta se o aviso já está visível
+      if (!isWarningRef.current) reset(); // não reseta se o aviso já está visível
     };
 
     events.forEach(e => window.addEventListener(e, handleActivity, { passive: true }));
@@ -63,7 +67,7 @@ export const useIdleTimer = ({ timeoutMinutes, onLogout, enabled }: UseIdleTimer
       events.forEach(e => window.removeEventListener(e, handleActivity));
       clearTimers();
     };
-  }, [enabled, reset, isWarning]);
+  }, [enabled, reset]); // isWarning removido das deps — evita reset ao exibir o aviso
 
   return { isWarning, secondsLeft, reset };
 };

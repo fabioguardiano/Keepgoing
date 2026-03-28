@@ -268,26 +268,26 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkO
     {/* Column header */}
     <div className="mb-3 px-1 space-y-1">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-black uppercase tracking-widest text-gray-600 truncate">
+        <h3 className="text-[13px] font-black uppercase tracking-widest text-slate-500 truncate">
           {phase.name}
         </h3>
-        <span className="ml-2 flex-shrink-0 px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 text-xs font-bold">
+        <span className="ml-2 flex-shrink-0 px-3 py-1.5 rounded-lg bg-slate-200 text-slate-600 text-[12px] font-black min-w-[32px] text-center">
           {workOrders.length}
         </span>
       </div>
       {workOrders.length > 0 && (
         <div className="flex items-center gap-2">
           {totalM2 > 0 && (
-            <span className="text-[10px] font-semibold text-gray-400">
-              {totalM2.toFixed(2)} m²
+            <span className="text-[12px] font-black text-slate-400">
+              {totalM2.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} m²
             </span>
           )}
           {totalM2 > 0 && totalLinear > 0 && (
-            <span className="text-[10px] text-gray-300">·</span>
+            <span className="text-[12px] text-slate-300">·</span>
           )}
           {totalLinear > 0 && (
-            <span className="text-[10px] font-semibold text-gray-400">
-              {totalLinear.toFixed(2)} m lin.
+            <span className="text-[12px] font-black text-slate-400">
+              {totalLinear.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} m
             </span>
           )}
         </div>

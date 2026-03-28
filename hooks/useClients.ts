@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Client } from '../types';
+import { up } from '../lib/uppercase';
 
 export const useClients = (companyId?: string, logActivity?: (action: any, details: string, referenceId?: string, orderNumber?: string) => Promise<void>) => {
   const [clients, setClients] = useState<Client[]>([]);
@@ -56,19 +57,26 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
       const payload = {
         id: (c.id && c.id.length > 20) ? c.id : undefined,
         company_id: finalCompanyId,
-        name: c.tradingName || c.legalName || 'Sem Nome', // Coluna obrigatória no banco
+        name: up(c.tradingName || c.legalName) || 'Sem Nome', // Coluna obrigatória no banco
         type: c.type || 'Pessoa Física',
         document: c.document || '',
-        legal_name: c.legalName || c.tradingName || '',
-        trading_name: c.tradingName || c.legalName || '',
+        legal_name: up(c.legalName || c.tradingName) || '',
+        trading_name: up(c.tradingName || c.legalName) || '',
         email: c.email || '',
         phone: c.phone || '',
         cellphone: c.cellphone || '',
         birth_date: c.birthDate || null,
-        address: c.address || {},
+        address: c.address ? {
+          ...c.address,
+          street:       up((c.address as any).street)       ?? (c.address as any).street,
+          complement:   up((c.address as any).complement)   ?? (c.address as any).complement,
+          neighborhood: up((c.address as any).neighborhood) ?? (c.address as any).neighborhood,
+          city:         up((c.address as any).city)         ?? (c.address as any).city,
+          state:        up((c.address as any).state)        ?? (c.address as any).state,
+        } : {},
         delivery_address: c.deliveryAddress || null,
         rg_insc: c.rgInsc || '',
-        observations: c.observations || '',
+        observations: up(c.observations) || '',
         client_code: c.code
       };
 
@@ -143,15 +151,22 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
 
         const payload = {
           company_id:   finalCompanyId,
-          name:         nome,
-          legal_name:   nome,
-          trading_name: nome,
+          name:         up(nome) || 'SEM NOME',
+          legal_name:   up(nome) || 'SEM NOME',
+          trading_name: up(nome) || 'SEM NOME',
           type:         String(row.tipo     || row.type     || 'Pessoa Física'),
           document:     String(row.documento || row.document || ''),
           email:        String(row.email     || ''),
           phone:        String(row.telefone  || row.phone    || ''),
           cellphone:    String(row.celular   || row.cellphone || ''),
-          address,
+          address: {
+            ...address,
+            street:       up(address.street)       ?? address.street,
+            complement:   up(address.complement)   ?? address.complement,
+            neighborhood: up(address.neighborhood) ?? address.neighborhood,
+            city:         up(address.city)         ?? address.city,
+            state:        up(address.state)        ?? address.state,
+          },
           status:       'ativo',
           client_code:  isNaN(Number(row.codigo)) ? undefined : Number(row.codigo),
         };

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { ProductService } from '../types';
+import { up } from '../lib/uppercase';
 
 export const useProducts = (companyId?: string, logActivity?: any) => {
   const [products, setProducts] = useState<ProductService[]>([]);
@@ -62,7 +63,7 @@ export const useProducts = (companyId?: string, logActivity?: any) => {
       const payload = {
         id: (p.id && p.id.length > 20) ? p.id : undefined,
         company_id: finalCompanyId,
-        name: p.description,
+        name: up(p.description),
         category: p.type,
         status: p.status,
         code: p.code,
@@ -79,10 +80,10 @@ export const useProducts = (companyId?: string, logActivity?: any) => {
         discount_percentage: p.discountPercentage,
         suggested_price: p.suggestedPrice,
         base_price: p.sellingPrice,
-        brand: p.brand,
-        manufacturer_number: p.manufacturerNumber,
+        brand: up(p.brand),
+        manufacturer_number: up(p.manufacturerNumber),
         nfe_data: p.nfeData,
-        description: p.description,
+        description: up(p.description),
         image_url: p.imageUrl
       };
 
