@@ -140,6 +140,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const [itemWidth, setItemWidth] = useState(0);
   const [itemPrice, setItemPrice] = useState(0);
   const [itemService, setItemService] = useState(0);
+  const [itemServiceValue, setItemServiceValue] = useState(0);
   const [itemMaterialId, setItemMaterialId] = useState('');
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [activeEnvironment, setActiveEnvironment] = useState<string>('');
@@ -208,7 +209,11 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
     const safeSvc   = isFinite(itemService) && itemService > 0 ? itemService : 0;
     const m2 = calculateM2(itemLength, itemWidth, safeQty);
     const baseTotal = m2 > 0 ? (m2 * safePrice) : (safeQty * safePrice);
-    return baseTotal + baseTotal * (safeSvc / 100);
+    
+    // We prioritize the itemServiceValue (R$) if it was specifically edited, 
+    // but the state is synced so we can use either.
+    // Using baseTotal + itemServiceValue ensures precision when the user types in Reais.
+    return baseTotal + itemServiceValue;
   };
 
   const addItem = () => {
@@ -295,6 +300,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
     setItemWidth(0);
     setItemPrice(0);
     setItemService(0);
+    setItemServiceValue(0);
     setItemMaterialId('');
     
     // Auto-focus back to description for next item
@@ -317,6 +323,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
     setItemWidth(item.width || 0);
     setItemPrice(item.unitPrice);
     setItemService(item.servicePercentage || 0);
+    const baseTotal = (item.m2 || item.quantity) ? ((item.m2 || 0) > 0 ? (item.m2 || 0) * item.unitPrice : item.quantity * item.unitPrice) : 0;
+    setItemServiceValue(baseTotal * ((item.servicePercentage || 0) / 100));
     setActiveEnvironment(item.environment || '');
     // Preserve the material name already stored in the item
     setItemMaterialId(item.materialName || '');
@@ -329,6 +337,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
     setItemWidth(0);
     setItemPrice(0);
     setItemService(0);
+    setItemServiceValue(0);
     setItemMaterialId('');
     setEditingItemId(null);
   };
@@ -990,7 +999,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                 <th className="px-4 py-3 text-center">Larg.</th>
                                 <th className="px-4 py-3 text-center">M² / Un</th>
                                 <th className="px-4 py-3 text-right">Vl. Unit</th>
-                                <th className="px-4 py-3 text-center">Ac. Serv (%)</th>
+                                <th className="px-4 py-3 text-center">Ac. Serv (%) / (R$)</th>
                                 <th className="px-4 py-3 text-right">Total</th>
                                 <th className="px-4 py-3 text-center">Ações</th>
                               </tr>
@@ -1027,7 +1036,17 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                       })()}
                                       <td className="px-4 py-3 text-center text-[11px] font-bold text-slate-600 dark:text-slate-300">{Number(item.m2 || 0).toFixed(2) || '0.00'}</td>
                                       <td className="px-4 py-3 text-right text-[11px] font-bold text-slate-600 dark:text-slate-300">R$ {(item.unitPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                      <td className="px-4 py-3 text-center text-[11px] font-bold text-blue-500">{item.servicePercentage || 0}%</td>
+                                      <td className="px-4 py-3 text-center text-[10px] whitespace-nowrap">
+                                        <div className="flex flex-col items-center">
+                                          <span className="font-bold text-blue-500">{item.servicePercentage || 0}%</span>
+                                          <span className="text-[9px] font-black text-slate-400">
+                                            {(() => {
+                                              const bTotal = (item.m2 || item.quantity) ? ((item.m2 || 0) > 0 ? (item.m2 || 0) * item.unitPrice : item.quantity * item.unitPrice) : 0;
+                                              return `R$ ${(bTotal * ((item.servicePercentage || 0) / 100)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                                            })()}
+                                          </span>
+                                        </div>
+                                      </td>
                                       <td className="px-4 py-3 text-right text-[11px] font-black text-slate-800 dark:text-white whitespace-nowrap">R$ {(item.totalPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                       <td className="px-4 py-3 text-center">
                                         <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1161,7 +1180,42 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                 }} 
                                 readOnly={!canEditPrice && !!itemMaterialId}
                                 className={`w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-right transition-all ${!canEditPrice && !!itemMaterialId ? 'opacity-50 cursor-not-allowed grayscale' : ''}`} /></td>
-                                <td className="p-1.5"><input type="number" step="0.1" ref={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? serviceRef : null} value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemService : 0} onChange={e => setItemService(parseFloat(e.target.value))} onKeyDown={e => e.key === 'Enter' && addItem()} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" /></td>
+                                <td className="p-1.5 min-w-[140px]">
+                                  <div className="flex items-center gap-1">
+                                    <input 
+                                      type="number" 
+                                      step="0.1" 
+                                      ref={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? serviceRef : null} 
+                                      value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemService : 0} 
+                                      onChange={e => {
+                                        const perc = parseFloat(e.target.value) || 0;
+                                        setItemService(perc);
+                                        const m2 = calculateM2(itemLength, itemWidth, itemQty);
+                                        const baseTotal = m2 > 0 ? (m2 * itemPrice) : (itemQty * itemPrice);
+                                        setItemServiceValue(baseTotal * (perc / 100));
+                                      }} 
+                                      onKeyDown={e => e.key === 'Enter' && addItem()} 
+                                      className="w-14 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" 
+                                      placeholder="%"
+                                    />
+                                    <input 
+                                      type="text" 
+                                      value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) && itemServiceValue > 0 ? itemServiceValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : ''}
+                                      onChange={e => {
+                                        const raw = e.target.value.replace(/\D/g, '');
+                                        const val = parseInt(raw || '0') / 100;
+                                        setItemServiceValue(val);
+                                        const m2 = calculateM2(itemLength, itemWidth, itemQty);
+                                        const baseTotal = m2 > 0 ? (m2 * itemPrice) : (itemQty * itemPrice);
+                                        const perc = baseTotal > 0 ? (val / baseTotal) * 100 : 0;
+                                        setItemService(perc);
+                                      }}
+                                      onKeyDown={e => e.key === 'Enter' && addItem()}
+                                      className="flex-1 min-w-[80px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-right"
+                                      placeholder="R$ 0,00"
+                                    />
+                                  </div>
+                                </td>
                                 <td className="p-1.5 text-right text-[10px] font-black text-[var(--primary-color)] whitespace-nowrap">
                                   R$ {activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? (calculateItemTotal() || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}
                                 </td>
