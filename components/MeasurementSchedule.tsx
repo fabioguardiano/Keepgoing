@@ -175,7 +175,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
     return day !== 0 && day !== 6; // Filter out Sat (6) and Sun (0)
   });
 
-  const hours = Array.from({ length: 14 }, (_, i) => i + 8); // 08:00 to 21:00
+  const hours = Array.from({ length: 12 }, (_, i) => i + 7); // 07:00 to 18:00
 
   const handleZoom = (e: React.WheelEvent) => {
     if (e.ctrlKey) {
