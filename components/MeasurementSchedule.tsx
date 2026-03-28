@@ -520,7 +520,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                     type="text" 
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
                     value={newMeasurement.clientName}
-                    onChange={e => setNewMeasurement({...newMeasurement, clientName: e.target.value})}
+                    onChange={e => setNewMeasurement({...newMeasurement, clientName: e.target.value.toUpperCase()})}
                     placeholder="Nome completo ou empresa"
                     required
                   />
@@ -573,7 +573,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                     type="text" 
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
                     value={newMeasurement.address}
-                    onChange={e => setNewMeasurement({...newMeasurement, address: e.target.value})}
+                    onChange={e => setNewMeasurement({...newMeasurement, address: e.target.value.toUpperCase()})}
                     placeholder="Logradouro, número, bairro e cidade"
                     required
                   />
@@ -585,7 +585,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                     type="text" 
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
                     value={newMeasurement.addressComplement}
-                    onChange={e => setNewMeasurement({...newMeasurement, addressComplement: e.target.value})}
+                    onChange={e => setNewMeasurement({...newMeasurement, addressComplement: e.target.value.toUpperCase()})}
                     placeholder="Ex: Ap 402, Bloco B ou Condomínio X"
                   />
                 </div>
@@ -640,7 +640,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                         ...newMeasurement, 
                         osId: e.target.value,
                         osNumber: order ? `${order.osNumber}-${order.osSubNumber}` : '',
-                        clientName: order?.clientName || newMeasurement.clientName
+                        clientName: (order?.clientName || newMeasurement.clientName).toUpperCase()
                       });
                     }}
                   >
@@ -652,13 +652,21 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Medidor Responsável</label>
-                  <input 
-                    type="text" 
+                  <select 
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
                     value={newMeasurement.measurerName}
                     onChange={e => setNewMeasurement({...newMeasurement, measurerName: e.target.value})}
-                    placeholder="Nome do medidor"
-                  />
+                    required
+                  >
+                    <option value="">Selecione o medidor</option>
+                    {appUsers
+                      .filter(u => (u.role === 'driver' || u.role === 'admin') && u.status === 'ativo')
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map(u => (
+                        <option key={u.id} value={u.name}>{u.name}</option>
+                      ))
+                    }
+                  </select>
                 </div>
 
                 <div className="sm:col-span-2">
@@ -666,7 +674,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                   <textarea 
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all resize-none h-24"
                     value={newMeasurement.description}
-                    onChange={e => setNewMeasurement({...newMeasurement, description: e.target.value})}
+                    onChange={e => setNewMeasurement({...newMeasurement, description: e.target.value.toUpperCase()})}
                     placeholder="Detalhes sobre a medição, pontos de atenção, etc..."
                   />
                 </div>
