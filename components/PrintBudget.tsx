@@ -189,11 +189,8 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
               )}
             </>
           ) : addr ? (
-            <div style={{ fontStyle: 'italic', color: '#475569' }}>
-              Mesmo endereço do cliente:{' '}
-              <span style={{ textTransform: 'uppercase', fontStyle: 'normal', color: '#000' }}>
-                {addr.street}, {addr.number} — {addr.neighborhood} — {addr.city}/{addr.state} — CEP: {addr.zipCode}
-              </span>
+            <div style={{ textTransform: 'uppercase', color: '#000' }}>
+              {addr.street}, {addr.number} — {addr.neighborhood} — {addr.city}/{addr.state} — CEP: {addr.zipCode}
             </div>
           ) : (
             <span style={{ color: '#94a3b8' }}>Endereço de entrega não informado.</span>
