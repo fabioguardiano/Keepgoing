@@ -40,6 +40,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [printingSale, setPrintingSale] = useState<SalesOrder | null>(null);
   const [blurMeasurements, setBlurMeasurements] = useState(false);
+  const [hideM2Unit, setHideM2Unit] = useState(true);
   const [showGenerateOS, setShowGenerateOS] = useState(false);
   const [showDiscountRequest, setShowDiscountRequest] = useState(false);
   // Revert-to-Orçamento flow (only when readOnly=true)
@@ -714,6 +715,18 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   />
                   <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 group-hover:text-slate-800 dark:group-hover:text-white transition-colors">
                     Ocultar Medidas
+                  </span>
+                </label>
+                <div className="w-px h-6 bg-orange-200 dark:bg-slate-600"></div>
+                <label className="flex items-center gap-2 px-3 cursor-pointer group" title="Ocultar a coluna de Metragem Quadrada / Unidade">
+                  <input 
+                    type="checkbox" 
+                    checked={hideM2Unit}
+                    onChange={(e) => setHideM2Unit(e.target.checked)}
+                    className="w-4 h-4 rounded text-[var(--primary-color)] focus:ring-[var(--primary-color)]"
+                  />
+                  <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 group-hover:text-slate-800 dark:group-hover:text-white transition-colors">
+                    Ocultar M² / Unidade
                   </span>
                 </label>
                 <div className="w-px h-6 bg-orange-200 dark:bg-slate-600"></div>
@@ -1472,6 +1485,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
           materials={materials}
           client={clients.find(c => c.id === printingSale.clientId)}
           blurMeasurements={blurMeasurements}
+          hideM2Unit={hideM2Unit}
         />,
         document.body
       )}

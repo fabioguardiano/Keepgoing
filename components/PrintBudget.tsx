@@ -10,6 +10,7 @@ interface PrintBudgetProps {
   materials: Material[];
   blurMeasurements?: boolean;
   sellerUser?: AppUser;
+  hideM2Unit?: boolean;
 }
 
 const fmtDim = (v?: number) =>
@@ -22,6 +23,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
   materials,
   blurMeasurements = false,
   sellerUser,
+  hideM2Unit = true,
 }) => {
   const today = new Date().toLocaleDateString('pt-BR');
   const currentTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -219,11 +221,11 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
               <thead>
                 <tr style={{ backgroundColor: '#f1f5f9', fontSize: '8.5px', fontWeight: 700, borderBottom: '1px solid #000' }}>
                   <th style={{ padding: '3px 4px', textAlign: 'left', width: '5%' }}>Qtde.</th>
-                  <th style={{ padding: '3px 4px', textAlign: 'left', width: '28%' }}>Descrição</th>
+                  <th style={{ padding: '3px 4px', textAlign: 'left', width: hideM2Unit ? '36%' : '28%' }}>Descrição</th>
                   <th style={{ padding: '3px 4px', textAlign: 'left', width: '25%' }}>Matéria Prima / Material</th>
                   <th style={{ padding: '3px 4px', textAlign: 'center', width: '10%' }}>Comp. (m)</th>
                   <th style={{ padding: '3px 4px', textAlign: 'center', width: '10%' }}>Larg. (m)</th>
-                  <th style={{ padding: '3px 4px', textAlign: 'center', width: '8%' }}>M²</th>
+                  {!hideM2Unit && <th style={{ padding: '3px 4px', textAlign: 'center', width: '8%' }}>M² / Un</th>}
                   <th style={{ padding: '3px 4px', textAlign: 'right', width: '14%' }}>Total (R$)</th>
                 </tr>
               </thead>
@@ -259,11 +261,13 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
                             : fmtDim(item.width) || '—'
                         ) : '—'}
                       </td>
-                      <td style={{ padding: '3px 4px', textAlign: 'center', fontFamily: 'monospace', fontSize: '9px' }}>
-                        {hasDimensions && m2 && !blurMeasurements
-                          ? Number(m2).toFixed(3)
-                          : '—'}
-                      </td>
+                      {!hideM2Unit && (
+                        <td style={{ padding: '3px 4px', textAlign: 'center', fontFamily: 'monospace', fontSize: '9px' }}>
+                          {hasDimensions && m2 && !blurMeasurements
+                            ? Number(m2).toFixed(3)
+                            : (item.unit === 'un' ? item.quantity : '—')}
+                        </td>
+                      )}
                       <td style={{ padding: '3px 4px', textAlign: 'right', fontWeight: 900 }}>
                         {fmt(item.totalPrice || 0)}
                       </td>
