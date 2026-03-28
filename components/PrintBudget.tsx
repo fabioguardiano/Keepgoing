@@ -192,7 +192,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
               {addr.street}, {addr.number} — {addr.neighborhood} — {addr.city}/{addr.state} — CEP: {addr.zipCode}
             </div>
           ) : (
-            <span style={{ color: '#94a3b8' }}>Endereço de entrega não informado.</span>
+            <span style={{ color: '#000' }}>Endereço de entrega não informado.</span>
           )}
         </div>
       </div>
@@ -323,7 +323,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
               {(() => {
                 const note = companyInfo.legalNote ?? 'Mármores e granitos, por sua natureza, estão sujeitos a variações de tonalidade, veios, buracos, fissuras e/ou manchas, não podendo ser recusados ou devolvidos por essa razão.\nServiços em obra (colagem, calafetagem, polimento etc.) só serão executados se explicitamente inclusos neste orçamento.';
                 return note.trim() ? (
-                  <div style={{ border: '1px solid #000', padding: '6px 8px', fontSize: '8.5px', color: '#333', whiteSpace: 'pre-wrap' }}>
+                  <div style={{ border: '1px solid #000', padding: '6px 8px', fontSize: '8.5px', color: '#000', whiteSpace: 'pre-wrap' }}>
                     {note}
                   </div>
                 ) : null;
@@ -395,7 +395,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
               <div style={{ border: '1px solid #000', padding: '3px 8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ fontWeight: 900, fontSize: '9px', textTransform: 'uppercase', color: '#000' }}>Prazo de Entrega:</span>
                 <span style={{ fontWeight: 700, fontSize: '10px' }}>
-                  {deliveryDays && deliveryDays > 0 ? `${deliveryDays} dias úteis` : <span style={{ fontStyle: 'italic', color: '#94a3b8' }}>A combinar</span>}
+                  {deliveryDays && deliveryDays > 0 ? `${deliveryDays} dias úteis` : <span style={{ fontStyle: 'italic', color: '#000' }}>A combinar</span>}
                 </span>
               </div>
             </div>
@@ -438,7 +438,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
       </div>
 
       {/* ── RODAPÉ ───────────────────────────────────────────── */}
-      <div style={{ borderTop: '1px solid #cbd5e1', marginTop: '16px', paddingTop: '6px', textAlign: 'center', fontSize: '8px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+      <div style={{ borderTop: '1px solid #000', marginTop: '16px', paddingTop: '6px', textAlign: 'center', fontSize: '8px', color: '#000', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
         {companyInfo.name}
         {companyInfo.address ? ` — ${companyInfo.address}` : ''}
         {companyInfo.phone ? ` — Tel: ${companyInfo.phone}` : ''}
