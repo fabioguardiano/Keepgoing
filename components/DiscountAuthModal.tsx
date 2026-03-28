@@ -7,6 +7,7 @@ import { AppUser, DiscountAuthorization } from '../types';
 interface RequestProps {
   requestedPct: number;
   maxPct: number;
+  subtotal: number;
   admins: AppUser[];
   onRequest: (admin: AppUser) => void;
   onRedo: () => void;
@@ -14,7 +15,7 @@ interface RequestProps {
 }
 
 export const DiscountRequestModal: React.FC<RequestProps> = ({
-  requestedPct, maxPct, admins, onRequest, onRedo, onClose,
+  requestedPct, maxPct, subtotal, admins, onRequest, onRedo, onClose,
 }) => {
   const [selectedAdmin, setSelectedAdmin] = useState<AppUser | null>(null);
 
@@ -28,7 +29,10 @@ export const DiscountRequestModal: React.FC<RequestProps> = ({
           <div className="flex-1">
             <h2 className="font-black text-gray-900 text-base">Desconto acima do limite</h2>
             <p className="text-xs text-amber-600 font-semibold">
-              Solicitado: <strong>{requestedPct.toFixed(1)}%</strong> · Limite: <strong>{maxPct.toFixed(1)}%</strong>
+              Solicitado: <strong>{requestedPct.toFixed(1)}% (R$ {(subtotal * (requestedPct / 100)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})</strong>
+            </p>
+            <p className="text-[10px] text-amber-500">
+              Limite: <strong>{maxPct.toFixed(1)}% (R$ {(subtotal * (maxPct / 100)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})</strong>
             </p>
           </div>
           <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg">

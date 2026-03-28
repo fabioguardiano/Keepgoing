@@ -161,6 +161,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const newEnvRef = useRef<HTMLInputElement>(null);
   const clientBtnRef = useRef<HTMLButtonElement>(null);
   const [hasStartedEditing, setHasStartedEditing] = useState(false);
+  const [discountValueInput, setDiscountValueInput] = useState(initialData?.discountValue?.toString() || '');
+  const [discountPercentageInput, setDiscountPercentageInput] = useState(initialData?.discountPercentage?.toString() || '');
 
   // Prevent accidental close/refresh
   useEffect(() => {
@@ -494,10 +496,17 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   };
 
   const subtotal = items.reduce((acc, item) => acc + (isFinite(item.totalPrice) ? item.totalPrice : 0), 0);
+  
+  // Lógica de desconto refinada: se o usuário digitou uma porcentagem, usamos ela.
+  // Se digitou um valor em reais, calculamos a porcentagem correspondente para a trava.
   const safeDiscPct = isFinite(discountPercentage) ? discountPercentage : 0;
   const safeDiscVal = isFinite(discountValue)      ? discountValue      : 0;
-  const calculatedDiscount = safeDiscPct > 0 ? (subtotal * (safeDiscPct / 100)) : safeDiscVal;
-  const totalGeral = subtotal - calculatedDiscount;
+  
+  // Para evitar problemas de arredondamento e garantir que o valor que o usuário digitou
+  // em reais seja o que realmente vai para o total, usamos o discountValue se ele existir.
+  // Só usamos a porcentagem se ela for > 0 e o valor for 0 (caso clássico de carregar do banco só % se existisse)
+  const calculatedDiscount = Math.max(safeDiscVal, subtotal * (safeDiscPct / 100));
+  const totalGeral = Math.max(0, subtotal - calculatedDiscount);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async (keepOpen: boolean = false) => {
@@ -554,7 +563,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
     // Validação de desconto máximo
     const maxPct = companyInfo.maxDiscountPct;
-    if (maxPct !== undefined && safeDiscPct > maxPct && onRequestDiscount) {
+    if (maxPct !== undefined && safeDiscPct > (maxPct + 0.01) && onRequestDiscount) {
       setShowDiscountRequest(true);
       return;
     }
@@ -1395,13 +1404,18 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     <input 
                       type="number" 
                       step="0.01"
-                      value={discountPercentage ? Number(discountPercentage).toFixed(2) : ''}
+                      value={discountPercentageInput}
                       onChange={e => {
-                        const perc = parseFloat(e.target.value) || 0;
+                        const valStr = e.target.value;
+                        setDiscountPercentageInput(valStr);
+                        const perc = parseFloat(valStr) || 0;
                         setDiscountPercentage(perc);
-                        setDiscountValue(subtotal * (perc / 100));
+                        const valNum = subtotal * (perc / 100);
+                        setDiscountValue(valNum);
+                        setDiscountValueInput(valNum > 0 ? valNum.toFixed(2) : '');
                       }}
                       className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-bold text-slate-800 dark:text-white"
+                      placeholder="0,00"
                     />
                   </div>
                   <div className="flex-1">
@@ -1409,14 +1423,27 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     <input 
                       type="number" 
                       step="0.01"
-                      value={discountValue ? Number(discountValue).toFixed(2) : ''}
+                      value={discountValueInput}
                       onChange={e => {
-                        const val = parseFloat(e.target.value) || 0;
+                        const valStr = e.target.value;
+                        setDiscountValueInput(valStr);
+                        const val = parseFloat(valStr) || 0;
                         setDiscountValue(val);
-                        setDiscountPercentage(subtotal > 0 ? (val / subtotal) * 100 : 0);
+                        const perc = subtotal > 0 ? (val / subtotal) * 100 : 0;
+                        setDiscountPercentage(perc);
+                        setDiscountPercentageInput(perc > 0 ? perc.toFixed(2) : '');
                       }}
-                      className="w-full p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none font-bold text-xs text-slate-800 dark:text-white"
+                      className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-bold text-slate-800 dark:text-white"
+                      placeholder="0,00"
                     />
+                    {companyInfo.maxDiscountPct !== undefined && (
+                      <div className="mt-1 flex justify-between items-center px-1">
+                        <span className="text-[8px] font-bold text-slate-400 uppercase">Limite ({companyInfo.maxDiscountPct}%)</span>
+                        <span className="text-[8px] font-black text-slate-500">
+                          R$ {(subtotal * (companyInfo.maxDiscountPct / 100)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between items-end">
@@ -1495,6 +1522,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
         <DiscountRequestModal
           requestedPct={safeDiscPct}
           maxPct={companyInfo.maxDiscountPct}
+          subtotal={subtotal}
           admins={appUsers.filter(u => u.role === 'admin' && u.status === 'ativo')}
           onRequest={(admin) => {
             onRequestDiscount(admin, safeDiscPct, companyInfo.maxDiscountPct!);
