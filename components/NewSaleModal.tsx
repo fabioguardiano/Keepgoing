@@ -159,6 +159,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const widthRef = useRef<HTMLInputElement>(null);
   const priceRef = useRef<HTMLInputElement>(null);
   const serviceRef = useRef<HTMLInputElement>(null);
+  const serviceValueRef = useRef<HTMLInputElement>(null);
   const newEnvRef = useRef<HTMLInputElement>(null);
   const clientBtnRef = useRef<HTMLButtonElement>(null);
   const [hasStartedEditing, setHasStartedEditing] = useState(false);
@@ -999,7 +1000,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                 <th className="px-4 py-3 text-center">Larg.</th>
                                 <th className="px-4 py-3 text-center">M² / Un</th>
                                 <th className="px-4 py-3 text-right">Vl. Unit</th>
-                                <th className="px-4 py-3 text-center">Ac. Serv (%) / (R$)</th>
+                                <th className="px-4 py-3 text-center">Svc %/R$</th>
                                 <th className="px-4 py-3 text-right">Total</th>
                                 <th className="px-4 py-3 text-center">Ações</th>
                               </tr>
@@ -1180,7 +1181,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                 }} 
                                 readOnly={!canEditPrice && !!itemMaterialId}
                                 className={`w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-right transition-all ${!canEditPrice && !!itemMaterialId ? 'opacity-50 cursor-not-allowed grayscale' : ''}`} /></td>
-                                <td className="p-1.5 min-w-[140px]">
+                                <td className="p-1.5 min-w-[120px]">
                                   <div className="flex items-center gap-1">
                                     <input 
                                       type="number" 
@@ -1194,12 +1195,18 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                         const baseTotal = m2 > 0 ? (m2 * itemPrice) : (itemQty * itemPrice);
                                         setItemServiceValue(baseTotal * (perc / 100));
                                       }} 
-                                      onKeyDown={e => e.key === 'Enter' && addItem()} 
-                                      className="w-14 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" 
+                                      onKeyDown={e => {
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          serviceValueRef.current?.focus();
+                                        }
+                                      }} 
+                                      className="w-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[10px] font-bold outline-none focus:border-[var(--primary-color)] text-center transition-all" 
                                       placeholder="%"
                                     />
                                     <input 
                                       type="text" 
+                                      ref={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? serviceValueRef : null}
                                       value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) && itemServiceValue > 0 ? itemServiceValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : ''}
                                       onChange={e => {
                                         const raw = e.target.value.replace(/\D/g, '');
@@ -1211,7 +1218,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                         setItemService(perc);
                                       }}
                                       onKeyDown={e => e.key === 'Enter' && addItem()}
-                                      className="flex-1 min-w-[80px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-right"
+                                      className="flex-1 min-w-[70px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[10px] font-bold outline-none focus:border-[var(--primary-color)] text-right transition-all"
                                       placeholder="R$ 0,00"
                                     />
                                   </div>
