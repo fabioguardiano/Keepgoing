@@ -383,6 +383,7 @@ export interface Measurement {
   id: string;
   clientName: string;
   address: string;
+  addressNumber?: string;
   cep?: string;
   date: string;
   time: string;

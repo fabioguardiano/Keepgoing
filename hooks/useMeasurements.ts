@@ -41,6 +41,7 @@ export const useMeasurements = (companyId?: string) => {
           measurerName: m.measurer_name,
           osId: m.os_id,
           osNumber: m.os_number,
+          addressNumber: m.address_number,
           addressComplement: m.address_complement,
           clientPhone: m.client_phone,
           sellerName: m.seller_name,
@@ -77,6 +78,7 @@ export const useMeasurements = (companyId?: string) => {
           measurer_name: up(measurement.measurerName),
           os_id: measurement.osId || null,
           os_number: measurement.osNumber,
+          address_number: measurement.addressNumber,
           address_complement: up(measurement.addressComplement),
           client_phone: measurement.clientPhone,
           seller_name: up(measurement.sellerName)
@@ -98,6 +100,7 @@ export const useMeasurements = (companyId?: string) => {
         measurerName: data.measurer_name,
         osId: data.os_id,
         osNumber: data.os_number,
+        addressNumber: data.address_number,
         addressComplement: data.address_complement,
         clientPhone: data.client_phone,
         sellerName: data.seller_name,
@@ -125,6 +128,7 @@ export const useMeasurements = (companyId?: string) => {
       if (updates.measurerName !== undefined) payload.measurer_name = up(updates.measurerName);
       if (updates.osId !== undefined) payload.os_id = updates.osId || null;
       if (updates.osNumber !== undefined) payload.os_number = updates.osNumber;
+      if (updates.addressNumber !== undefined) payload.address_number = updates.addressNumber;
       if (updates.addressComplement !== undefined) payload.address_complement = up(updates.addressComplement);
       if (updates.clientPhone !== undefined) payload.client_phone = updates.clientPhone;
       if (updates.sellerName !== undefined) payload.seller_name = up(updates.sellerName);

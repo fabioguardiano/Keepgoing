@@ -79,6 +79,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
     status: 'Pendente' as Measurement['status'],
     osId: '',
     osNumber: '',
+    addressNumber: '',
     addressComplement: '',
     clientPhone: '',
     sellerName: ''
@@ -127,36 +128,48 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
       ].filter((v, i, a) => v && a.indexOf(v) === i); // Unique only
 
       addressesToGeocode.forEach(addr => {
-        if (coords[addr] || !addr || addr.length < 5) return; // Já geocodificado ou curto
+        if (!addr || addr.length < 5) return;
+        
+        // Se for o endereço da nova medição, incluir o número para geocodificação precisa
+        const isNewAddress = addr === newMeasurement.address;
+        const fullAddr = isNewAddress && newMeasurement.addressNumber 
+          ? `${addr}, ${newMeasurement.addressNumber}`
+          : addr;
+
+        if (coords[fullAddr]) return;
 
         // Nominatim search
-        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}&limit=1`)
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddr)}&limit=1`)
           .then(r => r.json())
           .then(data => {
             if (data && data[0]) {
               const lat = parseFloat(data[0].lat);
               const lon = parseFloat(data[0].lon);
-              setCoords(prev => ({ ...prev, [addr]: [lat, lon] }));
-              if (addr === newMeasurement.address) {
+              setCoords(prev => ({ ...prev, [fullAddr]: [lat, lon] }));
+              if (isNewAddress) {
                 setMapCenter([lat, lon]);
               }
             }
           })
-          .catch(err => console.error('Erro geocoding:', addr, err));
+          .catch(err => console.error('Erro geocoding:', fullAddr, err));
       });
     }, 1500); // 1.5s debounce para respeitar política do Nominatim
 
     return () => clearTimeout(timer);
-  }, [measurements, newMeasurement.address, companyAddress]);
+  }, [measurements, newMeasurement.address, newMeasurement.addressNumber, companyAddress]);
 
   // Atualizar centro do mapa quando o endereço da nova medição mudar (caso já tenhamos a coordenada)
   useEffect(() => {
-    if (newMeasurement.address && coords[newMeasurement.address]) {
-      setMapCenter(coords[newMeasurement.address]);
+    const fullAddr = newMeasurement.addressNumber 
+      ? `${newMeasurement.address}, ${newMeasurement.addressNumber}`
+      : newMeasurement.address;
+
+    if (newMeasurement.address && coords[fullAddr]) {
+      setMapCenter(coords[fullAddr]);
     } else if (companyAddress && coords[companyAddress]) {
       setMapCenter(coords[companyAddress]);
     }
-  }, [newMeasurement.address, coords, companyAddress]);
+  }, [newMeasurement.address, newMeasurement.addressNumber, coords, companyAddress]);
 
   const getWeekDays = (baseDate: string) => {
     const d = new Date(baseDate + 'T12:00:00');
@@ -223,7 +236,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
       setEditingMeasurementId(null);
       setNewMeasurement({ 
         clientName: '', address: '', cep: '', date: selectedDate, time: '08:00', description: '', measurerName: '', status: 'Pendente', osId: '', osNumber: '',
-        addressComplement: '', clientPhone: '', sellerName: ''
+        addressNumber: '', addressComplement: '', clientPhone: '', sellerName: ''
       });
     } catch (error) {
       console.error('Erro ao salvar medição:', error);
@@ -244,6 +257,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
       osId: m.osId || '',
       osNumber: m.osNumber || '',
       cep: m.cep || '',
+      addressNumber: m.addressNumber || '',
       addressComplement: m.addressComplement || '',
       clientPhone: m.clientPhone || '',
       sellerName: m.sellerName || ''
@@ -481,58 +495,65 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
            </div>
 
            <div className="flex-1 relative z-0">
-              <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }} scrollWheelZoom={true}>
-                 <TileLayer
-                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                 />
-                 <MapController center={mapCenter} />
-                 
-                 {/* Company Home Marker */}
-                 {coords[companyAddress] && !isNaN(coords[companyAddress][0]) && (
-                   <Marker position={coords[companyAddress] as L.LatLngTuple} icon={createCompanyIcon()}>
-                     <Popup>
-                       <div className="p-1">
-                         <p className="font-black text-[10px] uppercase text-slate-400 mb-1">Ponto de Saída</p>
-                         <p className="font-bold text-xs">{companyName}</p>
-                       </div>
-                     </Popup>
-                   </Marker>
-                 )}
-   
-                 {/* Measurement Markers */}
-                 {mapMeasurements.map((m, i) => (
-                   coords[m.address] && !isNaN(coords[m.address][0]) && (
-                     <Marker 
-                       key={m.id} 
-                       position={coords[m.address] as L.LatLngTuple} 
-                       icon={createNumberedIcon(i + 1, '#2563eb')}
-                       eventHandlers={{ click: () => setSelectedMeasurementId(m.id) }}
-                     >
-                       <Popup>
-                         <div className="p-1 min-w-[120px]">
-                           <p className="font-black text-[9px] uppercase text-slate-400 mb-0.5">Medição {i + 1}</p>
-                           <p className="font-bold text-xs text-slate-900">{m.clientName}</p>
-                           <p className="text-[10px] text-blue-600 font-bold">{m.time}</p>
-                         </div>
-                       </Popup>
-                     </Marker>
-                   )
-                 ))}
-   
-                 {/* Route Path Line */}
-                 {mapMeasurements.length > 0 && (
-                   <Polyline 
-                     positions={[
-                       coords[companyAddress] as [number, number],
-                       ...mapMeasurements.filter(m => coords[m.address]).map(m => coords[m.address] as [number, number])
-                     ]}
-                     color="#2563eb"
-                     weight={2}
-                     opacity={0.5}
-                     dashArray="5, 10"
-                   />
-                 )}
+              <MapContainer center={mapCenter} zoom={13} className="w-full h-full">
+                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                  <MapController center={mapCenter} />
+                  
+                  {/* Company/Start marker */}
+                  {coords[companyAddress] && (
+                    <Marker position={coords[companyAddress]} icon={createCompanyIcon()}>
+                      <Popup>
+                        <div className="p-1">
+                          <p className="font-black text-[10px] uppercase text-slate-400">Ponto de Partida</p>
+                          <p className="font-bold text-xs">Sua Empresa</p>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  )}
+
+                  {/* Measurement markers */}
+                  {mapMeasurements.map((m, i) => {
+                    const fullAddr = m.addressNumber ? `${m.address}, ${m.addressNumber}` : m.address;
+                    return (
+                       coords[fullAddr] && (
+                        <Marker 
+                          key={m.id} 
+                          position={coords[fullAddr]} 
+                          icon={createNumberedIcon(i + 1, '#2563eb')}
+                          eventHandlers={{
+                            click: () => setSelectedMeasurementId(m.id)
+                          }}
+                        >
+                          <Popup>
+                            <div className="p-1 min-w-[120px]">
+                              <p className="font-black text-[9px] uppercase text-slate-400 mb-0.5">Medição {i + 1}</p>
+                              <p className="font-bold text-xs text-slate-900">{m.clientName}</p>
+                              <p className="text-[10px] text-blue-600 font-bold">{m.time}</p>
+                            </div>
+                          </Popup>
+                        </Marker>
+                      )
+                    );
+                  })}
+    
+                  {/* Route Path Line */}
+                  {mapMeasurements.length > 0 && (
+                    <Polyline 
+                      positions={[
+                        coords[companyAddress] as [number, number],
+                        ...mapMeasurements
+                          .map(m => {
+                            const fullAddr = m.addressNumber ? `${m.address}, ${m.addressNumber}` : m.address;
+                            return coords[fullAddr];
+                          })
+                          .filter(c => !!c) as [number, number][]
+                      ]}
+                      color="#2563eb"
+                      weight={2}
+                      opacity={0.5}
+                      dashArray="5, 10"
+                    />
+                  )}
    
                  {/* Real-time Tracking Markers */}
                  {Object.entries(driverTrackingLocations).map(([name, location]) => (
@@ -573,6 +594,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                     clientName: '', 
                     address: '', 
                     cep: '',
+                    addressNumber: '',
                     date: selectedDate, 
                     time: '08:00', 
                     description: '', 
@@ -646,16 +668,29 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                   </select>
                 </div>
                 
-                <div className="sm:col-span-2">
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Endereço da Medição</label>
-                  <input 
-                    type="text" 
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
-                    value={newMeasurement.address}
-                    onChange={e => setNewMeasurement({...newMeasurement, address: e.target.value.toUpperCase()})}
-                    placeholder="Logradouro, número, bairro e cidade"
-                    required
-                  />
+                <div className="sm:col-span-2 grid grid-cols-4 gap-4">
+                  <div className="col-span-3">
+                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Endereço da Medição</label>
+                    <input 
+                      type="text" 
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                      value={newMeasurement.address}
+                      onChange={e => setNewMeasurement({...newMeasurement, address: e.target.value.toUpperCase()})}
+                      placeholder="Logradouro, Bairro, Cidade - UF"
+                      required
+                    />
+                  </div>
+                  <div className="col-span-1">
+                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Número</label>
+                    <input 
+                      type="text" 
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                      value={newMeasurement.addressNumber}
+                      onChange={e => setNewMeasurement({...newMeasurement, addressNumber: e.target.value})}
+                      placeholder="123"
+                      required
+                    />
+                  </div>
                 </div>
 
                 <div className="sm:col-span-2">
@@ -768,7 +803,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                       setEditingMeasurementId(null);
                       setNewMeasurement({ 
                         clientName: '', address: '', cep: '', date: selectedDate, time: '08:00', description: '', measurerName: '', status: 'Pendente', osId: '', osNumber: '',
-                        addressComplement: '', clientPhone: '', sellerName: ''
+                        addressNumber: '', addressComplement: '', clientPhone: '', sellerName: ''
                       });
                     }}
                     className="flex-1 py-4 font-black uppercase tracking-widest text-gray-400 hover:text-gray-600 transition-colors"
