@@ -1421,20 +1421,19 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   <div className="flex-1">
                     <label className="text-[9px] font-black text-slate-400 uppercase mb-1 block">Valor Desconto (R$)</label>
                     <input 
-                      type="number" 
-                      step="0.01"
-                      value={discountValueInput}
+                      type="text" 
+                      value={discountValue > 0 ? discountValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : ''}
                       onChange={e => {
-                        const valStr = e.target.value;
-                        setDiscountValueInput(valStr);
-                        const val = parseFloat(valStr) || 0;
+                        const raw = e.target.value.replace(/\D/g, '');
+                        const val = parseInt(raw || '0') / 100;
                         setDiscountValue(val);
+                        setDiscountValueInput(val > 0 ? val.toString() : '');
                         const perc = subtotal > 0 ? (val / subtotal) * 100 : 0;
                         setDiscountPercentage(perc);
                         setDiscountPercentageInput(perc > 0 ? perc.toFixed(2) : '');
                       }}
                       className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-bold text-slate-800 dark:text-white"
-                      placeholder="0,00"
+                      placeholder="R$ 0,00"
                     />
                     {companyInfo.maxDiscountPct !== undefined && (
                       <div className="mt-1 flex justify-between items-center px-1">
