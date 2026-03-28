@@ -63,7 +63,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
             <img 
               src={companyInfo.printLogoUrl || companyInfo.logoUrl} 
               alt="Logo" 
-              style={{ maxHeight: '130px', maxWidth: '600px', width: 'auto', objectFit: 'contain', display: 'block' }} 
+              style={{ maxHeight: '260px', maxWidth: '600px', width: 'auto', objectFit: 'contain', display: 'block' }} 
             />
           ) : (
           <div style={{ fontSize: '34px', fontWeight: 900, letterSpacing: '-1px', color: '#000' }}>
