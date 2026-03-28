@@ -89,7 +89,7 @@ const App: React.FC = () => {
   const { payablePMs, handleSave: handleSavePayablePM, handleDelete: deletePayablePM, toggleActive: togglePayablePM } = usePayablePaymentMethods(activeCompanyId);
   const { workOrders, loadingWO, createWorkOrders, updateWorkOrderStatus, updateWorkOrderPhase, updateWorkOrder, updateDeliveryDate, cancelWorkOrder, addDrawing, deleteDrawing, getEnvironmentOSMap, refreshWorkOrders } = useWorkOrders(activeCompanyId);
   const { authorizations, requestAuthorization, resolveAuthorization } = useDiscountAuthorizations(activeCompanyId);
-  const { measurements, createMeasurement, updateMeasurement, deleteMeasurement } = useMeasurements(activeCompanyId);
+  const { measurements, createMeasurement, updateMeasurement, deleteMeasurement, restoreMeasurement } = useMeasurements(activeCompanyId);
   const { driverLocations, reportLocation, setOffline } = useDriverTracking(activeCompanyId, user);
   const { orders, setOrders, handleSaveOrder } = useOrderService(activeCompanyId, logActivity);
 
@@ -374,6 +374,7 @@ const App: React.FC = () => {
             onAddMeasurement={createMeasurement}
             onUpdateMeasurement={updateMeasurement}
             onDeleteMeasurement={deleteMeasurement}
+            onRestoreMeasurement={restoreMeasurement}
             driverTrackingLocations={driverLocations}
             companyAddress={companyInfo.address}
             companyName={companyInfo.name}

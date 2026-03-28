@@ -386,7 +386,7 @@ export interface Measurement {
   cep?: string;
   date: string;
   time: string;
-  status: 'Pendente' | 'Concluída' | 'Cancelada';
+  status: 'Pendente' | 'Concluída' | 'Cancelada' | 'Excluída';
   description?: string;
   measurerName?: string;
   osId?: string;

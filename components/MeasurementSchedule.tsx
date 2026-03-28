@@ -28,6 +28,7 @@ interface MeasurementScheduleProps {
   onAddMeasurement: (m: Omit<Measurement, 'id' | 'company_id'>) => Promise<any>;
   onUpdateMeasurement: (id: string, updates: Partial<Measurement>) => Promise<void>;
   onDeleteMeasurement: (id: string) => Promise<void>;
+  onRestoreMeasurement?: (id: string) => Promise<void>;
   driverTrackingLocations: Record<string, DriverStatus>;
   companyAddress: string;
   companyName: string;
@@ -50,6 +51,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
   onAddMeasurement, 
   onUpdateMeasurement, 
   onDeleteMeasurement,
+  onRestoreMeasurement,
   driverTrackingLocations,
   companyAddress,
   companyName,
@@ -62,6 +64,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
   const [showWeekends, setShowWeekends] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(60);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTrashOpen, setIsTrashOpen] = useState(false);
   const [editingMeasurementId, setEditingMeasurementId] = useState<string | null>(null);
   const [activeMobileView, setActiveMobileView] = useState<'list' | 'map'>('list');
   
@@ -191,8 +194,16 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
     setSelectedDate(d.toISOString().split('T')[0]);
   };
 
-  const weekMeasurements = measurements.filter(m => weekDays.includes(m.date));
-  const mapMeasurements = measurements.filter(m => m.date === selectedDate);
+  const filteredMeasurements = measurements.filter(m => {
+    const matchesSearch = m.clientName.toLowerCase().includes(searchTerm.toLowerCase()) || m.address.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
+  });
+
+  const activeMeasurements = filteredMeasurements.filter(m => m.status !== 'Excluída');
+  const trashMeasurements = measurements.filter(m => m.status === 'Excluída');
+
+  const weekMeasurements = activeMeasurements.filter(m => weekDays.includes(m.date));
+  const mapMeasurements = activeMeasurements.filter(m => m.date === selectedDate);
 
   const getTimePosition = (timeStr: string) => {
     const [h, m] = timeStr.split(':').map(Number);
@@ -789,6 +800,66 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                 )}
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Lixeira */}
+      {isTrashOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[2001] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden border">
+            <div className="p-6 border-b flex items-center justify-between bg-red-50/50">
+              <div className="flex items-center gap-3">
+                <Trash2 className="text-red-500" size={24} />
+                <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Lixeira de Medições</h3>
+              </div>
+              <button 
+                onClick={() => setIsTrashOpen(false)} 
+                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                title="Fechar"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+              {trashMeasurements.length === 0 ? (
+                <div className="text-center py-12">
+                   <AlertCircle className="mx-auto text-gray-200 mb-4" size={48} />
+                   <p className="text-gray-400 font-bold">A lixeira está vazia</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {trashMeasurements.map(m => (
+                    <div key={m.id} className="flex items-center justify-between p-4 bg-gray-50 border rounded-2xl">
+                      <div className="flex flex-col">
+                        <span className="font-black text-xs text-gray-900">{m.clientName}</span>
+                        <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{m.date} - {m.time}</span>
+                      </div>
+                      <button 
+                        onClick={async () => {
+                           if (onRestoreMeasurement) {
+                              await onRestoreMeasurement(m.id);
+                           }
+                        }}
+                        className="px-4 py-2 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-blue-700 transition-all shadow-md active:scale-95"
+                      >
+                        Restaurar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t bg-gray-50/50 flex justify-end">
+               <button 
+                 onClick={() => setIsTrashOpen(false)}
+                 className="px-6 py-3 font-black text-xs uppercase tracking-widest text-gray-400 hover:text-gray-600 transition-colors"
+               >
+                 Fechar
+               </button>
+            </div>
           </div>
         </div>
       )}

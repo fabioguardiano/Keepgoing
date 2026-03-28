@@ -147,14 +147,30 @@ export const useMeasurements = (companyId?: string) => {
     try {
       const { error } = await supabase
         .from('measurements')
-        .delete()
+        .update({ status: 'Excluída' })
         .eq('id', id);
         
       if (error) throw error;
       
-      setMeasurements(prev => prev.filter(m => m.id !== id));
+      setMeasurements(prev => prev.map(m => m.id === id ? { ...m, status: 'Excluída' } : m));
     } catch (err) {
       console.error('[deleteMeasurement Error]:', err);
+      throw err;
+    }
+  };
+
+  const restoreMeasurement = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('measurements')
+        .update({ status: 'Pendente' })
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      setMeasurements(prev => prev.map(m => m.id === id ? { ...m, status: 'Pendente' } : m));
+    } catch (err) {
+      console.error('[restoreMeasurement Error]:', err);
       throw err;
     }
   };
@@ -165,6 +181,7 @@ export const useMeasurements = (companyId?: string) => {
     fetchMeasurements, 
     createMeasurement, 
     updateMeasurement, 
-    deleteMeasurement 
+    deleteMeasurement,
+    restoreMeasurement
   };
 };
