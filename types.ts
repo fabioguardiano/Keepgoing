@@ -411,6 +411,7 @@ export interface CompanyInfo {
   phone: string;
   email: string;
   logoUrl?: string;
+  printLogoUrl?: string;
   sidebarColor?: string;
   sidebarTextColor?: string;
   buttonColor?: string;

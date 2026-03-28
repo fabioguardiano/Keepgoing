@@ -56,11 +56,15 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
       style={{ fontFamily: '"Calibri", "Arial", sans-serif', fontSize: '11px', lineHeight: '1.35' }}
     >
       {/* ── CABEÇALHO ────────────────────────────────────────── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0', marginBottom: '0' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingBottom: '0', marginBottom: '0' }}>
         {/* Logo / Nome */}
-        <div style={{ width: '55%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start' }}>
-          {companyInfo.logoUrl ? (
-            <img src={companyInfo.logoUrl} alt="Logo" style={{ maxHeight: '225px', maxWidth: '600px', width: 'auto', objectFit: 'contain', display: 'block' }} />
+        <div style={{ width: '55%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'flex-start' }}>
+          {companyInfo.printLogoUrl || companyInfo.logoUrl ? (
+            <img 
+              src={companyInfo.printLogoUrl || companyInfo.logoUrl} 
+              alt="Logo" 
+              style={{ maxHeight: '225px', maxWidth: '600px', width: 'auto', objectFit: 'contain', display: 'block' }} 
+            />
           ) : (
           <div style={{ fontSize: '34px', fontWeight: 900, letterSpacing: '-1px', color: '#000' }}>
             {companyInfo.name}
