@@ -378,6 +378,7 @@ const App: React.FC = () => {
             companyAddress={companyInfo.address}
             companyName={companyInfo.name}
             companyLogoUrl={companyInfo.logoUrl}
+            appUsers={appUsers}
           />
         );
       case 'Equipe':

@@ -7,7 +7,7 @@ import {
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Measurement, WorkOrder, DriverStatus, CompanyInfo } from '../types';
+import { Measurement, WorkOrder, DriverStatus, CompanyInfo, AppUser } from '../types';
 
 // O ícone padrão do Leaflet não funciona bem no Next.js/Vite sem isso
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
@@ -32,6 +32,7 @@ interface MeasurementScheduleProps {
   companyAddress: string;
   companyName: string;
   companyLogoUrl?: string;
+  appUsers: AppUser[];
 }
 
 // Subcomponente para controlar o centro do mapa
@@ -52,7 +53,8 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
   driverTrackingLocations,
   companyAddress,
   companyName,
-  companyLogoUrl
+  companyLogoUrl,
+  appUsers
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -548,13 +550,21 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
 
                 <div className="sm:col-span-1">
                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Vendedor</label>
-                  <input 
-                    type="text" 
+                  <select 
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
                     value={newMeasurement.sellerName}
                     onChange={e => setNewMeasurement({...newMeasurement, sellerName: e.target.value})}
-                    placeholder="Nome do vendedor"
-                  />
+                    required
+                  >
+                    <option value="">Selecione o vendedor</option>
+                    {appUsers
+                      .filter(u => (u.role === 'seller' || u.role === 'admin') && u.status === 'ativo')
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map(u => (
+                        <option key={u.id} value={u.name}>{u.name}</option>
+                      ))
+                    }
+                  </select>
                 </div>
                 
                 <div className="sm:col-span-2">
