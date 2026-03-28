@@ -395,6 +395,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                               <div 
                                 key={m.id}
                                 onClick={(e) => { e.stopPropagation(); setSelectedMeasurementId(m.id); setSelectedDate(m.date); }}
+                                onDoubleClick={(e) => { e.stopPropagation(); handleEditClick(m); }}
                                 className={`absolute left-0.5 right-0.5 p-2 rounded-xl border transition-all cursor-pointer shadow-sm items-start flex flex-col ${
                                   selectedMeasurementId === m.id 
                                     ? 'bg-blue-600 border-blue-400 text-white z-40 shadow-xl' 
@@ -439,7 +440,11 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                         <p className="text-[10px] font-black uppercase text-slate-400">Nenhuma medição</p>
                       </div>
                    ) : mapMeasurements.sort((a,b) => a.time.localeCompare(b.time)).map((m, i) => (
-                      <div key={m.id} onClick={() => setSelectedMeasurementId(m.id)} className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center gap-3 ${selectedMeasurementId === m.id ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-white border-slate-100 hover:bg-slate-50'}`}>
+                      <div key={m.id} 
+                        onClick={() => setSelectedMeasurementId(m.id)} 
+                        onDoubleClick={() => handleEditClick(m)}
+                        className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center gap-3 ${selectedMeasurementId === m.id ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-white border-slate-100 hover:bg-slate-50'}`}
+                      >
                          <div className={`w-6 h-6 rounded-lg text-[10px] font-black flex items-center justify-center shrink-0 ${selectedMeasurementId === m.id ? 'bg-white text-blue-600' : 'bg-blue-600 text-white'}`}>
                             {i+1}
                          </div>
