@@ -59,9 +59,9 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0px' }}>
         {/* Logo / Nome */}
         <div style={{ width: '55%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start' }}>
-          {companyInfo.logoUrl ? (
+          {companyInfo.printLogoUrl || companyInfo.logoUrl ? (
             <img 
-              src={companyInfo.logoUrl} 
+              src={companyInfo.printLogoUrl || companyInfo.logoUrl} 
               alt="Logo" 
               style={{ maxHeight: '260px', maxWidth: '600px', width: 'auto', objectFit: 'contain', display: 'block' }} 
             />

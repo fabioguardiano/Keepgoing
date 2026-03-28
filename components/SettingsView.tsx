@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Layout, Check, ChevronRight, Plus, Trash2, Edit2, GripVertical, Info, Building2, MapPin, Phone, Mail, ShoppingBag, FileSpreadsheet, Download, Upload, AlertCircle, Loader2, Wallet, Shield, Bell, ToggleLeft, ToggleRight, X, Pencil } from 'lucide-react';
+import { Settings, Layout, Check, ChevronRight, Plus, Trash2, Edit2, GripVertical, Info, Building2, MapPin, Phone, Mail, ShoppingBag, FileSpreadsheet, Download, Upload, AlertCircle, Loader2, Wallet, Shield, Bell, ToggleLeft, ToggleRight, X, Pencil, Box } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { PaymentTypesView } from './PaymentTypesView';
 import { PaymentMethodsView } from './PaymentMethodsView';
@@ -933,53 +933,77 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                             <div className="p-6 space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                                    {/* Logo Upload Section */}
-                                    <div className="md:col-span-2 p-5 bg-slate-50 border border-slate-100 rounded-3xl space-y-4">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-16 h-16 bg-white border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center overflow-hidden shrink-0">
-                                                {companyInfo.logoUrl ? (
-                                                    <img src={companyInfo.logoUrl} alt="Logo Preview" className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <Building2 size={28} className="text-slate-300" />
-                                                )}
-                                            </div>
-                                            <div className="flex-1 space-y-0.5">
-                                                <h3 className="text-xs font-bold text-slate-800">Logotipo da Empresa</h3>
-                                                <p className="text-[10px] text-slate-400 font-medium">PNG ou JPG. Recomendado: Quadrado, máx. 500x500px.</p>
-                                                <div className="flex gap-2 pt-1">
-                                                    <label className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[11px] font-bold text-slate-600 cursor-pointer hover:bg-slate-50 transition-all">
-                                                        Alterar Logo
-                                                        <input 
-                                                            type="file" 
-                                                            className="hidden" 
-                                                            accept="image/*"
-                                                            onChange={(e) => {
-                                                                const file = e.target.files?.[0];
-                                                                if (file) {
-                                                                    const reader = new FileReader();
-                                                                    reader.onloadend = () => {
-                                                                        handleUpdateCompany('logoUrl', reader.result as string);
-                                                                    };
-                                                                    reader.readAsDataURL(file);
-                                                                }
-                                                            }}
-                                                        />
-                                                    </label>
-                                                    {companyInfo.logoUrl && (
-                                                        <button 
-                                                            onClick={() => handleUpdateCompany('logoUrl', '')}
-                                                            className="px-3 py-1.5 bg-red-50 text-red-500 rounded-lg text-[11px] font-bold hover:bg-red-100 transition-all"
-                                                        >
-                                                            Remover
-                                                        </button>
-                                                    )}
+                                    {/* SEÇÃO DE LOGOTIPOS PREMIUM */}
+                                    <div className="md:col-span-2 space-y-4 pt-2 mb-2">
+                                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                            <Layout size={14} /> Identidade Visual
+                                        </h3>
+                                        
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            {/* Sidebar Logo */}
+                                            <div className="p-4 bg-white border border-slate-200 rounded-3xl space-y-3 shadow-sm">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center overflow-hidden">
+                                                        {companyInfo.logoUrl ? <img src={companyInfo.logoUrl} className="w-full h-full object-contain p-1" /> : <Layout size={18} className="text-slate-300" />}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] font-bold text-slate-800 leading-tight">Logo Sidebar</p>
+                                                        <p className="text-[8px] text-slate-400 font-medium">Menu Lateral</p>
+                                                    </div>
                                                 </div>
+                                                <label className="block px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[9px] font-black text-slate-600 text-center cursor-pointer hover:bg-slate-100 transition-all uppercase">
+                                                    Subir
+                                                    <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                                                        const file = e.target.files?.[0]; if (file) {
+                                                            const r = new FileReader(); r.onloadend = () => handleUpdateCompany('logoUrl', r.result as string); r.readAsDataURL(file);
+                                                        }
+                                                    }} />
+                                                </label>
+                                            </div>
+
+                                            {/* Print Logo */}
+                                            <div className="p-4 bg-white border border-slate-200 rounded-3xl space-y-3 shadow-sm">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center overflow-hidden">
+                                                        {companyInfo.printLogoUrl ? <img src={companyInfo.printLogoUrl} className="w-full h-full object-contain p-1" /> : <Building2 size={18} className="text-slate-300" />}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] font-bold text-slate-800 leading-tight">Logo Impressão</p>
+                                                        <p className="text-[8px] text-slate-400 font-medium">Doc. e Pedidos</p>
+                                                    </div>
+                                                </div>
+                                                <label className="block px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[9px] font-black text-slate-600 text-center cursor-pointer hover:bg-slate-100 transition-all uppercase">
+                                                    Subir
+                                                    <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                                                        const file = e.target.files?.[0]; if (file) {
+                                                            const r = new FileReader(); r.onloadend = () => handleUpdateCompany('printLogoUrl', r.result as string); r.readAsDataURL(file);
+                                                        }
+                                                    }} />
+                                                </label>
+                                            </div>
+
+                                            {/* Browser Icon */}
+                                            <div className="p-4 bg-white border border-slate-200 rounded-3xl space-y-3 shadow-sm">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center overflow-hidden">
+                                                        {companyInfo.iconUrl ? <img src={companyInfo.iconUrl} className="w-10 h-10 object-contain p-2" /> : <Box size={18} className="text-slate-300" />}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] font-bold text-slate-800 leading-tight">Ícone (Favicon)</p>
+                                                        <p className="text-[8px] text-slate-400 font-medium">Aba do Chrome</p>
+                                                    </div>
+                                                </div>
+                                                <label className="block px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[9px] font-black text-slate-600 text-center cursor-pointer hover:bg-slate-100 transition-all uppercase">
+                                                    Subir
+                                                    <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                                                        const file = e.target.files?.[0]; if (file) {
+                                                            const r = new FileReader(); r.onloadend = () => handleUpdateCompany('iconUrl', r.result as string); r.readAsDataURL(file);
+                                                        }
+                                                    }} />
+                                                </label>
                                             </div>
                                         </div>
                                     </div>
-
-
-
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
                                             <Building2 size={14} /> Nome da Empresa

@@ -127,6 +127,8 @@ export const useSettings = (
             phone: data.phone || '',
             email: data.email || '',
             logoUrl: data.logo_url || '',
+            printLogoUrl: data.print_logo_url || '',
+            iconUrl: data.icon_url || '',
             sidebarColor: data.sidebar_color || '#0f172a',
             sidebarTextColor: data.sidebar_text_color || '#cbd5e1',
             buttonColor: data.button_color || '#ec5b13',
@@ -161,6 +163,15 @@ export const useSettings = (
       return '#' + (0x1000000 + (R < 255 ? R < 0 ? 0 : R : 255) * 0x10000 + (G < 255 ? G < 0 ? 0 : G : 255) * 0x100 + (B < 255 ? B < 0 ? 0 : B : 255)).toString(16).slice(1);
     };
     root.style.setProperty('--secondary-color', darken(primary, 10));
+    
+    // Atualiza o Favicon (ícone da aba) se iconUrl estiver presente
+    if (companyInfo.iconUrl || companyInfo.logoUrl) {
+      const link = document.querySelector("link[rel*='icon']") as HTMLLinkElement || document.createElement('link');
+      link.type = 'image/x-icon';
+      link.rel = 'shortcut icon';
+      link.href = companyInfo.iconUrl || companyInfo.logoUrl || '';
+      if (!link.parentNode) document.getElementsByTagName('head')[0].appendChild(link);
+    }
   }, [companyInfo]);
 
   // Salva no Supabase + atualiza estado local e cache
@@ -176,6 +187,8 @@ export const useSettings = (
         phone: info.phone || null,
         email: info.email || null,
         logo_url: info.logoUrl || null,
+        print_logo_url: info.printLogoUrl || null,
+        icon_url: info.iconUrl || null,
         sidebar_color: info.sidebarColor || null,
         sidebar_text_color: info.sidebarTextColor || null,
         button_color: info.buttonColor || null,

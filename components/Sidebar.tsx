@@ -104,7 +104,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
       <div className="p-6 flex items-center gap-3 cursor-pointer" onClick={toggle}>
         <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[var(--primary-color)] shrink-0 overflow-hidden">
           {companyInfo.logoUrl ? (
-            <img src={companyInfo.logoUrl} alt="Logo" className="w-full h-full object-cover" />
+            <img src={companyInfo.logoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
           ) : (
             <Diamond className="w-6 h-6" />
           )}
