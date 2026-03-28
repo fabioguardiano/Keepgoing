@@ -1039,7 +1039,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                       <td className="px-4 py-3 text-right text-[11px] font-bold text-slate-600 dark:text-slate-300">R$ {(item.unitPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                       <td className="px-4 py-3 text-center text-[10px] whitespace-nowrap">
                                         <div className="flex flex-col items-center">
-                                          <span className="font-bold text-blue-500">{item.servicePercentage || 0}%</span>
+                                          <span className="font-bold text-blue-500">{Number(item.servicePercentage || 0).toFixed(2)}%</span>
                                           <span className="text-[9px] font-black text-slate-400">
                                             {(() => {
                                               const bTotal = (item.m2 || item.quantity) ? ((item.m2 || 0) > 0 ? (item.m2 || 0) * item.unitPrice : item.quantity * item.unitPrice) : 0;
@@ -1187,7 +1187,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                       type="number" 
                                       step="0.1" 
                                       ref={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? serviceRef : null} 
-                                      value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemService : 0} 
+                                      value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? (Number.isInteger(itemService) ? itemService : itemService.toFixed(2)) : 0} 
                                       onChange={e => {
                                         const perc = parseFloat(e.target.value) || 0;
                                         setItemService(perc);
@@ -1215,7 +1215,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                         const m2 = calculateM2(itemLength, itemWidth, itemQty);
                                         const baseTotal = m2 > 0 ? (m2 * itemPrice) : (itemQty * itemPrice);
                                         const perc = baseTotal > 0 ? (val / baseTotal) * 100 : 0;
-                                        setItemService(perc);
+                                        setItemService(parseFloat(perc.toFixed(2)));
                                       }}
                                       onKeyDown={e => e.key === 'Enter' && addItem()}
                                       className="flex-1 min-w-[70px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[10px] font-bold outline-none focus:border-[var(--primary-color)] text-right transition-all"
