@@ -978,53 +978,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                         </div>
                                     </div>
 
-                                    {/* Logo de Impressão Upload Section */}
-                                    <div className="md:col-span-2 p-5 bg-white border border-slate-200 rounded-3xl space-y-4">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-16 h-16 bg-white border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center overflow-hidden shrink-0">
-                                                    {companyInfo.printLogoUrl ? (
-                                                        <img src={companyInfo.printLogoUrl} alt="Print Logo Preview" className="w-full h-full object-cover" />
-                                                    ) : (
-                                                        <Layout size={28} className="text-slate-300" />
-                                                    )}
-                                                </div>
-                                                <div className="flex-1 space-y-0.5">
-                                                    <div className="flex items-center gap-2">
-                                                        <h3 className="text-xs font-bold text-slate-800">Logotipo para Impressão</h3>
-                                                        <span className="px-1.5 py-0.5 bg-blue-100 text-blue-600 rounded text-[9px] font-black uppercase">Novo</span>
-                                                    </div>
-                                                    <p className="text-[10px] text-slate-400 font-medium tracking-tight">Otimizado para documentos. Recomendado: Horizontal (ex: 600x200px).</p>
-                                                    <div className="flex gap-2 pt-1">
-                                                        <label className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[11px] font-bold text-slate-600 cursor-pointer hover:bg-slate-50 transition-all">
-                                                            Alterar Logo de Impressão
-                                                            <input 
-                                                                type="file" 
-                                                                className="hidden" 
-                                                                accept="image/*"
-                                                                onChange={(e) => {
-                                                                    const file = e.target.files?.[0];
-                                                                    if (file) {
-                                                                        const reader = new FileReader();
-                                                                        reader.onloadend = () => {
-                                                                            handleUpdateCompany('printLogoUrl', reader.result as string);
-                                                                        };
-                                                                        reader.readAsDataURL(file);
-                                                                    }
-                                                                }}
-                                                            />
-                                                        </label>
-                                                        {companyInfo.printLogoUrl && (
-                                                            <button 
-                                                                onClick={() => handleUpdateCompany('printLogoUrl', '')}
-                                                                className="px-3 py-1.5 bg-red-50 text-red-500 rounded-lg text-[11px] font-bold hover:bg-red-100 transition-all"
-                                                            >
-                                                                Remover
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+
 
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
