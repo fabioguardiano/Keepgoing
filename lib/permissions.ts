@@ -6,6 +6,7 @@ export const VIEW_MODULE_MAP: Partial<Record<View, ModuleKey>> = {
   'Produção': 'producao',
   'O.S. de Produção': 'producao',
   'Agenda de Entregas': 'agenda_entregas',
+  'Agenda de Medição': 'agenda_medicao',
   'Equipe': 'equipe',
   'Relatórios': 'relatorios',
   'Configurações': 'configuracoes',
@@ -46,7 +47,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
 };
 
 export const ALL_MODULES: ModuleKey[] = [
-  'vendas', 'producao', 'agenda_entregas', 'clientes',
+  'vendas', 'producao', 'agenda_entregas', 'agenda_medicao', 'clientes',
   'financeiro', 'estoque', 'cadastros', 'equipe', 'relatorios', 'configuracoes',
 ];
 
@@ -83,6 +84,7 @@ export const DEFAULT_PROFILES: PermissionProfile[] = [
     name: 'Medidor',
     isDefault: true,
     permissions: mixed({
+      agenda_medicao: 'full',
       agenda_entregas: 'full',
       vendas: 'view',
       clientes: 'view',
@@ -142,7 +144,7 @@ export const getModuleAccess = (
 const ROLE_FALLBACK: Record<AppUser['role'], Record<ModuleKey, AccessLevel>> = {
   admin: full(ALL_MODULES),
   manager: full(ALL_MODULES),
-  seller: mixed({ vendas: 'full', clientes: 'full', producao: 'view', agenda_entregas: 'view', estoque: 'view', cadastros: 'view' }),
-  viewer: mixed({ vendas: 'view', producao: 'view', clientes: 'view' }),
+  seller: mixed({ vendas: 'full', clientes: 'full', producao: 'view', agenda_entregas: 'view', agenda_medicao: 'view', estoque: 'view', cadastros: 'view' }),
+  viewer: mixed({ vendas: 'view', producao: 'view', clientes: 'view', agenda_entregas: 'view', agenda_medicao: 'view' }),
   driver: mixed({ agenda_entregas: 'full' }),
 };
