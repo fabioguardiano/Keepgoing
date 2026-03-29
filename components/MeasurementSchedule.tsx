@@ -72,7 +72,19 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
   const [editingMeasurementId, setEditingMeasurementId] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [activeMobileView, setActiveMobileView] = useState<'list' | 'map'>('list');
-  
+
+  const [calendarView, setCalendarView] = useState<'week' | 'month'>('week');
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [pickerYear, setPickerYear] = useState(new Date().getFullYear());
+
+  // Fechar month picker ao clicar fora
+  useEffect(() => {
+    if (!showMonthPicker) return;
+    const handler = () => setShowMonthPicker(false);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showMonthPicker]);
+
   const [newMeasurement, setNewMeasurement] = useState({
     clientName: '',
     address: '',
@@ -328,6 +340,24 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
   const weekMeasurements = activeMeasurements.filter(m => weekDays.includes(m.date));
   const mapMeasurements = activeMeasurements.filter(m => m.date === selectedDate);
 
+  // Dias do mês para visão mensal
+  const getMonthDays = (dateStr: string) => {
+    const d = new Date(dateStr + 'T12:00:00');
+    const year = d.getFullYear();
+    const month = d.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    // Preencher com dias do mês anterior para alinhar na semana
+    const startDow = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1; // segunda=0
+    const days: (string | null)[] = [];
+    for (let i = 0; i < startDow; i++) days.push(null);
+    for (let i = 1; i <= lastDay.getDate(); i++) {
+      days.push(`${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`);
+    }
+    return days;
+  };
+  const monthDays = getMonthDays(selectedDate);
+
   const getTimePosition = (timeStr: string) => {
     const [h, m] = timeStr.split(':').map(Number);
     const totalMinutes = h * 60 + m - START_HOUR * 60;
@@ -428,16 +458,74 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
             </div>
           </div>
 
+          {/* Toggle Semana / Mês */}
           <div className="hidden lg:flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200">
-            <button onClick={() => changeWeek('prev')} className="p-1.5 hover:bg-white rounded-lg transition-all text-slate-600 active:scale-90">
-              <ChevronLeft size={16} />
+            <button
+              onClick={() => setCalendarView('week')}
+              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide transition-all ${calendarView === 'week' ? 'bg-white shadow text-blue-600 border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
+            >Semana</button>
+            <button
+              onClick={() => setCalendarView('month')}
+              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide transition-all ${calendarView === 'month' ? 'bg-white shadow text-blue-600 border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
+            >Mês</button>
+          </div>
+
+          {/* Navegação de período + seletor rápido */}
+          <div className="hidden lg:flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200 relative">
+            <button
+              onClick={() => calendarView === 'week' ? changeWeek('prev') : setSelectedDate(d => {
+                const dt = new Date(d + 'T12:00:00'); dt.setMonth(dt.getMonth() - 1); return dt.toISOString().split('T')[0];
+              })}
+              className="p-1.5 hover:bg-white rounded-lg transition-all text-slate-600 active:scale-90"
+            ><ChevronLeft size={16} /></button>
+
+            <button
+              onClick={() => { setPickerYear(new Date(selectedDate + 'T12:00:00').getFullYear()); setShowMonthPicker(v => !v); }}
+              className="px-4 py-1 text-[11px] font-black text-slate-800 uppercase min-w-[180px] text-center hover:bg-white rounded-lg transition-all"
+            >
+              {calendarView === 'week'
+                ? `${new Date(getWeekDays(selectedDate)[0]).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} - ${new Date(getWeekDays(selectedDate)[6]).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}`
+                : new Date(selectedDate + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+              }
             </button>
-            <div className="px-4 py-1 text-[11px] font-black text-slate-800 uppercase min-w-[180px] text-center">
-              {new Date(getWeekDays(selectedDate)[0]).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} - {new Date(getWeekDays(selectedDate)[6]).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
-            </div>
-            <button onClick={() => changeWeek('next')} className="p-1.5 hover:bg-white rounded-lg transition-all text-slate-600 active:scale-90">
-              <ChevronRight size={16} />
-            </button>
+
+            <button
+              onClick={() => calendarView === 'week' ? changeWeek('next') : setSelectedDate(d => {
+                const dt = new Date(d + 'T12:00:00'); dt.setMonth(dt.getMonth() + 1); return dt.toISOString().split('T')[0];
+              })}
+              className="p-1.5 hover:bg-white rounded-lg transition-all text-slate-600 active:scale-90"
+            ><ChevronRight size={16} /></button>
+
+            {/* Popup seletor de mês/ano */}
+            {showMonthPicker && (
+              <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-2xl border p-4 z-[3000] w-72">
+                {/* Seletor de ano */}
+                <div className="flex items-center justify-between mb-3">
+                  <button onClick={() => setPickerYear(y => y - 1)} className="p-1.5 hover:bg-slate-100 rounded-lg transition-all"><ChevronLeft size={14} /></button>
+                  <span className="text-sm font-black text-slate-800">{pickerYear}</span>
+                  <button onClick={() => setPickerYear(y => y + 1)} className="p-1.5 hover:bg-slate-100 rounded-lg transition-all"><ChevronRight size={14} /></button>
+                </div>
+                {/* Grid de meses */}
+                <div className="grid grid-cols-3 gap-1.5">
+                  {['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].map((mes, idx) => {
+                    const cur = new Date(selectedDate + 'T12:00:00');
+                    const isActive = cur.getFullYear() === pickerYear && cur.getMonth() === idx;
+                    return (
+                      <button
+                        key={mes}
+                        onClick={() => {
+                          const d = new Date(pickerYear, idx, 1);
+                          setSelectedDate(d.toISOString().split('T')[0]);
+                          setCalendarView('month');
+                          setShowMonthPicker(false);
+                        }}
+                        className={`py-2 rounded-xl text-[11px] font-black uppercase tracking-wide transition-all ${isActive ? 'bg-blue-600 text-white' : 'hover:bg-slate-100 text-slate-600'}`}
+                      >{mes}</button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2 ml-4 px-3 py-1.5 bg-slate-100 rounded-xl border border-slate-200 shadow-inner">
@@ -474,8 +562,47 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
       </div>
 
       <div className="flex-1 overflow-hidden flex flex-col">
-        {/* Weekly Calendar with Dynamic Zoom & Forced Scrollbar */}
-        <div 
+        {calendarView === 'month' ? (
+          /* ===== VISÃO MENSAL ===== */
+          <div className="flex-1 overflow-y-auto scroll-sidebar bg-white p-4">
+            {/* Cabeçalho dos dias da semana */}
+            <div className="grid grid-cols-7 mb-2">
+              {['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(d => (
+                <div key={d} className="text-center text-[10px] font-black text-slate-400 uppercase py-2">{d}</div>
+              ))}
+            </div>
+            {/* Grid de dias */}
+            <div className="grid grid-cols-7 gap-1">
+              {monthDays.map((dayStr, idx) => {
+                if (!dayStr) return <div key={`empty-${idx}`} />;
+                const dayMeas = activeMeasurements.filter(m => m.date === dayStr);
+                const isSelected = dayStr === selectedDate;
+                const isToday = dayStr === new Date().toISOString().split('T')[0];
+                return (
+                  <div
+                    key={dayStr}
+                    onClick={() => { setSelectedDate(dayStr); setCalendarView('week'); }}
+                    className={`min-h-[80px] p-2 rounded-xl border cursor-pointer transition-all hover:border-blue-300 hover:shadow-sm flex flex-col gap-1 ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-slate-100 bg-white'}`}
+                  >
+                    <span className={`text-[12px] font-black w-6 h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-blue-600 text-white' : isSelected ? 'text-blue-600' : 'text-slate-600'}`}>
+                      {new Date(dayStr + 'T12:00:00').getDate()}
+                    </span>
+                    {dayMeas.slice(0, 3).map(m => (
+                      <div key={m.id} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md truncate ${m.status === 'Concluída' ? 'bg-emerald-100 text-emerald-700' : m.status === 'Cancelada' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-700'}`}>
+                        {m.time} {m.clientName}
+                      </div>
+                    ))}
+                    {dayMeas.length > 3 && (
+                      <span className="text-[9px] font-black text-slate-400">+{dayMeas.length - 3} mais</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+        /* ===== VISÃO SEMANAL (original) ===== */
+        <div
           onWheel={handleZoom}
           className="flex-1 overflow-y-scroll scroll-sidebar bg-white select-none"
         >
@@ -572,6 +699,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
             </div>
           </div>
         </div>
+        )} {/* fim ternário semana/mês */}
 
         {/* Action Bar & Map Strip - More Height as Requested (500px) */}
         <div className="h-[500px] shrink-0 flex flex-col lg:flex-row relative bg-slate-200 border-t shadow-[0_-15px_30px_rgba(0,0,0,0.1)]">
