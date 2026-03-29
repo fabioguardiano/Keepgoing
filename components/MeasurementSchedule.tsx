@@ -775,11 +775,14 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                     required
                   >
                     <option value="">Selecione o medidor</option>
-                    {staff
-                      .filter(s => s.position === 'medidor' && s.status === 'ativo')
-                      .sort((a, b) => a.name.localeCompare(b.name))
-                      .map(s => (
-                        <option key={s.id} value={s.name}>{s.name}</option>
+                    {[
+                      ...staff.filter(s => s.position === 'medidor' && s.status === 'ativo').map(s => s.name),
+                      ...appUsers.filter(u => u.role === 'driver' && u.status === 'ativo').map(u => u.name)
+                    ]
+                      .filter((v, i, a) => v && a.indexOf(v) === i)
+                      .sort((a, b) => a.localeCompare(b))
+                      .map(name => (
+                        <option key={name} value={name}>{name}</option>
                       ))
                     }
                   </select>
