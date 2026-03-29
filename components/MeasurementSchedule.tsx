@@ -33,6 +33,7 @@ interface MeasurementScheduleProps {
   companyAddress: string;
   companyName: string;
   companyLogoUrl?: string;
+  companyIconUrl?: string;
   appUsers: AppUser[];
   staff: ProductionStaff[];
   permissionProfiles: PermissionProfile[];
@@ -47,17 +48,18 @@ const MapController = ({ center }: { center: [number, number] }) => {
   return null;
 };
 
-export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({ 
-  measurements, 
-  orders, 
-  onAddMeasurement, 
-  onUpdateMeasurement, 
+export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
+  measurements,
+  orders,
+  onAddMeasurement,
+  onUpdateMeasurement,
   onDeleteMeasurement,
   onRestoreMeasurement,
   driverTrackingLocations,
   companyAddress,
   companyName,
   companyLogoUrl,
+  companyIconUrl,
   appUsers,
   staff,
   permissionProfiles
@@ -419,29 +421,57 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
     setIsModalOpen(true);
   };
 
+  // Pin gota SVG — destinos numerados (azul)
   const createNumberedIcon = (number: number, color: string) => L.divIcon({
     className: 'custom-div-icon',
-    html: `<div style="background-color: ${color}; color: white; border: 2px solid white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); transform: translateY(-50%);">${number}</div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 0]
+    html: `<div style="position:relative;width:32px;height:42px;filter:drop-shadow(0 4px 6px rgba(0,0,0,0.25))">
+      <svg viewBox="0 0 32 42" width="32" height="42" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 0C7.163 0 0 7.163 0 16c0 10.667 16 26 16 26S32 26.667 32 16C32 7.163 24.837 0 16 0z" fill="${color}"/>
+        <circle cx="16" cy="15" r="9" fill="white" opacity="0.2"/>
+      </svg>
+      <div style="position:absolute;top:6px;left:0;width:32px;text-align:center;color:white;font-weight:900;font-size:13px;font-family:sans-serif;line-height:1">${number}</div>
+    </div>`,
+    iconSize: [32, 42],
+    iconAnchor: [16, 42]
   });
 
-  const createCompanyIcon = () => L.divIcon({
-    className: 'custom-div-icon',
-    html: `<div style="background-color: #1f2937; color: white; border: 2px solid white; border-radius: 8px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); transform: translateY(-50%);">
-            ${companyLogoUrl ? `<img src="${companyLogoUrl}" style="width: 24px; height: 24px; border-radius: 4px; object-fit: cover" />` : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M16 18h.01"/></svg>'}
-           </div>`,
-    iconSize: [34, 34],
-    iconAnchor: [17, 0]
-  });
+  // Pin gota SVG — empresa (favicon ou ícone de prédio)
+  const createCompanyIcon = () => {
+    return L.divIcon({
+      className: 'custom-div-icon',
+      html: `<div style="position:relative;width:36px;height:48px;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.35))">
+        <svg viewBox="0 0 36 48" width="36" height="48" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 0C8.059 0 0 8.059 0 18c0 12 18 30 18 30S36 30 36 18C36 8.059 27.941 0 18 0z" fill="#1f2937"/>
+          <circle cx="18" cy="17" r="11" fill="white" opacity="0.15"/>
+        </svg>
+        <div style="position:absolute;top:4px;left:0;width:36px;height:26px;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:50%">
+          ${(companyIconUrl || companyLogoUrl)
+            ? `<img src="${companyIconUrl || companyLogoUrl}" style="width:20px;height:20px;object-fit:contain;border-radius:4px"/>`
+            : `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/></svg>`
+          }
+        </div>
+      </div>`,
+      iconSize: [36, 48],
+      iconAnchor: [18, 48]
+    });
+  };
 
+  // Pin gota SVG — medidor em trânsito (verde pulsante com ícone de carro)
   const createMeasurerIcon = () => L.divIcon({
     className: 'custom-div-icon',
-    html: `<div style="background-color: #10b981; color: white; border: 2px solid white; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; box-shadow: 0 0 15px rgba(16, 185, 129, 0.5); border: 3px solid white; animation: pulse 2s infinite; transform: translateY(-50%);">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-           </div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 0]
+    html: `<div style="position:relative;width:36px;height:48px;filter:drop-shadow(0 4px 8px rgba(16,185,129,0.5))">
+      <style>.pulse-ring{animation:ping 1.5s cubic-bezier(0,0,0.2,1) infinite}@keyframes ping{0%{transform:scale(1);opacity:.8}100%{transform:scale(1.6);opacity:0}}</style>
+      <div class="pulse-ring" style="position:absolute;top:2px;left:2px;width:32px;height:32px;border-radius:50%;background:rgba(16,185,129,0.3)"></div>
+      <svg viewBox="0 0 36 48" width="36" height="48" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 0C8.059 0 0 8.059 0 18c0 12 18 30 18 30S36 30 36 18C36 8.059 27.941 0 18 0z" fill="#10b981"/>
+        <circle cx="18" cy="17" r="11" fill="white" opacity="0.15"/>
+      </svg>
+      <div style="position:absolute;top:5px;left:0;width:36px;display:flex;align-items:center;justify-content:center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h11l3 4v6z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>
+      </div>
+    </div>`,
+    iconSize: [36, 48],
+    iconAnchor: [18, 48]
   });
 
   return (

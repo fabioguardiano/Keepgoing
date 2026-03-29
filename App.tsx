@@ -379,6 +379,7 @@ const App: React.FC = () => {
             companyAddress={companyInfo.address}
             companyName={companyInfo.name}
             companyLogoUrl={companyInfo.logoUrl}
+            companyIconUrl={companyInfo.iconUrl}
             appUsers={appUsers}
             staff={staff}
             permissionProfiles={permissionProfiles}
@@ -604,6 +605,7 @@ const App: React.FC = () => {
             companyAddress={companyInfo.address}
             companyName={companyInfo.name}
             companyLogoUrl={companyInfo.logoUrl}
+            companyIconUrl={companyInfo.iconUrl}
             appUsers={appUsers}
             staff={staff}
             permissionProfiles={permissionProfiles}
