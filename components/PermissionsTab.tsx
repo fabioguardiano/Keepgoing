@@ -268,7 +268,30 @@ export const PermissionsTab: React.FC<Props> = ({
               </div>
               <select
                 value={user.profileId ?? ''}
-                onChange={e => onSaveUser({ ...user, profileId: e.target.value || undefined })}
+                onChange={e => {
+                  const pid = e.target.value;
+                  let nextRole = user.role;
+                  const profile = profiles.find(p => p.id === pid);
+                  
+                  // Se mudar para um perfil que tem um 'role' correspondente (padronizado)
+                  if (pid.startsWith('profile-')) {
+                    const r = pid.replace('profile-', '') as any;
+                    if (['admin', 'manager', 'seller', 'driver', 'viewer'].includes(r)) {
+                      nextRole = r;
+                    }
+                  } else if (profile?.name.toLowerCase().includes('medidor') || profile?.name.toLowerCase().includes('entregador')) {
+                    // Especial: se o nome do perfil contém medidor, assume driver (para a agenda)
+                    nextRole = 'driver';
+                  } else if (profile?.name.toLowerCase().includes('vendedor')) {
+                    // Especial: se contém vendedor, assume seller
+                    nextRole = 'seller';
+                  } else if (profile?.name.toLowerCase().includes('gerente')) {
+                    // Especial: se contém gerente, assume manager
+                    nextRole = 'manager';
+                  }
+
+                  onSaveUser({ ...user, profileId: pid || undefined, role: nextRole });
+                }}
                 className="text-xs font-bold border border-slate-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-700 min-w-[160px]"
               >
                 <option value="">— Sem perfil (role padrão) —</option>

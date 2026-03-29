@@ -114,6 +114,12 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, onSave, onClose 
                     if (['admin', 'manager', 'seller', 'driver', 'viewer'].includes(r)) {
                       setRole(r);
                     }
+                  } else if (profile?.name.toLowerCase().includes('medidor') || profile?.name.toLowerCase().includes('entregador')) {
+                    setRole('driver');
+                  } else if (profile?.name.toLowerCase().includes('vendedor')) {
+                    setRole('seller');
+                  } else if (profile?.name.toLowerCase().includes('gerente')) {
+                    setRole('manager');
                   }
                 }} 
                 className={`${inputClass} appearance-none`}
@@ -357,8 +363,8 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
                       </div>
                     </td>
                     <td className="px-6 py-6">
-                      <span className={`text-xs font-black px-2.5 py-1 rounded-lg ${ROLE_COLORS[user.role]}`}>
-                        {ROLE_LABELS[user.role]}
+                      <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg ${ROLE_COLORS[user.role]}`}>
+                        {permissionProfiles.find(p => p.id === user.profileId)?.name || ROLE_LABELS[user.role]}
                       </span>
                     </td>
                     <td className="px-6 py-6">
