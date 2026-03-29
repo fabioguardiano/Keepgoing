@@ -107,6 +107,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
   const [coords, setCoords] = useState<Record<string, [number, number]>>({});
   const [viaCepData, setViaCepData] = useState<{ logradouro: string; localidade: string; uf: string } | null>(null);
   const [routeCoords, setRouteCoords] = useState<[number, number][]>([]);
+  const [previewMapCenter, setPreviewMapCenter] = useState<[number, number] | null>(null);
 
   // Busca por CEP (ViaCEP)
   useEffect(() => {
@@ -128,6 +129,24 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
       setViaCepData(null);
     }
   }, [newMeasurement.cep]);
+
+  // Geocodificar preview do mapa no modal — efeito dedicado e isolado
+  useEffect(() => {
+    if (!viaCepData) { setPreviewMapCenter(null); return; }
+    const number = newMeasurement.addressNumber?.trim();
+    const street = number
+      ? `${number}, ${viaCepData.logradouro}`
+      : viaCepData.logradouro;
+    const url = `https://nominatim.openstreetmap.org/search?format=json&street=${encodeURIComponent(street)}&city=${encodeURIComponent(viaCepData.localidade)}&state=${encodeURIComponent(viaCepData.uf)}&countrycodes=br&limit=1`;
+    fetch(url)
+      .then(r => r.json())
+      .then(data => {
+        if (data?.[0]) {
+          setPreviewMapCenter([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
+        }
+      })
+      .catch(() => {});
+  }, [viaCepData, newMeasurement.addressNumber]);
 
   // Geocodificação Real via Nominatim (OpenStreetMap)
   useEffect(() => {
@@ -273,7 +292,16 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
     return day !== 0 && day !== 6; // Filter out Sat (6) and Sun (0)
   });
 
-  const hours = Array.from({ length: 12 }, (_, i) => i + 7); // 07:00 to 18:00
+  const START_HOUR = 7;
+  const SLOT_MINUTES = 30;
+  const SLOT_COUNT = 24; // 07:00 até 19:00
+  // Slots de 30 em 30 minutos
+  const slots = Array.from({ length: SLOT_COUNT }, (_, i) => {
+    const totalMinutes = START_HOUR * 60 + i * SLOT_MINUTES;
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+    return { h, m, label: `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}` };
+  });
 
   const handleZoom = (e: React.WheelEvent) => {
     if (e.ctrlKey) {
@@ -302,8 +330,8 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
 
   const getTimePosition = (timeStr: string) => {
     const [h, m] = timeStr.split(':').map(Number);
-    const startHour = hours[0];
-    return (h - startHour) * zoomLevel + (m / 60) * zoomLevel;
+    const totalMinutes = h * 60 + m - START_HOUR * 60;
+    return (totalMinutes / SLOT_MINUTES) * zoomLevel;
   };
 
   const handleAddMeasurement = async (e: React.FormEvent) => {
@@ -330,6 +358,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
     setEditingMeasurementId(null);
     setConfirmingDelete(false);
     setViaCepData(null);
+    setPreviewMapCenter(null);
     setNewMeasurement({
       clientName: '', address: '', cep: '', date: date ?? selectedDate,
       time: time ?? '08:00', description: '', measurerName: '',
@@ -476,9 +505,11 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
             <div className="flex relative">
                {/* Hour Labels */}
                <div className="w-16 shrink-0 border-r bg-slate-50/50">
-                  {hours.map(h => (
-                    <div key={h} className="flex items-start justify-center pt-2 border-b last:border-b-0" style={{ height: `${zoomLevel}px` }}>
-                       <span className="text-[11px] font-black text-slate-500">{h.toString().padStart(2, '0')}:00</span>
+                  {slots.map(slot => (
+                    <div key={slot.label} className="flex items-start justify-center pt-1 border-b last:border-b-0" style={{ height: `${zoomLevel}px` }}>
+                      <span className={`text-[10px] font-${slot.m === 0 ? 'black' : 'medium'} ${slot.m === 0 ? 'text-slate-500' : 'text-slate-300'}`}>
+                        {slot.label}
+                      </span>
                     </div>
                   ))}
                </div>
@@ -494,13 +525,13 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                         key={dayStr} 
                         onClick={() => setSelectedDate(dayStr)}
                         className={`flex-1 border-r last:border-r-0 relative transition-all ${isSelected ? 'bg-blue-50/20 shadow-inner' : ''}`}
-                        style={{ minHeight: `${hours.length * zoomLevel}px` }}
+                        style={{ minHeight: `${slots.length * zoomLevel}px` }}
                       >
-                         {/* Hour Dividers */}
-                         {hours.map(h => (
-                           <div key={h} className="border-b last:border-b-0 w-full opacity-20 flex items-center justify-center group/slot" style={{ height: `${zoomLevel}px` }}>
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); setSelectedDate(dayStr); openNewMeasurementModal(dayStr, `${h.toString().padStart(2, '0')}:00`); }}
+                         {/* Slot Dividers — 30 min each */}
+                         {slots.map(slot => (
+                           <div key={slot.label} className={`border-b last:border-b-0 w-full flex items-center justify-center group/slot ${slot.m === 0 ? 'opacity-20' : 'opacity-10'}`} style={{ height: `${zoomLevel}px` }}>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setSelectedDate(dayStr); openNewMeasurementModal(dayStr, slot.label); }}
                                 className="opacity-0 group-hover/slot:opacity-100 p-1.5 bg-blue-100 text-blue-600 rounded-full transition-all shadow-sm"
                               >
                                 <Plus size={14} strokeWidth={3} />
@@ -793,22 +824,28 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
 
                 {/* Map Preview in Modal */}
                 <div className="sm:col-span-2 h-32 rounded-2xl overflow-hidden border border-gray-100 relative">
-                   <MapContainer 
-                     key={`modal-map-${mapCenter[0]}-${mapCenter[1]}`}
-                     center={mapCenter} 
-                     zoom={15} 
-                     style={{ height: '100%', width: '100%' }} 
-                     zoomControl={false}
-                     scrollWheelZoom={false}
-                     dragging={false}
-                   >
-                     <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                     <MapController center={mapCenter} />
-                     <Marker position={mapCenter} />
-                   </MapContainer>
-                   <div className="absolute top-2 left-2 px-2 py-0.5 bg-white/90 backdrop-blur rounded text-[9px] font-black uppercase text-gray-500 shadow-sm z-[500]">
-                     Prévia da Localização
-                   </div>
+                  {previewMapCenter ? (
+                    <MapContainer
+                      key={`modal-map-${previewMapCenter[0]}-${previewMapCenter[1]}`}
+                      center={previewMapCenter}
+                      zoom={16}
+                      style={{ height: '100%', width: '100%' }}
+                      zoomControl={false}
+                      scrollWheelZoom={false}
+                      dragging={false}
+                    >
+                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                      <Marker position={previewMapCenter} />
+                    </MapContainer>
+                  ) : (
+                    <div className="w-full h-full bg-slate-100 flex flex-col items-center justify-center gap-1">
+                      <MapPin size={20} className="text-slate-300" />
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Preencha o CEP para ver o mapa</p>
+                    </div>
+                  )}
+                  <div className="absolute top-2 left-2 px-2 py-0.5 bg-white/90 backdrop-blur rounded text-[9px] font-black uppercase text-gray-500 shadow-sm z-[500]">
+                    Prévia da Localização
+                  </div>
                 </div>
 
                 <div>
