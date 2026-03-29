@@ -424,7 +424,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
   // Pin gota SVG — destinos numerados com nome do cliente
   const createNumberedIcon = (number: number, color: string, clientName?: string) => {
     const label = clientName
-      ? clientName.split(' ')[0].substring(0, 12).toUpperCase()
+      ? clientName.split(' ').slice(0, 2).join(' ').substring(0, 16).toUpperCase()
       : '';
     const bubbleWidth = Math.max(80, label.length * 7 + 24);
     return L.divIcon({
