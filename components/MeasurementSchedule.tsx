@@ -421,19 +421,34 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
     setIsModalOpen(true);
   };
 
-  // Pin gota SVG — destinos numerados (azul)
-  const createNumberedIcon = (number: number, color: string) => L.divIcon({
-    className: 'custom-div-icon',
-    html: `<div style="position:relative;width:32px;height:42px;filter:drop-shadow(0 4px 6px rgba(0,0,0,0.25))">
-      <svg viewBox="0 0 32 42" width="32" height="42" xmlns="http://www.w3.org/2000/svg">
-        <path d="M16 0C7.163 0 0 7.163 0 16c0 10.667 16 26 16 26S32 26.667 32 16C32 7.163 24.837 0 16 0z" fill="${color}"/>
-        <circle cx="16" cy="15" r="9" fill="white" opacity="0.2"/>
-      </svg>
-      <div style="position:absolute;top:6px;left:0;width:32px;text-align:center;color:white;font-weight:900;font-size:13px;font-family:sans-serif;line-height:1">${number}</div>
-    </div>`,
-    iconSize: [32, 42],
-    iconAnchor: [16, 42]
-  });
+  // Pin gota SVG — destinos numerados com nome do cliente
+  const createNumberedIcon = (number: number, color: string, clientName?: string) => {
+    const label = clientName
+      ? clientName.split(' ')[0].substring(0, 12).toUpperCase()
+      : '';
+    const bubbleWidth = Math.max(80, label.length * 7 + 24);
+    return L.divIcon({
+      className: 'custom-div-icon',
+      html: `<div style="position:relative;width:${bubbleWidth}px;height:42px;filter:drop-shadow(0 4px 6px rgba(0,0,0,0.25))">
+        <!-- Pin gota centralizado -->
+        <div style="position:absolute;left:${bubbleWidth / 2 - 16}px;top:0;width:32px;height:42px">
+          <svg viewBox="0 0 32 42" width="32" height="42" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 0C7.163 0 0 7.163 0 16c0 10.667 16 26 16 26S32 26.667 32 16C32 7.163 24.837 0 16 0z" fill="${color}"/>
+            <circle cx="16" cy="15" r="9" fill="white" opacity="0.2"/>
+          </svg>
+          <div style="position:absolute;top:6px;left:0;width:32px;text-align:center;color:white;font-weight:900;font-size:13px;font-family:sans-serif;line-height:1">${number}</div>
+        </div>
+        ${label ? `<!-- Label nome cliente -->
+        <div style="position:absolute;top:0;left:0;right:0;display:flex;justify-content:center">
+          <div style="margin-top:-18px;background:${color};color:white;font-weight:800;font-size:9px;font-family:sans-serif;padding:2px 6px;border-radius:4px;white-space:nowrap;letter-spacing:0.05em;box-shadow:0 2px 4px rgba(0,0,0,0.2)">
+            ${label}
+          </div>
+        </div>` : ''}
+      </div>`,
+      iconSize: [bubbleWidth, 42],
+      iconAnchor: [bubbleWidth / 2, 42]
+    });
+  };
 
   // Pin gota SVG — empresa (favicon ou ícone de prédio)
   const createCompanyIcon = () => {
@@ -801,7 +816,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                       <Marker
                         key={m.id}
                         position={coords[m.address]}
-                        icon={createNumberedIcon(i + 1, '#2563eb')}
+                        icon={createNumberedIcon(i + 1, '#2563eb', m.clientName)}
                         eventHandlers={{ click: () => setSelectedMeasurementId(m.id) }}
                       >
                         <Popup>
