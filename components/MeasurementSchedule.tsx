@@ -782,8 +782,8 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                       </div>
                    ))}
                 </div>
-                <div className="p-4 border-t bg-slate-50">
-                   <button 
+                <div className="p-4 border-t bg-slate-50 flex flex-col gap-2">
+                   <button
                      onClick={() => {
                         const destination = mapMeasurements.length > 0 ? mapMeasurements[mapMeasurements.length - 1].address : '';
                         const waypoints = mapMeasurements.slice(0, -1).map(m => m.address).join('/');
@@ -792,6 +792,56 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                      className="w-full py-3 bg-slate-900 text-white rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2 shadow-xl focus:ring-4 focus:ring-slate-900/20"
                    >
                      <Navigation size={14} /> Rota no Maps
+                   </button>
+                   <button
+                     onClick={() => {
+                       const sorted = [...mapMeasurements].sort((a, b) => a.time.localeCompare(b.time));
+                       const dateLabel = new Date(selectedDate + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+                       const rows = sorted.map((m, i) => `
+                         <tr>
+                           <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;text-align:center;font-weight:900;color:#2563eb;font-size:16px">${i + 1}</td>
+                           <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;font-weight:700">${m.time}</td>
+                           <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;font-weight:800;text-transform:uppercase">${m.clientName}</td>
+                           <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;color:#475569">${[m.address, m.addressNumber, m.addressComplement].filter(Boolean).join(', ')}</td>
+                           <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;color:#475569">${m.clientPhone || '—'}</td>
+                           <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;color:#475569">${m.measurerName || '—'}</td>
+                           <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;color:#475569">${m.description || '—'}</td>
+                         </tr>`).join('');
+                       const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Roteiro de Medições — ${dateLabel}</title>
+                         <style>
+                           body{font-family:Arial,sans-serif;padding:32px;color:#1e293b;font-size:13px}
+                           h1{font-size:20px;font-weight:900;text-transform:uppercase;margin:0 0 4px}
+                           .sub{color:#64748b;font-size:12px;margin-bottom:24px}
+                           table{width:100%;border-collapse:collapse;margin-top:8px}
+                           th{background:#1e293b;color:white;padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+                           tr:nth-child(even) td{background:#f8fafc}
+                           .footer{margin-top:32px;color:#94a3b8;font-size:11px;border-top:1px solid #e2e8f0;padding-top:12px}
+                           @media print{body{padding:16px}}
+                         </style></head><body>
+                         ${companyLogoUrl ? `<img src="${companyLogoUrl}" style="height:48px;object-fit:contain;margin-bottom:12px"/>` : ''}
+                         <h1>Roteiro de Medições</h1>
+                         <div class="sub">${dateLabel} &nbsp;•&nbsp; ${companyName} &nbsp;•&nbsp; Partida: ${companyAddress}</div>
+                         <table>
+                           <thead><tr>
+                             <th style="width:40px">#</th>
+                             <th style="width:60px">Hora</th>
+                             <th>Cliente</th>
+                             <th>Endereço</th>
+                             <th style="width:120px">Telefone</th>
+                             <th style="width:110px">Medidor</th>
+                             <th>Observações</th>
+                           </tr></thead>
+                           <tbody>${rows}</tbody>
+                         </table>
+                         <div class="footer">Gerado em ${new Date().toLocaleString('pt-BR')} — ${companyName}</div>
+                         <script>window.onload=()=>{window.print()}<\/script>
+                       </body></html>`;
+                       const w = window.open('', '_blank');
+                       if (w) { w.document.write(html); w.document.close(); }
+                     }}
+                     className="w-full py-3 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all flex items-center justify-center gap-2"
+                   >
+                     <FileDown size={14} /> Imprimir / Salvar PDF
                    </button>
                 </div>
            </div>
