@@ -380,6 +380,7 @@ const App: React.FC = () => {
             companyName={companyInfo.name}
             companyLogoUrl={companyInfo.logoUrl}
             appUsers={appUsers}
+            staff={staff}
           />
         );
       case 'Equipe':
