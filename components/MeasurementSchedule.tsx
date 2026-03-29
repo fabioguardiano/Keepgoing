@@ -747,7 +747,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
         )} {/* fim ternário semana/mês */}
 
         {/* Action Bar & Map Strip - More Height as Requested (500px) */}
-        <div className="h-[500px] shrink-0 flex flex-col lg:flex-row relative bg-slate-200 border-t shadow-[0_-15px_30px_rgba(0,0,0,0.1)]">
+        <div className="h-[680px] shrink-0 flex flex-col lg:flex-row relative bg-slate-200 border-t shadow-[0_-15px_30px_rgba(0,0,0,0.1)]">
            {/* Daily Focus Summary */}
            <div className="w-80 bg-white border-r flex flex-col shrink-0 overflow-y-auto hidden lg:flex scroll-sidebar">
                 <div className="p-4 border-b bg-slate-50 flex items-center justify-between">
@@ -772,9 +772,12 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                          <div className={`w-6 h-6 rounded-lg text-[10px] font-black flex items-center justify-center shrink-0 ${selectedMeasurementId === m.id ? 'bg-white text-blue-600' : 'bg-blue-600 text-white'}`}>
                             {i+1}
                          </div>
-                         <div className="min-w-0">
-                            <p className="text-[11px] font-black truncate tracking-tight mb-0.5 uppercase">{m.clientName}</p>
-                            <p className="text-[9px] font-bold opacity-70">{m.time} • {m.measurerName || 'Sem medidor'}</p>
+                         <div className="min-w-0 flex-1">
+                            <p className="text-[11px] font-black tracking-tight mb-0.5 uppercase leading-tight">{m.clientName}</p>
+                            <p className="text-[9px] font-bold opacity-70 mb-1">{m.time} • {m.measurerName || 'Sem medidor'}</p>
+                            <p className="text-[9px] font-medium leading-snug break-words" style={{ color: selectedMeasurementId === m.id ? 'rgba(255,255,255,0.8)' : '#64748b' }}>
+                              {[m.address, m.addressNumber, m.addressComplement].filter(Boolean).join(', ')}
+                            </p>
                          </div>
                       </div>
                    ))}
