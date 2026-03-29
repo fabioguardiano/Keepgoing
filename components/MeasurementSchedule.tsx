@@ -799,24 +799,24 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                        const dateLabel = new Date(selectedDate + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
                        const rows = sorted.map((m, i) => `
                          <tr>
-                           <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;text-align:center;font-weight:900;color:#2563eb;font-size:16px">${i + 1}</td>
-                           <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;font-weight:700">${m.time}</td>
-                           <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;font-weight:800;text-transform:uppercase">${m.clientName}</td>
-                           <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;color:#475569">${[m.address, m.addressNumber, m.addressComplement].filter(Boolean).join(', ')}</td>
-                           <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;color:#475569">${m.clientPhone || '—'}</td>
-                           <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;color:#475569">${m.measurerName || '—'}</td>
-                           <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;color:#475569">${m.description || '—'}</td>
+                           <td style="padding:5px 8px;border-bottom:1px solid #e2e8f0;text-align:center;font-weight:900;color:#2563eb;font-size:13px">${i + 1}</td>
+                           <td style="padding:5px 8px;border-bottom:1px solid #e2e8f0;font-weight:700;white-space:nowrap">${m.time}</td>
+                           <td style="padding:5px 8px;border-bottom:1px solid #e2e8f0;font-weight:800;text-transform:uppercase">${m.clientName}</td>
+                           <td style="padding:5px 8px;border-bottom:1px solid #e2e8f0;color:#475569;word-break:break-word">${[m.address, m.addressNumber, m.addressComplement].filter(Boolean).join(', ')}</td>
+                           <td style="padding:5px 8px;border-bottom:1px solid #e2e8f0;color:#475569;white-space:nowrap">${m.clientPhone || '—'}</td>
+                           <td style="padding:5px 8px;border-bottom:1px solid #e2e8f0;color:#475569">${m.measurerName || '—'}</td>
+                           <td style="padding:5px 8px;border-bottom:1px solid #e2e8f0;color:#475569">${m.description || '—'}</td>
                          </tr>`).join('');
                        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Roteiro de Medições — ${dateLabel}</title>
                          <style>
-                           body{font-family:Arial,sans-serif;padding:32px;color:#1e293b;font-size:13px}
-                           h1{font-size:20px;font-weight:900;text-transform:uppercase;margin:0 0 4px}
-                           .sub{color:#64748b;font-size:12px;margin-bottom:24px}
-                           table{width:100%;border-collapse:collapse;margin-top:8px}
-                           th{background:#1e293b;color:white;padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+                           body{font-family:Arial,sans-serif;padding:20px;color:#1e293b;font-size:10px}
+                           h1{font-size:15px;font-weight:900;text-transform:uppercase;margin:0 0 3px}
+                           .sub{color:#64748b;font-size:9px;margin-bottom:16px}
+                           table{width:100%;border-collapse:collapse;margin-top:8px;font-size:10px}
+                           th{background:#1e293b;color:white;padding:6px 8px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.05em}
                            tr:nth-child(even) td{background:#f8fafc}
-                           .footer{margin-top:32px;color:#94a3b8;font-size:11px;border-top:1px solid #e2e8f0;padding-top:12px}
-                           @media print{body{padding:16px}}
+                           .footer{margin-top:20px;color:#94a3b8;font-size:9px;border-top:1px solid #e2e8f0;padding-top:8px}
+                           @media print{body{padding:10px}@page{margin:10mm}}
                          </style></head><body>
                          ${companyLogoUrl ? `<img src="${companyLogoUrl}" style="height:48px;object-fit:contain;margin-bottom:12px"/>` : ''}
                          <h1>Roteiro de Medições</h1>
