@@ -441,13 +441,13 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
       className: 'custom-div-icon',
       html: `<div style="position:relative;width:36px;height:48px;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.35))">
         <svg viewBox="0 0 36 48" width="36" height="48" xmlns="http://www.w3.org/2000/svg">
-          <path d="M18 0C8.059 0 0 8.059 0 18c0 12 18 30 18 30S36 30 36 18C36 8.059 27.941 0 18 0z" fill="#1f2937"/>
-          <circle cx="18" cy="17" r="11" fill="white" opacity="0.15"/>
+          <path d="M18 0C8.059 0 0 8.059 0 18c0 12 18 30 18 30S36 30 36 18C36 8.059 27.941 0 18 0z" fill="white" stroke="#e2e8f0" stroke-width="1.5"/>
+          <circle cx="18" cy="17" r="11" fill="#f1f5f9" opacity="0.8"/>
         </svg>
         <div style="position:absolute;top:4px;left:0;width:36px;height:26px;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:50%">
           ${(companyIconUrl || companyLogoUrl)
             ? `<img src="${companyIconUrl || companyLogoUrl}" style="width:20px;height:20px;object-fit:contain;border-radius:4px"/>`
-            : `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/></svg>`
+            : `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1f2937" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/></svg>`
           }
         </div>
       </div>`,
