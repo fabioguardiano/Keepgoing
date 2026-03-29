@@ -101,18 +101,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
         color: 'var(--sidebar-text)'
       }}
     >
-      <div className="p-6 flex items-center gap-3 cursor-pointer" onClick={toggle}>
-        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[var(--primary-color)] shrink-0 overflow-hidden">
-          {companyInfo.logoUrl ? (
-            <img src={companyInfo.logoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
-          ) : (
-            <Diamond className="w-6 h-6" />
-          )}
-        </div>
-        {isOpen && (
-          <div className="overflow-hidden whitespace-nowrap">
-            <h1 className="font-bold text-lg leading-none truncate max-w-[140px]" style={{ color: 'var(--sidebar-text)' }}>{companyInfo.name}</h1>
-            <span className="text-xs uppercase tracking-wider font-semibold opacity-50">KeepGoing CRM</span>
+      <div className="p-4 flex items-center gap-3 cursor-pointer" onClick={toggle}>
+        {isOpen ? (
+          <div className="w-full h-16 bg-white rounded-2xl flex items-center justify-center overflow-hidden shrink-0">
+            {companyInfo.logoUrl ? (
+              <img src={companyInfo.logoUrl} alt="Logo" className="w-full h-full object-contain p-2" />
+            ) : (
+              <div className="flex items-center gap-3 px-3">
+                <Diamond className="w-6 h-6 text-[var(--primary-color)] shrink-0" />
+                <div className="overflow-hidden">
+                  <h1 className="font-bold text-base leading-none truncate" style={{ color: 'var(--primary-color)' }}>{companyInfo.name}</h1>
+                  <span className="text-[9px] uppercase tracking-wider font-semibold text-slate-400">KeepGoing CRM</span>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[var(--primary-color)] shrink-0 overflow-hidden">
+            {companyInfo.logoUrl ? (
+              <img src={companyInfo.logoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
+            ) : (
+              <Diamond className="w-6 h-6" />
+            )}
           </div>
         )}
       </div>

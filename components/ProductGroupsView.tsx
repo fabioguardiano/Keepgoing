@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
-import { Box, Plus, Search, Edit2, PowerOff, X } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Box, Plus, Search, Edit2, PowerOff, X, ArrowUpDown } from 'lucide-react';
 import { ProductGroup } from '../types';
+
+type SortField = 'code' | 'description' | 'createdAt';
+type SortDirection = 'asc' | 'desc';
 
 interface ProductGroupsViewProps {
   groups: ProductGroup[];
@@ -13,10 +16,22 @@ export const ProductGroupsView: React.FC<ProductGroupsViewProps> = ({ groups, on
   const [editingGroup, setEditingGroup] = useState<ProductGroup | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showInactive, setShowInactive] = useState(false);
+  const [sortField, setSortField] = useState<SortField>('code');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [formData, setFormData] = useState<Omit<ProductGroup, 'id' | 'createdAt'>>({
     code: '',
     description: ''
   });
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) setSortDirection(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortField(field); setSortDirection('asc'); }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown size={14} className="opacity-30 group-hover:opacity-100 transition-opacity" />;
+    return <ArrowUpDown size={14} className="text-primary" />;
+  };
 
   const handleEdit = (group: ProductGroup) => {
     setEditingGroup(group);
@@ -40,12 +55,18 @@ export const ProductGroupsView: React.FC<ProductGroupsViewProps> = ({ groups, on
     setFormData({ code: '', description: '' });
   };
 
-  const filteredGroups = groups.filter(g => {
+  const filteredGroups = useMemo(() => groups.filter(g => {
     const matchesSearch = g.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       g.code.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = showInactive ? g.status === 'inativo' : (g.status === 'ativo' || !g.status);
     return matchesSearch && matchesStatus;
-  });
+  }).sort((a, b) => {
+    let cmp = 0;
+    if (sortField === 'code') cmp = a.code.localeCompare(b.code, undefined, { numeric: true });
+    if (sortField === 'description') cmp = a.description.localeCompare(b.description);
+    if (sortField === 'createdAt') cmp = (a.createdAt || '').localeCompare(b.createdAt || '');
+    return sortDirection === 'asc' ? cmp : -cmp;
+  }), [groups, searchQuery, showInactive, sortField, sortDirection]);
 
   const inputClass = "w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/20 focus:border-[var(--primary-color)] transition-all";
   const labelClass = "block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 ml-1";
@@ -107,10 +128,18 @@ export const ProductGroupsView: React.FC<ProductGroupsViewProps> = ({ groups, on
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest">Cód</th>
-                <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest">Descrição</th>
-                <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest">Data Cadastro</th>
-                <th className="px-6 py-5 text-right text-sm font-bold text-slate-400 uppercase tracking-widest">Ações</th>
+                <th onClick={() => handleSort('code')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                  <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">Cód <SortIcon field="code" /></div>
+                </th>
+                <th onClick={() => handleSort('description')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                  <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">Descrição <SortIcon field="description" /></div>
+                </th>
+                <th onClick={() => handleSort('createdAt')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                  <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">Data Cadastro <SortIcon field="createdAt" /></div>
+                </th>
+                <th className="px-6 py-5 text-right">
+                  <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">Ações</div>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">

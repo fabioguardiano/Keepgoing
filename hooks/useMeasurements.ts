@@ -152,10 +152,11 @@ export const useMeasurements = (companyId?: string) => {
       const { error } = await supabase
         .from('measurements')
         .update({ status: 'Excluída' })
-        .eq('id', id);
-        
+        .eq('id', id)
+        .eq('company_id', companyId);
+
       if (error) throw error;
-      
+
       setMeasurements(prev => prev.map(m => m.id === id ? { ...m, status: 'Excluída' } : m));
     } catch (err) {
       console.error('[deleteMeasurement Error]:', err);

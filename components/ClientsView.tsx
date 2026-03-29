@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Users, Plus, Search, Mail, Phone, MapPin, PowerOff, Edit2, ShieldCheck, CreditCard, Globe, ExternalLink, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
+import { Users, Plus, Search, Mail, Phone, MapPin, PowerOff, Edit2, ShieldCheck, CreditCard, Globe, ExternalLink, ArrowUpDown } from 'lucide-react';
 import { Client } from '../types';
 import { NewClientModal } from './NewClientModal';
 
@@ -78,7 +78,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return <ArrowUpDown size={14} className="opacity-30 group-hover:opacity-100 transition-opacity" />;
-    return sortDirection === 'asc' ? <ChevronUp size={14} className="text-primary" /> : <ChevronDown size={14} className="text-primary" />;
+    return <ArrowUpDown size={14} className="text-primary" />;
   };
 
   return (

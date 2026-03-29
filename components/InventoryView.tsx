@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Plus, Search, Package, AlertTriangle, TrendingUp, TrendingDown, Trash2, Edit2, Diamond, ShoppingBag, Wrench, MapPin, PowerOff, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
+import { Box, Plus, Search, Package, AlertTriangle, TrendingUp, TrendingDown, Trash2, Edit2, Diamond, ShoppingBag, Wrench, MapPin, PowerOff, ArrowUpDown } from 'lucide-react';
 import { Material, Brand, ProductGroup, Supplier, Category } from '../types';
 import { NewMaterialModal } from './NewMaterialModal';
 
@@ -58,7 +58,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return <ArrowUpDown size={14} className="opacity-30 group-hover:opacity-100 transition-opacity" />;
-    return sortDirection === 'asc' ? <ChevronUp size={14} className="text-primary" /> : <ChevronDown size={14} className="text-primary" />;
+    return <ArrowUpDown size={14} className="text-primary" />;
   };
 
   const handleEdit = (material: Material) => {
@@ -224,10 +224,10 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                       </button>
                       <button 
                         onClick={() => onUpdateStatus(material.id, material.status === 'ativo' ? 'inativo' : 'ativo')} 
-                        className={`p-2 rounded-xl transition-all ${material.status === 'ativo' ? 'text-slate-400 hover:text-red-500 hover:bg-red-50' : 'text-green-500 hover:bg-green-50'}`}
+                        className={`p-2 rounded-xl transition-all ${material.status === 'ativo' ? 'text-slate-400 hover:text-amber-600 hover:bg-amber-50' : 'text-green-500 hover:bg-green-50'}`}
                         title={material.status === 'ativo' ? 'Inativar' : 'Ativar'}
                       >
-                        {material.status === 'ativo' ? <Trash2 size={16} /> : <Plus size={16} />}
+                        <PowerOff size={16} />
                       </button>
                     </div>
                   </td>

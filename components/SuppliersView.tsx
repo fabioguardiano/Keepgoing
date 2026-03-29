@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Truck, Plus, Search, Phone, PowerOff, Edit2, ShieldCheck, ArrowUpDown, ChevronUp, ChevronDown, User } from 'lucide-react';
+import { Truck, Plus, Search, Phone, PowerOff, Edit2, ShieldCheck, ArrowUpDown, User } from 'lucide-react';
 import { Supplier } from '../types';
 import { NewSupplierModal } from './NewSupplierModal';
 
@@ -75,7 +75,7 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return <ArrowUpDown size={14} className="opacity-30 group-hover:opacity-100 transition-opacity" />;
-    return sortDirection === 'asc' ? <ChevronUp size={14} className="text-primary" /> : <ChevronDown size={14} className="text-primary" />;
+    return <ArrowUpDown size={14} className="text-primary" />;
   };
 
   return (

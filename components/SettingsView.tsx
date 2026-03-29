@@ -941,18 +941,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                         
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                             {/* Sidebar Logo */}
-                                            <div className="p-4 bg-white border border-slate-200 rounded-3xl space-y-3 shadow-sm">
-                                                <div className="flex items-center gap-3 mb-2">
-                                                    <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center overflow-hidden">
-                                                        {companyInfo.logoUrl ? <img src={companyInfo.logoUrl} className="w-full h-full object-contain p-1" /> : <Layout size={18} className="text-slate-300" />}
+                                            <div className="p-4 bg-white border border-slate-200 rounded-3xl space-y-2 shadow-sm">
+                                                <p className="text-[10px] font-bold text-slate-800 uppercase tracking-wider">Logo Sidebar</p>
+                                                <p className="text-[8px] text-slate-400 font-medium">Menu Lateral — recomendado retangular (ex: 400x160px)</p>
+                                                <label className="block w-full cursor-pointer group">
+                                                    <div className="w-full h-20 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center overflow-hidden group-hover:border-slate-400 group-hover:bg-slate-100 transition-all">
+                                                        {companyInfo.logoUrl
+                                                            ? <img src={companyInfo.logoUrl} className="w-full h-full object-contain p-2" />
+                                                            : <div className="flex flex-col items-center gap-1"><Layout size={20} className="text-slate-300" /><span className="text-[8px] text-slate-400">Clique para subir</span></div>
+                                                        }
                                                     </div>
-                                                    <div>
-                                                        <p className="text-[10px] font-bold text-slate-800 leading-tight">Logo Sidebar</p>
-                                                        <p className="text-[8px] text-slate-400 font-medium">Menu Lateral (Ex: 500x500px)</p>
-                                                    </div>
-                                                </div>
-                                                <label className="block px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[9px] font-black text-slate-600 text-center cursor-pointer hover:bg-slate-100 transition-all uppercase">
-                                                    Subir
                                                     <input type="file" className="hidden" accept="image/*" onChange={(e) => {
                                                         const file = e.target.files?.[0]; if (file) {
                                                             const r = new FileReader(); r.onloadend = () => handleUpdateCompany('logoUrl', r.result as string); r.readAsDataURL(file);
@@ -962,18 +960,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                             </div>
 
                                             {/* Print Logo */}
-                                            <div className="p-4 bg-white border border-slate-200 rounded-3xl space-y-3 shadow-sm">
-                                                <div className="flex items-center gap-3 mb-2">
-                                                    <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center overflow-hidden">
-                                                        {companyInfo.printLogoUrl ? <img src={companyInfo.printLogoUrl} className="w-full h-full object-contain p-1" /> : <Building2 size={18} className="text-slate-300" />}
+                                            {/* Print Logo */}
+                                            <div className="p-4 bg-white border border-slate-200 rounded-3xl space-y-2 shadow-sm">
+                                                <p className="text-[10px] font-bold text-slate-800 uppercase tracking-wider">Logo Impressão</p>
+                                                <p className="text-[8px] text-slate-400 font-medium">Doc. e Pedidos — recomendado retangular (ex: 200x80px)</p>
+                                                <label className="block w-full cursor-pointer group">
+                                                    <div className="w-full h-20 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center overflow-hidden group-hover:border-slate-400 group-hover:bg-slate-100 transition-all">
+                                                        {companyInfo.printLogoUrl
+                                                            ? <img src={companyInfo.printLogoUrl} className="w-full h-full object-contain p-2" />
+                                                            : <div className="flex flex-col items-center gap-1"><Building2 size={20} className="text-slate-300" /><span className="text-[8px] text-slate-400">Clique para subir</span></div>
+                                                        }
                                                     </div>
-                                                    <div>
-                                                        <p className="text-[10px] font-bold text-slate-800 leading-tight">Logo Impressão</p>
-                                                        <p className="text-[8px] text-slate-400 font-medium">Doc. e Pedidos (Ex: 200x80px)</p>
-                                                    </div>
-                                                </div>
-                                                <label className="block px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[9px] font-black text-slate-600 text-center cursor-pointer hover:bg-slate-100 transition-all uppercase">
-                                                    Subir
                                                     <input type="file" className="hidden" accept="image/*" onChange={(e) => {
                                                         const file = e.target.files?.[0]; if (file) {
                                                             const r = new FileReader(); r.onloadend = () => handleUpdateCompany('printLogoUrl', r.result as string); r.readAsDataURL(file);
@@ -983,18 +980,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                             </div>
 
                                             {/* Browser Icon */}
-                                            <div className="p-4 bg-white border border-slate-200 rounded-3xl space-y-3 shadow-sm">
-                                                <div className="flex items-center gap-3 mb-2">
-                                                    <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center overflow-hidden">
-                                                        {companyInfo.iconUrl ? <img src={companyInfo.iconUrl} className="w-10 h-10 object-contain p-2" /> : <Box size={18} className="text-slate-300" />}
+                                            <div className="p-4 bg-white border border-slate-200 rounded-3xl space-y-2 shadow-sm">
+                                                <p className="text-[10px] font-bold text-slate-800 uppercase tracking-wider">Ícone (Favicon)</p>
+                                                <p className="text-[8px] text-slate-400 font-medium">Aba do Chrome — recomendado quadrado (ex: 32x32px)</p>
+                                                <label className="block w-full cursor-pointer group">
+                                                    <div className="w-full h-20 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center overflow-hidden group-hover:border-slate-400 group-hover:bg-slate-100 transition-all">
+                                                        {companyInfo.iconUrl
+                                                            ? <img src={companyInfo.iconUrl} className="w-full h-full object-contain p-3" />
+                                                            : <div className="flex flex-col items-center gap-1"><Box size={20} className="text-slate-300" /><span className="text-[8px] text-slate-400">Clique para subir</span></div>
+                                                        }
                                                     </div>
-                                                    <div>
-                                                        <p className="text-[10px] font-bold text-slate-800 leading-tight">Ícone (Favicon)</p>
-                                                        <p className="text-[8px] text-slate-400 font-medium">Aba do Chrome (Ex: 32x32px)</p>
-                                                    </div>
-                                                </div>
-                                                <label className="block px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[9px] font-black text-slate-600 text-center cursor-pointer hover:bg-slate-100 transition-all uppercase">
-                                                    Subir
                                                     <input type="file" className="hidden" accept="image/*" onChange={(e) => {
                                                         const file = e.target.files?.[0]; if (file) {
                                                             const r = new FileReader(); r.onloadend = () => handleUpdateCompany('iconUrl', r.result as string); r.readAsDataURL(file);

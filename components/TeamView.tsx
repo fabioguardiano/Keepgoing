@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
-import { Users, Shield, HardHat, Plus, X, Mail, Edit2, Trash2, ChevronDown, Search, PowerOff } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Users, Shield, HardHat, Plus, X, Mail, Edit2, Trash2, ChevronDown, Search, PowerOff, ArrowUpDown } from 'lucide-react';
+
+type SortField = 'name' | 'email' | 'createdAt' | 'position' | 'hourlyRate';
+type SortDirection = 'asc' | 'desc';
 import { AppUser, ProductionStaff, StaffPosition, PermissionProfile } from '../types';
 
 const POSITION_LABELS: Record<StaffPosition, string> = {
@@ -240,20 +243,44 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
   const [editingStaff, setEditingStaff] = useState<ProductionStaff | undefined>();
   const [searchTerm, setSearchTerm] = useState('');
   const [showInactive, setShowInactive] = useState(false);
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
-  const filteredUsers = appUsers.filter(u => {
+  const handleSort = (field: SortField) => {
+    if (sortField === field) setSortDirection(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortField(field); setSortDirection('asc'); }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown size={14} className="opacity-30 group-hover:opacity-100 transition-opacity" />;
+    return <ArrowUpDown size={14} className="text-primary" />;
+  };
+
+  const filteredUsers = useMemo(() => appUsers.filter(u => {
     const matchesSearch = u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = showInactive ? true : (u.status || 'ativo') === 'ativo';
     return matchesSearch && matchesStatus;
-  });
+  }).sort((a, b) => {
+    let cmp = 0;
+    if (sortField === 'name') cmp = a.name.localeCompare(b.name);
+    if (sortField === 'email') cmp = a.email.localeCompare(b.email);
+    if (sortField === 'createdAt') cmp = (a.createdAt || '').localeCompare(b.createdAt || '');
+    return sortDirection === 'asc' ? cmp : -cmp;
+  }), [appUsers, searchTerm, showInactive, sortField, sortDirection]);
 
-  const filteredStaff = staff.filter(s => {
+  const filteredStaff = useMemo(() => staff.filter(s => {
     const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       POSITION_LABELS[s.position].toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = showInactive ? true : (s.status || 'ativo') === 'ativo';
     return matchesSearch && matchesStatus;
-  });
+  }).sort((a, b) => {
+    let cmp = 0;
+    if (sortField === 'name') cmp = a.name.localeCompare(b.name);
+    if (sortField === 'position') cmp = POSITION_LABELS[a.position].localeCompare(POSITION_LABELS[b.position]);
+    if (sortField === 'hourlyRate') cmp = a.hourlyRate - b.hourlyRate;
+    return sortDirection === 'asc' ? cmp : -cmp;
+  }), [staff, searchTerm, showInactive, sortField, sortDirection]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -332,12 +359,18 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest">Cód</th>
-                  <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest">Nome</th>
-                  <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest">Email</th>
-                  <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest">Perfil</th>
-                  <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest">Desde</th>
-                  <th className="px-6 py-5 text-right text-sm font-bold text-slate-400 uppercase tracking-widest">Ações</th>
+                  <th className="px-6 py-5"><div className="text-sm font-bold text-slate-400 uppercase tracking-widest">Cód</div></th>
+                  <th onClick={() => handleSort('name')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                    <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">Nome <SortIcon field="name" /></div>
+                  </th>
+                  <th onClick={() => handleSort('email')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                    <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">Email <SortIcon field="email" /></div>
+                  </th>
+                  <th className="px-6 py-5"><div className="text-sm font-bold text-slate-400 uppercase tracking-widest">Perfil</div></th>
+                  <th onClick={() => handleSort('createdAt')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                    <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">Desde <SortIcon field="createdAt" /></div>
+                  </th>
+                  <th className="px-6 py-5 text-right"><div className="text-sm font-bold text-slate-400 uppercase tracking-widest">Ações</div></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -393,7 +426,7 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
                           className={`p-2 rounded-xl transition-all border border-transparent ${
                             user.status === 'inativo' 
                               ? 'text-green-500 hover:bg-green-50 hover:border-green-100' 
-                              : 'text-slate-400 hover:text-orange-500 hover:bg-orange-50 hover:border-orange-100'
+                              : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-100'
                           }`}
                           title={user.status === 'inativo' ? 'Reativar' : 'Inativar'}
                         >
@@ -419,12 +452,18 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest">Cód</th>
-                  <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest">Colaborador</th>
-                  <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest">Função</th>
-                  <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest">Valor/Hora</th>
-                  <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest">Status</th>
-                  <th className="px-6 py-5 text-right text-sm font-bold text-slate-400 uppercase tracking-widest">Ações</th>
+                  <th className="px-6 py-5"><div className="text-sm font-bold text-slate-400 uppercase tracking-widest">Cód</div></th>
+                  <th onClick={() => handleSort('name')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                    <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">Colaborador <SortIcon field="name" /></div>
+                  </th>
+                  <th onClick={() => handleSort('position')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                    <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">Função <SortIcon field="position" /></div>
+                  </th>
+                  <th onClick={() => handleSort('hourlyRate')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                    <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">Valor/Hora <SortIcon field="hourlyRate" /></div>
+                  </th>
+                  <th className="px-6 py-5"><div className="text-sm font-bold text-slate-400 uppercase tracking-widest">Status</div></th>
+                  <th className="px-6 py-5 text-right"><div className="text-sm font-bold text-slate-400 uppercase tracking-widest">Ações</div></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -476,7 +515,7 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
                           className={`p-2 rounded-xl transition-all border border-transparent ${
                             s.status === 'inativo' 
                               ? 'text-green-500 hover:bg-green-50 hover:border-green-100' 
-                              : 'text-slate-400 hover:text-orange-500 hover:bg-orange-50 hover:border-orange-100'
+                              : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-100'
                           }`}
                           title={s.status === 'inativo' ? 'Reativar' : 'Inativar'}
                         >

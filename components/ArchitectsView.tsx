@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Briefcase, Plus, Search, Phone, PowerOff, Edit2, ShieldCheck, ArrowUpDown, ChevronUp, ChevronDown, User } from 'lucide-react';
+import { Briefcase, Plus, Search, Phone, PowerOff, Edit2, ShieldCheck, ArrowUpDown, User } from 'lucide-react';
 import { Architect } from '../types';
 import { NewArchitectModal } from './NewArchitectModal';
 
@@ -75,7 +75,7 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return <ArrowUpDown size={14} className="opacity-30 group-hover:opacity-100 transition-opacity" />;
-    return sortDirection === 'asc' ? <ChevronUp size={14} className="text-primary" /> : <ChevronDown size={14} className="text-primary" />;
+    return <ArrowUpDown size={14} className="text-primary" />;
   };
 
   return (

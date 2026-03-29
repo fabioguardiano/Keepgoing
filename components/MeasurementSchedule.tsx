@@ -7,7 +7,7 @@ import {
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Measurement, WorkOrder, DriverStatus, CompanyInfo, AppUser, ProductionStaff } from '../types';
+import { Measurement, WorkOrder, DriverStatus, CompanyInfo, AppUser, ProductionStaff, PermissionProfile } from '../types';
 
 // O ícone padrão do Leaflet não funciona bem no Next.js/Vite sem isso
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
@@ -35,6 +35,7 @@ interface MeasurementScheduleProps {
   companyLogoUrl?: string;
   appUsers: AppUser[];
   staff: ProductionStaff[];
+  permissionProfiles: PermissionProfile[];
 }
 
 // Subcomponente para controlar o centro do mapa
@@ -58,7 +59,8 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
   companyName,
   companyLogoUrl,
   appUsers,
-  staff
+  staff,
+  permissionProfiles
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -68,6 +70,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTrashOpen, setIsTrashOpen] = useState(false);
   const [editingMeasurementId, setEditingMeasurementId] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [activeMobileView, setActiveMobileView] = useState<'list' | 'map'>('list');
   
   const [newMeasurement, setNewMeasurement] = useState({
@@ -92,15 +95,18 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
   };
 
   const formatPhone = (value: string) => {
-    const digits = value.replace(/\D/g, '');
-    if (digits.length <= 10) {
-      return digits.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
-    }
-    return digits.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    const digits = value.replace(/\D/g, '').substring(0, 11);
+    if (digits.length === 0) return '';
+    if (digits.length <= 2) return `(${digits}`;
+    if (digits.length <= 6) return `(${digits.substring(0, 2)}) ${digits.substring(2)}`;
+    if (digits.length <= 10) return `(${digits.substring(0, 2)}) ${digits.substring(2, 6)}-${digits.substring(6)}`;
+    return `(${digits.substring(0, 2)}) ${digits.substring(2, 7)}-${digits.substring(7)}`;
   };
 
   const [mapCenter, setMapCenter] = useState<[number, number]>([-21.1767, -47.8208]); // Ribeirão Preto default
   const [coords, setCoords] = useState<Record<string, [number, number]>>({});
+  const [viaCepData, setViaCepData] = useState<{ logradouro: string; localidade: string; uf: string } | null>(null);
+  const [routeCoords, setRouteCoords] = useState<[number, number][]>([]);
 
   // Busca por CEP (ViaCEP)
   useEffect(() => {
@@ -110,6 +116,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
         .then(r => r.json())
         .then(data => {
           if (!data.erro) {
+            setViaCepData({ logradouro: data.logradouro, localidade: data.localidade, uf: data.uf });
             setNewMeasurement(prev => ({
               ...prev,
               address: `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`
@@ -117,52 +124,83 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
           }
         })
         .catch(err => console.error('Erro ao buscar CEP:', err));
+    } else {
+      setViaCepData(null);
     }
   }, [newMeasurement.cep]);
 
   // Geocodificação Real via Nominatim (OpenStreetMap)
   useEffect(() => {
     const timer = setTimeout(() => {
-      const addressesToGeocode = [
-        ...measurements.map(m => m.address),
-        newMeasurement.address,
-        companyAddress
-      ].filter((v, i, a) => v && a.indexOf(v) === i); // Unique only
-
-      addressesToGeocode.forEach(addr => {
-        if (!addr || addr.length < 5) return;
-        
-        // Se for o endereço da nova medição, incluir o número para geocodificação precisa
-        const isNewAddress = addr === newMeasurement.address;
-        const fullAddr = isNewAddress && newMeasurement.addressNumber 
-          ? `${addr}, ${newMeasurement.addressNumber}`
-          : addr;
-
-        if (coords[fullAddr]) return;
-
-        // Nominatim search
-        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddr)}&limit=1`)
+      // Geocodificar endereço da empresa
+      if (companyAddress && companyAddress.length >= 5 && !coords[companyAddress]) {
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(companyAddress)}&countrycodes=br&limit=1`)
           .then(r => r.json())
           .then(data => {
-            if (data && data[0]) {
-              const lat = parseFloat(data[0].lat);
-              const lon = parseFloat(data[0].lon);
-              setCoords(prev => ({ ...prev, [fullAddr]: [lat, lon] }));
-              if (isNewAddress) {
-                setMapCenter([lat, lon]);
-              }
-            }
+            if (data?.[0]) setCoords(prev => ({ ...prev, [companyAddress]: [parseFloat(data[0].lat), parseFloat(data[0].lon)] }));
           })
-          .catch(err => console.error('Erro geocoding:', fullAddr, err));
+          .catch(() => {});
+      }
+
+      // Geocodificar endereços das medições — usa query estruturada (rua + cidade) para melhor precisão
+      measurements.forEach(m => {
+        if (!m.address || m.address.length < 5 || coords[m.address]) return;
+        const parts = m.address.split(',');
+        let url: string;
+        if (parts.length >= 3) {
+          // Formato ViaCEP: "Logradouro, Bairro, Cidade - UF"
+          const street = parts[0].trim();
+          const cityPart = parts[parts.length - 1].trim().replace(/ - \w{2}$/, '').trim();
+          url = `https://nominatim.openstreetmap.org/search?format=json&street=${encodeURIComponent(street)}&city=${encodeURIComponent(cityPart)}&countrycodes=br&limit=1`;
+        } else {
+          url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(m.address)}&countrycodes=br&limit=1`;
+        }
+        fetch(url)
+          .then(r => r.json())
+          .then(data => {
+            if (data?.[0]) setCoords(prev => ({ ...prev, [m.address]: [parseFloat(data[0].lat), parseFloat(data[0].lon)] }));
+          })
+          .catch(() => {});
       });
-    }, 1500); // 1.5s debounce para respeitar política do Nominatim
+
+      // Geocodificar o endereço da nova medição usando dados estruturados (mais preciso)
+      if (!newMeasurement.address || newMeasurement.address.length < 5) return;
+
+      const fullAddr = newMeasurement.addressNumber
+        ? `${newMeasurement.address}, ${newMeasurement.addressNumber}`
+        : newMeasurement.address;
+
+      if (coords[fullAddr]) return;
+
+      let geocodeUrl: string;
+      if (viaCepData && newMeasurement.addressNumber) {
+        const street = `${newMeasurement.addressNumber} ${viaCepData.logradouro}`;
+        geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&street=${encodeURIComponent(street)}&city=${encodeURIComponent(viaCepData.localidade)}&state=${encodeURIComponent(viaCepData.uf)}&countrycodes=br&limit=1`;
+      } else if (viaCepData) {
+        geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&street=${encodeURIComponent(viaCepData.logradouro)}&city=${encodeURIComponent(viaCepData.localidade)}&state=${encodeURIComponent(viaCepData.uf)}&countrycodes=br&limit=1`;
+      } else {
+        geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddr)}&countrycodes=br&limit=1`;
+      }
+
+      fetch(geocodeUrl)
+        .then(r => r.json())
+        .then(data => {
+          if (data && data[0]) {
+            const lat = parseFloat(data[0].lat);
+            const lon = parseFloat(data[0].lon);
+            setCoords(prev => ({ ...prev, [fullAddr]: [lat, lon] }));
+            setMapCenter([lat, lon]);
+          }
+        })
+        .catch(err => console.error('Erro geocoding:', fullAddr, err));
+    }, 1000);
 
     return () => clearTimeout(timer);
-  }, [measurements, newMeasurement.address, newMeasurement.addressNumber, companyAddress]);
+  }, [measurements, newMeasurement.address, newMeasurement.addressNumber, companyAddress, viaCepData]);
 
   // Atualizar centro do mapa quando o endereço da nova medição mudar (caso já tenhamos a coordenada)
   useEffect(() => {
-    const fullAddr = newMeasurement.addressNumber 
+    const fullAddr = newMeasurement.addressNumber
       ? `${newMeasurement.address}, ${newMeasurement.addressNumber}`
       : newMeasurement.address;
 
@@ -172,6 +210,48 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
       setMapCenter(coords[companyAddress]);
     }
   }, [newMeasurement.address, newMeasurement.addressNumber, coords, companyAddress]);
+
+  // Atualizar centro do mapa ao trocar de dia selecionado
+  useEffect(() => {
+    const dayMeas = measurements
+      .filter(m => m.status !== 'Excluída' && m.date === selectedDate)
+      .sort((a, b) => a.time.localeCompare(b.time));
+    if (dayMeas.length > 0) {
+      const first = dayMeas[0];
+      if (coords[first.address]) setMapCenter(coords[first.address]);
+    } else if (coords[companyAddress]) {
+      setMapCenter(coords[companyAddress]);
+    }
+  }, [selectedDate, measurements, coords]);
+
+  // Buscar rota por ruas via OSRM quando as medições do dia ou coordenadas mudarem
+  useEffect(() => {
+    const dayMeas = measurements
+      .filter(m => m.status !== 'Excluída' && m.date === selectedDate)
+      .sort((a, b) => a.time.localeCompare(b.time));
+
+    const waypoints: [number, number][] = [];
+
+    if (coords[companyAddress]) waypoints.push(coords[companyAddress]);
+    // Geocoding salva sob m.address (sem addressNumber), usar mesma chave
+    for (const m of dayMeas) {
+      if (coords[m.address]) waypoints.push(coords[m.address]);
+    }
+
+    if (waypoints.length < 2) { setRouteCoords([]); return; }
+
+    const coordStr = waypoints.map(([lat, lon]) => `${lon},${lat}`).join(';');
+    fetch(`https://router.project-osrm.org/route/v1/driving/${coordStr}?overview=full&geometries=geojson`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.routes?.[0]?.geometry?.coordinates) {
+          setRouteCoords(data.routes[0].geometry.coordinates.map(([lon, lat]: [number, number]) => [lat, lon]));
+        } else {
+          setRouteCoords(waypoints);
+        }
+      })
+      .catch(() => setRouteCoords(waypoints));
+  }, [selectedDate, measurements, coords, companyAddress]);
 
   const getWeekDays = (baseDate: string) => {
     const d = new Date(baseDate + 'T12:00:00');
@@ -244,6 +324,19 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
       console.error('Erro ao salvar medição:', error);
       alert('Houve um erro ao salvar a medição.');
     }
+  };
+
+  const openNewMeasurementModal = (date?: string, time?: string) => {
+    setEditingMeasurementId(null);
+    setConfirmingDelete(false);
+    setViaCepData(null);
+    setNewMeasurement({
+      clientName: '', address: '', cep: '', date: date ?? selectedDate,
+      time: time ?? '08:00', description: '', measurerName: '',
+      status: 'Pendente', osId: '', osNumber: '',
+      addressNumber: '', addressComplement: '', clientPhone: '', sellerName: ''
+    });
+    setIsModalOpen(true);
   };
 
   const handleEditClick = (m: Measurement) => {
@@ -343,7 +436,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
             />
           </div>
           <button 
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => openNewMeasurementModal()}
             className="flex items-center gap-1 px-5 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg shadow-blue-600/20 active:scale-95"
           >
             <Plus size={16} strokeWidth={3} /> Agendar
@@ -407,7 +500,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                          {hours.map(h => (
                            <div key={h} className="border-b last:border-b-0 w-full opacity-20 flex items-center justify-center group/slot" style={{ height: `${zoomLevel}px` }}>
                               <button 
-                                onClick={(e) => { e.stopPropagation(); setSelectedDate(dayStr); setNewMeasurement({...newMeasurement, date: dayStr, time: `${h.toString().padStart(2, '0')}:00`}); setIsModalOpen(true); }}
+                                onClick={(e) => { e.stopPropagation(); setSelectedDate(dayStr); openNewMeasurementModal(dayStr, `${h.toString().padStart(2, '0')}:00`); }}
                                 className="opacity-0 group-hover/slot:opacity-100 p-1.5 bg-blue-100 text-blue-600 rounded-full transition-all shadow-sm"
                               >
                                 <Plus size={14} strokeWidth={3} />
@@ -513,47 +606,33 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                     </Marker>
                   )}
 
-                  {/* Measurement markers */}
-                  {mapMeasurements.map((m, i) => {
-                    const fullAddr = m.addressNumber ? `${m.address}, ${m.addressNumber}` : m.address;
-                    return (
-                       coords[fullAddr] && (
-                        <Marker 
-                          key={m.id} 
-                          position={coords[fullAddr]} 
-                          icon={createNumberedIcon(i + 1, '#2563eb')}
-                          eventHandlers={{
-                            click: () => setSelectedMeasurementId(m.id)
-                          }}
-                        >
-                          <Popup>
-                            <div className="p-1 min-w-[120px]">
-                              <p className="font-black text-[9px] uppercase text-slate-400 mb-0.5">Medição {i + 1}</p>
-                              <p className="font-bold text-xs text-slate-900">{m.clientName}</p>
-                              <p className="text-[10px] text-blue-600 font-bold">{m.time}</p>
-                            </div>
-                          </Popup>
-                        </Marker>
-                      )
-                    );
-                  })}
+                  {/* Measurement markers — geocoding salva sob m.address */}
+                  {mapMeasurements.map((m, i) => (
+                    coords[m.address] && (
+                      <Marker
+                        key={m.id}
+                        position={coords[m.address]}
+                        icon={createNumberedIcon(i + 1, '#2563eb')}
+                        eventHandlers={{ click: () => setSelectedMeasurementId(m.id) }}
+                      >
+                        <Popup>
+                          <div className="p-1 min-w-[120px]">
+                            <p className="font-black text-[9px] uppercase text-slate-400 mb-0.5">Medição {i + 1}</p>
+                            <p className="font-bold text-xs text-slate-900">{m.clientName}</p>
+                            <p className="text-[10px] text-blue-600 font-bold">{m.time}</p>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    )
+                  ))}
     
-                  {/* Route Path Line */}
-                  {mapMeasurements.length > 0 && (
-                    <Polyline 
-                      positions={[
-                        coords[companyAddress] as [number, number],
-                        ...mapMeasurements
-                          .map(m => {
-                            const fullAddr = m.addressNumber ? `${m.address}, ${m.addressNumber}` : m.address;
-                            return coords[fullAddr];
-                          })
-                          .filter(c => !!c) as [number, number][]
-                      ]}
+                  {/* Route Path Line — rota por ruas via OSRM */}
+                  {routeCoords.length > 1 && (
+                    <Polyline
+                      positions={routeCoords}
                       color="#2563eb"
-                      weight={2}
-                      opacity={0.5}
-                      dashArray="5, 10"
+                      weight={4}
+                      opacity={0.75}
                     />
                   )}
    
@@ -661,7 +740,13 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                   >
                     <option value="">Selecione o vendedor</option>
                     {appUsers
-                      .filter(u => u.role === 'seller' && u.status === 'ativo')
+                      .filter(u => {
+                        if (u.status !== 'ativo') return false;
+                        const profile = permissionProfiles.find(p => p.id === u.profileId);
+                        if (!profile) return u.role === 'seller' || u.role === 'admin';
+                        const pname = profile.name.toLowerCase();
+                        return pname.includes('vendedor') || pname.includes('administrador') || pname.includes('admin') || u.role === 'seller' || u.role === 'admin';
+                      })
                       .sort((a, b) => a.name.localeCompare(b.name))
                       .map(u => (
                         <option key={u.id} value={u.name}>{u.name}</option>
@@ -777,7 +862,11 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                     <option value="">Selecione o medidor</option>
                     {[
                       ...staff.filter(s => s.position === 'medidor' && s.status === 'ativo').map(s => s.name),
-                      ...appUsers.filter(u => u.role === 'driver' && u.status === 'ativo').map(u => u.name)
+                      ...appUsers.filter(u => {
+                        if (u.status !== 'ativo') return false;
+                        const profile = permissionProfiles.find(p => p.id === u.profileId);
+                        return profile?.name.toLowerCase().includes('medidor');
+                      }).map(u => u.name)
                     ]
                       .filter((v, i, a) => v && a.indexOf(v) === i)
                       .sort((a, b) => a.localeCompare(b))
@@ -824,19 +913,44 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                 </div>
 
                 {editingMeasurementId && onDeleteMeasurement && (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (window.confirm('Tem certeza que deseja EXCLUIR este agendamento? Esta ação não pode ser desfeita.')) {
-                        await onDeleteMeasurement(editingMeasurementId);
-                        setIsModalOpen(false);
-                        setEditingMeasurementId(null);
-                      }
-                    }}
-                    className="w-full py-3 bg-red-50 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-100 transition-all flex items-center justify-center gap-2 border border-red-100"
-                  >
-                    <Trash2 size={14} /> Excluir Agendamento
-                  </button>
+                  confirmingDelete ? (
+                    <div className="w-full p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2">
+                      <p className="flex-1 text-[10px] font-black text-red-600 uppercase tracking-wide">Confirma a exclusão?</p>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await onDeleteMeasurement(editingMeasurementId);
+                            setIsModalOpen(false);
+                            setEditingMeasurementId(null);
+                            setConfirmingDelete(false);
+                          } catch (err: any) {
+                            const msg = err?.message || err?.details || JSON.stringify(err) || 'Erro desconhecido';
+                            alert(`Erro ao excluir: ${msg}`);
+                            setConfirmingDelete(false);
+                          }
+                        }}
+                        className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wide hover:bg-red-700 transition-all"
+                      >
+                        Sim, excluir
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmingDelete(false)}
+                        className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-wide hover:bg-slate-50 transition-all"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmingDelete(true)}
+                      className="w-full py-3 bg-red-50 text-red-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-100 transition-all flex items-center justify-center gap-2 border border-red-100"
+                    >
+                      <Trash2 size={14} /> Excluir Agendamento
+                    </button>
+                  )
                 )}
               </div>
             </form>

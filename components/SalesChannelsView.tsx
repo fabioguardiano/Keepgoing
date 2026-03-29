@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
-import { ShoppingBag, Plus, Search, Edit2, PowerOff, X } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { ShoppingBag, Plus, Search, Edit2, PowerOff, X, ArrowUpDown } from 'lucide-react';
 import { SalesChannel } from '../types';
+
+type SortField = 'id' | 'name' | 'createdAt';
+type SortDirection = 'asc' | 'desc';
 
 interface SalesChannelsViewProps {
   channels: SalesChannel[];
@@ -13,9 +16,21 @@ export const SalesChannelsView: React.FC<SalesChannelsViewProps> = ({ channels, 
   const [editingChannel, setEditingChannel] = useState<SalesChannel | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showInactive, setShowInactive] = useState(false);
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [formData, setFormData] = useState<Omit<SalesChannel, 'id' | 'createdAt'>>({
     name: ''
   });
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) setSortDirection(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortField(field); setSortDirection('asc'); }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown size={14} className="opacity-30 group-hover:opacity-100 transition-opacity" />;
+    return <ArrowUpDown size={14} className="text-primary" />;
+  };
 
   const handleEdit = (channel: SalesChannel) => {
     setEditingChannel(channel);
@@ -38,11 +53,17 @@ export const SalesChannelsView: React.FC<SalesChannelsViewProps> = ({ channels, 
     setFormData({ name: '' });
   };
 
-  const filteredChannels = channels.filter(c => {
+  const filteredChannels = useMemo(() => channels.filter(c => {
     const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = showInactive ? c.status === 'inativo' : (c.status === 'ativo' || !c.status);
     return matchesSearch && matchesStatus;
-  });
+  }).sort((a, b) => {
+    let cmp = 0;
+    if (sortField === 'id') cmp = (a.id || '').localeCompare(b.id || '');
+    if (sortField === 'name') cmp = a.name.localeCompare(b.name);
+    if (sortField === 'createdAt') cmp = (a.createdAt || '').localeCompare(b.createdAt || '');
+    return sortDirection === 'asc' ? cmp : -cmp;
+  }), [channels, searchQuery, showInactive, sortField, sortDirection]);
 
   const inputClass = "w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/20 focus:border-[var(--primary-color)] transition-all";
   const labelClass = "block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 ml-1";
@@ -101,10 +122,18 @@ export const SalesChannelsView: React.FC<SalesChannelsViewProps> = ({ channels, 
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100">
-                <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest">Cód</th>
-                <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest">Descrição</th>
-                <th className="px-6 py-5 text-sm font-bold text-slate-400 uppercase tracking-widest">Data Cadastro</th>
-                <th className="px-6 py-5 text-right text-sm font-bold text-slate-400 uppercase tracking-widest">Ações</th>
+                <th onClick={() => handleSort('id')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                  <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">Cód <SortIcon field="id" /></div>
+                </th>
+                <th onClick={() => handleSort('name')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                  <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">Descrição <SortIcon field="name" /></div>
+                </th>
+                <th onClick={() => handleSort('createdAt')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                  <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">Data Cadastro <SortIcon field="createdAt" /></div>
+                </th>
+                <th className="px-6 py-5 text-right">
+                  <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">Ações</div>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
