@@ -168,10 +168,13 @@ const resolveFromProfile = (
   module: ModuleKey,
   subModule?: SubModuleKey,
 ): AccessLevel => {
+  const parentAccess = profile.permissions[module] ?? 'none';
+  if (parentAccess === 'none') return 'none'; // Se o módulo principal está desativado, os submódulos também ficam
+
   if (subModule && profile.subPermissions && subModule in profile.subPermissions) {
-    return profile.subPermissions[subModule] ?? profile.permissions[module] ?? 'none';
+    return profile.subPermissions[subModule] ?? parentAccess;
   }
-  return profile.permissions[module] ?? 'none';
+  return parentAccess;
 };
 
 // ─── Helper principal ──────────────────────────────────────────────────────
