@@ -257,42 +257,64 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
     }
   }, [selectedDate, measurements, coords]);
 
-  // Buscar rota por ruas via OSRM quando as medições do dia ou coordenadas mudarem
+  // Decoder de polyline Valhalla (precision 6)
+  const decodePolyline6 = (encoded: string): [number, number][] => {
+    const factor = 1e6;
+    const coords: [number, number][] = [];
+    let index = 0, lat = 0, lng = 0;
+    while (index < encoded.length) {
+      let b: number, shift = 0, result = 0;
+      do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+      lat += (result & 1) ? ~(result >> 1) : (result >> 1);
+      shift = 0; result = 0;
+      do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+      lng += (result & 1) ? ~(result >> 1) : (result >> 1);
+      coords.push([lat / factor, lng / factor]);
+    }
+    return coords;
+  };
+
+  // Buscar rota por ruas via Valhalla (OpenStreetMap) — global, cobre o Brasil
   useEffect(() => {
     const dayMeas = measurements
       .filter(m => m.status !== 'Excluída' && m.date === selectedDate)
       .sort((a, b) => a.time.localeCompare(b.time));
 
     const waypoints: [number, number][] = [];
-
     if (coords[companyAddress]) waypoints.push(coords[companyAddress]);
-    // Geocoding salva sob m.address (sem addressNumber), usar mesma chave
     for (const m of dayMeas) {
       if (coords[m.address]) waypoints.push(coords[m.address]);
     }
 
     if (waypoints.length < 2) { setRouteCoords([]); return; }
 
-    const coordStr = waypoints.map(([lat, lon]) => `${lon},${lat}`).join(';');
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
+    const timeout = setTimeout(() => controller.abort(), 12000);
 
-    fetch(
-      `https://router.project-osrm.org/route/v1/driving/${coordStr}?overview=full&geometries=geojson`,
-      { signal: controller.signal }
-    )
+    fetch('https://valhalla1.openstreetmap.de/route', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        locations: waypoints.map(([lat, lon]) => ({ lat, lon })),
+        costing: 'auto',
+        directions_options: { units: 'km' }
+      }),
+      signal: controller.signal
+    })
       .then(r => r.json())
       .then(data => {
         clearTimeout(timeout);
-        if (data.routes?.[0]?.geometry?.coordinates) {
-          setRouteCoords(data.routes[0].geometry.coordinates.map(([lon, lat]: [number, number]) => [lat, lon]));
+        const legs = data.trip?.legs;
+        if (legs?.length) {
+          const allCoords = legs.flatMap((leg: any) => decodePolyline6(leg.shape));
+          setRouteCoords(allCoords);
         } else {
-          setRouteCoords([]); // API sem rota: não exibir linhas retas enganosas
+          setRouteCoords([]);
         }
       })
       .catch(() => {
         clearTimeout(timeout);
-        setRouteCoords([]); // Falha de rede: não exibir linhas retas enganosas
+        setRouteCoords([]);
       });
   }, [selectedDate, measurements, coords, companyAddress]);
 
