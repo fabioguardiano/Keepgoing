@@ -45,11 +45,11 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
           specialTableCommission: m.special_table_commission ?? 0,
         }));
         setMaterials(mappedMaterials as Material[]);
-        localStorage.setItem(`marmo_materials_${companyId || 'legacy'}`, JSON.stringify(mappedMaterials));
+        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_materials_${companyId || 'legacy'}`, JSON.stringify(mappedMaterials));
       }
     } catch (err) {
       console.error('Erro ao carregar materiais do Supabase:', err);
-      const saved = localStorage.getItem(`marmo_materials_${companyId || 'legacy'}`);
+      const saved = ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).getItem(`marmo_materials_${companyId || 'legacy'}`);
       if (saved) setMaterials(JSON.parse(saved));
     } finally {
       setLoadingMaterials(false);
@@ -144,7 +144,7 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
         const next = prev.find(x => x.id === m.id || x.id === savedMaterial.id)
           ? prev.map(x => (x.id === m.id || x.id === savedMaterial.id) ? savedMaterial : x)
           : [savedMaterial, ...prev];
-        localStorage.setItem(`marmo_materials_${finalCompanyId}`, JSON.stringify(next));
+        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_materials_${finalCompanyId}`, JSON.stringify(next));
         return next;
       });
       

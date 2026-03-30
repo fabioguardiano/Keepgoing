@@ -3,11 +3,11 @@ import { supabase } from '../lib/supabase';
 import { up } from '../lib/uppercase';
 
 // ─── useLocalStorage ────────────────────────────────────────────────────────
-// Substitui o padrão repetitivo useState + useEffect para localStorage.
+// Substitui o padrão repetitivo useState + useEffect para ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).
 function useLocalStorage<T>(key: string, fallback: T): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [value, setValue] = useState<T>(() => {
     try {
-      const raw = localStorage.getItem(key);
+      const raw = ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).getItem(key);
       if (!raw) return fallback;
       const parsed = JSON.parse(raw);
       // Mantém fallback se array vazio veio salvo (ex: usuários iniciais)
@@ -18,7 +18,7 @@ function useLocalStorage<T>(key: string, fallback: T): [T, React.Dispatch<React.
     }
   });
   useEffect(() => {
-    localStorage.setItem(key, JSON.stringify(value));
+    ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(key, JSON.stringify(value));
   }, [key, value]);
   return [value, setValue];
 }
@@ -47,7 +47,7 @@ export const useSettings = (
   setSales?: (update: (prev: any[]) => any[]) => void,
   companyId?: string
 ) => {
-  // App Users — Supabase como fonte principal, localStorage como cache
+  // App Users — Supabase como fonte principal, ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any) como cache
   const [appUsers, setAppUsers] = useLocalStorage<AppUser[]>('marmo_app_users', INITIAL_APP_USERS);
 
   // Carrega app_users do Supabase quando companyId estiver disponível
@@ -141,7 +141,7 @@ export const useSettings = (
   const [serviceGroups, setServiceGroups] = useLocalStorage<ServiceGroup[]>('marmo_service_groups', []);
   const [salesChannels, setSalesChannels] = useLocalStorage<SalesChannel[]>('marmo_sales_channels', DEFAULT_SALES_CHANNELS);
 
-  // Company Info — fonte de verdade: Supabase. localStorage é apenas cache inicial.
+  // Company Info — fonte de verdade: Supabase. ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any) é apenas cache inicial.
   const defaultCompanyData: CompanyInfo = {
     name: 'Tok de Art',
     document: '14.092.404/0001-67',
@@ -157,7 +157,7 @@ export const useSettings = (
 
   const [companyInfo, setCompanyInfoState] = useState<CompanyInfo>(() => {
     try {
-      const saved = localStorage.getItem('marmo_company');
+      const saved = ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).getItem('marmo_company');
       if (!saved) return defaultCompanyData;
       const parsed = JSON.parse(saved) || {};
       return { ...defaultCompanyData, ...parsed };
@@ -195,7 +195,7 @@ export const useSettings = (
             maxDiscountPct: data.max_discount_pct ?? undefined,
           };
           setCompanyInfoState(info);
-          localStorage.setItem('marmo_company', JSON.stringify(info));
+          ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem('marmo_company', JSON.stringify(info));
         }
       } catch (err) {
         console.error('Erro ao carregar dados da empresa:', err);
@@ -235,7 +235,7 @@ export const useSettings = (
   // Salva no Supabase + atualiza estado local e cache
   const setCompanyInfo = async (info: CompanyInfo) => {
     setCompanyInfoState(info);
-    localStorage.setItem('marmo_company', JSON.stringify(info));
+    ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem('marmo_company', JSON.stringify(info));
     if (!companyId) return;
     try {
       const { error } = await supabase.from('companies').update({
@@ -446,7 +446,7 @@ export const useSettings = (
   };
 
   // Permission Profiles — fonte de verdade: Supabase (coluna permission_profiles em companies).
-  // localStorage é apenas cache para carregamento rápido inicial.
+  // ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any) é apenas cache para carregamento rápido inicial.
   const mergeProfiles = (fromDb: PermissionProfile[]): PermissionProfile[] => {
     const ids = fromDb.map(p => p.id);
     const missing = DEFAULT_PROFILES.filter(d => !ids.includes(d.id));
@@ -460,7 +460,7 @@ export const useSettings = (
 
   const [permissionProfiles, setPermissionProfiles] = useState<PermissionProfile[]>(() => {
     try {
-      const raw = localStorage.getItem('marmo_permission_profiles');
+      const raw = ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).getItem('marmo_permission_profiles');
       if (!raw) return DEFAULT_PROFILES;
       return mergeProfiles(JSON.parse(raw));
     } catch {
@@ -482,7 +482,7 @@ export const useSettings = (
         if (data?.permission_profiles && Array.isArray(data.permission_profiles) && data.permission_profiles.length > 0) {
           const merged = mergeProfiles(data.permission_profiles as PermissionProfile[]);
           setPermissionProfiles(merged);
-          localStorage.setItem('marmo_permission_profiles', JSON.stringify(merged));
+          ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem('marmo_permission_profiles', JSON.stringify(merged));
         }
       } catch (err) {
         console.error('[useSettings] Erro ao carregar permission_profiles do Supabase:', err);
@@ -491,9 +491,9 @@ export const useSettings = (
     fetchProfiles();
   }, [companyId]);
 
-  // Persiste no localStorage como cache
+  // Persiste no ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any) como cache
   useEffect(() => {
-    localStorage.setItem('marmo_permission_profiles', JSON.stringify(permissionProfiles));
+    ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem('marmo_permission_profiles', JSON.stringify(permissionProfiles));
   }, [permissionProfiles]);
 
   // Salva perfis no Supabase (fonte de verdade) — fire-and-forget

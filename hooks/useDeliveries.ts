@@ -29,11 +29,11 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
           status: d.status as any
         }));
         setDeliveries(mapped as Delivery[]);
-        localStorage.setItem(`marmo_deliveries_${companyId || 'legacy'}`, JSON.stringify(mapped));
+        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_deliveries_${companyId || 'legacy'}`, JSON.stringify(mapped));
       }
     } catch (err) {
       console.error('Erro ao carregar entregas do Supabase:', err);
-      const saved = localStorage.getItem(`marmo_deliveries_${companyId || 'legacy'}`);
+      const saved = ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).getItem(`marmo_deliveries_${companyId || 'legacy'}`);
       if (saved) setDeliveries(JSON.parse(saved));
     } finally {
       setLoadingDeliveries(false);
@@ -76,7 +76,7 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
 
       setDeliveries(prev => {
         const next = [newDelivery, ...prev];
-        localStorage.setItem(`marmo_deliveries_${finalCompanyId}`, JSON.stringify(next));
+        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_deliveries_${finalCompanyId}`, JSON.stringify(next));
         return next;
       });
       
@@ -109,7 +109,7 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
       if (error) throw error;
       setDeliveries(prev => {
         const next = prev.map(d => d.id === id ? { ...d, status } : d);
-        localStorage.setItem(`marmo_deliveries_${finalCompanyId}`, JSON.stringify(next));
+        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_deliveries_${finalCompanyId}`, JSON.stringify(next));
         return next;
       });
 
@@ -141,7 +141,7 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
       if (error) throw error;
       setDeliveries(prev => {
         const next = prev.filter(d => d.id !== id);
-        localStorage.setItem(`marmo_deliveries_${finalCompanyId}`, JSON.stringify(next));
+        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_deliveries_${finalCompanyId}`, JSON.stringify(next));
         return next;
       });
       
@@ -181,7 +181,7 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
       if (error) throw error;
       setDeliveries(prev => {
         const next = prev.map(d => d.id === id ? { ...d, ...updates } : d);
-        localStorage.setItem(`marmo_deliveries_${finalCompanyId}`, JSON.stringify(next));
+        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_deliveries_${finalCompanyId}`, JSON.stringify(next));
         return next;
       });
 

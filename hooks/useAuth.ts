@@ -41,15 +41,15 @@ export const useAuth = () => {
       if (session?.user) {
         const u = mapSession(session);
         setUser(u);
-        localStorage.setItem('marmo_user', JSON.stringify(u));
+        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem('marmo_user', JSON.stringify(u));
       } else {
-        const saved = localStorage.getItem('marmo_user');
+        const saved = ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).getItem('marmo_user');
         if (saved) {
           try {
             const u = JSON.parse(saved);
             if (u && !u.company_id) {
               u.company_id = '00000000-0000-0000-0000-000000000000';
-              localStorage.setItem('marmo_user', JSON.stringify(u));
+              ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem('marmo_user', JSON.stringify(u));
             }
             setUser(u);
           } catch {
@@ -71,13 +71,13 @@ export const useAuth = () => {
           writeAuthLog(u, 'login');
           return u;
         });
-        localStorage.setItem('marmo_user', JSON.stringify(u));
+        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem('marmo_user', JSON.stringify(u));
       } else {
         setUser(prev => {
           if (prev) writeAuthLog(prev, 'logout');
           return null;
         });
-        localStorage.removeItem('marmo_user');
+        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).removeItem('marmo_user');
       }
     });
 
@@ -86,7 +86,7 @@ export const useAuth = () => {
 
   const handleLogin = (u: User) => {
     setUser(u);
-    localStorage.setItem('marmo_user', JSON.stringify(u));
+    ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem('marmo_user', JSON.stringify(u));
   };
 
   const handleLogout = async () => {
@@ -94,7 +94,7 @@ export const useAuth = () => {
     await supabase.auth.signOut();
     if (currentUser) await writeAuthLog(currentUser, 'logout');
     setUser(null);
-    localStorage.removeItem('marmo_user');
+    ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).removeItem('marmo_user');
   };
 
   return { user, setUser, authReady, handleLogin, handleLogout };

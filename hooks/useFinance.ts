@@ -28,11 +28,11 @@ export const useFinance = (companyId?: string, logActivity?: (action: any, detai
           description: t.description
         }));
         setTransactions(mapped);
-        localStorage.setItem(`marmo_transactions_${companyId || 'legacy'}`, JSON.stringify(mapped));
+        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_transactions_${companyId || 'legacy'}`, JSON.stringify(mapped));
       }
     } catch (err) {
       console.error('Erro ao carregar transações do Supabase:', err);
-      const saved = localStorage.getItem(`marmo_transactions_${companyId || 'legacy'}`);
+      const saved = ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).getItem(`marmo_transactions_${companyId || 'legacy'}`);
       if (saved) setTransactions(JSON.parse(saved));
     } finally {
       setLoadingFinance(false);
@@ -79,7 +79,7 @@ export const useFinance = (companyId?: string, logActivity?: (action: any, detai
         const next = prev.find(x => x.id === t.id || x.id === saved.id)
           ? prev.map(x => (x.id === t.id || x.id === saved.id) ? saved : x)
           : [saved, ...prev];
-        localStorage.setItem(`marmo_transactions_${finalCompanyId}`, JSON.stringify(next));
+        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_transactions_${finalCompanyId}`, JSON.stringify(next));
         return next;
       });
 
@@ -107,7 +107,7 @@ export const useFinance = (companyId?: string, logActivity?: (action: any, detai
 
       setTransactions(prev => {
         const next = prev.filter(t => t.id !== id);
-        localStorage.setItem(`marmo_transactions_${companyId || '00000000-0000-0000-0000-000000000000'}`, JSON.stringify(next));
+        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_transactions_${companyId || '00000000-0000-0000-0000-000000000000'}`, JSON.stringify(next));
         return next;
       });
     } catch (err: any) {

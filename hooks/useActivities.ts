@@ -33,7 +33,7 @@ export const useActivities = (user: User | null) => {
       }
     } catch (err) {
       console.error('Erro ao carregar logs do Supabase:', err);
-      const saved = localStorage.getItem('marmo_activities');
+      const saved = ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).getItem('marmo_activities');
       if (saved) setActivities(JSON.parse(saved));
     } finally {
       setLoadingActivities(false);
@@ -85,7 +85,7 @@ export const useActivities = (user: User | null) => {
       };
 
       setActivities(prev => [newLog, ...prev].slice(0, 500));
-      localStorage.setItem('marmo_activities', JSON.stringify([newLog, ...activities].slice(0, 500)));
+      ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem('marmo_activities', JSON.stringify([newLog, ...activities].slice(0, 500)));
     } catch (err) {
       console.error('Erro ao registrar atividade:', err);
     }

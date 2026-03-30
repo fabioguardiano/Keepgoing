@@ -30,11 +30,11 @@ export const useArchitects = (companyId?: string, logActivity?: any) => {
           createdAt: a.created_at
         }));
         setArchitects(mapped as Architect[]);
-        localStorage.setItem(`marmo_architects_${companyId || 'legacy'}`, JSON.stringify(mapped));
+        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_architects_${companyId || 'legacy'}`, JSON.stringify(mapped));
       }
     } catch (err) {
       console.error('Erro ao carregar arquitetos do Supabase:', err);
-      const saved = localStorage.getItem(`marmo_architects_${companyId || 'legacy'}`);
+      const saved = ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).getItem(`marmo_architects_${companyId || 'legacy'}`);
       if (saved) setArchitects(JSON.parse(saved));
     } finally {
       setLoadingArchitects(false);
@@ -89,7 +89,7 @@ export const useArchitects = (companyId?: string, logActivity?: any) => {
         const next = prev.find(x => x.id === a.id || x.id === saved.id)
           ? prev.map(x => (x.id === a.id || x.id === saved.id) ? saved : x)
           : [saved, ...prev];
-        localStorage.setItem(`marmo_architects_${finalCompanyId}`, JSON.stringify(next));
+        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_architects_${finalCompanyId}`, JSON.stringify(next));
         return next;
       });
 
@@ -110,7 +110,7 @@ export const useArchitects = (companyId?: string, logActivity?: any) => {
 
       setArchitects(prev => {
         const next = prev.map(x => x.id === id ? { ...x, status: newStatus } : x);
-        localStorage.setItem(`marmo_architects_${companyId || '00000000-0000-0000-0000-000000000000'}`, JSON.stringify(next));
+        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_architects_${companyId || '00000000-0000-0000-0000-000000000000'}`, JSON.stringify(next));
         return next;
       });
       fetchArchitects();

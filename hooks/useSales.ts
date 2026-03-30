@@ -54,11 +54,11 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
           lastInteractionAt: s.last_interaction_at
         }));
         setSales(mapped as SalesOrder[]);
-        localStorage.setItem(`marmo_sales_${companyId || 'legacy'}`, JSON.stringify(mapped));
+        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_sales_${companyId || 'legacy'}`, JSON.stringify(mapped));
       }
     } catch (err) {
       console.error('Erro ao carregar vendas do Supabase:', err);
-      const saved = localStorage.getItem(`marmo_sales_${companyId || 'legacy'}`);
+      const saved = ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).getItem(`marmo_sales_${companyId || 'legacy'}`);
       if (saved) setSales(JSON.parse(saved));
     } finally {
       setLoadingSales(false);
@@ -175,7 +175,7 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
         const next = prev.find(x => x.id === s.id || x.id === savedSale.id)
           ? prev.map(x => (x.id === s.id || x.id === savedSale.id) ? savedSale : x)
           : [savedSale, ...prev];
-        localStorage.setItem(`marmo_sales_${finalCompanyId}`, JSON.stringify(next));
+        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_sales_${finalCompanyId}`, JSON.stringify(next));
         return next;
       });
 

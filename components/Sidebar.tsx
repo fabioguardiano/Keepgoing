@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Diamond, LayoutDashboard, Package, BarChart3, Users, Settings, PlusCircle, MapPin, ShoppingBag, Wallet, Box, ChevronDown, ChevronRight, Truck, Briefcase, Wrench, TrendingUp, ClipboardList } from 'lucide-react';
-import { View, CompanyInfo, ModuleKey, AccessLevel } from '../types';
+import { View, CompanyInfo, ModuleKey, SubModuleKey, AccessLevel } from '../types';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -9,7 +9,7 @@ interface SidebarProps {
   onViewChange: (view: View) => void;
   companyInfo: CompanyInfo;
   exchangeRates: { usd: number; eur: number; lastUpdate: string };
-  getAccess: (module: ModuleKey) => AccessLevel;
+  getAccess: (module: ModuleKey, subModule?: SubModuleKey) => AccessLevel;
 }
 
 interface NavItem {
@@ -17,7 +17,7 @@ interface NavItem {
   label: string;
   view?: View;
   module?: string;
-  subItems?: { label: string; view: View; icon: any; module?: string }[];
+  subItems?: { label: string; view: View; icon: any; module?: string; subModule?: SubModuleKey }[];
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, onViewChange, companyInfo, exchangeRates, getAccess }) => {
@@ -35,8 +35,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
       label: 'Cadastros',
       subItems: [
         { icon: Users,    label: 'Clientes',     view: 'Clientes' as View,     module: 'clientes' },
-        { icon: Truck,    label: 'Fornecedores', view: 'Fornecedores' as View, module: 'cadastros' },
-        { icon: Briefcase,label: 'Arquitetos',   view: 'Arquitetos' as View,   module: 'cadastros' },
+        { icon: Truck,    label: 'Fornecedores', view: 'Fornecedores' as View, module: 'cadastros', subModule: 'fornecedores' as SubModuleKey },
+        { icon: Briefcase,label: 'Arquitetos',   view: 'Arquitetos' as View,   module: 'cadastros', subModule: 'arquitetos' as SubModuleKey },
         { icon: Users,    label: 'Equipe',       view: 'Equipe' as View,       module: 'equipe' },
       ]
     },
@@ -45,10 +45,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
       label: 'Grupo/Coleções',
       module: 'cadastros' as ModuleKey,
       subItems: [
-        { icon: Diamond,    label: 'Marcas',          view: 'Marcas' as View,          module: 'cadastros' },
-        { icon: ShoppingBag,label: 'Canais de Vendas',view: 'Canais de Vendas' as View,module: 'cadastros' },
-        { icon: Box,        label: 'Produtos',        view: 'Grupos de Produtos' as View, module: 'cadastros' },
-        { icon: Wrench,     label: 'Serviços',        view: 'Grupos de Serviços' as View, module: 'cadastros' },
+        { icon: Diamond,    label: 'Marcas',          view: 'Marcas' as View,             module: 'cadastros', subModule: 'marcas' as SubModuleKey },
+        { icon: ShoppingBag,label: 'Canais de Vendas',view: 'Canais de Vendas' as View,   module: 'cadastros', subModule: 'canais_vendas' as SubModuleKey },
+        { icon: Box,        label: 'Produtos',        view: 'Grupos de Produtos' as View,  module: 'cadastros', subModule: 'grupos_produtos' as SubModuleKey },
+        { icon: Wrench,     label: 'Serviços',        view: 'Grupos de Serviços' as View,  module: 'cadastros', subModule: 'grupos_servicos' as SubModuleKey },
       ]
     },
     {
@@ -56,14 +56,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
       label: 'Estoque / Acabamentos',
       module: 'estoque' as ModuleKey,
       subItems: [
-        { icon: Package,    label: 'Matéria Prima',           view: 'Matéria Prima' as View,           module: 'estoque' },
-        { icon: Diamond,    label: 'Acabamentos',             view: 'Acabamentos' as View,             module: 'estoque' },
-        { icon: ShoppingBag,label: 'Produtos Revenda',        view: 'Produtos Revenda' as View,        module: 'estoque' },
+        { icon: Package,    label: 'Matéria Prima',           view: 'Matéria Prima' as View,           module: 'estoque', subModule: 'materia_prima' as SubModuleKey },
+        { icon: Diamond,    label: 'Acabamentos',             view: 'Acabamentos' as View,             module: 'estoque', subModule: 'acabamentos' as SubModuleKey },
+        { icon: ShoppingBag,label: 'Produtos Revenda',        view: 'Produtos Revenda' as View,        module: 'estoque', subModule: 'produtos_revenda' as SubModuleKey },
         { icon: Wrench,     label: 'Mão de obra (Instalação)',view: 'Mão de obra (Instalação)' as View,module: 'estoque' },
       ]
     },
     { icon: ShoppingBag,   label: 'Vendas',            view: 'Vendas' as View,            module: 'vendas' },
-    { icon: ClipboardList, label: 'O.S. de Produção',  view: 'O.S. de Produção' as View,  module: 'producao' },
+    { icon: ClipboardList, label: 'O.S. de Produção',  view: 'O.S. de Produção' as View,  module: 'producao', },
     { icon: LayoutDashboard,label: 'Produção',          view: 'Produção' as View,          module: 'producao' },
     { icon: MapPin,        label: 'Agenda de Entregas', view: 'Agenda de Entregas' as View,module: 'agenda_entregas' },
     { icon: ClipboardList, label: 'Agenda de Medição', view: 'Agenda de Medição' as View,module: 'agenda_medicao' },
@@ -72,9 +72,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
       label: 'Financeiro',
       module: 'financeiro' as ModuleKey,
       subItems: [
-        { icon: TrendingUp, label: 'Contas a Receber',    view: 'Contas a Receber' as View,    module: 'financeiro' },
-        { icon: Wallet,     label: 'Contas a Pagar',      view: 'Contas a Pagar' as View,      module: 'financeiro' },
-        { icon: ShoppingBag,label: 'Formas de Pagamento', view: 'Formas de Pagamento' as View, module: 'financeiro' },
+        { icon: TrendingUp, label: 'Contas a Receber',    view: 'Contas a Receber' as View,    module: 'financeiro', subModule: 'contas_receber' as SubModuleKey },
+        { icon: Wallet,     label: 'Contas a Pagar',      view: 'Contas a Pagar' as View,      module: 'financeiro', subModule: 'contas_pagar' as SubModuleKey },
+        { icon: ShoppingBag,label: 'Formas de Pagamento', view: 'Formas de Pagamento' as View, module: 'financeiro', subModule: 'formas_pagamento' as SubModuleKey },
         { icon: Wallet,     label: 'Tipos de Pagamento',  view: 'Tipos de Pagamento' as View,  module: 'financeiro' },
       ]
     },
@@ -83,14 +83,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
   ].filter(item => {
     const mod = item.module ?? item.subItems?.[0]?.module;
     if (!mod) return true;
-    if (getAccess(mod as ModuleKey) === 'none') return false;
-    if (item.subItems) {
-      item.subItems = item.subItems.filter(si =>
-        !si.module || getAccess(si.module as ModuleKey) !== 'none'
-      );
-      return item.subItems.length > 0;
+    // Itens sem sub-itens: verifica acesso direto (sem sub-módulo)
+    if (!item.subItems) {
+      return getAccess(mod as ModuleKey) !== 'none';
     }
-    return true;
+    // Itens com sub-itens: filtra cada sub-item verificando sub-módulo quando disponível
+    item.subItems = item.subItems.filter(si => {
+      if (!si.module) return true;
+      return getAccess(si.module as ModuleKey, si.subModule) !== 'none';
+    });
+    return item.subItems.length > 0;
   });
 
   return (
