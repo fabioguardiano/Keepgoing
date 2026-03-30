@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { up } from '../lib/uppercase';
 
@@ -446,36 +445,81 @@ export const useSettings = (
     setSalesPhases(result);
   };
 
-  // Permission Profiles — init com merge + reforço de uppercase nos padrões
+  // Permission Profiles — fonte de verdade: Supabase (coluna permission_profiles em companies).
+  // localStorage é apenas cache para carregamento rápido inicial.
+  const mergeProfiles = (fromDb: PermissionProfile[]): PermissionProfile[] => {
+    const ids = fromDb.map(p => p.id);
+    const missing = DEFAULT_PROFILES.filter(d => !ids.includes(d.id));
+    return [...missing, ...fromDb].map(p => {
+      // Garante que nomes dos perfis padrão reflitam a versão mais atual do código
+      const def = DEFAULT_PROFILES.find(d => d.id === p.id);
+      if (def && p.isDefault) return { ...p, name: def.name };
+      return p;
+    });
+  };
+
   const [permissionProfiles, setPermissionProfiles] = useState<PermissionProfile[]>(() => {
     try {
       const raw = localStorage.getItem('marmo_permission_profiles');
       if (!raw) return DEFAULT_PROFILES;
-      const parsed: PermissionProfile[] = JSON.parse(raw);
-      const ids = parsed.map(p => p.id);
-      const missing = DEFAULT_PROFILES.filter(d => !ids.includes(d.id));
-      
-      // Merge e garante que os nomes dos padrões estejam atualizados (ex: Administrador -> ADMINISTRADOR)
-      return [...missing, ...parsed].map(p => {
-        const def = DEFAULT_PROFILES.find(d => d.id === p.id);
-        if (def && p.isDefault) return { ...p, name: def.name }; // Sincroniza o nome com a última versão do código
-        return p;
-      });
+      return mergeProfiles(JSON.parse(raw));
     } catch {
       return DEFAULT_PROFILES;
     }
   });
+
+  // Sincroniza perfis DO Supabase quando companyId estiver disponível
+  useEffect(() => {
+    if (!companyId) return;
+    const fetchProfiles = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('companies')
+          .select('permission_profiles')
+          .eq('id', companyId)
+          .single();
+        if (error) throw error;
+        if (data?.permission_profiles && Array.isArray(data.permission_profiles) && data.permission_profiles.length > 0) {
+          const merged = mergeProfiles(data.permission_profiles as PermissionProfile[]);
+          setPermissionProfiles(merged);
+          localStorage.setItem('marmo_permission_profiles', JSON.stringify(merged));
+        }
+      } catch (err) {
+        console.error('[useSettings] Erro ao carregar permission_profiles do Supabase:', err);
+      }
+    };
+    fetchProfiles();
+  }, [companyId]);
+
+  // Persiste no localStorage como cache
   useEffect(() => {
     localStorage.setItem('marmo_permission_profiles', JSON.stringify(permissionProfiles));
   }, [permissionProfiles]);
 
-  const handleSaveProfile = (profile: PermissionProfile) =>
-    setPermissionProfiles(prev => prev.find(p => p.id === profile.id)
-      ? prev.map(p => p.id === profile.id ? profile : p)
-      : [...prev, profile]);
+  // Salva perfis no Supabase (fonte de verdade) — fire-and-forget
+  const syncProfilesToSupabase = (profiles: PermissionProfile[]) => {
+    if (!companyId) return;
+    supabase.from('companies')
+      .update({ permission_profiles: profiles })
+      .eq('id', companyId)
+      .then(({ error }) => {
+        if (error) console.error('[useSettings] Erro ao salvar permission_profiles no Supabase:', error);
+      });
+  };
 
-  const handleDeleteProfile = (id: string) =>
-    setPermissionProfiles(prev => prev.filter(p => p.id !== id && !p.isDefault));
+  const handleSaveProfile = (profile: PermissionProfile) => {
+    const updated = permissionProfiles.find(p => p.id === profile.id)
+      ? permissionProfiles.map(p => p.id === profile.id ? profile : p)
+      : [...permissionProfiles, profile];
+    setPermissionProfiles(updated);
+    syncProfilesToSupabase(updated);
+  };
+
+  const handleDeleteProfile = (id: string) => {
+    const updated = permissionProfiles.filter(p => p.id !== id && !p.isDefault);
+    setPermissionProfiles(updated);
+    syncProfilesToSupabase(updated);
+  };
 
   const handleSaveBrand = (b: Brand) => setBrands(prev => { const u = { ...b, description: up(b.description) ?? b.description }; return prev.find(x => x.id === b.id) ? prev.map(x => x.id === b.id ? u : x) : [u, ...prev]; });
   const handleDeleteBrand = (id: string) => setBrands(prev => prev.map(x => x.id === id ? { ...x, status: 'inativo' as const } : x));
