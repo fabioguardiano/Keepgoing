@@ -154,12 +154,40 @@ export const DEFAULT_PROFILES: PermissionProfile[] = [
   },
 ];
 
+// ─── Mapeamento: role → perfil padrão ─────────────────────────────────────
+// Garante que users sem profileId explícito ainda usem o perfil correto do admin.
+
+const ROLE_DEFAULT_PROFILE: Partial<Record<string, string>> = {
+  seller: 'profile-vendedor',
+  driver: 'profile-motorista',
+};
+
+// Helper interno para extrair o nível de acesso de um perfil
+const resolveFromProfile = (
+  profile: PermissionProfile,
+  module: ModuleKey,
+  subModule?: SubModuleKey,
+): AccessLevel => {
+  if (subModule && profile.subPermissions && subModule in profile.subPermissions) {
+    return profile.subPermissions[subModule] ?? profile.permissions[module] ?? 'none';
+  }
+  return profile.permissions[module] ?? 'none';
+};
+
 // ─── Helper principal ──────────────────────────────────────────────────────
 
 /**
  * Retorna o nível de acesso de um usuário logado a um módulo específico.
- * - role 'admin' sempre recebe 'full' (bypass total)
- * - Respeita subPermissions quando existe entrada para o submódulo
+ *
+ * Ordem de prioridade:
+ * 1. role 'admin' → full (bypass total)
+ * 2. profileId atribuído explicitamente ao usuário
+ * 3. Perfil padrão para o role (ex: seller → profile-vendedor)
+ * 4. ROLE_FALLBACK como última saída
+ *
+ * Assim, mesmo que o usuário não tenha profileId atribuído,
+ * ele usa as permissões do perfil padrão do seu role —
+ * que o admin pode ter customizado no Supabase.
  */
 export const getModuleAccess = (
   user: { id: string; email?: string; role: string },
@@ -172,25 +200,29 @@ export const getModuleAccess = (
 
   const appUser = appUsers.find(u => u.id === user.id || u.email === user.email);
 
+  // 1. Perfil explicitamente atribuído ao usuário
   if (appUser?.profileId) {
     const profile = profiles.find(p => p.id === appUser.profileId);
-    if (profile) {
-      // Se há sub-permissão definida para esse submódulo, ela prevalece
-      if (subModule && profile.subPermissions && subModule in profile.subPermissions) {
-        return profile.subPermissions[subModule] ?? profile.permissions[module] ?? 'none';
-      }
-      return profile.permissions[module] ?? 'none';
-    }
+    if (profile) return resolveFromProfile(profile, module, subModule);
   }
 
+  // 2. Perfil padrão para o role (captura sellers sem profileId atribuído)
+  const defaultProfileId = ROLE_DEFAULT_PROFILE[user.role];
+  if (defaultProfileId) {
+    const defaultProfile = profiles.find(p => p.id === defaultProfileId);
+    if (defaultProfile) return resolveFromProfile(defaultProfile, module, subModule);
+  }
+
+  // 3. Fallback final por role
   return ROLE_FALLBACK[user.role as AppUser['role']]?.[module] ?? 'none';
 };
 
-// Fallback para usuários sem perfil atribuído
+// Fallback de último recurso — só usado se nenhum perfil (direto ou padrão) for encontrado.
+// Mantém acesso mínimo para não quebrar o sistema, mas é seguro.
 const ROLE_FALLBACK: Record<AppUser['role'], Record<ModuleKey, AccessLevel>> = {
-  admin: full(ALL_MODULES),
+  admin:   full(ALL_MODULES),
   manager: full(ALL_MODULES),
-  seller: mixed({ vendas: 'full', clientes: 'full', producao: 'view', agenda_entregas: 'view', agenda_medicao: 'view', estoque: 'view', cadastros: 'view' }),
-  viewer: mixed({ vendas: 'view', producao: 'view', clientes: 'view', agenda_entregas: 'view', agenda_medicao: 'view' }),
-  driver: mixed({ agenda_entregas: 'full' }),
+  seller:  mixed({ vendas: 'full', clientes: 'full', producao: 'view', agenda_entregas: 'view' }),
+  viewer:  mixed({ vendas: 'view', clientes: 'view' }),
+  driver:  mixed({ agenda_entregas: 'full' }),
 };
