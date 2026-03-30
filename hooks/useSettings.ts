@@ -446,7 +446,7 @@ export const useSettings = (
     setSalesPhases(result);
   };
 
-  // Permission Profiles — init com merge para garantir perfis padrão
+  // Permission Profiles — init com merge + reforço de uppercase nos padrões
   const [permissionProfiles, setPermissionProfiles] = useState<PermissionProfile[]>(() => {
     try {
       const raw = localStorage.getItem('marmo_permission_profiles');
@@ -454,7 +454,13 @@ export const useSettings = (
       const parsed: PermissionProfile[] = JSON.parse(raw);
       const ids = parsed.map(p => p.id);
       const missing = DEFAULT_PROFILES.filter(d => !ids.includes(d.id));
-      return [...missing, ...parsed];
+      
+      // Merge e garante que os nomes dos padrões estejam atualizados (ex: Administrador -> ADMINISTRADOR)
+      return [...missing, ...parsed].map(p => {
+        const def = DEFAULT_PROFILES.find(d => d.id === p.id);
+        if (def && p.isDefault) return { ...p, name: def.name }; // Sincroniza o nome com a última versão do código
+        return p;
+      });
     } catch {
       return DEFAULT_PROFILES;
     }

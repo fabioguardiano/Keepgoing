@@ -105,13 +105,13 @@ const mixed = (map: Partial<Record<ModuleKey, AccessLevel>>): Record<ModuleKey, 
 export const DEFAULT_PROFILES: PermissionProfile[] = [
   {
     id: 'profile-admin',
-    name: 'Administrador',
+    name: 'ADMINISTRADOR',
     isDefault: true,
     permissions: full(ALL_MODULES),
   },
   {
     id: 'profile-vendedor',
-    name: 'Vendedor',
+    name: 'VENDEDOR',
     isDefault: true,
     permissions: mixed({
       vendas: 'full',
@@ -124,7 +124,7 @@ export const DEFAULT_PROFILES: PermissionProfile[] = [
   },
   {
     id: 'profile-medidor',
-    name: 'Medidor',
+    name: 'MEDIDOR',
     isDefault: true,
     permissions: mixed({
       agenda_medicao: 'full',
@@ -135,7 +135,7 @@ export const DEFAULT_PROFILES: PermissionProfile[] = [
   },
   {
     id: 'profile-projetista',
-    name: 'Projetista',
+    name: 'PROJETISTA',
     isDefault: true,
     permissions: mixed({
       producao: 'full',
@@ -146,7 +146,7 @@ export const DEFAULT_PROFILES: PermissionProfile[] = [
   },
   {
     id: 'profile-motorista',
-    name: 'Motorista / Entregador',
+    name: 'MOTORISTA / ENTREGADOR',
     isDefault: true,
     permissions: mixed({
       agenda_entregas: 'full',
