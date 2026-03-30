@@ -31,16 +31,16 @@ import {
 import { DEFAULT_PROFILES } from '../lib/permissions';
 
 const INITIAL_APP_USERS: AppUser[] = [
-  { id: '1', name: 'Fábio Admin', email: 'fabio@marmoflow.com', role: 'admin', status: 'ativo', createdAt: '2024-01-10' },
-  { id: '2', name: 'Ana Gerente', email: 'ana@marmoflow.com', role: 'manager', status: 'ativo', createdAt: '2024-02-01' },
-  { id: '3', name: 'Carlos Vendas', email: 'carlos@marmoflow.com', role: 'seller', status: 'ativo', createdAt: '2024-03-05' },
+  { id: '1', code: 1, name: 'Fábio Admin', email: 'fabio@marmoflow.com', role: 'admin', status: 'ativo', createdAt: '2024-01-10' },
+  { id: '2', code: 2, name: 'Ana Gerente', email: 'ana@marmoflow.com', role: 'manager', status: 'ativo', createdAt: '2024-02-01' },
+  { id: '3', code: 3, name: 'Carlos Vendas', email: 'carlos@marmoflow.com', role: 'seller', status: 'ativo', createdAt: '2024-03-05' },
 ];
 
 const INITIAL_STAFF: ProductionStaff[] = [
-  { id: '1', name: 'João Ferreira', position: 'serrador', hourlyRate: 22, phone: '(11) 99876-1234', status: 'ativo' },
-  { id: '2', name: 'Marcos Lima', position: 'acabador', hourlyRate: 20, phone: '(11) 99123-5678', status: 'ativo' },
-  { id: '3', name: 'Pedro Alves', position: 'ajudante_serrador', hourlyRate: 16, phone: '(11) 98765-0000', status: 'ativo' },
-  { id: '4', name: 'Lucas Costa', position: 'medidor', hourlyRate: 18, phone: '(11) 97654-3210', status: 'inativo' },
+  { id: '1', code: 1, name: 'João Ferreira', position: 'serrador', hourlyRate: 22, phone: '(11) 99876-1234', status: 'ativo' },
+  { id: '2', code: 2, name: 'Marcos Lima', position: 'acabador', hourlyRate: 20, phone: '(11) 99123-5678', status: 'ativo' },
+  { id: '3', code: 3, name: 'Pedro Alves', position: 'ajudante_serrador', hourlyRate: 16, phone: '(11) 98765-0000', status: 'ativo' },
+  { id: '4', code: 4, name: 'Lucas Costa', position: 'medidor', hourlyRate: 18, phone: '(11) 97654-3210', status: 'inativo' },
 ];
 
 export const useSettings = (
@@ -64,6 +64,7 @@ export const useSettings = (
         if (data && data.length > 0) {
           const mapped: AppUser[] = data.map((row: any) => ({
             id: row.id,
+            code: row.code || undefined,
             name: row.name,
             email: row.email,
             role: row.role || 'viewer',
@@ -271,12 +272,15 @@ export const useSettings = (
 
       // Usa o ID do Auth como ID do app_user para consistência
       const authUserId = signUpData?.user?.id || u.id;
-      const newUser: AppUser = { ...u, id: authUserId, company_id: userCompanyId };
+      // Calcula próximo código sequencial fixo
+      const nextCode = appUsers.reduce((max, x) => Math.max(max, x.code || 0), 0) + 1;
+      const newUser: AppUser = { ...u, id: authUserId, code: nextCode, company_id: userCompanyId };
 
       // Persiste no Supabase (tabela app_users)
       try {
         await supabase.from('app_users').upsert({
           id: authUserId,
+          code: nextCode,
           name: u.name,
           email: u.email,
           role: u.role,
@@ -297,6 +301,7 @@ export const useSettings = (
     try {
       const { error } = await supabase.from('app_users').upsert({
         id: u.id,
+        code: u.code || undefined,
         name: u.name,
         email: u.email,
         role: u.role,
@@ -327,7 +332,16 @@ export const useSettings = (
     setAppUsers(prev => prev.map(x => x.id === id ? { ...x, status: 'inativo' as const } : x));
   };
 
-  const handleSaveStaff = (s: ProductionStaff) => setStaff(prev => prev.find(x => x.id === s.id) ? prev.map(x => x.id === s.id ? s : x) : [...prev, s]);
+  const handleSaveStaff = (s: ProductionStaff) => {
+    setStaff(prev => {
+      const exists = prev.find(x => x.id === s.id);
+      if (exists) {
+        return prev.map(x => x.id === s.id ? { ...s, code: s.code || exists.code } : x);
+      }
+      const nextCode = prev.reduce((max, x) => Math.max(max, x.code || 0), 0) + 1;
+      return [...prev, { ...s, code: nextCode }];
+    });
+  };
   const handleDeleteStaff = (id: string) => setStaff(prev => prev.map(x => x.id === id ? { ...x, status: 'inativo' as const } : x));
 
   const addPhase = (name: string) => {

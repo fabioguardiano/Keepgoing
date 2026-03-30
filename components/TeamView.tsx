@@ -76,6 +76,7 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, existingEmails, 
 
     const err = await onSave({
       id: initial?.id || String(Date.now()),
+      code: initial?.code,
       name, email, role,
       profileId: profileId || undefined,
       company_id: initial?.company_id,
@@ -458,7 +459,7 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
                   <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-6 py-6">
                       <span className="text-sm font-black text-primary bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20 shadow-sm">
-                        #{index + 1}
+                        #{user.code || '—'}
                       </span>
                     </td>
                     <td className="px-6 py-6">
@@ -551,7 +552,7 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
                   <tr key={s.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-6 py-6">
                       <span className="text-sm font-black text-primary bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20 shadow-sm">
-                        #{index + 1}
+                        #{s.code || '—'}
                       </span>
                     </td>
                     <td className="px-6 py-6">

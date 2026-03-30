@@ -80,6 +80,7 @@ export interface PermissionProfile {
 
 export interface AppUser {
   id: string;
+  code?: number;
   name: string;
   email: string;
   role: 'admin' | 'manager' | 'seller' | 'viewer' | 'driver';
@@ -91,6 +92,7 @@ export interface AppUser {
 
 export interface ProductionStaff {
   id: string;
+  code?: number;
   name: string;
   position: StaffPosition;
   hourlyRate: number;

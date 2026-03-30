@@ -3,6 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS app_users (
     id TEXT PRIMARY KEY,
+    code INTEGER,
     name TEXT NOT NULL,
     email TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'viewer',
