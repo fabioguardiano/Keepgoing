@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { up } from '../lib/uppercase';
 
@@ -203,7 +204,34 @@ export const useSettings = (
   };
 
   // Handlers
-  const handleSaveUser = (u: AppUser) => setAppUsers(prev => prev.find(x => x.id === u.id) ? prev.map(x => x.id === u.id ? u : x) : [...prev, u]);
+  const handleSaveUser = async (u: AppUser, password?: string) => {
+    // Para usuários novos (com senha fornecida), cria no Supabase Auth
+    if (password) {
+      // Cliente isolado: não persiste sessão, não afeta o login do admin atual
+      const isolated = createClient(
+        import.meta.env.VITE_SUPABASE_URL as string,
+        import.meta.env.VITE_SUPABASE_ANON_KEY as string,
+        { auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false } }
+      );
+      const { error } = await isolated.auth.signUp({
+        email: u.email,
+        password,
+        options: {
+          data: {
+            full_name: u.name,
+            name: u.name,
+            company_id: companyId || '00000000-0000-0000-0000-000000000000',
+            role: u.role,
+          }
+        }
+      });
+      if (error) {
+        alert(`Erro ao criar usuário no sistema de autenticação:\n${error.message}`);
+        return;
+      }
+    }
+    setAppUsers(prev => prev.find(x => x.id === u.id) ? prev.map(x => x.id === u.id ? u : x) : [...prev, u]);
+  };
   const handleDeleteUser = (id: string) => setAppUsers(prev => prev.map(x => x.id === id ? { ...x, status: 'inativo' as const } : x));
 
   const handleSaveStaff = (s: ProductionStaff) => setStaff(prev => prev.find(x => x.id === s.id) ? prev.map(x => x.id === s.id ? s : x) : [...prev, s]);

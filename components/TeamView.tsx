@@ -48,7 +48,7 @@ const formatDateBR = (dateStr: string) => {
 interface UserFormProps {
   initial?: Partial<AppUser>;
   profiles: PermissionProfile[];
-  onSave: (u: AppUser) => void;
+  onSave: (u: AppUser, password?: string) => void;
   onClose: () => void;
 }
 
@@ -67,7 +67,7 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, onSave, onClose 
       profileId: profileId || undefined,
       status: initial?.status || 'ativo',
       createdAt: initial?.createdAt || new Date().toISOString().slice(0, 10),
-    });
+    }, initial?.id ? undefined : password);
     onClose();
   };
 
@@ -227,7 +227,7 @@ type Tab = 'usuarios' | 'producao';
 
 interface TeamViewProps {
   appUsers: AppUser[];
-  onSaveUser: (u: AppUser) => void;
+  onSaveUser: (u: AppUser, password?: string) => void;
   onDeleteUser: (id: string) => void;
   staff: ProductionStaff[];
   onSaveStaff: (s: ProductionStaff) => void;
