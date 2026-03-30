@@ -43,7 +43,22 @@ export default async function handler(req, res) {
         user_metadata: userData || {}
       });
 
-      if (error) return res.status(400).json({ error: error.message });
+      if (error) {
+        // Se o erro for que já existe, tentamos buscar o usuário para retornar o ID e "corrigir" o vínculo
+        if (error.message.toLowerCase().includes('already registered')) {
+            const { data: usersData, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+            const existingUser = usersData?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
+            
+            if (existingUser) {
+                // Atualizamos os metadados dele para garantir que o company_id esteja certo
+                await supabaseAdmin.auth.admin.updateUserById(existingUser.id, {
+                    user_metadata: userData || {}
+                });
+                return res.status(200).json({ success: true, user: existingUser, recovered: true });
+            }
+        }
+        return res.status(400).json({ error: error.message });
+      }
       return res.status(200).json({ success: true, user: data.user });
     } else {
       // Ação padrão: reset de senha
