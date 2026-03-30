@@ -274,16 +274,26 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
     if (waypoints.length < 2) { setRouteCoords([]); return; }
 
     const coordStr = waypoints.map(([lat, lon]) => `${lon},${lat}`).join(';');
-    fetch(`https://routing.openstreetmap.de/routed-car/route/v1/driving/${coordStr}?overview=full&geometries=geojson`)
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    fetch(
+      `https://router.project-osrm.org/route/v1/driving/${coordStr}?overview=full&geometries=geojson`,
+      { signal: controller.signal }
+    )
       .then(r => r.json())
       .then(data => {
+        clearTimeout(timeout);
         if (data.routes?.[0]?.geometry?.coordinates) {
           setRouteCoords(data.routes[0].geometry.coordinates.map(([lon, lat]: [number, number]) => [lat, lon]));
         } else {
-          setRouteCoords(waypoints);
+          setRouteCoords([]); // API sem rota: não exibir linhas retas enganosas
         }
       })
-      .catch(() => setRouteCoords(waypoints));
+      .catch(() => {
+        clearTimeout(timeout);
+        setRouteCoords([]); // Falha de rede: não exibir linhas retas enganosas
+      });
   }, [selectedDate, measurements, coords, companyAddress]);
 
   const getWeekDays = (baseDate: string) => {
