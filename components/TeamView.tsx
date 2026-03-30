@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Users, Shield, HardHat, Plus, X, Mail, Edit2, Trash2, ChevronDown, Search, PowerOff, ArrowUpDown } from 'lucide-react';
+import { Users, Shield, HardHat, Plus, X, Mail, Edit2, Trash2, ChevronDown, Search, PowerOff, ArrowUpDown, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
 type SortField = 'name' | 'email' | 'createdAt' | 'position' | 'hourlyRate';
 type SortDirection = 'asc' | 'desc';
@@ -48,101 +48,176 @@ const formatDateBR = (dateStr: string) => {
 interface UserFormProps {
   initial?: Partial<AppUser>;
   profiles: PermissionProfile[];
-  onSave: (u: AppUser, password?: string) => void;
+  existingEmails: string[];
+  onSave: (u: AppUser, password?: string) => Promise<string | undefined>;
   onClose: () => void;
 }
 
-const UserForm: React.FC<UserFormProps> = ({ initial, profiles, onSave, onClose }) => {
+const UserForm: React.FC<UserFormProps> = ({ initial, profiles, existingEmails, onSave, onClose }) => {
   const [name, setName] = useState(initial?.name ?? '');
   const [email, setEmail] = useState(initial?.email ?? '');
   const [role, setRole] = useState<AppUser['role']>(initial?.role ?? 'seller');
   const [profileId, setProfileId] = useState(initial?.profileId ?? '');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const isEditing = !!initial?.id;
+
+  // Validação de email duplicado (só para novos usuários)
+  const emailDuplicate = !isEditing && existingEmails.includes(email.toLowerCase());
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
+    if (emailDuplicate) return;
+    setLoading(true);
+    setError(null);
+
+    const err = await onSave({
       id: initial?.id || String(Date.now()),
       name, email, role,
       profileId: profileId || undefined,
       status: initial?.status || 'ativo',
       createdAt: initial?.createdAt || new Date().toISOString().slice(0, 10),
-    }, initial?.id ? undefined : password);
-    onClose();
+    }, isEditing ? undefined : password);
+
+    setLoading(false);
+
+    if (err) {
+      setError(err);
+    } else if (!isEditing) {
+      setSuccess(true);
+      // Fecha automaticamente após 4s para o usuário ler a mensagem
+      setTimeout(onClose, 4000);
+    } else {
+      onClose();
+    }
   };
 
-  const inputClass = "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm";
+  const inputClass = "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm disabled:opacity-50";
   const labelClass = "block text-sm font-bold text-slate-700 mb-2 ml-1";
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[3000] flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[3000] flex items-center justify-center p-4" onClick={!loading ? onClose : undefined}>
       <form className="bg-white rounded-[32px] w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={e => e.stopPropagation()} onSubmit={handleSubmit}>
         <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
           <div>
-            <h3 className="text-xl font-bold text-slate-800">{initial?.id ? 'Editar Usuário' : 'Novo Usuário'}</h3>
+            <h3 className="text-xl font-bold text-slate-800">{isEditing ? 'Editar Usuário' : 'Novo Usuário'}</h3>
             <p className="text-slate-500 text-sm">Acesso ao sistema</p>
           </div>
-          <button type="button" onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+          <button type="button" onClick={!loading ? onClose : undefined} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
             <X className="text-slate-400" />
           </button>
         </div>
-        <div className="p-8 space-y-4">
-          <div>
-            <label className={labelClass}>Nome Completo</label>
-            <input required value={name} onChange={e => setName(e.target.value.toUpperCase())} className={inputClass} placeholder="Ex: JOÃO SILVA" />
-          </div>
-          <div>
-            <label className={labelClass}>Email</label>
-            <input required type="email" value={email} onChange={e => setEmail(e.target.value.toLowerCase())} className={inputClass} placeholder="joao@empresa.com" />
-          </div>
-          {!initial?.id && (
+
+        {/* Tela de sucesso */}
+        {success ? (
+          <div className="p-8 flex flex-col items-center gap-4 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+              <CheckCircle2 className="text-green-600" size={32} />
+            </div>
             <div>
-              <label className={labelClass}>Senha (inicial)</label>
-              <input required type="password" value={password} onChange={e => setPassword(e.target.value)} className={inputClass} placeholder="••••••••" />
+              <p className="text-lg font-bold text-slate-800 mb-1">Usuário criado!</p>
+              <p className="text-sm text-slate-500">
+                Um email de confirmação foi enviado para <span className="font-bold text-slate-700">{email}</span>.
+                O usuário precisará clicar no link para ativar o acesso.
+              </p>
             </div>
-          )}
-          <div>
-            <label className={labelClass}>Perfil de Acesso</label>
-            <div className="relative">
-              <select 
-                value={profileId} 
-                onChange={e => {
-                  const pid = e.target.value;
-                  setProfileId(pid);
-                  // Opcional: Atualiza o role básico para compatibilidade se for um perfil padrão
-                  const profile = profiles.find(p => p.id === pid);
-                  if (profile?.id.startsWith('profile-')) {
-                    const r = pid.replace('profile-', '') as AppUser['role'];
-                    if (['admin', 'manager', 'seller', 'driver', 'viewer'].includes(r)) {
-                      setRole(r);
-                    }
-                  } else if (profile?.name.toLowerCase().includes('medidor') || profile?.name.toLowerCase().includes('entregador')) {
-                    setRole('driver');
-                  } else if (profile?.name.toLowerCase().includes('vendedor')) {
-                    setRole('seller');
-                  } else if (profile?.name.toLowerCase().includes('gerente')) {
-                    setRole('manager');
-                  }
-                }} 
-                className={`${inputClass} appearance-none`}
-                required
-              >
-                <option value="">Selecione um perfil...</option>
-                {profiles.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-4 top-3.5 text-slate-400 w-4 h-4 pointer-events-none" />
-            </div>
-          </div>
-          <div className="pt-2 flex gap-3">
-            <button type="button" onClick={onClose} className="flex-1 px-6 py-3 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-all">Cancelar</button>
-            <button type="submit" className="flex-1 px-6 py-3 bg-primary hover:bg-secondary text-white rounded-xl font-bold shadow-lg shadow-primary/20 transition-all active:scale-95">
-              {initial?.id ? 'Salvar' : 'Criar Usuário'}
+            <button type="button" onClick={onClose} className="mt-2 px-8 py-3 bg-primary text-white rounded-xl font-bold hover:opacity-90 transition-all">
+              Fechar
             </button>
           </div>
-        </div>
+        ) : (
+          <div className="p-8 space-y-4">
+            {/* Erro */}
+            {error && (
+              <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-2xl">
+                <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={18} />
+                <p className="text-sm font-medium text-red-700">{error}</p>
+              </div>
+            )}
+
+            <div>
+              <label className={labelClass}>Nome Completo</label>
+              <input required disabled={loading} value={name} onChange={e => setName(e.target.value.toUpperCase())} className={inputClass} placeholder="Ex: JOÃO SILVA" />
+            </div>
+            <div>
+              <label className={labelClass}>Email</label>
+              <input
+                required
+                type="email"
+                disabled={loading || isEditing}
+                value={email}
+                onChange={e => { setEmail(e.target.value.toLowerCase()); setError(null); }}
+                className={`${inputClass} ${emailDuplicate ? 'border-red-400 focus:border-red-400' : ''}`}
+                placeholder="joao@empresa.com"
+              />
+              {emailDuplicate && (
+                <p className="mt-1.5 ml-1 text-xs font-bold text-red-500 flex items-center gap-1">
+                  <AlertCircle size={12} /> Este email já está cadastrado.
+                </p>
+              )}
+            </div>
+            {!isEditing && (
+              <div>
+                <label className={labelClass}>Senha inicial</label>
+                <input
+                  required
+                  type="password"
+                  disabled={loading}
+                  minLength={6}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className={inputClass}
+                  placeholder="Mínimo 6 caracteres"
+                />
+                <p className="mt-1.5 ml-1 text-xs text-slate-400">O usuário poderá alterar a senha após confirmar o email.</p>
+              </div>
+            )}
+            <div>
+              <label className={labelClass}>Perfil de Acesso</label>
+              <div className="relative">
+                <select
+                  disabled={loading}
+                  value={profileId}
+                  onChange={e => {
+                    const pid = e.target.value;
+                    setProfileId(pid);
+                    const profile = profiles.find(p => p.id === pid);
+                    if (profile?.id.startsWith('profile-')) {
+                      const r = pid.replace('profile-', '') as AppUser['role'];
+                      if (['admin', 'manager', 'seller', 'driver', 'viewer'].includes(r)) setRole(r);
+                    } else if (profile?.name.toLowerCase().includes('medidor') || profile?.name.toLowerCase().includes('entregador')) {
+                      setRole('driver');
+                    } else if (profile?.name.toLowerCase().includes('vendedor')) {
+                      setRole('seller');
+                    } else if (profile?.name.toLowerCase().includes('gerente')) {
+                      setRole('manager');
+                    }
+                  }}
+                  className={`${inputClass} appearance-none`}
+                  required
+                >
+                  <option value="">Selecione um perfil...</option>
+                  {profiles.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-4 top-3.5 text-slate-400 w-4 h-4 pointer-events-none" />
+              </div>
+            </div>
+            <div className="pt-2 flex gap-3">
+              <button type="button" onClick={!loading ? onClose : undefined} disabled={loading} className="flex-1 px-6 py-3 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-50">
+                Cancelar
+              </button>
+              <button type="submit" disabled={loading || emailDuplicate} className="flex-1 px-6 py-3 bg-primary hover:opacity-90 text-white rounded-xl font-bold shadow-lg shadow-primary/20 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2">
+                {loading ? <><Loader2 size={16} className="animate-spin" /> Criando...</> : isEditing ? 'Salvar' : 'Criar Usuário'}
+              </button>
+            </div>
+          </div>
+        )}
       </form>
     </div>
   );
@@ -227,7 +302,7 @@ type Tab = 'usuarios' | 'producao';
 
 interface TeamViewProps {
   appUsers: AppUser[];
-  onSaveUser: (u: AppUser, password?: string) => void;
+  onSaveUser: (u: AppUser, password?: string) => Promise<string | undefined>;
   onDeleteUser: (id: string) => void;
   staff: ProductionStaff[];
   onSaveStaff: (s: ProductionStaff) => void;
@@ -541,7 +616,7 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
         </div>
       </div>
 
-      {showUserForm && <UserForm initial={editingUser} profiles={permissionProfiles} onSave={onSaveUser} onClose={() => { setShowUserForm(false); setEditingUser(undefined); }} />}
+      {showUserForm && <UserForm initial={editingUser} profiles={permissionProfiles} existingEmails={appUsers.filter(u => u.id !== editingUser?.id).map(u => u.email.toLowerCase())} onSave={onSaveUser} onClose={() => { setShowUserForm(false); setEditingUser(undefined); }} />}
       {showStaffForm && <StaffForm initial={editingStaff} onSave={onSaveStaff} onClose={() => { setShowStaffForm(false); setEditingStaff(undefined); }} />}
     </div>
   );

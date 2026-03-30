@@ -204,7 +204,7 @@ export const useSettings = (
   };
 
   // Handlers
-  const handleSaveUser = async (u: AppUser, password?: string) => {
+  const handleSaveUser = async (u: AppUser, password?: string): Promise<string | undefined> => {
     // Para usuários novos (com senha fornecida), cria no Supabase Auth
     if (password) {
       // Cliente isolado: não persiste sessão, não afeta o login do admin atual
@@ -226,11 +226,14 @@ export const useSettings = (
         }
       });
       if (error) {
-        alert(`Erro ao criar usuário no sistema de autenticação:\n${error.message}`);
-        return;
+        if (error.message.toLowerCase().includes('already registered') || error.message.toLowerCase().includes('already exists')) {
+          return 'Este email já possui uma conta cadastrada no sistema.';
+        }
+        return `Erro ao criar acesso: ${error.message}`;
       }
     }
     setAppUsers(prev => prev.find(x => x.id === u.id) ? prev.map(x => x.id === u.id ? u : x) : [...prev, u]);
+    return undefined;
   };
   const handleDeleteUser = (id: string) => setAppUsers(prev => prev.map(x => x.id === id ? { ...x, status: 'inativo' as const } : x));
 
