@@ -642,33 +642,6 @@ export const SalesView: React.FC<SalesViewProps> = ({
                                 </>
                               )}
                             </div>
-                            
-                            {!isEditing && (
-                              <div className="flex items-center gap-1 shrink-0">
-                                <div className="relative group/menu">
-                                  <button className="text-slate-400 hover:text-[var(--primary-color)] transition-colors p-1">
-                                    <MoreHorizontal size={18} />
-                                  </button>
-                                  <div className="absolute right-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl py-1 z-50 invisible group-hover/menu:visible opacity-0 group-hover/menu:opacity-100 transition-all min-w-[150px]">
-                                    <button
-                                      onClick={() => {
-                                        setEditingPhase(phase);
-                                        setTempPhaseName(phase);
-                                      }}
-                                      className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2"
-                                    >
-                                      <Edit2 size={12} /> Renomear
-                                    </button>
-                                    <button
-                                      onClick={() => onDeleteSalesPhase(phase)}
-                                      className="w-full text-left px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-slate-100 dark:border-slate-800"
-                                    >
-                                      <Trash2 size={12} /> Excluir
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
                           </div>
                           
                           {/* Cards List */}
