@@ -1,0 +1,56 @@
+components/NewOrderModal.tsx(46,11): error TS2739: Type '{ id: string; osNumber: string; orderNumber: string; clientName: string; projectDescription: string; material: string; materialArea: number; phase: ProductionPhase; seller: string; priority: "baixa" | ... 1 more ... | "alta"; deadline: string; createdAt: string; imageUrls: string[]; }' is missing the following properties from type 'OrderService': salesPhase, isOsGenerated
+constants.tsx(6,3): error TS2739: Type '{ id: string; osNumber: string; orderNumber: string; clientName: string; projectDescription: string; material: string; materialArea: number; phase: "Servi├ºo Lan├ºado"; seller: string; imageUrls: string[]; createdAt: string; deadline: string; priority: "alta"; }' is missing the following properties from type 'OrderService': salesPhase, isOsGenerated
+constants.tsx(24,3): error TS2739: Type '{ id: string; osNumber: string; orderNumber: string; clientName: string; projectDescription: string; material: string; materialArea: number; phase: "Corte"; seller: string; imageUrls: string[]; createdAt: string; deadline: string; priority: "media"; }' is missing the following properties from type 'OrderService': salesPhase, isOsGenerated
+constants.tsx(39,3): error TS2739: Type '{ id: string; osNumber: string; orderNumber: string; clientName: string; projectDescription: string; material: string; materialArea: number; phase: "Acabamento"; seller: string; imageUrls: string[]; createdAt: string; deadline: string; priority: "baixa"; }' is missing the following properties from type 'OrderService': salesPhase, isOsGenerated
+hooks/useActivities.ts(36,83): error TS2554: Expected 0 arguments, but got 1.
+hooks/useActivities.ts(88,69): error TS2554: Expected 0 arguments, but got 2.
+hooks/useArchitects.ts(33,71): error TS2554: Expected 0 arguments, but got 2.
+hooks/useArchitects.ts(37,83): error TS2554: Expected 0 arguments, but got 1.
+hooks/useArchitects.ts(92,71): error TS2554: Expected 0 arguments, but got 2.
+hooks/useArchitects.ts(113,71): error TS2554: Expected 0 arguments, but got 2.
+hooks/useAuth.ts(44,71): error TS2554: Expected 0 arguments, but got 2.
+hooks/useAuth.ts(46,85): error TS2554: Expected 0 arguments, but got 1.
+hooks/useAuth.ts(52,77): error TS2554: Expected 0 arguments, but got 2.
+hooks/useAuth.ts(74,71): error TS2554: Expected 0 arguments, but got 2.
+hooks/useAuth.ts(80,74): error TS2554: Expected 0 arguments, but got 1.
+hooks/useAuth.ts(89,67): error TS2554: Expected 0 arguments, but got 2.
+hooks/useAuth.ts(97,70): error TS2554: Expected 0 arguments, but got 1.
+hooks/useClients.ts(37,71): error TS2554: Expected 0 arguments, but got 2.
+hooks/useClients.ts(41,83): error TS2554: Expected 0 arguments, but got 1.
+hooks/useClients.ts(113,71): error TS2554: Expected 0 arguments, but got 2.
+hooks/useClients.ts(201,71): error TS2554: Expected 0 arguments, but got 2.
+hooks/useDeliveries.ts(32,71): error TS2554: Expected 0 arguments, but got 2.
+hooks/useDeliveries.ts(36,83): error TS2554: Expected 0 arguments, but got 1.
+hooks/useDeliveries.ts(79,71): error TS2554: Expected 0 arguments, but got 2.
+hooks/useDeliveries.ts(112,71): error TS2554: Expected 0 arguments, but got 2.
+hooks/useDeliveries.ts(144,71): error TS2554: Expected 0 arguments, but got 2.
+hooks/useDeliveries.ts(184,71): error TS2554: Expected 0 arguments, but got 2.
+hooks/useFinance.ts(31,71): error TS2554: Expected 0 arguments, but got 2.
+hooks/useFinance.ts(35,83): error TS2554: Expected 0 arguments, but got 1.
+hooks/useFinance.ts(82,71): error TS2554: Expected 0 arguments, but got 2.
+hooks/useFinance.ts(110,71): error TS2554: Expected 0 arguments, but got 2.
+hooks/useMaterials.ts(48,71): error TS2554: Expected 0 arguments, but got 2.
+hooks/useMaterials.ts(52,83): error TS2554: Expected 0 arguments, but got 1.
+hooks/useMaterials.ts(147,71): error TS2554: Expected 0 arguments, but got 2.
+hooks/useProducts.ts(45,71): error TS2554: Expected 0 arguments, but got 2.
+hooks/useProducts.ts(49,83): error TS2554: Expected 0 arguments, but got 1.
+hooks/useProducts.ts(126,71): error TS2554: Expected 0 arguments, but got 2.
+hooks/useSales.ts(57,71): error TS2554: Expected 0 arguments, but got 2.
+hooks/useSales.ts(61,83): error TS2554: Expected 0 arguments, but got 1.
+hooks/useSales.ts(178,71): error TS2554: Expected 0 arguments, but got 2.
+hooks/useSettings.ts(10,81): error TS2554: Expected 0 arguments, but got 1.
+hooks/useSettings.ts(21,67): error TS2554: Expected 0 arguments, but got 2.
+hooks/useSettings.ts(160,83): error TS2554: Expected 0 arguments, but got 1.
+hooks/useSettings.ts(198,73): error TS2554: Expected 0 arguments, but got 2.
+hooks/useSettings.ts(238,67): error TS2554: Expected 0 arguments, but got 2.
+hooks/useSettings.ts(463,81): error TS2554: Expected 0 arguments, but got 1.
+hooks/useSettings.ts(485,73): error TS2554: Expected 0 arguments, but got 2.
+hooks/useSettings.ts(496,67): error TS2554: Expected 0 arguments, but got 2.
+hooks/useSuppliers.ts(33,71): error TS2554: Expected 0 arguments, but got 2.
+hooks/useSuppliers.ts(37,83): error TS2554: Expected 0 arguments, but got 1.
+hooks/useSuppliers.ts(93,71): error TS2554: Expected 0 arguments, but got 2.
+hooks/useSuppliers.ts(114,71): error TS2554: Expected 0 arguments, but got 2.
+lib/supabase.ts(2,26): error TS2307: Cannot find module '../types_supabase' or its corresponding type declarations.
+scripts/check_db.ts(2,25): error TS2307: Cannot find module 'dotenv' or its corresponding type declarations.
+scripts/test_company_info.ts(1,26): error TS2307: Cannot find module './lib/supabase.ts' or its corresponding type declarations.
+scripts/test_counts.ts(1,26): error TS2307: Cannot find module './lib/supabase.js' or its corresponding type declarations.

@@ -10,6 +10,7 @@ interface ProductsViewProps {
   category: 'Matéria Prima' | 'Produtos de Revenda' | 'Serviços' | 'Colocação' | 'Acabamentos';
   brands?: { code: string, description: string }[];
   productGroups?: { code: string, description: string }[];
+  onMigrateFromCache?: () => void;
 }
 
 type SortField = 'description' | 'code' | 'stockBalance' | 'sellingPrice';
@@ -17,7 +18,7 @@ type SortDirection = 'asc' | 'desc';
 
 export const ProductsView: React.FC<ProductsViewProps> = ({ 
   products, onSaveProduct, onUpdateStatus, category,
-  brands = [], productGroups = []
+  brands = [], productGroups = [], onMigrateFromCache
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showInactive, setShowInactive] = useState(false);
@@ -91,12 +92,22 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           </div>
           <p className="text-slate-500 font-medium">Gestão técnica e precificação de itens</p>
         </div>
-        <button 
-          onClick={handleAddNew}
-          className="bg-[var(--primary-color)] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[var(--primary-color)]/20 hover:bg-[var(--secondary-color)] transition-all transform hover:scale-[1.02] active:scale-95"
-        >
-          <Plus size={20} /> Novo Registro
-        </button>
+        <div className="flex flex-col sm:flex-row gap-2">
+          {onMigrateFromCache && (
+            <button 
+              onClick={onMigrateFromCache}
+              className="bg-amber-100 text-amber-700 px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-amber-200 transition-all transform hover:scale-[1.02] active:scale-95"
+            >
+              Restaurar Dados (Cache)
+            </button>
+          )}
+          <button 
+            onClick={handleAddNew}
+            className="bg-[var(--primary-color)] text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[var(--primary-color)]/20 hover:bg-[var(--secondary-color)] transition-all transform hover:scale-[1.02] active:scale-95"
+          >
+            <Plus size={20} /> Novo Registro
+          </button>
+        </div>
       </div>
 
       <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4">

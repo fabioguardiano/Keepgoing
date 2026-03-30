@@ -1,0 +1,3 @@
+DEFAULT profile-vendedor estoque: view
+Access for estoque/materia: view
+Access for estoque/materia (no subModule): view
