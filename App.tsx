@@ -75,12 +75,12 @@ const App: React.FC = () => {
   const activeCompanyId = authReady ? user?.company_id : undefined;
   const { sales, handleSaveSale: saveSaleBase, setSales, refreshSales } = useSales(activeCompanyId, logActivity);
   const { clients, loadingClients, handleSaveClient, handleImportClients, deleteClient, setClients } = useClients(activeCompanyId, logActivity);
-  const { materials, handleSaveMaterial, setMaterials, migrateFromCache: migrateMaterials } = useMaterials(activeCompanyId, logActivity);
+  const { materials, handleSaveMaterial, setMaterials } = useMaterials(activeCompanyId, logActivity);
   const { deliveries, addDelivery, updateDeliveryStatus, updateDelivery, deleteDelivery, setDeliveries } = useDeliveries(activeCompanyId, logActivity);
   const { transactions, handleSaveTransaction, deleteTransaction, setTransactions } = useFinance(activeCompanyId, logActivity);
   const { suppliers, handleSaveSupplier, deleteSupplier, setSuppliers } = useSuppliers(activeCompanyId, logActivity);
   const { architects, handleSaveArchitect, deleteArchitect, setArchitects } = useArchitects(activeCompanyId, logActivity);
-  const { products, handleSaveProduct, migrateFromCache: migrateProducts } = useProducts(activeCompanyId, logActivity);
+  const { products, handleSaveProduct } = useProducts(activeCompanyId, logActivity);
   const { receivables, handleSaveReceivable, deleteReceivable, payInstallment: payReceivableInstallment, unpayInstallment: unpayReceivableInstallment } = useAccountsReceivable(activeCompanyId, logActivity);
   const { payables, handleSavePayable, deletePayable, settleBill, cancelBill } = useAccountsPayable(activeCompanyId, logActivity);
   const { categories: billCategories, saveCategory: saveBillCategory, deleteCategory: deleteBillCategory } = useBillCategories(activeCompanyId);
@@ -502,7 +502,6 @@ const App: React.FC = () => {
             productGroups={productGroups}
             suppliers={suppliers}
             exchangeRates={exchangeRates}
-            onMigrateFromCache={migrateMaterials}
           />
         );
       case 'Acabamentos':
@@ -526,7 +525,6 @@ const App: React.FC = () => {
             }}
             brands={brands}
             productGroups={productGroups}
-            onMigrateFromCache={migrateProducts}
           />
         );
       case 'Financeiro':

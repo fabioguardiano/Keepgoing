@@ -179,64 +179,12 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
     setMaterials(prev => prev.filter(x => x.id !== id));
   };
 
-  const migrateFromCache = async () => {
-    if (typeof window === 'undefined') return;
-    const finalCompanyId = companyId || '00000000-0000-0000-0000-000000000000';
-    
-    const keysToCheck = [
-      `marmo_materials_${finalCompanyId}`, 
-      'marmo_materials_legacy', 
-      'marmo_materials'
-    ];
-    let itemsToMigrate: any[] = [];
-    
-    for (const k of keysToCheck) {
-      const data = window.localStorage.getItem(k);
-      if (data) {
-        try {
-          const parsed = JSON.parse(data);
-          if (Array.isArray(parsed) && parsed.length > itemsToMigrate.length) {
-            itemsToMigrate = parsed;
-          }
-        } catch(e) {}
-      }
-    }
-
-    if (itemsToMigrate.length === 0) {
-      alert("Nenhum material/serviço encontrado no LocalStorage do navegador.");
-      return;
-    }
-
-    const confirm = window.confirm(`Encontrados ${itemsToMigrate.length} itens locais. Deseja realizar a migração/recuperação para o banco de dados?`);
-    if (!confirm) return;
-
-    setLoadingMaterials(true);
-    let successCount = 0;
-    
-    for (const m of itemsToMigrate) {
-      try {
-        await handleSaveMaterial({
-          ...m,
-          id: undefined // force new id to avoid conflicts
-        } as unknown as Material);
-        successCount++;
-      } catch (e) {
-        console.error("Erro importando", m.name, e);
-      }
-    }
-    
-    setLoadingMaterials(false);
-    alert(`Migração concluída: ${successCount} materiais/serviços recuperados.`);
-    await fetchMaterials();
-  };
-
   return { 
     materials, 
     loadingMaterials, 
     handleSaveMaterial, 
     deleteMaterial,
     setMaterials, 
-    refreshMaterials: fetchMaterials,
-    migrateFromCache
+    refreshMaterials: fetchMaterials
   };
 };

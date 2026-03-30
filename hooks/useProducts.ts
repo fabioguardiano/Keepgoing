@@ -149,65 +149,12 @@ export const useProducts = (companyId?: string, logActivity?: any) => {
     setProducts(prev => prev.filter(x => x.id !== id));
   };
 
-  const migrateFromCache = async () => {
-    if (typeof window === 'undefined') return;
-    const finalCompanyId = companyId || '00000000-0000-0000-0000-000000000000';
-    
-    // Check old keys
-    const keysToCheck = [
-      `marmo_products_${finalCompanyId}`, 
-      'marmo_products_legacy', 
-      'marmo_products'
-    ];
-    let itemsToMigrate: any[] = [];
-    
-    for (const k of keysToCheck) {
-      const data = window.localStorage.getItem(k);
-      if (data) {
-        try {
-          const parsed = JSON.parse(data);
-          if (Array.isArray(parsed) && parsed.length > itemsToMigrate.length) {
-            itemsToMigrate = parsed;
-          }
-        } catch(e) {}
-      }
-    }
-
-    if (itemsToMigrate.length === 0) {
-      alert("Nenhum produto encontrado no LocalStorage do seu navegador.");
-      return;
-    }
-
-    const confirm = window.confirm(`Encontrados ${itemsToMigrate.length} itens locais. Deseja realizar a migração/recuperação para o banco de dados? Issou pode levar alguns segundos.`);
-    if (!confirm) return;
-
-    setLoadingProducts(true);
-    let successCount = 0;
-    
-    for (const p of itemsToMigrate) {
-      try {
-        await handleSaveProduct({
-          ...p,
-          id: undefined // force new id to avoid conflicts
-        } as unknown as ProductService);
-        successCount++;
-      } catch (e) {
-        console.error("Erro importando", p.description, e);
-      }
-    }
-    
-    setLoadingProducts(false);
-    alert(`Migração concluída: ${successCount} produtos recuperados.`);
-    await fetchProducts();
-  };
-
   return { 
     products, 
     loadingProducts, 
     handleSaveProduct, 
     deleteProduct,
     setProducts,
-    refreshProducts: fetchProducts,
-    migrateFromCache 
+    refreshProducts: fetchProducts
   };
 };

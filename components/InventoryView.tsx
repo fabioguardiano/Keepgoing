@@ -11,7 +11,6 @@ interface InventoryViewProps {
   productGroups: ProductGroup[];
   suppliers: Supplier[];
   exchangeRates: { usd: number; eur: number; lastUpdate: string };
-  onMigrateFromCache?: () => void;
 }
 
 type SortField = 'code' | 'name' | 'stockQuantity' | 'sellingPrice';
@@ -19,7 +18,7 @@ type SortDirection = 'asc' | 'desc';
 
 export const InventoryView: React.FC<InventoryViewProps> = ({ 
   materials, onSaveMaterial, onUpdateStatus,
-  brands, productGroups, suppliers, exchangeRates, onMigrateFromCache
+  brands, productGroups, suppliers, exchangeRates
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showInactive, setShowInactive] = useState(false);
@@ -84,22 +83,12 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           </div>
           <p className="text-slate-500 font-medium">Controle de chapas e insumos de produção</p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2">
-          {onMigrateFromCache && (
-            <button 
-              onClick={onMigrateFromCache}
-              className="bg-amber-100 text-amber-700 px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-amber-200 transition-all transform hover:scale-[1.02] active:scale-95"
-            >
-              Restaurar Dados (Cache)
-            </button>
-          )}
-          <button 
-            onClick={handleAddNew}
-            className="bg-primary text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-secondary transition-all transform hover:scale-[1.02] active:scale-95"
-          >
-            <Plus size={20} /> Novo Registro
-          </button>
-        </div>
+        <button 
+          onClick={handleAddNew}
+          className="bg-primary text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-secondary transition-all transform hover:scale-[1.02] active:scale-95"
+        >
+          <Plus size={20} /> Novo Registro
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
