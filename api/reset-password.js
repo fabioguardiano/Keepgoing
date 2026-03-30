@@ -45,14 +45,20 @@ export default async function handler(req, res) {
 
       if (error) {
         // Se o erro for que já existe, tentamos buscar o usuário para retornar o ID e "corrigir" o vínculo
+        const cleanEmail = email.toLowerCase().trim();
         if (error.message.toLowerCase().includes('already registered')) {
-            const { data: usersData, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-            const existingUser = usersData?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
+            // Aumentamos o limite para garantir que achamos o usuário mesmo em listas longas
+            const { data: usersData, error: listError } = await supabaseAdmin.auth.admin.listUsers({
+              page: 1,
+              perPage: 1000 // Aumenta o limite de busca
+            });
+            const existingUser = usersData?.users?.find(u => u.email?.toLowerCase().trim() === cleanEmail);
             
             if (existingUser) {
                 // Atualizamos os metadados dele para garantir que o company_id esteja certo
                 await supabaseAdmin.auth.admin.updateUserById(existingUser.id, {
-                    user_metadata: userData || {}
+                    user_metadata: userData || {},
+                    email_confirm: true
                 });
                 return res.status(200).json({ success: true, user: existingUser, recovered: true });
             }

@@ -277,7 +277,7 @@ export const useSettings = (
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'create',
-          email: u.email,
+          email: u.email.toLowerCase().trim(),
           newPassword: password,
           userData: {
             full_name: u.name,
