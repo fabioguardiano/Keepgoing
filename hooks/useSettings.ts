@@ -62,17 +62,44 @@ export const useSettings = (
           .eq('company_id', companyId);
         if (error) throw error;
         if (data && data.length > 0) {
-          const mapped: AppUser[] = data.map((row: any) => ({
-            id: row.id,
-            code: row.code || undefined,
-            name: row.name,
-            email: row.email,
-            role: row.role || 'viewer',
-            status: row.status || 'ativo',
-            profileId: row.profile_id || undefined,
-            company_id: row.company_id,
-            createdAt: row.created_at || new Date().toISOString().slice(0, 10),
-          }));
+          // Auto-reparo: Deleta os Celsos sem código (os antigos bugados)
+          let filteredData = data.filter((u: any) => !(u.name.toUpperCase().includes('CELSO TAVARES') && !u.code));
+          if (filteredData.length < data.length) {
+            // Remove na nuvem os que não têm código
+            supabase.from('app_users')
+              .delete()
+              .ilike('name', '%CELSO TAVARES%')
+              .is('code', null)
+              .then();
+          }
+
+          let currentMax = filteredData.reduce((m: number, u: any) => Math.max(m, u.code || 0), 0);
+
+          const mapped: AppUser[] = filteredData.map((row: any) => {
+            let code = row.code;
+            
+            // Força Fabio Lima (o antigo, ou o qual seja) a ser o 1 e fixa ele
+            if (row.name.toUpperCase().includes('FABIO LIMA') && code !== 1) {
+              code = 1;
+              supabase.from('app_users').update({ code: 1 }).eq('id', row.id).then();
+            } else if (!code) {
+              currentMax++;
+              code = currentMax;
+              // Atualiza silenciosamente no Supabase para persistir a correção
+              supabase.from('app_users').update({ code }).eq('id', row.id).then();
+            }
+            return {
+              id: row.id,
+              code,
+              name: row.name,
+              email: row.email,
+              role: row.role || 'viewer',
+              status: row.status || 'ativo',
+              profileId: row.profile_id || undefined,
+              company_id: row.company_id,
+              createdAt: row.created_at || new Date().toISOString().slice(0, 10),
+            };
+          });
           setAppUsers(mapped);
         }
       } catch (err) {

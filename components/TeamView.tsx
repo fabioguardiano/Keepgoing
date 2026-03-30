@@ -145,6 +145,13 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, existingEmails, 
               </div>
             )}
 
+            {isEditing && (
+              <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl mb-2">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Código</span>
+                <span className="text-sm font-black text-primary bg-primary/10 px-3 py-1 rounded-lg">#{initial?.code || '—'}</span>
+              </div>
+            )}
+
             <div>
               <label className={labelClass}>Nome Completo</label>
               <input required disabled={loading} value={name} onChange={e => setName(e.target.value.toUpperCase())} className={inputClass} placeholder="Ex: JOÃO SILVA" />
@@ -246,6 +253,7 @@ const StaffForm: React.FC<StaffFormProps> = ({ initial, onSave, onClose }) => {
     e.preventDefault();
     onSave({
       id: initial?.id || String(Date.now()),
+      code: initial?.code,
       name, position,
       hourlyRate: parseFloat(hourlyRate) || 0,
       phone: initial?.phone || '',
@@ -271,6 +279,14 @@ const StaffForm: React.FC<StaffFormProps> = ({ initial, onSave, onClose }) => {
           </button>
         </div>
         <div className="p-8 space-y-4">
+          
+          {initial?.id && initial?.code && (
+            <div className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl mb-2">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Código</span>
+              <span className="text-sm font-black text-primary bg-primary/10 px-3 py-1 rounded-lg">#{initial.code}</span>
+            </div>
+          )}
+
           <div>
             <label className={labelClass}>Nome Completo</label>
             <input required value={name} onChange={e => setName(e.target.value.toUpperCase())} className={inputClass} placeholder="Ex: JOÃO FERREIRA" />
