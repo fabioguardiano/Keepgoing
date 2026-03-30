@@ -274,7 +274,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
     if (waypoints.length < 2) { setRouteCoords([]); return; }
 
     const coordStr = waypoints.map(([lat, lon]) => `${lon},${lat}`).join(';');
-    fetch(`https://router.project-osrm.org/route/v1/driving/${coordStr}?overview=full&geometries=geojson`)
+    fetch(`https://routing.openstreetmap.de/routed-car/route/v1/driving/${coordStr}?overview=full&geometries=geojson`)
       .then(r => r.json())
       .then(data => {
         if (data.routes?.[0]?.geometry?.coordinates) {
@@ -328,6 +328,12 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
   const changeWeek = (direction: 'prev' | 'next') => {
     const d = new Date(selectedDate + 'T12:00:00');
     d.setDate(d.getDate() + (direction === 'next' ? 7 : -7));
+    setSelectedDate(d.toISOString().split('T')[0]);
+  };
+
+  const changeDay = (direction: 'prev' | 'next') => {
+    const d = new Date(selectedDate + 'T12:00:00');
+    d.setDate(d.getDate() + (direction === 'next' ? 1 : -1));
     setSelectedDate(d.toISOString().split('T')[0]);
   };
 
@@ -607,6 +613,8 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
       </div>
 
       <div className="flex-1 overflow-hidden flex flex-col">
+        {/* ===== DESKTOP LAYOUT ===== */}
+        <div className="hidden lg:flex flex-col flex-1 overflow-hidden">
         {calendarView === 'month' ? (
           /* ===== VISÃO MENSAL ===== */
           <div className="flex-1 overflow-y-auto scroll-sidebar bg-white p-4">
@@ -913,6 +921,190 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                  ))}
                </MapContainer>
            </div>
+        </div>
+        </div> {/* end desktop layout */}
+
+        {/* ===== MOBILE LAYOUT ===== */}
+        <div className="flex flex-col flex-1 overflow-hidden lg:hidden">
+          {/* Mobile date navigator */}
+          <div className="bg-white border-b px-4 py-3 flex items-center justify-between shrink-0 shadow-sm">
+            <button
+              onClick={() => changeDay('prev')}
+              className="p-2 hover:bg-slate-100 rounded-xl transition-all text-slate-600 active:scale-90"
+            >
+              <ChevronLeft size={22} />
+            </button>
+            <div className="text-center">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                {new Date(selectedDate + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long' })}
+              </p>
+              <p className="text-base font-black text-slate-900">
+                {new Date(selectedDate + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+              </p>
+            </div>
+            <button
+              onClick={() => changeDay('next')}
+              className="p-2 hover:bg-slate-100 rounded-xl transition-all text-slate-600 active:scale-90"
+            >
+              <ChevronRight size={22} />
+            </button>
+          </div>
+
+          {/* Mobile content */}
+          {activeMobileView === 'list' ? (
+            <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-slate-50">
+              {mapMeasurements.length === 0 ? (
+                <div className="py-24 text-center">
+                  <CalendarIcon size={40} className="mx-auto mb-3 text-slate-200" />
+                  <p className="text-[11px] font-black uppercase text-slate-400 tracking-widest">Nenhuma medição neste dia</p>
+                  <button
+                    onClick={() => openNewMeasurementModal()}
+                    className="mt-4 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-[11px] font-black uppercase tracking-wide shadow-lg shadow-blue-600/20"
+                  >
+                    + Agendar Medição
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {[...mapMeasurements].sort((a, b) => a.time.localeCompare(b.time)).map((m, i) => (
+                    <div key={m.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                      <div className="flex items-stretch">
+                        <div className="w-12 bg-blue-600 flex items-center justify-center shrink-0">
+                          <span className="text-white font-black text-[16px]">{i + 1}</span>
+                        </div>
+                        <div className="flex-1 min-w-0 p-3">
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <p className="text-[13px] font-black text-slate-900 uppercase leading-tight">{m.clientName}</p>
+                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap ${
+                              m.status === 'Concluída' ? 'bg-emerald-100 text-emerald-700' :
+                              m.status === 'Cancelada' ? 'bg-red-100 text-red-600' :
+                              'bg-blue-100 text-blue-700'
+                            }`}>{m.status}</span>
+                          </div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Clock size={11} className="text-blue-500 shrink-0" />
+                            <span className="text-[11px] font-black text-blue-600">{m.time}</span>
+                            {m.measurerName && (
+                              <>
+                                <span className="text-slate-300">•</span>
+                                <UserIcon size={11} className="text-slate-400 shrink-0" />
+                                <span className="text-[11px] font-bold text-slate-500">{m.measurerName}</span>
+                              </>
+                            )}
+                          </div>
+                          <div className="flex items-start gap-1.5">
+                            <MapPin size={11} className="text-slate-400 shrink-0 mt-0.5" />
+                            <p className="text-[11px] text-slate-500 font-medium leading-snug">
+                              {[m.address, m.addressNumber, m.addressComplement].filter(Boolean).join(', ')}
+                            </p>
+                          </div>
+                          {m.clientPhone && (
+                            <div className="flex items-center gap-1.5 mt-1">
+                              <Phone size={11} className="text-slate-400 shrink-0" />
+                              <p className="text-[11px] text-slate-500 font-medium">{m.clientPhone}</p>
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => handleEditClick(m)}
+                          className="px-3 flex items-center text-slate-300 hover:text-blue-500 border-l border-slate-100 transition-all"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => {
+                      const sorted = [...mapMeasurements].sort((a, b) => a.time.localeCompare(b.time));
+                      const destination = sorted.length > 0 ? sorted[sorted.length - 1].address : '';
+                      const waypoints = sorted.slice(0, -1).map(m => m.address).join('/');
+                      window.open(`https://www.google.com/maps/dir/${encodeURIComponent(companyAddress)}/${waypoints ? encodeURIComponent(waypoints) + '/' : ''}${encodeURIComponent(destination)}`, '_blank');
+                    }}
+                    className="w-full py-3.5 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg"
+                  >
+                    <Navigation size={14} /> Rota no Maps
+                  </button>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="flex-1 relative">
+              <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }}>
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <MapController center={mapCenter} />
+                {coords[companyAddress] && (
+                  <Marker position={coords[companyAddress]} icon={createCompanyIcon()}>
+                    <Popup>
+                      <div className="p-1">
+                        <p className="font-black text-[10px] uppercase text-slate-400">Partida</p>
+                        <p className="font-bold text-xs">{companyName}</p>
+                      </div>
+                    </Popup>
+                  </Marker>
+                )}
+                {[...mapMeasurements].sort((a, b) => a.time.localeCompare(b.time)).map((m, i) => (
+                  coords[m.address] && (
+                    <Marker
+                      key={m.id}
+                      position={coords[m.address]}
+                      icon={createNumberedIcon(i + 1, '#2563eb', m.clientName)}
+                      eventHandlers={{ click: () => { setSelectedMeasurementId(m.id); setActiveMobileView('list'); } }}
+                    >
+                      <Popup>
+                        <div className="p-1 min-w-[120px]">
+                          <p className="font-black text-[9px] uppercase text-slate-400 mb-0.5">Medição {i + 1}</p>
+                          <p className="font-bold text-xs text-slate-900">{m.clientName}</p>
+                          <p className="text-[10px] text-blue-600 font-bold">{m.time}</p>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  )
+                ))}
+                {routeCoords.length > 1 && (
+                  <Polyline positions={routeCoords} color="#2563eb" weight={4} opacity={0.75} />
+                )}
+                {Object.entries(driverTrackingLocations).map(([name, location]) => (
+                  <Marker key={name} position={[location.lat, location.lng]} icon={createMeasurerIcon()}>
+                    <Popup>
+                      <div className="p-1">
+                        <div className="flex items-center gap-1.5 mb-1 text-emerald-600">
+                          <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                          <p className="font-black text-[10px] uppercase">Online</p>
+                        </div>
+                        <p className="font-bold text-xs tracking-tight">{name}</p>
+                      </div>
+                    </Popup>
+                  </Marker>
+                ))}
+              </MapContainer>
+            </div>
+          )}
+
+          {/* Bottom tab bar */}
+          <div className="border-t bg-white flex shrink-0 z-10 safe-area-pb">
+            <button
+              onClick={() => setActiveMobileView('list')}
+              className={`flex-1 py-3 flex flex-col items-center gap-0.5 text-[9px] font-black uppercase tracking-widest transition-all ${activeMobileView === 'list' ? 'text-blue-600' : 'text-slate-400'}`}
+            >
+              <ListIcon size={20} />
+              Lista
+            </button>
+            <button
+              onClick={() => setActiveMobileView('map')}
+              className={`flex-1 py-3 flex flex-col items-center gap-0.5 text-[9px] font-black uppercase tracking-widest transition-all ${activeMobileView === 'map' ? 'text-blue-600' : 'text-slate-400'}`}
+            >
+              <MapIcon size={20} />
+              Mapa
+            </button>
+            <button
+              onClick={() => setIsTrashOpen(true)}
+              className="flex-1 py-3 flex flex-col items-center gap-0.5 text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-red-500 transition-all"
+            >
+              <Trash2 size={20} />
+              Lixeira
+            </button>
+          </div>
         </div>
       </div>
 
