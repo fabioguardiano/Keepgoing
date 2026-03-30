@@ -78,6 +78,7 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, existingEmails, 
       id: initial?.id || String(Date.now()),
       name, email, role,
       profileId: profileId || undefined,
+      company_id: initial?.company_id,
       status: initial?.status || 'ativo',
       createdAt: initial?.createdAt || new Date().toISOString().slice(0, 10),
     }, isEditing ? undefined : password);
@@ -88,10 +89,10 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, existingEmails, 
       setError(err);
     } else if (!isEditing) {
       setSuccess(true);
-      // Fecha automaticamente após 4s para o usuário ler a mensagem
       setTimeout(onClose, 4000);
     } else {
-      onClose();
+      setSuccess(true);
+      setTimeout(onClose, 1500);
     }
   };
 
@@ -119,10 +120,14 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, existingEmails, 
               <CheckCircle2 className="text-green-600" size={32} />
             </div>
             <div>
-              <p className="text-lg font-bold text-slate-800 mb-1">Usuário criado!</p>
+              <p className="text-lg font-bold text-slate-800 mb-1">
+                {isEditing ? 'Usuário atualizado!' : 'Usuário criado!'}
+              </p>
               <p className="text-sm text-slate-500">
-                Um email de confirmação foi enviado para <span className="font-bold text-slate-700">{email}</span>.
-                O usuário precisará clicar no link para ativar o acesso.
+                {isEditing
+                  ? <>As alterações de <span className="font-bold text-slate-700">{name}</span> foram salvas com sucesso.</>
+                  : <>Um email de confirmação foi enviado para <span className="font-bold text-slate-700">{email}</span>. O usuário precisará clicar no link para ativar o acesso.</>
+                }
               </p>
             </div>
             <button type="button" onClick={onClose} className="mt-2 px-8 py-3 bg-primary text-white rounded-xl font-bold hover:opacity-90 transition-all">
@@ -213,7 +218,7 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, existingEmails, 
                 Cancelar
               </button>
               <button type="submit" disabled={loading || emailDuplicate} className="flex-1 px-6 py-3 bg-primary hover:opacity-90 text-white rounded-xl font-bold shadow-lg shadow-primary/20 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2">
-                {loading ? <><Loader2 size={16} className="animate-spin" /> Criando...</> : isEditing ? 'Salvar' : 'Criar Usuário'}
+                {loading ? <><Loader2 size={16} className="animate-spin" /> {isEditing ? 'Salvando...' : 'Criando...'}</> : isEditing ? 'Salvar Alterações' : 'Criar Usuário'}
               </button>
             </div>
           </div>

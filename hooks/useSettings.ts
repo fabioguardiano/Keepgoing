@@ -48,8 +48,38 @@ export const useSettings = (
   setSales?: (update: (prev: any[]) => any[]) => void,
   companyId?: string
 ) => {
-  // App Users
+  // App Users — Supabase como fonte principal, localStorage como cache
   const [appUsers, setAppUsers] = useLocalStorage<AppUser[]>('marmo_app_users', INITIAL_APP_USERS);
+
+  // Carrega app_users do Supabase quando companyId estiver disponível
+  useEffect(() => {
+    if (!companyId) return;
+    const fetchAppUsers = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('app_users')
+          .select('*')
+          .eq('company_id', companyId);
+        if (error) throw error;
+        if (data && data.length > 0) {
+          const mapped: AppUser[] = data.map((row: any) => ({
+            id: row.id,
+            name: row.name,
+            email: row.email,
+            role: row.role || 'viewer',
+            status: row.status || 'ativo',
+            profileId: row.profile_id || undefined,
+            company_id: row.company_id,
+            createdAt: row.created_at || new Date().toISOString().slice(0, 10),
+          }));
+          setAppUsers(mapped);
+        }
+      } catch (err) {
+        console.error('[useSettings] Erro ao carregar app_users do Supabase:', err);
+      }
+    };
+    fetchAppUsers();
+  }, [companyId]);
 
   // Production Staff
   const [staff, setStaff] = useLocalStorage<ProductionStaff[]>('marmo_staff', INITIAL_STAFF);
@@ -204,7 +234,14 @@ export const useSettings = (
   };
 
   // Handlers
+  /**
+   * Salva um usuário do app (novo ou edição).
+   * - Novos: cria no Supabase Auth + insere na tabela app_users.
+   * - Edição: atualiza nome, role e perfil na tabela app_users.
+   */
   const handleSaveUser = async (u: AppUser, password?: string): Promise<string | undefined> => {
+    const userCompanyId = companyId || '00000000-0000-0000-0000-000000000000';
+
     // Para usuários novos (com senha fornecida), cria no Supabase Auth
     if (password) {
       // Cliente isolado: não persiste sessão, não afeta o login do admin atual
@@ -213,14 +250,14 @@ export const useSettings = (
         import.meta.env.VITE_SUPABASE_ANON_KEY as string,
         { auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false } }
       );
-      const { error } = await isolated.auth.signUp({
+      const { data: signUpData, error } = await isolated.auth.signUp({
         email: u.email,
         password,
         options: {
           data: {
             full_name: u.name,
             name: u.name,
-            company_id: companyId || '00000000-0000-0000-0000-000000000000',
+            company_id: userCompanyId,
             role: u.role,
           }
         }
@@ -231,11 +268,64 @@ export const useSettings = (
         }
         return `Erro ao criar acesso: ${error.message}`;
       }
+
+      // Usa o ID do Auth como ID do app_user para consistência
+      const authUserId = signUpData?.user?.id || u.id;
+      const newUser: AppUser = { ...u, id: authUserId, company_id: userCompanyId };
+
+      // Persiste no Supabase (tabela app_users)
+      try {
+        await supabase.from('app_users').upsert({
+          id: authUserId,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          status: u.status || 'ativo',
+          profile_id: u.profileId || null,
+          company_id: userCompanyId,
+          created_at: u.createdAt || new Date().toISOString().slice(0, 10),
+        });
+      } catch (err) {
+        console.error('[handleSaveUser] Erro ao persistir app_user novo:', err);
+      }
+
+      setAppUsers(prev => [...prev, newUser]);
+      return undefined;
     }
+
+    // Edição de usuário existente — persiste no Supabase
+    try {
+      const { error } = await supabase.from('app_users').upsert({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        status: u.status || 'ativo',
+        profile_id: u.profileId || null,
+        company_id: u.company_id || userCompanyId,
+        created_at: u.createdAt || new Date().toISOString().slice(0, 10),
+      });
+      if (error) {
+        console.error('[handleSaveUser] Erro ao atualizar app_user:', error);
+        return `Erro ao salvar alterações: ${error.message}`;
+      }
+    } catch (err: any) {
+      console.error('[handleSaveUser] Erro inesperado:', err);
+      return `Erro ao salvar alterações: ${err.message}`;
+    }
+
     setAppUsers(prev => prev.find(x => x.id === u.id) ? prev.map(x => x.id === u.id ? u : x) : [...prev, u]);
     return undefined;
   };
-  const handleDeleteUser = (id: string) => setAppUsers(prev => prev.map(x => x.id === id ? { ...x, status: 'inativo' as const } : x));
+  const handleDeleteUser = async (id: string) => {
+    // Marca como inativo no Supabase
+    try {
+      await supabase.from('app_users').update({ status: 'inativo' }).eq('id', id);
+    } catch (err) {
+      console.error('[handleDeleteUser] Erro ao inativar no Supabase:', err);
+    }
+    setAppUsers(prev => prev.map(x => x.id === id ? { ...x, status: 'inativo' as const } : x));
+  };
 
   const handleSaveStaff = (s: ProductionStaff) => setStaff(prev => prev.find(x => x.id === s.id) ? prev.map(x => x.id === s.id ? s : x) : [...prev, s]);
   const handleDeleteStaff = (id: string) => setStaff(prev => prev.map(x => x.id === id ? { ...x, status: 'inativo' as const } : x));
