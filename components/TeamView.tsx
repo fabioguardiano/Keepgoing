@@ -82,7 +82,7 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, existingEmails, 
       company_id: initial?.company_id,
       status: initial?.status || 'ativo',
       createdAt: initial?.createdAt || new Date().toISOString().slice(0, 10),
-    }, isEditing ? undefined : password);
+    }, password);
 
     setLoading(false);
 
@@ -173,22 +173,24 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, existingEmails, 
                 </p>
               )}
             </div>
-            {!isEditing && (
-              <div>
-                <label className={labelClass}>Senha inicial</label>
-                <input
-                  required
-                  type="password"
-                  disabled={loading}
-                  minLength={6}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className={inputClass}
-                  placeholder="Mínimo 6 caracteres"
-                />
-                <p className="mt-1.5 ml-1 text-xs text-slate-400">O usuário poderá alterar a senha após confirmar o email.</p>
-              </div>
-            )}
+            <div>
+              <label className={labelClass}>{isEditing ? 'Redefinir Senha (apenas se for trocar)' : 'Senha inicial'}</label>
+              <input
+                required={!isEditing}
+                type="password"
+                disabled={loading}
+                minLength={6}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className={inputClass}
+                placeholder={isEditing ? 'Deixe em branco para manter a atual' : 'Mínimo 6 caracteres'}
+              />
+              {!isEditing && (
+                <p className="mt-1.5 ml-1 text-xs text-slate-400 flex items-center gap-1">
+                  O usuário poderá alterar a senha após confirmar o email.
+                </p>
+              )}
+            </div>
             <div>
               <label className={labelClass}>Perfil de Acesso</label>
               <div className="relative">

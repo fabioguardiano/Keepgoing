@@ -270,8 +270,8 @@ export const useSettings = (
   const handleSaveUser = async (u: AppUser, password?: string): Promise<string | undefined> => {
     const userCompanyId = companyId || '00000000-0000-0000-0000-000000000000';
 
-    // Para usuários novos (com senha fornecida), cria no Supabase Auth
-    if (password) {
+    // Para usuários novos (com senha fornecida e sem código ainda), cria no Supabase Auth
+    if (password && !u.code) {
       // Cliente isolado: não persiste sessão, não afeta o login do admin atual
       const isolated = createClient(
         import.meta.env.VITE_SUPABASE_URL as string,
@@ -326,6 +326,19 @@ export const useSettings = (
 
     // Edição de usuário existente — persiste no Supabase
     try {
+      // Se tiver password numa edição, chama nossa rota serverless para Admin API
+      if (password && u.code) {
+        const response = await fetch('/api/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: u.id, newPassword: password })
+        });
+        const result = await response.json();
+        if (!response.ok) {
+           return `Aviso: não foi possível alterar a conta no Vercel: ${result.error || 'Erro desconhecido'}`;
+        }
+      }
+
       const { error } = await supabase.from('app_users').upsert({
         id: u.id,
         code: u.code || undefined,
