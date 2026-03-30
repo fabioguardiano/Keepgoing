@@ -270,35 +270,34 @@ export const useSettings = (
   const handleSaveUser = async (u: AppUser, password?: string): Promise<string | undefined> => {
     const userCompanyId = companyId || '00000000-0000-0000-0000-000000000000';
 
-    // Para usuários novos (com senha fornecida e sem código ainda), cria no Supabase Auth
+    // Para usuários novos (com senha fornecida e sem código ainda), cria via Admin API no Vercel
     if (password && !u.code) {
-      // Cliente isolado: não persiste sessão, não afeta o login do admin atual
-      const isolated = createClient(
-        import.meta.env.VITE_SUPABASE_URL as string,
-        import.meta.env.VITE_SUPABASE_ANON_KEY as string,
-        { auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false } }
-      );
-      const { data: signUpData, error } = await isolated.auth.signUp({
-        email: u.email,
-        password,
-        options: {
-          data: {
+      const resp = await fetch('/api/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create',
+          email: u.email,
+          newPassword: password,
+          userData: {
             full_name: u.name,
             name: u.name,
             company_id: userCompanyId,
             role: u.role,
           }
-        }
+        })
       });
-      if (error) {
-        if (error.message.toLowerCase().includes('already registered') || error.message.toLowerCase().includes('already exists')) {
+      
+      const signUpResult = await resp.json();
+      if (!resp.ok) {
+        if (signUpResult.error?.toLowerCase().includes('already registered')) {
           return 'Este email já possui uma conta cadastrada no sistema.';
         }
-        return `Erro ao criar acesso: ${error.message}`;
+        return `Erro ao criar acesso: ${signUpResult.error || 'Erro desconhecido'}`;
       }
 
-      // Usa o ID do Auth como ID do app_user para consistência
-      const authUserId = signUpData?.user?.id || u.id;
+      // Usa o ID do Auth do resultado do Admin API como ID do app_user para consistência
+      const authUserId = signUpResult.user?.id || u.id;
       // Calcula próximo código sequencial fixo
       const nextCode = appUsers.reduce((max, x) => Math.max(max, x.code || 0), 0) + 1;
       const newUser: AppUser = { ...u, id: authUserId, code: nextCode, company_id: userCompanyId };
