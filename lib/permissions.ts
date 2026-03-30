@@ -1,4 +1,4 @@
-import { AppUser, AccessLevel, ModuleKey, PermissionProfile, View } from '../types';
+import { AppUser, AccessLevel, ModuleKey, SubModuleKey, PermissionProfile, View } from '../types';
 
 // ─── Mapeamento: View → Módulo ─────────────────────────────────────────────
 
@@ -30,6 +30,49 @@ export const VIEW_MODULE_MAP: Partial<Record<View, ModuleKey>> = {
   'Canais de Vendas': 'cadastros',
 };
 
+// ─── Mapeamento: View → SubMódulo ──────────────────────────────────────────
+
+export const VIEW_SUBMODULE_MAP: Partial<Record<View, SubModuleKey>> = {
+  'Fornecedores': 'fornecedores',
+  'Arquitetos': 'arquitetos',
+  'Canais de Vendas': 'canais_vendas',
+  'Marcas': 'marcas',
+  'Grupos de Produtos': 'grupos_produtos',
+  'Grupos de Serviços': 'grupos_servicos',
+  'Contas a Receber': 'contas_receber',
+  'Contas a Pagar': 'contas_pagar',
+  'Formas de Pagamento': 'formas_pagamento',
+  'Matéria Prima': 'materia_prima',
+  'Acabamentos': 'acabamentos',
+  'Produtos Revenda': 'produtos_revenda',
+  'O.S. de Produção': 'os_producao',
+};
+
+// ─── Sub-módulos por módulo pai ─────────────────────────────────────────────
+
+export const MODULE_SUBMODULES: Partial<Record<ModuleKey, SubModuleKey[]>> = {
+  cadastros: ['fornecedores', 'arquitetos', 'canais_vendas', 'marcas', 'grupos_produtos', 'grupos_servicos'],
+  financeiro: ['contas_receber', 'contas_pagar', 'formas_pagamento'],
+  estoque:    ['materia_prima', 'acabamentos', 'produtos_revenda'],
+  producao:   ['os_producao'],
+};
+
+export const SUBMODULE_LABELS: Record<SubModuleKey, string> = {
+  fornecedores:    'Fornecedores',
+  arquitetos:      'Arquitetos',
+  canais_vendas:   'Canais de Vendas',
+  marcas:          'Marcas',
+  grupos_produtos: 'Grupos de Produtos',
+  grupos_servicos: 'Grupos de Serviços',
+  contas_receber:  'Contas a Receber',
+  contas_pagar:    'Contas a Pagar',
+  formas_pagamento:'Formas de Pagamento',
+  materia_prima:   'Matéria Prima',
+  acabamentos:     'Acabamentos',
+  produtos_revenda:'Produtos de Revenda',
+  os_producao:     'O.S. de Produção',
+};
+
 // ─── Rótulos dos módulos ───────────────────────────────────────────────────
 
 export const MODULE_LABELS: Record<ModuleKey, string> = {
@@ -43,7 +86,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   equipe: 'Equipe',
   relatorios: 'Relatórios',
   configuracoes: 'Configurações',
-  cadastros: 'Cadastros (Fornec., Arq., Canais)',
+  cadastros: 'Cadastros',
 };
 
 export const ALL_MODULES: ModuleKey[] = [
@@ -116,27 +159,30 @@ export const DEFAULT_PROFILES: PermissionProfile[] = [
 /**
  * Retorna o nível de acesso de um usuário logado a um módulo específico.
  * - role 'admin' sempre recebe 'full' (bypass total)
- * - Busca o AppUser pelo id/email, lê seu profileId e retorna o nível do perfil
- * - Se não encontrar perfil, cai no padrão por role
+ * - Respeita subPermissions quando existe entrada para o submódulo
  */
 export const getModuleAccess = (
   user: { id: string; email?: string; role: string },
   appUsers: AppUser[],
   profiles: PermissionProfile[],
   module: ModuleKey,
+  subModule?: SubModuleKey,
 ): AccessLevel => {
-  // Admin do sistema sempre tem acesso total
   if (user.role === 'admin') return 'full';
 
-  // Busca o usuário na lista de AppUsers
   const appUser = appUsers.find(u => u.id === user.id || u.email === user.email);
 
   if (appUser?.profileId) {
     const profile = profiles.find(p => p.id === appUser.profileId);
-    if (profile) return profile.permissions[module] ?? 'none';
+    if (profile) {
+      // Se há sub-permissão definida para esse submódulo, ela prevalece
+      if (subModule && profile.subPermissions && subModule in profile.subPermissions) {
+        return profile.subPermissions[subModule] ?? profile.permissions[module] ?? 'none';
+      }
+      return profile.permissions[module] ?? 'none';
+    }
   }
 
-  // Fallback por role
   return ROLE_FALLBACK[user.role as AppUser['role']]?.[module] ?? 'none';
 };
 

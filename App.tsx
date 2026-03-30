@@ -48,7 +48,7 @@ import { useDiscountAuthorizations } from './hooks/useDiscountAuthorizations';
 import { useDriverTracking } from './hooks/useDriverTracking';
 import { useOrderService } from './hooks/useOrderService';
 import { useExchangeRates } from './hooks/useExchangeRates';
-import { getModuleAccess, VIEW_MODULE_MAP } from './lib/permissions';
+import { getModuleAccess, VIEW_MODULE_MAP, VIEW_SUBMODULE_MAP } from './lib/permissions';
 import { WorkOrdersView } from './components/WorkOrdersView';
 import { WorkOrderKanban } from './components/WorkOrderKanban';
 import { useMeasurements } from './hooks/useMeasurements';
@@ -117,9 +117,9 @@ const App: React.FC = () => {
     enabled: !!user,
   });
 
-  // Função de acesso por módulo para o usuário logado
-  const getAccess = (module: import('./types').ModuleKey) =>
-    getModuleAccess(user!, appUsers, permissionProfiles, module);
+  // Função de acesso por módulo (e opcionalmente sub-módulo) para o usuário logado
+  const getAccess = (module: import('./types').ModuleKey, subModule?: import('./types').SubModuleKey) =>
+    getModuleAccess(user!, appUsers, permissionProfiles, module, subModule);
 
   // Escopo de visibilidade em Vendas para o usuário logado
   const getVendasScope = (): import('./types').VendasScope => {
@@ -308,9 +308,10 @@ const App: React.FC = () => {
   );
 
   const renderContent = () => {
-    // Bloqueia acesso se o módulo da view atual for 'none'
+    // Bloqueia acesso se o módulo (ou sub-módulo) da view atual for 'none'
     const viewModule = VIEW_MODULE_MAP[currentView];
-    if (viewModule && getAccess(viewModule) === 'none') {
+    const viewSubModule = VIEW_SUBMODULE_MAP[currentView];
+    if (viewModule && getAccess(viewModule, viewSubModule) === 'none') {
       return (
         <div className="flex flex-col items-center justify-center h-full gap-4 text-slate-400">
           <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center">

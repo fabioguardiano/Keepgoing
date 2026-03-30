@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Plus, Edit2, Trash2, ChevronLeft, Check, Lock } from 'lucide-react';
-import { PermissionProfile, AppUser, ModuleKey, AccessLevel, VendasScope } from '../types';
-import { ALL_MODULES, MODULE_LABELS, DEFAULT_PROFILES } from '../lib/permissions';
+import { ShieldCheck, Plus, Edit2, Trash2, ChevronLeft, ChevronDown, ChevronRight, Check, Lock } from 'lucide-react';
+import { PermissionProfile, AppUser, ModuleKey, SubModuleKey, AccessLevel, VendasScope } from '../types';
+import { ALL_MODULES, MODULE_LABELS, MODULE_SUBMODULES, SUBMODULE_LABELS } from '../lib/permissions';
 
 interface Props {
   profiles: PermissionProfile[];
@@ -34,14 +34,43 @@ const VENDAS_SCOPE_OPTIONS: { value: VendasScope; label: string; description: st
 const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, onSave, onBack }) => {
   const [name, setName] = useState(profile.name);
   const [perms, setPerms] = useState<Record<ModuleKey, AccessLevel>>({ ...profile.permissions });
+  const [subPerms, setSubPerms] = useState<Partial<Record<SubModuleKey, AccessLevel>>>(
+    profile.subPermissions ?? {}
+  );
   const [vendasScope, setVendasScope] = useState<VendasScope>(profile.vendasScope ?? 'all');
+  // Módulos com sub-módulos que estão expandidos
+  const [expandedModules, setExpandedModules] = useState<Set<ModuleKey>>(new Set());
 
-  const setAccess = (module: ModuleKey, level: AccessLevel) =>
+  const isAdminLocked = profile.id === 'profile-admin';
+
+  const setAccess = (module: ModuleKey, level: AccessLevel) => {
     setPerms(prev => ({ ...prev, [module]: level }));
+    // Quando o módulo vai para 'none', limpa todas as sub-permissões dele
+    if (level === 'none') {
+      const subs = MODULE_SUBMODULES[module] ?? [];
+      setSubPerms(prev => {
+        const next = { ...prev };
+        subs.forEach(s => delete next[s]);
+        return next;
+      });
+    }
+  };
+
+  const setSubAccess = (sub: SubModuleKey, level: AccessLevel) => {
+    setSubPerms(prev => ({ ...prev, [sub]: level }));
+  };
+
+  const toggleExpand = (module: ModuleKey) => {
+    setExpandedModules(prev => {
+      const next = new Set(prev);
+      if (next.has(module)) next.delete(module); else next.add(module);
+      return next;
+    });
+  };
 
   const handleSave = () => {
     if (!name.trim()) return;
-    onSave({ ...profile, name: name.trim(), permissions: perms, vendasScope });
+    onSave({ ...profile, name: name.trim(), permissions: perms, subPermissions: subPerms, vendasScope });
     onBack();
   };
 
@@ -66,7 +95,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, onSave, onBack }
         <input
           value={name}
           onChange={e => setName(e.target.value)}
-          disabled={profile.id === 'profile-admin'}
+          disabled={isAdminLocked}
           placeholder="Ex: Projetista Sênior"
           className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
         />
@@ -76,65 +105,171 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, onSave, onBack }
       <div>
         <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Módulos e Acessos</label>
         <div className="space-y-2">
-          {ALL_MODULES.map(module => (
-            <div key={module} className="bg-slate-50 rounded-xl overflow-hidden">
-              <div className="flex items-center gap-3 p-3">
-                <span className="flex-1 text-sm font-bold text-slate-700">{MODULE_LABELS[module]}</span>
-                <div className="flex gap-1.5">
-                  {ACCESS_OPTIONS.map(opt => {
-                    const isSelected = perms[module] === opt.value;
-                    const isAdminLocked = profile.id === 'profile-admin';
-                    return (
-                      <button
-                        key={opt.value}
-                        onClick={() => !isAdminLocked && setAccess(module, opt.value)}
-                        disabled={isAdminLocked}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all border-2
-                          ${isSelected
-                            ? `${opt.color} border-transparent shadow-sm`
-                            : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'}
-                          ${isAdminLocked ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
-                      >
-                        {isSelected && <Check size={10} className="inline mr-1" />}
-                        {opt.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+          {ALL_MODULES.map(module => {
+            const subs = MODULE_SUBMODULES[module] ?? [];
+            const hasSubs = subs.length > 0;
+            const isExpanded = expandedModules.has(module);
+            const moduleAccess = perms[module];
+            const hasModuleAccess = moduleAccess !== 'none';
 
-              {/* Escopo de visibilidade — só aparece no módulo Vendas quando tem acesso */}
-              {module === 'vendas' && perms['vendas'] !== 'none' && (
-                <div className="px-3 pb-3 pt-1 border-t border-slate-200/60">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Visibilidade dos orçamentos</p>
-                  <div className="flex flex-col gap-1.5">
-                    {VENDAS_SCOPE_OPTIONS.map(opt => (
-                      <button
-                        key={opt.value}
-                        onClick={() => profile.id !== 'profile-admin' && setVendasScope(opt.value)}
-                        disabled={profile.id === 'profile-admin'}
-                        className={`flex items-start gap-2.5 px-3 py-2 rounded-lg text-left text-xs transition-all border-2
-                          ${vendasScope === opt.value
-                            ? 'bg-white border-[var(--primary-color)] shadow-sm'
-                            : 'bg-white/60 border-transparent hover:border-slate-200'}
-                          ${profile.id === 'profile-admin' ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
-                      >
-                        <span className={`mt-0.5 w-3 h-3 rounded-full border-2 flex-shrink-0 ${vendasScope === opt.value ? 'border-[var(--primary-color)] bg-[var(--primary-color)]' : 'border-slate-300'}`} />
-                        <span>
-                          <span className="font-bold text-slate-700">{opt.label}</span>
-                          <span className="text-slate-400 ml-1.5">— {opt.description}</span>
-                        </span>
-                      </button>
-                    ))}
+            // Conta sub-permissões customizadas neste módulo
+            const customSubCount = subs.filter(s => s in subPerms).length;
+
+            return (
+              <div key={module} className="bg-slate-50 rounded-xl overflow-hidden border border-slate-100">
+                {/* Linha do módulo */}
+                <div className="flex items-center gap-3 p-3">
+                  {/* Botão expandir sub-módulos */}
+                  {hasSubs && hasModuleAccess ? (
+                    <button
+                      type="button"
+                      onClick={() => toggleExpand(module)}
+                      className="p-1 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors flex-shrink-0"
+                      title={isExpanded ? 'Recolher sub-módulos' : 'Personalizar sub-módulos'}
+                    >
+                      {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                    </button>
+                  ) : (
+                    <span className="w-6 flex-shrink-0" />
+                  )}
+
+                  <span className="flex-1 text-sm font-bold text-slate-700 leading-tight">
+                    {MODULE_LABELS[module]}
+                    {customSubCount > 0 && (
+                      <span className="ml-2 text-[10px] font-black bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
+                        {customSubCount} personalizado{customSubCount > 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </span>
+
+                  <div className="flex gap-1.5">
+                    {ACCESS_OPTIONS.map(opt => {
+                      const isSelected = moduleAccess === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => !isAdminLocked && setAccess(module, opt.value)}
+                          disabled={isAdminLocked}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all border-2
+                            ${isSelected
+                              ? `${opt.color} border-transparent shadow-sm`
+                              : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'}
+                            ${isAdminLocked ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+                        >
+                          {isSelected && <Check size={10} className="inline mr-1" />}
+                          {opt.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
-              )}
-            </div>
-          ))}
+
+                {/* Escopo de visibilidade — só aparece no módulo Vendas quando tem acesso */}
+                {module === 'vendas' && perms['vendas'] !== 'none' && (
+                  <div className="px-3 pb-3 pt-1 border-t border-slate-200/60">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Visibilidade dos orçamentos</p>
+                    <div className="flex flex-col gap-1.5">
+                      {VENDAS_SCOPE_OPTIONS.map(opt => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => !isAdminLocked && setVendasScope(opt.value)}
+                          disabled={isAdminLocked}
+                          className={`flex items-start gap-2.5 px-3 py-2 rounded-lg text-left text-xs transition-all border-2
+                            ${vendasScope === opt.value
+                              ? 'bg-white border-[var(--primary-color)] shadow-sm'
+                              : 'bg-white/60 border-transparent hover:border-slate-200'}
+                            ${isAdminLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                        >
+                          <span className={`mt-0.5 w-3 h-3 rounded-full border-2 flex-shrink-0 ${vendasScope === opt.value ? 'border-[var(--primary-color)] bg-[var(--primary-color)]' : 'border-slate-300'}`} />
+                          <span>
+                            <span className="font-bold text-slate-700">{opt.label}</span>
+                            <span className="text-slate-400 ml-1.5">— {opt.description}</span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Sub-módulos expandidos */}
+                {hasSubs && hasModuleAccess && isExpanded && (
+                  <div className="border-t border-slate-200/60 bg-white">
+                    <p className="px-4 pt-2.5 pb-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      Personalizar por sub-módulo
+                    </p>
+                    <div className="pb-2 space-y-px">
+                      {subs.map(sub => {
+                        // Se não há sub-permissão definida, herda o nível do módulo pai
+                        const inherited = moduleAccess;
+                        const customLevel = subPerms[sub];
+                        const effectiveLevel = customLevel ?? inherited;
+                        const isCustomized = sub in subPerms;
+
+                        return (
+                          <div key={sub} className="flex items-center gap-3 px-4 py-2 hover:bg-slate-50 transition-colors">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-300 flex-shrink-0 ml-2" />
+                            <span className="flex-1 text-xs font-bold text-slate-600">
+                              {SUBMODULE_LABELS[sub]}
+                              {isCustomized && (
+                                <span className="ml-1.5 text-[9px] font-black text-primary">● personalizado</span>
+                              )}
+                            </span>
+                            <div className="flex gap-1.5 items-center">
+                              {/* Botão para resetar para herança */}
+                              {isCustomized && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSubPerms(prev => {
+                                      const next = { ...prev };
+                                      delete next[sub];
+                                      return next;
+                                    });
+                                  }}
+                                  className="text-[10px] text-slate-400 hover:text-red-500 font-bold px-2 py-0.5 rounded-lg hover:bg-red-50 transition-all border border-transparent hover:border-red-100"
+                                  title="Remover personalização (herdar do módulo)"
+                                >
+                                  herdar
+                                </button>
+                              )}
+                              {ACCESS_OPTIONS.map(opt => {
+                                const isSelected = effectiveLevel === opt.value;
+                                return (
+                                  <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => setSubAccess(sub, opt.value)}
+                                    className={`px-2.5 py-0.5 rounded-lg text-[11px] font-bold transition-all border-2
+                                      ${isSelected
+                                        ? isCustomized
+                                          ? `${opt.color} border-transparent shadow-sm ring-2 ring-primary/30`
+                                          : `${opt.color} border-transparent shadow-sm opacity-60`
+                                        : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'}`}
+                                  >
+                                    {isSelected && <Check size={9} className="inline mr-0.5" />}
+                                    {opt.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <p className="px-4 pb-2.5 text-[10px] text-slate-400 italic">
+                      Sub-módulos sem personalização herdam o nível do módulo acima.
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {profile.id !== 'profile-admin' && (
+      {!isAdminLocked && (
         <button
           onClick={handleSave}
           className="w-full py-2.5 bg-primary text-white font-black rounded-xl hover:opacity-90 transition-opacity text-sm"
@@ -192,6 +327,7 @@ export const PermissionsTab: React.FC<Props> = ({
         <div className="space-y-2">
           {profiles.map(profile => {
             const assignedCount = appUsers.filter(u => u.profileId === profile.id).length;
+            const subCount = Object.keys(profile.subPermissions ?? {}).length;
             return (
               <div key={profile.id} className="flex items-center gap-4 p-4 bg-slate-50 border border-slate-100 rounded-2xl hover:bg-white hover:border-slate-200 transition-all group">
                 <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -208,6 +344,7 @@ export const PermissionsTab: React.FC<Props> = ({
                   </div>
                   <p className="text-xs text-slate-400 mt-0.5">
                     {assignedCount > 0 ? `${assignedCount} usuário(s)` : 'Nenhum usuário'}
+                    {subCount > 0 && <span className="ml-2 text-primary font-bold">· {subCount} sub-módulo{subCount > 1 ? 's' : ''} personalizado{subCount > 1 ? 's' : ''}</span>}
                   </p>
                 </div>
 
@@ -272,21 +409,17 @@ export const PermissionsTab: React.FC<Props> = ({
                   const pid = e.target.value;
                   let nextRole = user.role;
                   const profile = profiles.find(p => p.id === pid);
-                  
-                  // Se mudar para um perfil que tem um 'role' correspondente (padronizado)
+
                   if (pid.startsWith('profile-')) {
                     const r = pid.replace('profile-', '') as any;
                     if (['admin', 'manager', 'seller', 'driver', 'viewer'].includes(r)) {
                       nextRole = r;
                     }
                   } else if (profile?.name.toLowerCase().includes('medidor') || profile?.name.toLowerCase().includes('entregador')) {
-                    // Especial: se o nome do perfil contém medidor, assume driver (para a agenda)
                     nextRole = 'driver';
                   } else if (profile?.name.toLowerCase().includes('vendedor')) {
-                    // Especial: se contém vendedor, assume seller
                     nextRole = 'seller';
                   } else if (profile?.name.toLowerCase().includes('gerente')) {
-                    // Especial: se contém gerente, assume manager
                     nextRole = 'manager';
                   }
 
@@ -312,6 +445,9 @@ export const PermissionsTab: React.FC<Props> = ({
           <span className="flex items-center gap-1.5 text-xs"><span className="w-3 h-3 rounded-full bg-blue-400 inline-block" /> Visualizar — só leitura, sem criar/editar</span>
           <span className="flex items-center gap-1.5 text-xs"><span className="w-3 h-3 rounded-full bg-green-500 inline-block" /> Completo — CRUD completo</span>
         </div>
+        <p className="text-xs text-blue-600 mt-2">
+          Use o botão <ChevronRight size={12} className="inline" /> ao lado de um módulo para personalizar o acesso por sub-módulo individualmente.
+        </p>
       </div>
     </div>
   );

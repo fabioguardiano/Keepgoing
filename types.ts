@@ -68,12 +68,32 @@ export type AccessLevel = 'none' | 'view' | 'full';
 
 export type VendasScope = 'all' | 'own' | 'view_all_edit_own';
 
+export type SubModuleKey =
+  // cadastros
+  | 'fornecedores'
+  | 'arquitetos'
+  | 'canais_vendas'
+  | 'marcas'
+  | 'grupos_produtos'
+  | 'grupos_servicos'
+  // financeiro
+  | 'contas_receber'
+  | 'contas_pagar'
+  | 'formas_pagamento'
+  // estoque
+  | 'materia_prima'
+  | 'acabamentos'
+  | 'produtos_revenda'
+  // producao
+  | 'os_producao';
+
 export interface PermissionProfile {
   id: string;
   name: string;
   isDefault?: boolean; // perfis padrão não podem ser excluídos
   permissions: Record<ModuleKey, AccessLevel>;
   vendasScope?: VendasScope; // escopo de visibilidade em Vendas
+  subPermissions?: Partial<Record<SubModuleKey, AccessLevel>>; // permissões granulares por sub-módulo
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
