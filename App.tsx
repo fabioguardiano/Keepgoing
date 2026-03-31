@@ -54,6 +54,7 @@ import { WorkOrdersView } from './components/WorkOrdersView';
 import { WorkOrderKanban } from './components/WorkOrderKanban';
 import { useMeasurements } from './hooks/useMeasurements';
 import { MeasurementSchedule } from './components/MeasurementSchedule';
+import { useLegacyMigration } from './hooks/useLegacyMigration';
 import 'leaflet/dist/leaflet.css';
 
 
@@ -74,6 +75,9 @@ const App: React.FC = () => {
   // 4. Hooks de Domínio
   // Só passamos o companyId quando authReady=true para evitar busca prematura com UUID errado
   const activeCompanyId = authReady ? user?.company_id : undefined;
+
+  // Migração única: move dados do localStorage (legado) para o Supabase se o banco estiver vazio
+  useLegacyMigration(activeCompanyId);
   const { sales, handleSaveSale: saveSaleBase, setSales, refreshSales } = useSales(activeCompanyId, logActivity);
   const { clients, loadingClients, handleSaveClient, handleImportClients, deleteClient, setClients } = useClients(activeCompanyId, logActivity);
   const { materials, handleSaveMaterial, deleteMaterial, setMaterials } = useMaterials(activeCompanyId, logActivity);
