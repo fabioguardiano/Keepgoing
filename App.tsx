@@ -158,61 +158,88 @@ const App: React.FC = () => {
       const savedSale = await saveSaleBase(s);
       const saleId = (savedSale as any)?.id || s.id;
 
-      // 1. Executa Reconciliação se necessário
-      if (isEditingPedido && Math.abs(diffToReconcile) > 0.01) {
+      // 1. Executa Reconciliação e/ou atualização de condições de pagamento
+      if (isEditingPedido && s.status === 'Pedido') {
         const saleAR = receivables.find(r => r.saleId === saleId && r.category === 'Venda' && r.status !== 'cancelado');
         if (saleAR) {
-          const newInstallments = [...saleAR.installments];
-          
-          if (diffToReconcile > 0) {
-            // Aumento: adiciona na última parcela pendente ou cria uma nova
-            const lastPending = [...newInstallments].reverse().find(i => i.status === 'pendente');
-            if (lastPending) {
-              lastPending.value = Math.round((lastPending.value + diffToReconcile) * 100) / 100;
-            } else {
-              newInstallments.push({
-                id: crypto.randomUUID(),
-                number: newInstallments.length + 1,
-                dueDate: new Date().toISOString().split('T')[0],
-                value: diffToReconcile,
-                status: 'pendente',
-                notes: 'Ajuste de Aditivo de Pedido'
-              } as any);
-            }
-          } else {
-            // Redução: abate das parcelas pendentes (da última para a primeira)
-            let remainingToSub = Math.abs(diffToReconcile);
-            const pendingIndices = newInstallments
-              .map((inst, idx) => ({ inst, idx }))
-              .filter(x => x.inst.status === 'pendente')
-              .sort((a, b) => b.inst.number - a.inst.number);
+          let newInstallments = [...saleAR.installments];
+          let needsSave = false;
+          let reconNote = '';
 
-            for (const { idx } of pendingIndices) {
-              if (remainingToSub <= 0) break;
-              const sub = Math.min(newInstallments[idx].value, remainingToSub);
-              newInstallments[idx].value = Math.round((newInstallments[idx].value - sub) * 100) / 100;
-              remainingToSub = Math.round((remainingToSub - sub) * 100) / 100;
+          // ── Reconciliação de Valor ────────────────────────────────────────
+          if (Math.abs(diffToReconcile) > 0.01) {
+            if (diffToReconcile > 0) {
+              const lastPending = [...newInstallments].reverse().find(i => i.status === 'pendente');
+              if (lastPending) {
+                lastPending.value = Math.round((lastPending.value + diffToReconcile) * 100) / 100;
+              } else {
+                newInstallments.push({
+                  id: crypto.randomUUID(),
+                  number: newInstallments.length + 1,
+                  dueDate: new Date().toISOString().split('T')[0],
+                  value: diffToReconcile,
+                  status: 'pendente',
+                  notes: 'Ajuste de Aditivo de Pedido'
+                } as any);
+              }
+            } else {
+              let remainingToSub = Math.abs(diffToReconcile);
+              const pendingIndices = newInstallments
+                .map((inst, idx) => ({ inst, idx }))
+                .filter(x => x.inst.status === 'pendente')
+                .sort((a, b) => b.inst.number - a.inst.number);
+              for (const { idx } of pendingIndices) {
+                if (remainingToSub <= 0) break;
+                const sub = Math.min(newInstallments[idx].value, remainingToSub);
+                newInstallments[idx].value = Math.round((newInstallments[idx].value - sub) * 100) / 100;
+                remainingToSub = Math.round((remainingToSub - sub) * 100) / 100;
+              }
+            }
+            reconNote = `\n[RECONCILIAÇÃO ${new Date().toLocaleDateString('pt-BR')}] Ajuste de valor: ${diffToReconcile > 0 ? '+' : ''}${diffToReconcile.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
+            newInstallments = newInstallments.filter(i => i.value > 0 || i.status === 'pago');
+            needsSave = true;
+          }
+
+          // ── Atualização de Vencimentos (só parcelas pendentes) ────────────
+          const oldSale = sales.find(x => x.id === s.id);
+          if (s.firstDueDate && s.firstDueDate !== oldSale?.firstDueDate) {
+            const allPending = newInstallments.every(i => i.status === 'pendente');
+            if (allPending && newInstallments.length > 0) {
+              const firstDate = new Date(s.firstDueDate + 'T12:00:00');
+              newInstallments = newInstallments.map((inst, i) => ({
+                ...inst,
+                dueDate: new Date(firstDate.getFullYear(), firstDate.getMonth() + i, firstDate.getDate()).toISOString().split('T')[0],
+              }));
+              needsSave = true;
             }
           }
 
-          // Filtra parcelas com valor zero e atualiza totais
-          const finalInsts = newInstallments.filter(i => i.value > 0 || i.status === 'pago');
-          const updatedTotal = finalInsts.reduce((acc, i) => acc + i.value, 0);
-          const paidValue = finalInsts.filter(i => i.status === 'pago').reduce((acc, i) => acc + (i.paidValue || i.value), 0);
+          // ── Atualização de Forma de Pagamento ────────────────────────────
+          const pmChanged = s.paymentMethodId && s.paymentMethodId !== saleAR.paymentMethodId;
+          const pm = pmChanged ? paymentMethods.find(p => p.id === s.paymentMethodId) : null;
 
-          await handleSaveReceivable({
-            ...saleAR,
-            installments: finalInsts,
-            totalValue: updatedTotal,
-            paidValue: paidValue,
-            status: (updatedTotal - paidValue) <= 0 ? 'quitado' : (paidValue > 0 ? 'parcial' : 'pendente'),
-            notes: (saleAR.notes || '') + `\n[RECONCILIAÇÃO ${new Date().toLocaleDateString('pt-BR')}] Ajuste de valor: ${diffToReconcile > 0 ? '+' : ''}${diffToReconcile.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`
-          });
+          if (needsSave || pmChanged) {
+            const finalInsts = newInstallments;
+            const updatedTotal = finalInsts.reduce((acc, i) => acc + i.value, 0);
+            const paidValue = finalInsts.filter(i => i.status === 'pago').reduce((acc, i) => acc + (i.paidValue || i.value), 0);
+            await handleSaveReceivable({
+              ...saleAR,
+              installments: finalInsts,
+              totalValue: updatedTotal,
+              paidValue,
+              paymentMethodId: pmChanged ? s.paymentMethodId : saleAR.paymentMethodId,
+              paymentMethodName: pmChanged ? (pm?.name || s.paymentMethodName || saleAR.paymentMethodName) : saleAR.paymentMethodName,
+              status: (updatedTotal - paidValue) <= 0 ? 'quitado' : (paidValue > 0 ? 'parcial' : 'pendente'),
+              notes: (saleAR.notes || '') + reconNote,
+            });
+          }
         }
       }
 
-      // 2. Criação Inicial de AR (fluxo normal quando vira pedido pela primeira vez)
-      if (s.status === 'Pedido' && !isEditingPedido) {
+      // 2. Criação de AR — roda sempre que status é Pedido.
+      //    hasDownAR / hasRegularAR previnem duplicação.
+      //    Também cobre Pedidos antigos que não tiveram AR criado (ex: bloqueio RLS anterior).
+      if (s.status === 'Pedido') {
         const existingARs = receivables.filter(r => r.saleId === saleId && r.status !== 'cancelado');
 
         // ── AR de Entrada ──
@@ -407,22 +434,6 @@ const App: React.FC = () => {
             workOrders={workOrders}
             loading={loadingWO}
             onUpdateStatus={updateWorkOrderStatus}
-          />
-        );
-      case 'Agenda de Entregas':
-        return (
-          <DeliverySchedule 
-            orders={orders} 
-            deliveries={deliveries} 
-            onAddDelivery={addDelivery} 
-            onUpdateDeliveryStatus={updateDeliveryStatus} 
-            onUpdateDelivery={updateDelivery}
-            onDeleteDelivery={deleteDelivery}
-            onReorderDeliveries={setDeliveries}
-            driverTrackingLocations={driverLocations}
-            companyAddress={companyInfo.address}
-            companyName={companyInfo.name}
-            companyLogoUrl={companyInfo.logoUrl}
           />
         );
       case 'Agenda de Medição':
@@ -640,16 +651,18 @@ const App: React.FC = () => {
       case 'Agenda de Entregas':
         return (
           <DeliverySchedule 
-            orders={orders}
+            orders={workOrders} 
             deliveries={deliveries} 
             onAddDelivery={addDelivery} 
             onUpdateDeliveryStatus={updateDeliveryStatus} 
-            onUpdateDelivery={updateDelivery} 
+            onUpdateDelivery={updateDelivery}
             onDeleteDelivery={deleteDelivery}
+            onReorderDeliveries={setDeliveries}
+            driverTrackingLocations={driverLocations}
             companyAddress={companyInfo.address}
             companyName={companyInfo.name}
             companyLogoUrl={companyInfo.logoUrl}
-            driverTrackingLocations={driverLocations}
+            phases={phases}
           />
         );
       case 'Agenda de Medição':
