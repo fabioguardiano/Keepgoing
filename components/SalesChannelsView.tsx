@@ -210,6 +210,14 @@ export const SalesChannelsView: React.FC<SalesChannelsViewProps> = ({ channels, 
 
             <form onSubmit={handleSubmit} className="p-8 space-y-4">
               <div>
+                <label className={labelClass}>Código</label>
+                <input
+                  readOnly
+                  className={`${inputClass} cursor-not-allowed opacity-60`}
+                  value={editingChannel?.code ?? (channels.reduce((max, x) => Math.max(max, x.code ?? 0), 0) + 1)}
+                />
+              </div>
+              <div>
                 <label className={labelClass}>Nome do Canal</label>
                 <input
                   required
@@ -217,6 +225,7 @@ export const SalesChannelsView: React.FC<SalesChannelsViewProps> = ({ channels, 
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Ex: Facebook, Parceria Arquiteto X..."
+                  autoFocus
                 />
               </div>
 
