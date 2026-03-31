@@ -172,24 +172,6 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
         >
           <div className="relative" onClick={e => e.stopPropagation()}>
             <img src={lightbox} alt="Desenho" className="max-h-[90vh] max-w-[90vw] rounded-xl shadow-2xl object-contain" />
-            {/* Watermark — visível apenas ao imprimir */}
-            <div className="absolute inset-0 hidden print:flex items-center justify-center pointer-events-none rounded-xl overflow-hidden">
-              <span style={{
-                transform: 'rotate(-45deg)',
-                color: 'rgba(185,28,28,0.50)',
-                fontSize: '28px',
-                fontWeight: 900,
-                textAlign: 'center',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                lineHeight: 1.4,
-                whiteSpace: 'nowrap',
-                border: '3px solid rgba(185,28,28,0.35)',
-                padding: '8px 20px',
-              }}>
-                CÓPIA NÃO OFICIAL<br/>USE O DESENHO ORIGINAL
-              </span>
-            </div>
           </div>
           <button onClick={() => setLightbox(null)} className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/40 rounded-full text-white transition-colors">
             <X size={22} />
@@ -439,24 +421,6 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                       {drawings.map((url, idx) => (
                         <div key={idx} className="relative group rounded-xl overflow-hidden border border-gray-200 aspect-square bg-gray-50">
                           <img src={url} alt={`Desenho ${idx + 1}`} className="w-full h-full object-cover" />
-                          {/* Watermark — visível apenas ao imprimir */}
-                          <div className="absolute inset-0 hidden print:flex items-center justify-center pointer-events-none" style={{ zIndex: 10 }}>
-                            <span style={{
-                              transform: 'rotate(-45deg)',
-                              color: 'rgba(185,28,28,0.55)',
-                              fontSize: '9px',
-                              fontWeight: 900,
-                              textAlign: 'center',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.08em',
-                              lineHeight: 1.4,
-                              whiteSpace: 'nowrap',
-                              border: '1.5px solid rgba(185,28,28,0.4)',
-                              padding: '2px 6px',
-                            }}>
-                              CÓPIA NÃO OFICIAL<br/>USE O DESENHO ORIGINAL
-                            </span>
-                          </div>
                           {/* Hover overlay */}
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
                             <button
