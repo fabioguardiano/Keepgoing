@@ -140,11 +140,17 @@ export const useSettings = (
 
   // Categories & Lists
   const DEFAULT_SALES_CHANNELS: SalesChannel[] = [
-    { id: '1', name: 'Google', createdAt: new Date().toISOString() },
-    { id: '2', name: 'Indicação', createdAt: new Date().toISOString() },
-    { id: '3', name: 'Instagram', createdAt: new Date().toISOString() },
-    { id: '4', name: 'Showroom', createdAt: new Date().toISOString() },
+    { id: '1', name: 'GOOGLE', createdAt: new Date().toISOString() },
+    { id: '2', name: 'INDICAÇÃO', createdAt: new Date().toISOString() },
+    { id: '3', name: 'INSTAGRAM', createdAt: new Date().toISOString() },
+    { id: '4', name: 'SHOWROOM', createdAt: new Date().toISOString() },
   ];
+  const [salesChannels, setSalesChannels] = useState<SalesChannel[]>(() => {
+    try {
+      const raw = (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).getItem('marmo_sales_channels');
+      return raw ? JSON.parse(raw) : DEFAULT_SALES_CHANNELS;
+    } catch { return DEFAULT_SALES_CHANNELS; }
+  });
   const [brands, setBrands]               = useState<Brand[]>(() => {
     try {
       const raw = (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).getItem('marmo_brands');
@@ -163,8 +169,6 @@ export const useSettings = (
       return raw ? JSON.parse(raw) : [];
     } catch { return []; }
   });
-  const [salesChannels, setSalesChannels] = useLocalStorage<SalesChannel[]>('marmo_sales_channels', DEFAULT_SALES_CHANNELS);
-
   // Company Info — fonte de verdade: Supabase. (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)) é apenas cache inicial.
   const defaultCompanyData: CompanyInfo = {
     name: 'Tok de Art',
@@ -214,6 +218,12 @@ export const useSettings = (
             try {
               const cached = JSON.parse(ls.getItem('marmo_service_groups') || '[]');
               if (cached.length > 0) needsSync.service_groups = cached;
+            } catch {}
+          }
+          if ((!data.sales_channels || data.sales_channels.length === 0) && ls) {
+            try {
+              const cached = JSON.parse(ls.getItem('marmo_sales_channels') || '[]');
+              if (cached.length > 0) needsSync.sales_channels = cached;
             } catch {}
           }
           if ((!data.product_groups || data.product_groups.length === 0) && ls) {
@@ -289,6 +299,11 @@ export const useSettings = (
         const sg = data.service_groups.map((g: any) => ({ ...g, description: up(g.description) ?? g.description }));
         setServiceGroups(sg);
         (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem('marmo_service_groups', JSON.stringify(sg));
+      }
+      if (data.sales_channels && Array.isArray(data.sales_channels) && data.sales_channels.length > 0) {
+        const sc = data.sales_channels.map((c: any) => ({ ...c, name: up(c.name) ?? c.name }));
+        setSalesChannels(sc);
+        (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem('marmo_sales_channels', JSON.stringify(sc));
       }
     };
 
@@ -684,12 +699,22 @@ export const useSettings = (
     return next;
   });
 
-  const handleSaveSalesChannel = (c: SalesChannel) => setSalesChannels(prev => {
+  const handleSaveSalesChannel = (c: SalesChannel) => {
     const u = { ...c, name: up(c.name) ?? c.name };
-    return prev.find(x => x.id === c.id) ? prev.map(x => x.id === c.id ? u : x) : [...prev, u];
-  });
+    setSalesChannels(prev => {
+      const next = prev.find(x => x.id === c.id) ? prev.map(x => x.id === c.id ? u : x) : [...prev, u];
+      syncCompanyMetadata('sales_channels', next);
+      return next;
+    });
+  };
 
-  const handleDeleteSalesChannel = (id: string) => setSalesChannels(prev => prev.map(x => x.id === id ? { ...x, status: 'inativo' as const } : x));
+  const handleDeleteSalesChannel = (id: string) => {
+    setSalesChannels(prev => {
+      const next = prev.map(x => x.id === id ? { ...x, status: 'inativo' as const } : x);
+      syncCompanyMetadata('sales_channels', next);
+      return next;
+    });
+  };
 
   const onSyncCloud = async (type: 'brands' | 'product_groups' | 'service_groups') => {
     if (!companyId) return;
