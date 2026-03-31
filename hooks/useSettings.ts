@@ -276,16 +276,19 @@ export const useSettings = (
 
       // Metadata Lists (Brands, Groups, Services)
       if (data.brands && Array.isArray(data.brands) && (data.brands.length > 0 || brands.length === 0)) {
-        setBrands(data.brands);
-        (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem('marmo_brands', JSON.stringify(data.brands));
+        const br = data.brands.map((b: any) => ({ ...b, description: up(b.description) ?? b.description }));
+        setBrands(br);
+        (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem('marmo_brands', JSON.stringify(br));
       }
       if (data.product_groups && Array.isArray(data.product_groups) && (data.product_groups.length > 0 || productGroups.length === 0)) {
-        setProductGroups(data.product_groups);
-        (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem('marmo_product_groups', JSON.stringify(data.product_groups));
+        const pg = data.product_groups.map((g: any) => ({ ...g, description: up(g.description) ?? g.description }));
+        setProductGroups(pg);
+        (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem('marmo_product_groups', JSON.stringify(pg));
       }
       if (data.service_groups && Array.isArray(data.service_groups) && (data.service_groups.length > 0 || serviceGroups.length === 0)) {
-        setServiceGroups(data.service_groups);
-        (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem('marmo_service_groups', JSON.stringify(data.service_groups));
+        const sg = data.service_groups.map((g: any) => ({ ...g, description: up(g.description) ?? g.description }));
+        setServiceGroups(sg);
+        (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem('marmo_service_groups', JSON.stringify(sg));
       }
     };
 
