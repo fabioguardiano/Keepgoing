@@ -45,16 +45,9 @@ export const useProducts = (companyId?: string, logActivity?: any) => {
           };
         });
         setProducts(mapped as ProductService[]);
-        if (typeof window !== 'undefined') {
-          window.localStorage.setItem(`marmo_products_${companyId || 'legacy'}`, JSON.stringify(mapped));
-        }
       }
     } catch (err) {
       console.error('Erro ao carregar produtos do Supabase:', err);
-      if (typeof window !== 'undefined') {
-        const saved = window.localStorage.getItem(`marmo_products_${companyId || 'legacy'}`);
-        if (saved) setProducts(JSON.parse(saved));
-      }
     } finally {
       setLoadingProducts(false);
     }
@@ -130,7 +123,6 @@ export const useProducts = (companyId?: string, logActivity?: any) => {
         const next = prev.find(x => x.id === p.id || x.id === saved.id)
           ? prev.map(x => (x.id === p.id || x.id === saved.id) ? saved : x)
           : [saved, ...prev];
-        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_products_${finalCompanyId}`, JSON.stringify(next));
         return next;
       });
 

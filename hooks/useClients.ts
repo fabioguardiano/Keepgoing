@@ -51,12 +51,8 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
         createdAt: c.created_at
       }));
       setClients(mapped as Client[]);
-      // Persistência local específica da empresa (ou legada)
-      ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_clients_${companyId || 'legacy'}`, JSON.stringify(mapped));
     } catch (err) {
       console.error('Erro ao carregar clientes do Supabase:', err);
-      const saved = ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).getItem(`marmo_clients_${companyId || 'legacy'}`);
-      if (saved) setClients(JSON.parse(saved));
     } finally {
       setLoadingClients(false);
     }
@@ -172,8 +168,6 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
           ? prev.map(x => (x.id === c.id || x.id === saved.id) ? saved : x)
           : [saved, ...prev];
         
-        // Atualiza ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any) IMEDIATAMENTE antes do próximo F5
-        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_clients_${finalCompanyId}`, JSON.stringify(next));
         return next;
       });
 
@@ -281,11 +275,7 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
       const { error } = await supabase.from('clients').update({ status: newStatus }).eq('id', id);
       if (error) throw error;
 
-      setClients(prev => {
-        const next = prev.map(x => x.id === id ? { ...x, status: newStatus } : x);
-        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_clients_${companyId || '00000000-0000-0000-0000-000000000000'}`, JSON.stringify(next));
-        return next;
-      });
+      setClients(prev => prev.map(x => x.id === id ? { ...x, status: newStatus } : x));
       fetchClients();
     } catch (err: any) {
       console.error('Erro ao inativar cliente:', err);

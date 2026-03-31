@@ -50,16 +50,9 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
           };
         });
         setMaterials(mappedMaterials as Material[]);
-        if (typeof window !== 'undefined') {
-          window.localStorage.setItem(`marmo_materials_${companyId || 'legacy'}`, JSON.stringify(mappedMaterials));
-        }
       }
     } catch (err) {
       console.error('Erro ao carregar materiais do Supabase:', err);
-      if (typeof window !== 'undefined') {
-        const saved = window.localStorage.getItem(`marmo_materials_${companyId || 'legacy'}`);
-        if (saved) setMaterials(JSON.parse(saved));
-      }
     } finally {
       setLoadingMaterials(false);
     }
@@ -163,7 +156,6 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
         const next = prev.find(x => x.id === m.id || x.id === savedMaterial.id)
           ? prev.map(x => (x.id === m.id || x.id === savedMaterial.id) ? savedMaterial : x)
           : [savedMaterial, ...prev];
-        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_materials_${finalCompanyId}`, JSON.stringify(next));
         return next;
       });
       

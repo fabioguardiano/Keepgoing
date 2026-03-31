@@ -30,12 +30,9 @@ export const useSuppliers = (companyId?: string, logActivity?: any) => {
           createdAt: s.created_at
         }));
         setSuppliers(mapped as Supplier[]);
-        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_suppliers_${companyId || 'legacy'}`, JSON.stringify(mapped));
       }
     } catch (err) {
       console.error('Erro ao carregar fornecedores do Supabase:', err);
-      const saved = ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).getItem(`marmo_suppliers_${companyId || 'legacy'}`);
-      if (saved) setSuppliers(JSON.parse(saved));
     } finally {
       setLoadingSuppliers(false);
     }
@@ -117,7 +114,6 @@ export const useSuppliers = (companyId?: string, logActivity?: any) => {
         const next = prev.find(x => x.id === s.id || x.id === saved.id)
           ? prev.map(x => (x.id === s.id || x.id === saved.id) ? saved : x)
           : [saved, ...prev];
-        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_suppliers_${finalCompanyId}`, JSON.stringify(next));
         return next;
       });
 
@@ -136,11 +132,7 @@ export const useSuppliers = (companyId?: string, logActivity?: any) => {
       const { error } = await supabase.from('suppliers').update({ status: newStatus }).eq('id', id);
       if (error) throw error;
 
-      setSuppliers(prev => {
-        const next = prev.map(x => x.id === id ? { ...x, status: newStatus } : x);
-        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_suppliers_${companyId || '00000000-0000-0000-0000-000000000000'}`, JSON.stringify(next));
-        return next;
-      });
+      setSuppliers(prev => prev.map(x => x.id === id ? { ...x, status: newStatus } : x));
       fetchSuppliers();
     } catch (err: any) {
       console.error('Erro ao inativar fornecedor:', err);

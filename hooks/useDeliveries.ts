@@ -29,12 +29,9 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
           status: d.status as any
         }));
         setDeliveries(mapped as Delivery[]);
-        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_deliveries_${companyId || 'legacy'}`, JSON.stringify(mapped));
       }
     } catch (err) {
       console.error('Erro ao carregar entregas do Supabase:', err);
-      const saved = ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).getItem(`marmo_deliveries_${companyId || 'legacy'}`);
-      if (saved) setDeliveries(JSON.parse(saved));
     } finally {
       setLoadingDeliveries(false);
     }
@@ -76,7 +73,6 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
 
       setDeliveries(prev => {
         const next = [newDelivery, ...prev];
-        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_deliveries_${finalCompanyId}`, JSON.stringify(next));
         return next;
       });
       
@@ -109,7 +105,6 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
       if (error) throw error;
       setDeliveries(prev => {
         const next = prev.map(d => d.id === id ? { ...d, status } : d);
-        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_deliveries_${finalCompanyId}`, JSON.stringify(next));
         return next;
       });
 
@@ -141,7 +136,6 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
       if (error) throw error;
       setDeliveries(prev => {
         const next = prev.filter(d => d.id !== id);
-        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_deliveries_${finalCompanyId}`, JSON.stringify(next));
         return next;
       });
       
@@ -181,7 +175,6 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
       if (error) throw error;
       setDeliveries(prev => {
         const next = prev.map(d => d.id === id ? { ...d, ...updates } : d);
-        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_deliveries_${finalCompanyId}`, JSON.stringify(next));
         return next;
       });
 

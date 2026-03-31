@@ -8,18 +8,6 @@ import {
 } from '../types';
 import { DEFAULT_PROFILES } from '../lib/permissions';
 
-const INITIAL_APP_USERS: AppUser[] = [
-  { id: '1', code: 1, name: 'Fábio Admin', email: 'fabio@marmoflow.com', role: 'admin', status: 'ativo', createdAt: '2024-01-10' },
-  { id: '2', code: 2, name: 'Ana Gerente', email: 'ana@marmoflow.com', role: 'manager', status: 'ativo', createdAt: '2024-02-01' },
-  { id: '3', code: 3, name: 'Carlos Vendas', email: 'carlos@marmoflow.com', role: 'seller', status: 'ativo', createdAt: '2024-03-05' },
-];
-
-const INITIAL_STAFF: ProductionStaff[] = [
-  { id: '1', code: 1, name: 'João Ferreira', position: 'serrador', hourlyRate: 22, phone: '(11) 99876-1234', status: 'ativo' },
-  { id: '2', code: 2, name: 'Marcos Lima', position: 'acabador', hourlyRate: 20, phone: '(11) 99123-5678', status: 'ativo' },
-  { id: '3', code: 3, name: 'Pedro Alves', position: 'ajudante_serrador', hourlyRate: 16, phone: '(11) 98765-0000', status: 'ativo' },
-  { id: '4', code: 4, name: 'Lucas Costa', position: 'medidor', hourlyRate: 18, phone: '(11) 97654-3210', status: 'inativo' },
-];
 
 export const useSettings = (
   setOrders?: (update: (prev: any[]) => any[]) => void,
@@ -27,7 +15,7 @@ export const useSettings = (
   companyId?: string
 ) => {
   // App Users — Supabase como fonte principal
-  const [appUsers, setAppUsers] = useState<AppUser[]>(INITIAL_APP_USERS);
+  const [appUsers, setAppUsers] = useState<AppUser[]>([]);
 
   // Carrega app_users do Supabase quando companyId estiver disponível
   useEffect(() => {
@@ -88,7 +76,7 @@ export const useSettings = (
   }, [companyId]);
 
   // Production Staff — Supabase como fonte de verdade
-  const [staff, setStaff] = useState<ProductionStaff[]>(INITIAL_STAFF);
+  const [staff, setStaff] = useState<ProductionStaff[]>([]);
 
   // Deadline alert thresholds — Supabase como fonte de verdade
   const [deadlineWarningDays, setDeadlineWarningDays] = useState<number>(7);
@@ -336,11 +324,19 @@ export const useSettings = (
   const handleSaveUser = async (u: AppUser, password?: string): Promise<string | undefined> => {
     const userCompanyId = companyId || '00000000-0000-0000-0000-000000000000';
 
+    const getAuthHeaders = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      return {
+        'Content-Type': 'application/json',
+        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      };
+    };
+
     // Para usuários novos (com senha fornecida e sem código ainda), cria via Admin API no Vercel
     if (password && !u.code) {
       const resp = await fetch('/api/reset-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await getAuthHeaders(),
         body: JSON.stringify({
           action: 'create',
           email: u.email.toLowerCase().trim(),
@@ -395,7 +391,7 @@ export const useSettings = (
       if (password && u.code) {
         const response = await fetch('/api/reset-password', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: await getAuthHeaders(),
           body: JSON.stringify({ userId: u.id, newPassword: password })
         });
         const result = await response.json();

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { Login } from './components/Login';
@@ -710,7 +711,9 @@ const App: React.FC = () => {
         />
         <RecentActivity activities={activities} isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} currentUserName={user?.name || user?.email} />
         <main className="flex-1 overflow-x-auto p-4 kanban-container">
-          {renderContent()}
+          <ErrorBoundary>
+            {renderContent()}
+          </ErrorBoundary>
         </main>
       </div>
     </div>

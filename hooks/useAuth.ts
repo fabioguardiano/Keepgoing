@@ -41,21 +41,6 @@ export const useAuth = () => {
       if (session?.user) {
         const u = mapSession(session);
         setUser(u);
-        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem('marmo_user', JSON.stringify(u));
-      } else {
-        const saved = ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).getItem('marmo_user');
-        if (saved) {
-          try {
-            const u = JSON.parse(saved);
-            if (u && !u.company_id) {
-              u.company_id = '00000000-0000-0000-0000-000000000000';
-              ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem('marmo_user', JSON.stringify(u));
-            }
-            setUser(u);
-          } catch {
-            // usuário salvo corrompido — ignora
-          }
-        }
       }
       setAuthReady(true);
     };
@@ -67,17 +52,14 @@ export const useAuth = () => {
         const u = mapSession(session);
         setUser(prev => {
           if (prev?.id === u.id && prev?.company_id === u.company_id) return prev;
-          // Novo login detectado
           writeAuthLog(u, 'login');
           return u;
         });
-        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem('marmo_user', JSON.stringify(u));
       } else {
         setUser(prev => {
           if (prev) writeAuthLog(prev, 'logout');
           return null;
         });
-        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).removeItem('marmo_user');
       }
     });
 
@@ -86,7 +68,6 @@ export const useAuth = () => {
 
   const handleLogin = (u: User) => {
     setUser(u);
-    ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem('marmo_user', JSON.stringify(u));
   };
 
   const handleLogout = async () => {
@@ -94,7 +75,6 @@ export const useAuth = () => {
     await supabase.auth.signOut();
     if (currentUser) await writeAuthLog(currentUser, 'logout');
     setUser(null);
-    ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).removeItem('marmo_user');
   };
 
   return { user, setUser, authReady, handleLogin, handleLogout };
