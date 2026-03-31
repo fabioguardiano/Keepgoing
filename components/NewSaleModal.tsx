@@ -1018,7 +1018,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                 <th className="px-4 py-3 text-center">Larg.</th>
                                 <th className="px-4 py-3 text-center">M² / Un</th>
                                 <th className="px-4 py-3 text-right">Vl. Unit</th>
-                                <th className="px-4 py-3 text-center min-w-[75px]">% / R$</th>
+                                <th className="px-4 py-3 text-center min-w-[105px]">% / R$</th>
                                 <th className="px-4 py-3 text-right">Total</th>
                                 <th className="px-4 py-3 text-center">Ações</th>
                               </tr>
@@ -1055,7 +1055,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                       })()}
                                       <td className="px-4 py-3 text-center text-[11px] font-bold text-slate-600 dark:text-slate-300">{Number(item.m2 || 0).toFixed(2) || '0.00'}</td>
                                       <td className="px-4 py-3 text-right text-[11px] font-bold text-slate-600 dark:text-slate-300">R$ {(item.unitPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                      <td className="px-4 py-3 text-center text-[10px] whitespace-nowrap">
+                                      <td className="px-4 py-3 text-center text-[10px] whitespace-nowrap min-w-[105px]">
                                         <div className="flex flex-col items-center">
                                           <span className="font-bold text-blue-500">{Number(item.servicePercentage || 0).toFixed(2)}%</span>
                                           <span className="text-[9px] font-black text-slate-400">
@@ -1199,7 +1199,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                 }} 
                                 readOnly={!canEditPrice && !!itemMaterialId}
                                 className={`w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-right transition-all ${!canEditPrice && !!itemMaterialId ? 'opacity-50 cursor-not-allowed grayscale' : ''}`} /></td>
-                                <td className="p-1 min-w-[70px]">
+                                <td className="p-1 min-w-[105px]">
                                   <div className="flex items-center gap-0.5">
                                     <input 
                                       type="number" 
@@ -1219,7 +1219,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                           serviceValueRef.current?.focus();
                                         }
                                       }} 
-                                      className="w-[26px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-0.5 py-2 text-[10px] font-bold outline-none focus:border-[var(--primary-color)] text-center transition-all" 
+                                      className="w-[34px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-1 py-2 text-[10px] font-bold outline-none focus:border-[var(--primary-color)] text-center transition-all" 
                                       placeholder="%"
                                     />
                                     <input 
@@ -1236,7 +1236,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                         setItemService(parseFloat(perc.toFixed(2)));
                                       }}
                                       onKeyDown={e => e.key === 'Enter' && addItem()}
-                                      className="w-[48px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-0.5 py-2 text-[10px] font-bold outline-none focus:border-[var(--primary-color)] text-right transition-all"
+                                      className="w-[62px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-1 py-2 text-[10px] font-bold outline-none focus:border-[var(--primary-color)] text-right transition-all"
                                       placeholder="R$ 0,00"
                                     />
                                   </div>
