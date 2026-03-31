@@ -700,9 +700,11 @@ export const useSettings = (
   });
 
   const handleSaveSalesChannel = (c: SalesChannel) => {
-    const u = { ...c, name: up(c.name) ?? c.name };
     setSalesChannels(prev => {
-      const next = prev.find(x => x.id === c.id) ? prev.map(x => x.id === c.id ? u : x) : [...prev, u];
+      const exists = prev.find(x => x.id === c.id);
+      const nextCode = exists?.code ?? (prev.reduce((max, x) => Math.max(max, x.code ?? 0), 0) + 1);
+      const u = { ...c, name: up(c.name) ?? c.name, code: nextCode };
+      const next = exists ? prev.map(x => x.id === c.id ? u : x) : [...prev, u];
       syncCompanyMetadata('sales_channels', next);
       return next;
     });

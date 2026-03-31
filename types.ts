@@ -237,6 +237,7 @@ export interface Client {
 
 export interface SalesChannel {
   id: string;
+  code?: number;
   name: string;
   status?: 'ativo' | 'inativo';
   createdAt: string;

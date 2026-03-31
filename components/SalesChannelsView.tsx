@@ -141,7 +141,7 @@ export const SalesChannelsView: React.FC<SalesChannelsViewProps> = ({ channels, 
                 <tr key={channel.id} className={`hover:bg-slate-50/50 transition-colors group ${channel.status === 'inativo' ? 'opacity-60' : ''}`}>
                   <td className="px-6 py-5">
                     <span className="text-sm font-black text-primary bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20 shadow-sm">
-                      #{index + 1}
+                      #{channel.code ?? index + 1}
                     </span>
                   </td>
                   <td className="px-6 py-5">
