@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, Image as ImageIcon, Plus, Briefcase, Calendar, Layers, User, ChevronDown, Trash2, Clock, ZoomIn, Lock, Pencil, XCircle, AlertTriangle } from 'lucide-react';
+import { X, Upload, Image as ImageIcon, Plus, Briefcase, Calendar, Layers, User, ChevronDown, Trash2, Clock, ZoomIn, Lock, Pencil, XCircle, AlertTriangle, Printer } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { WorkOrder, WorkOrderLog, PhaseConfig, AppUser } from '../types';
 import { formatOsLabel } from '../hooks/useWorkOrders';
 
@@ -113,6 +114,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   const [cancelReason, setCancelReason] = useState('');
   const [cancelReasonFree, setCancelReasonFree] = useState('');
   const [cancelling, setCancelling] = useState(false);
+  const [printingDrawing, setPrintingDrawing] = useState<string | null>(null);
 
   const currentPhase = workOrder.productionPhase || phases[0]?.name || '';
   const sortedLogs = [...(workOrder.logs || [])].sort(
@@ -150,6 +152,14 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
     onUpdate(workOrder.id, { assignedUsers: (workOrder.assignedUsers || []).filter(u => u.name !== name) });
   };
 
+  const handlePrintDrawing = (url: string) => {
+    setPrintingDrawing(url);
+    setTimeout(() => {
+      window.print();
+      setPrintingDrawing(null);
+    }, 100);
+  };
+
   const osLabel = formatOsLabel(workOrder, allWorkOrders);
 
   return (
@@ -183,6 +193,13 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
           </div>
           <button onClick={() => setLightbox(null)} className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/40 rounded-full text-white transition-colors">
             <X size={22} />
+          </button>
+          <button 
+            onClick={() => handlePrintDrawing(lightbox)} 
+            className="absolute top-4 right-16 p-2 bg-[var(--primary-color)] hover:opacity-90 rounded-full text-white transition-all shadow-lg flex items-center gap-2 px-4"
+          >
+            <Printer size={20} />
+            <span className="text-sm font-bold">Imprimir Desenho</span>
           </button>
         </div>
       )}
@@ -450,6 +467,13 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                               <ZoomIn size={14} />
                             </button>
                             <button
+                              onClick={() => handlePrintDrawing(url)}
+                              className="p-1.5 bg-white/90 rounded-lg text-[var(--primary-color)] hover:bg-white transition-colors"
+                              title="Imprimir com marca d'água"
+                            >
+                              <Printer size={14} />
+                            </button>
+                            <button
                               onClick={() => onDeleteDrawing(workOrder.id, url)}
                               className="p-1.5 bg-white/90 rounded-lg text-red-500 hover:bg-white transition-colors"
                               title="Remover desenho"
@@ -630,6 +654,49 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
             </div>
           </div>
         </div>
+      )}
+      {/* Portal de Impressão do Desenho */}
+      {printingDrawing && createPortal(
+        <div className="print-only fixed inset-0 bg-white z-[9999]">
+          <div className="relative w-full h-full flex items-center justify-center p-8">
+            {/* Cabeçalho da Impressão */}
+            <div className="absolute top-4 left-8 right-8 flex justify-between items-end border-b-2 border-gray-100 pb-2">
+               <div>
+                 <h2 className="text-xl font-black text-gray-900">{osLabel}</h2>
+                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{workOrder.clientName}</p>
+               </div>
+               <div className="text-right">
+                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Desenho Técnico / OS</p>
+                 <p className="text-[9px] text-gray-400 italic">Impresso em {new Date().toLocaleString('pt-BR')}</p>
+               </div>
+            </div>
+
+            <img 
+              src={printingDrawing} 
+              alt="Desenho para Impressão" 
+              className="max-w-full max-h-[85vh] object-contain shadow-sm"
+            />
+            
+            {/* Marca d'água de Segurança */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+               <div className="border-[6px] border-red-600/20 p-8 rounded-[40px] transform -rotate-[35deg]">
+                 <span className="text-7xl font-black text-red-600/15 text-center leading-none uppercase tracking-[0.2em] whitespace-nowrap block">
+                   CÓPIA NÃO OFICIAL
+                 </span>
+                 <span className="text-2xl font-black text-red-600/10 text-center block mt-4 uppercase tracking-widest">
+                   USE O DESENHO ORIGINAL
+                 </span>
+               </div>
+            </div>
+
+            {/* Rodapé da Impressão */}
+            <div className="absolute bottom-4 left-8 right-8 flex justify-between text-[10px] text-gray-400 font-bold border-t border-gray-100 pt-2">
+               <span>KeepGoing CRM — Módulo de Produção</span>
+               <span className="uppercase tracking-widest">{workOrder.productionPhase || 'Produção'}</span>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </>
   );
