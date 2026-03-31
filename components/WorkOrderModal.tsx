@@ -643,11 +643,11 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
             
             {/* Marca d'água de Segurança */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
-               <div className="border-[6px] border-red-600/20 p-8 rounded-[40px] transform -rotate-[35deg]">
-                 <span className="text-7xl font-black text-red-600/15 text-center leading-none uppercase tracking-[0.2em] whitespace-nowrap block">
+               <div className="border-[4px] border-red-600/15 p-6 rounded-[30px] transform -rotate-[30deg]">
+                 <span className="text-5xl font-black text-red-600/10 text-center leading-none uppercase tracking-[0.2em] whitespace-nowrap block">
                    CÓPIA NÃO OFICIAL
                  </span>
-                 <span className="text-2xl font-black text-red-600/10 text-center block mt-4 uppercase tracking-widest">
+                 <span className="text-lg font-black text-red-600/5 text-center block mt-3 uppercase tracking-widest">
                    USE O DESENHO ORIGINAL
                  </span>
                </div>
