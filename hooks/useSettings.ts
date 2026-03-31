@@ -1,27 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { up } from '../lib/uppercase';
-
-// ─── useLocalStorage ────────────────────────────────────────────────────────
-// Substitui o padrão repetitivo useState + useEffect para (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).
-function useLocalStorage<T>(key: string, fallback: T): [T, React.Dispatch<React.SetStateAction<T>>] {
-  const [value, setValue] = useState<T>(() => {
-    try {
-      const raw = (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).getItem(key);
-      if (!raw) return fallback;
-      const parsed = JSON.parse(raw);
-      // Mantém fallback se array vazio veio salvo (ex: usuários iniciais)
-      if (Array.isArray(parsed) && parsed.length === 0 && Array.isArray(fallback) && (fallback as unknown[]).length > 0) return fallback;
-      return parsed ?? fallback;
-    } catch {
-      return fallback;
-    }
-  });
-  useEffect(() => {
-    (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem(key, JSON.stringify(value));
-  }, [key, value]);
-  return [value, setValue];
-}
 import {
   AppUser, ProductionStaff, PhaseConfig, SalesPhaseConfig,
   Brand, ProductGroup, ServiceGroup, SalesChannel,
@@ -47,8 +26,8 @@ export const useSettings = (
   setSales?: (update: (prev: any[]) => any[]) => void,
   companyId?: string
 ) => {
-  // App Users — Supabase como fonte principal, (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)) como cache
-  const [appUsers, setAppUsers] = useLocalStorage<AppUser[]>('marmo_app_users', INITIAL_APP_USERS);
+  // App Users — Supabase como fonte principal
+  const [appUsers, setAppUsers] = useState<AppUser[]>(INITIAL_APP_USERS);
 
   // Carrega app_users do Supabase quando companyId estiver disponível
   useEffect(() => {
@@ -76,7 +55,7 @@ export const useSettings = (
 
           const mapped: AppUser[] = filteredData.map((row: any) => {
             let code = row.code;
-            
+
             // Força Fabio Lima (o antigo, ou o qual seja) a ser o 1 e fixa ele
             if (row.name.toUpperCase().includes('FABIO LIMA') && code !== 1) {
               code = 1;
@@ -108,35 +87,26 @@ export const useSettings = (
     fetchAppUsers();
   }, [companyId]);
 
-  // Production Staff
-  const [staff, setStaff] = useLocalStorage<ProductionStaff[]>('marmo_staff', INITIAL_STAFF);
+  // Production Staff — Supabase como fonte de verdade
+  const [staff, setStaff] = useState<ProductionStaff[]>(INITIAL_STAFF);
 
-  // Deadline alert thresholds
-  const [deadlineWarningDays, setDeadlineWarningDays] = useLocalStorage<number>('marmo_deadline_warning_days', 7);
-  const [deadlineUrgentDays, setDeadlineUrgentDays] = useLocalStorage<number>('marmo_deadline_urgent_days', 3);
+  // Deadline alert thresholds — Supabase como fonte de verdade
+  const [deadlineWarningDays, setDeadlineWarningDays] = useState<number>(7);
+  const [deadlineUrgentDays, setDeadlineUrgentDays] = useState<number>(3);
 
-  // Idle session timeout
-  const [idleTimeoutMinutes, setIdleTimeoutMinutes] = useLocalStorage<number>('marmo_idle_timeout_minutes', 15);
+  // Idle session timeout — Supabase como fonte de verdade
+  const [idleTimeoutMinutes, setIdleTimeoutMinutes] = useState<number>(15);
 
-  // Production Phases
-  const [phases, setPhases] = useLocalStorage<PhaseConfig[]>('marmo_phases', INITIAL_PHASES);
+  // Production Phases — Supabase como fonte de verdade
+  const [phases, setPhases] = useState<PhaseConfig[]>(INITIAL_PHASES);
 
-  // Sales Phases — fonte de verdade: Supabase. localStorage como cache.
+  // Sales Phases — fonte de verdade: Supabase.
   const DEFAULT_SALES_PHASES: SalesPhaseConfig[] = [
     { name: 'Oportunidade', code: '10', desirableDays: 2, alertDays: 1 },
     { name: 'Orçamento', code: '20', desirableDays: 2, alertDays: 1 },
     { name: 'Negociação', code: '30', desirableDays: 5, alertDays: 1 },
   ];
-  const [salesPhases, setSalesPhases] = useState<SalesPhaseConfig[]>(() => {
-    try {
-      const raw = (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).getItem('marmo_sales_phases');
-      if (!raw) return DEFAULT_SALES_PHASES;
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_SALES_PHASES;
-    } catch {
-      return DEFAULT_SALES_PHASES;
-    }
-  });
+  const [salesPhases, setSalesPhases] = useState<SalesPhaseConfig[]>(DEFAULT_SALES_PHASES);
 
   // Categories & Lists
   const DEFAULT_SALES_CHANNELS: SalesChannel[] = [
@@ -145,31 +115,12 @@ export const useSettings = (
     { id: '3', code: 3, name: 'INSTAGRAM', createdAt: new Date().toISOString() },
     { id: '4', code: 4, name: 'SHOWROOM', createdAt: new Date().toISOString() },
   ];
-  const [salesChannels, setSalesChannels] = useState<SalesChannel[]>(() => {
-    try {
-      const raw = (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).getItem('marmo_sales_channels');
-      return raw ? JSON.parse(raw) : DEFAULT_SALES_CHANNELS;
-    } catch { return DEFAULT_SALES_CHANNELS; }
-  });
-  const [brands, setBrands]               = useState<Brand[]>(() => {
-    try {
-      const raw = (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).getItem('marmo_brands');
-      return raw ? JSON.parse(raw) : [];
-    } catch { return []; }
-  });
-  const [productGroups, setProductGroups] = useState<ProductGroup[]>(() => {
-    try {
-      const raw = (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).getItem('marmo_product_groups');
-      return raw ? JSON.parse(raw) : [];
-    } catch { return []; }
-  });
-  const [serviceGroups, setServiceGroups] = useState<ServiceGroup[]>(() => {
-    try {
-      const raw = (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).getItem('marmo_service_groups');
-      return raw ? JSON.parse(raw) : [];
-    } catch { return []; }
-  });
-  // Company Info — fonte de verdade: Supabase. (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)) é apenas cache inicial.
+  const [salesChannels, setSalesChannels] = useState<SalesChannel[]>(DEFAULT_SALES_CHANNELS);
+  const [brands, setBrands]               = useState<Brand[]>([]);
+  const [productGroups, setProductGroups] = useState<ProductGroup[]>([]);
+  const [serviceGroups, setServiceGroups] = useState<ServiceGroup[]>([]);
+
+  // Company Info — fonte de verdade: Supabase.
   const defaultCompanyData: CompanyInfo = {
     name: 'Tok de Art',
     document: '14.092.404/0001-67',
@@ -183,79 +134,11 @@ export const useSettings = (
     sidebarTextColor: '#cbd5e1',
   };
 
-  const [companyInfo, setCompanyInfoState] = useState<CompanyInfo>(() => {
-    try {
-      const saved = (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).getItem('marmo_company');
-      if (!saved) return defaultCompanyData;
-      const parsed = JSON.parse(saved) || {};
-      return { ...defaultCompanyData, ...parsed };
-    } catch {
-      return defaultCompanyData;
-    }
-  });
+  const [companyInfo, setCompanyInfoState] = useState<CompanyInfo>(defaultCompanyData);
 
   // Busca do Supabase quando companyId estiver disponível + Realtime Sync
   useEffect(() => {
     if (!companyId) return;
-
-    const fetchCompany = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('companies')
-          .select('*')
-          .eq('id', companyId)
-          .single();
-        if (error) throw error;
-        if (data) {
-          updateStatesFromCompanyData(data);
-
-          // Force-sync: se a coluna ainda está vazia no Supabase mas o localStorage
-          // do usuário atual tem dados, grava agora para que outros usuários recebam.
-          const needsSync: Record<string, any> = {};
-          const ls = typeof window !== 'undefined' ? window.localStorage : null;
-
-          if ((!data.service_groups || data.service_groups.length === 0) && ls) {
-            try {
-              const cached = JSON.parse(ls.getItem('marmo_service_groups') || '[]');
-              if (cached.length > 0) needsSync.service_groups = cached;
-            } catch {}
-          }
-          if ((!data.sales_channels || data.sales_channels.length === 0) && ls) {
-            try {
-              const cached = JSON.parse(ls.getItem('marmo_sales_channels') || '[]');
-              if (cached.length > 0) needsSync.sales_channels = cached;
-            } catch {}
-          }
-          if ((!data.product_groups || data.product_groups.length === 0) && ls) {
-            try {
-              const cached = JSON.parse(ls.getItem('marmo_product_groups') || '[]');
-              if (cached.length > 0) needsSync.product_groups = cached;
-            } catch {}
-          }
-          if ((!data.brands || data.brands.length === 0) && ls) {
-            try {
-              const cached = JSON.parse(ls.getItem('marmo_brands') || '[]');
-              if (cached.length > 0) needsSync.brands = cached;
-            } catch {}
-          }
-          if ((!data.sales_phases || data.sales_phases.length === 0) && ls) {
-            try {
-              const cached = JSON.parse(ls.getItem('marmo_sales_phases') || '[]');
-              if (cached.length > 0) needsSync.sales_phases = cached;
-            } catch {}
-          }
-          if (Object.keys(needsSync).length > 0) {
-            supabase.from('companies').update(needsSync).eq('id', companyId)
-              .then(({ error: e }) => {
-                if (e) console.error('[useSettings] Erro no force-sync de grupos:', e);
-                else console.log('[useSettings] Force-sync de grupos realizado:', Object.keys(needsSync));
-              });
-          }
-        }
-      } catch (err) {
-        console.error('Erro ao carregar dados da empresa:', err);
-      }
-    };
 
     const updateStatesFromCompanyData = (data: any) => {
       const info: CompanyInfo = {
@@ -275,36 +158,30 @@ export const useSettings = (
         maxDiscountPct: data.max_discount_pct ?? undefined,
       };
       setCompanyInfoState(info);
-      (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem('marmo_company', JSON.stringify(info));
 
       // Sales Phases
       if (data.sales_phases && Array.isArray(data.sales_phases) && data.sales_phases.length > 0) {
         setSalesPhases(data.sales_phases);
-        (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem('marmo_sales_phases', JSON.stringify(data.sales_phases));
       }
 
       // Permission Profiles
       if (data.permission_profiles && Array.isArray(data.permission_profiles) && data.permission_profiles.length > 0) {
         const merged = mergeProfiles(data.permission_profiles as PermissionProfile[]);
         setPermissionProfiles(merged);
-        (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem('marmo_permission_profiles', JSON.stringify(merged));
       }
 
       // Metadata Lists (Brands, Groups, Services)
       if (data.brands && Array.isArray(data.brands) && (data.brands.length > 0 || brands.length === 0)) {
         const br = data.brands.map((b: any) => ({ ...b, description: up(b.description) ?? b.description }));
         setBrands(br);
-        (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem('marmo_brands', JSON.stringify(br));
       }
       if (data.product_groups && Array.isArray(data.product_groups) && (data.product_groups.length > 0 || productGroups.length === 0)) {
         const pg = data.product_groups.map((g: any) => ({ ...g, description: up(g.description) ?? g.description }));
         setProductGroups(pg);
-        (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem('marmo_product_groups', JSON.stringify(pg));
       }
       if (data.service_groups && Array.isArray(data.service_groups) && (data.service_groups.length > 0 || serviceGroups.length === 0)) {
         const sg = data.service_groups.map((g: any) => ({ ...g, description: up(g.description) ?? g.description }));
         setServiceGroups(sg);
-        (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem('marmo_service_groups', JSON.stringify(sg));
       }
       if (data.sales_channels && Array.isArray(data.sales_channels) && data.sales_channels.length > 0) {
         let nextCode = 1;
@@ -319,8 +196,46 @@ export const useSettings = (
         });
         const needsBackfill = sc.some((c: any, i: number) => c.code !== data.sales_channels[i].code);
         setSalesChannels(sc);
-        (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem('marmo_sales_channels', JSON.stringify(sc));
         if (needsBackfill) syncCompanyMetadata('sales_channels', sc);
+      }
+
+      // Staff
+      if (data.staff && Array.isArray(data.staff) && data.staff.length > 0) {
+        setStaff(data.staff);
+      }
+
+      // Phases
+      if (data.phases && Array.isArray(data.phases) && data.phases.length > 0) {
+        setPhases(data.phases);
+      }
+
+      // Deadline thresholds
+      if (typeof data.deadline_warning_days === 'number') {
+        setDeadlineWarningDays(data.deadline_warning_days);
+      }
+      if (typeof data.deadline_urgent_days === 'number') {
+        setDeadlineUrgentDays(data.deadline_urgent_days);
+      }
+
+      // Idle timeout
+      if (typeof data.idle_timeout_minutes === 'number') {
+        setIdleTimeoutMinutes(data.idle_timeout_minutes);
+      }
+    };
+
+    const fetchCompany = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('companies')
+          .select('*')
+          .eq('id', companyId)
+          .single();
+        if (error) throw error;
+        if (data) {
+          updateStatesFromCompanyData(data);
+        }
+      } catch (err) {
+        console.error('Erro ao carregar dados da empresa:', err);
       }
     };
 
@@ -361,7 +276,7 @@ export const useSettings = (
       return '#' + (0x1000000 + (R < 255 ? R < 0 ? 0 : R : 255) * 0x10000 + (G < 255 ? G < 0 ? 0 : G : 255) * 0x100 + (B < 255 ? B < 0 ? 0 : B : 255)).toString(16).slice(1);
     };
     root.style.setProperty('--secondary-color', darken(primary, 10));
-    
+
     // Atualiza o Favicon (ícone da aba) se iconUrl estiver presente
     if (companyInfo.iconUrl || companyInfo.logoUrl) {
       const link = document.querySelector("link[rel*='icon']") as HTMLLinkElement || document.createElement('link');
@@ -372,10 +287,9 @@ export const useSettings = (
     }
   }, [companyInfo]);
 
-  // Salva no Supabase + atualiza estado local e cache
+  // Salva no Supabase + atualiza estado local
   const setCompanyInfo = async (info: CompanyInfo) => {
     setCompanyInfoState(info);
-    (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem('marmo_company', JSON.stringify(info));
     if (!companyId) return;
     try {
       const { error } = await supabase.from('companies').update({
@@ -403,9 +317,8 @@ export const useSettings = (
   /**
    * Sincronização genérica para listas de metadados
    */
-  const syncCompanyMetadata = (columnName: string, data: any[]) => {
+  const syncCompanyMetadata = (columnName: string, data: any) => {
     if (!companyId) return;
-    (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem(`marmo_${columnName}`, JSON.stringify(data));
     supabase.from('companies')
       .update({ [columnName]: data })
       .eq('id', companyId)
@@ -440,7 +353,7 @@ export const useSettings = (
           }
         })
       });
-      
+
       const signUpResult = await resp.json();
       if (!resp.ok) {
         if (signUpResult.error?.toLowerCase().includes('already registered')) {
@@ -527,32 +440,49 @@ export const useSettings = (
   const handleSaveStaff = (s: ProductionStaff) => {
     setStaff(prev => {
       const exists = prev.find(x => x.id === s.id);
+      let next: ProductionStaff[];
       if (exists) {
-        return prev.map(x => x.id === s.id ? { ...s, code: s.code || exists.code } : x);
+        next = prev.map(x => x.id === s.id ? { ...s, code: s.code || exists.code } : x);
+      } else {
+        const nextCode = prev.reduce((max, x) => Math.max(max, x.code || 0), 0) + 1;
+        next = [...prev, { ...s, code: nextCode }];
       }
-      const nextCode = prev.reduce((max, x) => Math.max(max, x.code || 0), 0) + 1;
-      return [...prev, { ...s, code: nextCode }];
+      syncCompanyMetadata('staff', next);
+      return next;
     });
   };
   const handleDeleteStaff = (id: string) => setStaff(prev => prev.map(x => x.id === id ? { ...x, status: 'inativo' as const } : x));
 
   const addPhase = (name: string) => {
     if (!phases.find(p => p.name === name)) {
-      setPhases([...phases, { name, requiresResponsible: false }]);
+      const next = [...phases, { name, requiresResponsible: false }];
+      setPhases(next);
+      syncCompanyMetadata('phases', next);
     }
   };
   const renamePhase = (oldName: string, newName: string) => {
-    setPhases(prev => prev.map(p => p.name === oldName ? { ...p, name: newName } : p));
+    setPhases(prev => {
+      const next = prev.map(p => p.name === oldName ? { ...p, name: newName } : p);
+      syncCompanyMetadata('phases', next);
+      return next;
+    });
     if (setOrders) {
       setOrders(prev => prev.map(o => o.phase === oldName ? { ...o, phase: newName as ProductionPhase } : o));
     }
   };
-  const deletePhase = (name: string) => setPhases(prev => prev.filter(p => p.name !== name));
+  const deletePhase = (name: string) => {
+    setPhases(prev => {
+      const next = prev.filter(p => p.name !== name);
+      syncCompanyMetadata('phases', next);
+      return next;
+    });
+  };
   const reorderPhases = (startIndex: number, endIndex: number) => {
     const result = Array.from(phases);
     const [removed] = result.splice(startIndex, 1);
     result.splice(endIndex, 0, removed);
     setPhases(result);
+    syncCompanyMetadata('phases', result);
   };
   const togglePhaseRequirement = (phaseName: string) => setPhases(prev => prev.map(p => p.name === phaseName ? { ...p, requiresResponsible: !p.requiresResponsible } : p));
 
@@ -561,15 +491,13 @@ export const useSettings = (
       const next = [...salesPhases, { name }];
       setSalesPhases(next);
       syncSalesPhasesToSupabase(next);
-      (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem('marmo_sales_phases', JSON.stringify(next));
     }
   };
   const renameSalesPhase = (oldName: string, newName: string) => {
     const next = salesPhases.map(p => p.name === oldName ? { ...p, name: newName } : p);
     setSalesPhases(next);
     syncSalesPhasesToSupabase(next);
-    (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem('marmo_sales_phases', JSON.stringify(next));
-    
+
     if (setSales) {
       setSales(prev => prev.map(s => s.salesPhase === oldName ? { ...s, salesPhase: newName } : s));
     }
@@ -583,7 +511,6 @@ export const useSettings = (
     const next = salesPhases.filter(p => p.name !== name);
     setSalesPhases(next);
     syncSalesPhasesToSupabase(next);
-    (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem('marmo_sales_phases', JSON.stringify(next));
   };
 
   // Migração/Garantia de códigos para fases padrão
@@ -599,6 +526,7 @@ export const useSettings = (
       return changed ? next : prev;
     });
   }, []);
+
   const syncSalesPhasesToSupabase = (sPhases: SalesPhaseConfig[]) => {
     if (!companyId) return;
     supabase.from('companies')
@@ -613,7 +541,6 @@ export const useSettings = (
     setSalesPhases(prev => {
       const next = prev.map(p => p.name === name ? { ...p, ...updates } : p);
       syncSalesPhasesToSupabase(next);
-      (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem('marmo_sales_phases', JSON.stringify(next));
       return next;
     });
   };
@@ -623,11 +550,9 @@ export const useSettings = (
     result.splice(endIndex, 0, removed);
     setSalesPhases(result);
     syncSalesPhasesToSupabase(result);
-    (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem('marmo_sales_phases', JSON.stringify(result));
   };
 
   // Permission Profiles — fonte de verdade: Supabase (coluna permission_profiles em companies).
-  // (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)) é apenas cache para carregamento rápido inicial.
   const mergeProfiles = (fromDb: PermissionProfile[]): PermissionProfile[] => {
     const ids = fromDb.map(p => p.id);
     const missing = DEFAULT_PROFILES.filter(d => !ids.includes(d.id));
@@ -639,22 +564,9 @@ export const useSettings = (
     });
   };
 
-  const [permissionProfiles, setPermissionProfiles] = useState<PermissionProfile[]>(() => {
-    try {
-      const raw = (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).getItem('marmo_permission_profiles');
-      if (!raw) return DEFAULT_PROFILES;
-      return mergeProfiles(JSON.parse(raw));
-    } catch {
-      return DEFAULT_PROFILES;
-    }
-  });
+  const [permissionProfiles, setPermissionProfiles] = useState<PermissionProfile[]>(DEFAULT_PROFILES);
 
   // O fetch agora é feito junto com o da empresa acima para garantir consistência
-
-  // Persiste no (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)) como cache
-  useEffect(() => {
-    (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem('marmo_permission_profiles', JSON.stringify(permissionProfiles));
-  }, [permissionProfiles]);
 
   // Salva perfis no Supabase (fonte de verdade) — fire-and-forget
   const syncProfilesToSupabase = (profiles: PermissionProfile[]) => {
@@ -743,18 +655,34 @@ export const useSettings = (
       service_groups: serviceGroups
     };
     const data = dataMap[type as keyof typeof dataMap];
-    
+
     try {
       const { error } = await supabase.from('companies')
         .update({ [type]: data })
         .eq('id', companyId);
-      
+
       if (error) throw error;
       console.log(`[useSettings] Sincronização cloud de ${type} concluída com sucesso.`);
     } catch (err) {
       console.error(`[useSettings] Erro ao sincronizar ${type} com a nuvem:`, err);
       throw err;
     }
+  };
+
+  // Wrapper setters que também persistem no Supabase
+  const saveDeadlineWarningDays = (days: number) => {
+    setDeadlineWarningDays(days);
+    syncCompanyMetadata('deadline_warning_days', days);
+  };
+
+  const saveDeadlineUrgentDays = (days: number) => {
+    setDeadlineUrgentDays(days);
+    syncCompanyMetadata('deadline_urgent_days', days);
+  };
+
+  const saveIdleTimeoutMinutes = (mins: number) => {
+    setIdleTimeoutMinutes(mins);
+    syncCompanyMetadata('idle_timeout_minutes', mins);
   };
 
   return {
@@ -768,10 +696,9 @@ export const useSettings = (
     salesChannels, handleSaveSalesChannel, handleDeleteSalesChannel,
     companyInfo, setCompanyInfo,
     permissionProfiles, handleSaveProfile, handleDeleteProfile,
-    deadlineWarningDays, setDeadlineWarningDays,
-    deadlineUrgentDays, setDeadlineUrgentDays,
-    idleTimeoutMinutes, setIdleTimeoutMinutes,
+    deadlineWarningDays, setDeadlineWarningDays: saveDeadlineWarningDays,
+    deadlineUrgentDays, setDeadlineUrgentDays: saveDeadlineUrgentDays,
+    idleTimeoutMinutes, setIdleTimeoutMinutes: saveIdleTimeoutMinutes,
     onSyncCloud,
   };
 };
-
