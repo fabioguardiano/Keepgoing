@@ -153,7 +153,7 @@ export const useSettings = (
       }
 
       // Permission Profiles
-      if (data.permission_profiles && Array.isArray(data.permission_profiles) && data.permission_profiles.length > 0) {
+      if (data.permission_profiles && Array.isArray(data.permission_profiles)) {
         const merged = mergeProfiles(data.permission_profiles as PermissionProfile[]);
         setPermissionProfiles(merged);
       }

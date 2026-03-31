@@ -304,7 +304,10 @@ const App: React.FC = () => {
           await handleSaveOrder(newOrder);
         }
       }
-    } catch (err) { /* Erro já tratado no hook */ }
+    } catch (err) {
+      console.error('[handleSaveSale] Erro nas operações em cascata:', err);
+      alert('Venda salva, mas ocorreu um erro ao criar os registros financeiros ou de O.S. Verifique os dados e tente novamente.');
+    }
   };
 
   // Login com redirect para motoristas
