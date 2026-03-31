@@ -18,32 +18,37 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
       
       if (materialsError) throw materialsError;
       if (materialsData) {
-        const mappedMaterials = materialsData.map(m => ({
-          ...m,
-          group: m.product_group || '',
-          unitCost: m.unit_cost,
-          minStock: m.min_stock,
-          stockQuantity: m.stock_quantity,
-          registrationDate: m.registration_date,
-          freightCost: m.freight_cost,
-          taxPercentage: m.tax_percentage,
-          lossPercentage: m.loss_percentage,
-          profitMargin: m.profit_margin,
-          commissionPercentage: m.commission_percentage,
-          discountPercentage: m.discount_percentage,
-          suggestedPrice: m.suggested_price,
-          sellingPrice: m.selling_price,
-          dolarRate: m.dolar_rate,
-          euroRate: m.euro_rate,
-          priceHistory: m.price_history,
-          imageUrl: m.image_url,
-          stockLocation: m.inventory_location,
-          m2PerUnit: m.m2_per_unit,
-          supplier: m.supplier || '',
-          specialTableMargin: m.special_table_margin ?? 0,
-          specialTableValue: m.special_table_value ?? 0,
-          specialTableCommission: m.special_table_commission ?? 0,
-        }));
+        const mappedMaterials = materialsData.map(m => {
+          // Normaliza códigos puramente numéricos para 4 dígitos (ex: "1" -> "0001")
+          const normalizedCode = /^\d+$/.test(m.code || '') ? m.code.padStart(4, '0') : m.code;
+          return {
+            ...m,
+            code: normalizedCode,
+            group: m.product_group || '',
+            unitCost: m.unit_cost,
+            minStock: m.min_stock,
+            stockQuantity: m.stock_quantity,
+            registrationDate: m.registration_date,
+            freightCost: m.freight_cost,
+            taxPercentage: m.tax_percentage,
+            lossPercentage: m.loss_percentage,
+            profitMargin: m.profit_margin,
+            commissionPercentage: m.commission_percentage,
+            discountPercentage: m.discount_percentage,
+            suggestedPrice: m.suggested_price,
+            sellingPrice: m.selling_price,
+            dolarRate: m.dolar_rate,
+            euroRate: m.euro_rate,
+            priceHistory: m.price_history,
+            imageUrl: m.image_url,
+            stockLocation: m.inventory_location,
+            m2PerUnit: m.m2_per_unit,
+            supplier: m.supplier || '',
+            specialTableMargin: m.special_table_margin ?? 0,
+            specialTableValue: m.special_table_value ?? 0,
+            specialTableCommission: m.special_table_commission ?? 0,
+          };
+        });
         setMaterials(mappedMaterials as Material[]);
         if (typeof window !== 'undefined') {
           window.localStorage.setItem(`marmo_materials_${companyId || 'legacy'}`, JSON.stringify(mappedMaterials));
@@ -70,7 +75,7 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
       const payload = {
         id: (m.id && m.id.length > 20) ? m.id : undefined,
         company_id: finalCompanyId,
-        code: m.code,
+        code: /^\d+$/.test(m.code || '') ? m.code.padStart(4, '0') : m.code,
         name: up(m.name),
         type: m.type,
         status: m.status,

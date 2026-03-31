@@ -26,6 +26,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 25;
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -49,12 +51,18 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
     .sort((a, b) => {
       let comparison = 0;
       if (sortField === 'name') comparison = a.name.localeCompare(b.name);
-      if (sortField === 'code') comparison = a.code.localeCompare(b.code);
+      if (sortField === 'code') comparison = a.code.localeCompare(b.code, undefined, { numeric: true, sensitivity: 'base' });
       if (sortField === 'stockQuantity') comparison = a.stockQuantity - b.stockQuantity;
       if (sortField === 'sellingPrice') comparison = (a.sellingPrice || 0) - (b.sellingPrice || 0);
       
       return sortDirection === 'asc' ? comparison : -comparison;
     });
+
+  const totalPages = Math.ceil(filteredMaterials.length / itemsPerPage);
+  const paginatedMaterials = filteredMaterials.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return <ArrowUpDown size={14} className="opacity-30 group-hover:opacity-100 transition-opacity" />;
@@ -129,7 +137,10 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
             placeholder="Buscar por código ou descrição..."
             className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium text-sm"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
           />
         </div>
         <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
@@ -141,7 +152,10 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           {materials.filter(m => m.status === 'inativo').length} Inativos
         </div>
         <button
-          onClick={() => setShowInactive(v => !v)}
+          onClick={() => {
+            setShowInactive(v => !v);
+            setCurrentPage(1);
+          }}
           className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-xs font-bold uppercase tracking-widest transition-all ${showInactive ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-200'}`}
         >
           <PowerOff size={14} />
@@ -180,7 +194,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredMaterials.map(material => (
+              {paginatedMaterials.map(material => (
                 <tr key={material.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-6 py-4">
                     <span className="text-xs font-black text-slate-400 bg-slate-100 px-2 py-1 rounded-lg">{material.code}</span>
@@ -245,6 +259,47 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               )}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mt-6">
+        <div className="text-sm font-bold text-slate-400">
+          Mostrando <span className="text-slate-800">{paginatedMaterials.length}</span> de <span className="text-slate-800">{filteredMaterials.length}</span> registros
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+            className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-black text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            Anterior
+          </button>
+          {[...Array(totalPages)].map((_, i) => {
+            const page = i + 1;
+            // Mostrar apenas algumas páginas se houver muitas
+            if (totalPages > 7) {
+              if (page !== 1 && page !== totalPages && Math.abs(page - currentPage) > 1) {
+                if (page === 2 || page === totalPages - 1) return <span key={page} className="px-2 text-slate-300">...</span>;
+                return null;
+              }
+            }
+            return (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`w-8 h-8 flex items-center justify-center rounded-xl text-[10px] font-black transition-all ${currentPage === page ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white border border-slate-200 text-slate-400 hover:bg-slate-50'}`}
+              >
+                {page}
+              </button>
+            );
+          })}
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages || totalPages === 0}
+            className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-black text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            Próximo
+          </button>
         </div>
       </div>
 

@@ -18,29 +18,32 @@ export const useProducts = (companyId?: string, logActivity?: any) => {
 
       if (error) throw error;
       if (data) {
-        const mapped = data.map(p => ({
-          ...p,
-          description: p.name || '',
-          type: p.category,
-          code: p.code || '',
-          group: p.product_group || '',
-          unit: p.unit || 'UN',
-          stockBalance: p.stock_balance ?? 0,
-          minStock: p.min_stock ?? 0,
-          unitCost: p.unit_cost ?? 0,
-          freight: p.freight ?? 0,
-          lossPercentage: p.loss_percentage ?? 0,
-          taxPercentage: p.tax_percentage ?? 0,
-          profitMargin: p.profit_margin ?? 0,
-          commissionPercentage: p.commission_percentage ?? 0,
-          discountPercentage: p.discount_percentage ?? 0,
-          suggestedPrice: p.suggested_price ?? 0,
-          sellingPrice: p.base_price ?? 0,
-          brand: p.brand || '',
-          manufacturerNumber: p.manufacturer_number || '',
-          nfeData: p.nfe_data || null,
-          imageUrl: p.image_url || '',
-        }));
+        const mapped = data.map(p => {
+          const normalizedCode = /^\d+$/.test(p.code || '') ? p.code.padStart(4, '0') : p.code;
+          return {
+            ...p,
+            code: normalizedCode || '',
+            description: p.name || '',
+            type: p.category,
+            group: p.product_group || '',
+            unit: p.unit || 'UN',
+            stockBalance: p.stock_balance ?? 0,
+            minStock: p.min_stock ?? 0,
+            unitCost: p.unit_cost ?? 0,
+            freight: p.freight ?? 0,
+            lossPercentage: p.loss_percentage ?? 0,
+            taxPercentage: p.tax_percentage ?? 0,
+            profitMargin: p.profit_margin ?? 0,
+            commissionPercentage: p.commission_percentage ?? 0,
+            discountPercentage: p.discount_percentage ?? 0,
+            suggestedPrice: p.suggested_price ?? 0,
+            sellingPrice: p.base_price ?? 0,
+            brand: p.brand || '',
+            manufacturerNumber: p.manufacturer_number || '',
+            nfeData: p.nfe_data || null,
+            imageUrl: p.image_url || '',
+          };
+        });
         setProducts(mapped as ProductService[]);
         if (typeof window !== 'undefined') {
           window.localStorage.setItem(`marmo_products_${companyId || 'legacy'}`, JSON.stringify(mapped));
@@ -70,7 +73,7 @@ export const useProducts = (companyId?: string, logActivity?: any) => {
         name: up(p.description),
         category: p.type,
         status: p.status,
-        code: p.code,
+        code: /^\d+$/.test(p.code || '') ? p.code.padStart(4, '0') : p.code,
         product_group: p.group,
         unit: p.unit,
         stock_balance: p.stockBalance,

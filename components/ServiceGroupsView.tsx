@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Wrench, Plus, Search, Filter, Edit2, PowerOff, X, ArrowUpDown } from 'lucide-react';
+import { Wrench, Plus, Search, Filter, Edit2, PowerOff, X, ArrowUpDown, RefreshCw, Cloud, Loader2 } from 'lucide-react';
 import { ServiceGroup } from '../types';
 
 type SortField = 'code' | 'description' | 'createdAt';
@@ -9,15 +9,28 @@ interface ServiceGroupsViewProps {
   groups: ServiceGroup[];
   onSaveGroup: (group: ServiceGroup) => void;
   onDeleteGroup: (id: string) => void;
+  onSyncCloud?: () => Promise<void>;
 }
 
-export const ServiceGroupsView: React.FC<ServiceGroupsViewProps> = ({ groups, onSaveGroup, onDeleteGroup }) => {
+export const ServiceGroupsView: React.FC<ServiceGroupsViewProps> = ({ groups, onSaveGroup, onDeleteGroup, onSyncCloud }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [editingGroup, setEditingGroup] = useState<ServiceGroup | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showInactive, setShowInactive] = useState(false);
   const [sortField, setSortField] = useState<SortField>('code');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
+  const handleSync = async () => {
+    if (!onSyncCloud) return;
+    setSyncing(true);
+    try {
+      await onSyncCloud();
+      // Feedback opcional aqui (ex: alert ou toast)
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const handleSort = (field: SortField) => {
     if (sortField === field) setSortDirection(d => d === 'asc' ? 'desc' : 'asc');
@@ -90,22 +103,35 @@ export const ServiceGroupsView: React.FC<ServiceGroupsViewProps> = ({ groups, on
           <h1 className="text-2xl font-black text-slate-800 tracking-tight">Grupos de Serviços</h1>
           <p className="text-slate-500 font-medium">Configuração técnica de grupos de serviços e acabamentos</p>
         </div>
-        <button
-          onClick={() => {
-            const nextCode = groups.length > 0
-              ? String(Math.max(...groups.map(g => parseInt(g.code) || 0)) + 1).padStart(2, '0')
-              : '01';
-            setEditingGroup(null);
-            setFormData({
-              code: nextCode, description: '', altMin: 0, altMax: 0, un: '', indice: 0,
-              bnto: '', descFrete: '', perda: 0, ifp: 0, tpMin: 0, qtFun: 0, es: ''
-            });
-            setIsModalOpen(true);
-          }}
-          className="bg-primary text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-secondary transition-all transform hover:scale-[1.02] active:scale-95"
-        >
-          <Plus size={20} /> Novo Grupo
-        </button>
+        <div className="flex items-center gap-3">
+          {onSyncCloud && (
+            <button
+              onClick={handleSync}
+              disabled={syncing}
+              className={`p-3 rounded-2xl border border-slate-200 bg-white text-slate-500 hover:text-primary hover:border-primary/30 transition-all shadow-sm flex items-center justify-center gap-2 group ${syncing ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title="Sincronizar com a Nuvem (Cloud)"
+            >
+              {syncing ? <Loader2 size={20} className="animate-spin text-primary" /> : <Cloud size={20} className="group-hover:scale-110 transition-transform" />}
+              <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">Nuvem</span>
+            </button>
+          )}
+          <button
+            onClick={() => {
+              const nextCode = groups.length > 0
+                ? String(Math.max(...groups.map(g => parseInt(g.code) || 0)) + 1).padStart(2, '0')
+                : '01';
+              setEditingGroup(null);
+              setFormData({
+                code: nextCode, description: '', altMin: 0, altMax: 0, un: '', indice: 0,
+                bnto: '', descFrete: '', perda: 0, ifp: 0, tpMin: 0, qtFun: 0, es: ''
+              });
+              setIsModalOpen(true);
+            }}
+            className="bg-primary text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-secondary transition-all transform hover:scale-[1.02] active:scale-95"
+          >
+            <Plus size={20} /> Novo Grupo
+          </button>
+        </div>
       </div>
 
       {/* Search Header */}

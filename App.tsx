@@ -75,12 +75,12 @@ const App: React.FC = () => {
   const activeCompanyId = authReady ? user?.company_id : undefined;
   const { sales, handleSaveSale: saveSaleBase, setSales, refreshSales } = useSales(activeCompanyId, logActivity);
   const { clients, loadingClients, handleSaveClient, handleImportClients, deleteClient, setClients } = useClients(activeCompanyId, logActivity);
-  const { materials, handleSaveMaterial, setMaterials } = useMaterials(activeCompanyId, logActivity);
+  const { materials, handleSaveMaterial, deleteMaterial, setMaterials } = useMaterials(activeCompanyId, logActivity);
   const { deliveries, addDelivery, updateDeliveryStatus, updateDelivery, deleteDelivery, setDeliveries } = useDeliveries(activeCompanyId, logActivity);
   const { transactions, handleSaveTransaction, deleteTransaction, setTransactions } = useFinance(activeCompanyId, logActivity);
   const { suppliers, handleSaveSupplier, deleteSupplier, setSuppliers } = useSuppliers(activeCompanyId, logActivity);
   const { architects, handleSaveArchitect, deleteArchitect, setArchitects } = useArchitects(activeCompanyId, logActivity);
-  const { products, handleSaveProduct } = useProducts(activeCompanyId, logActivity);
+  const { products, handleSaveProduct, deleteProduct } = useProducts(activeCompanyId, logActivity);
   const { receivables, handleSaveReceivable, deleteReceivable, payInstallment: payReceivableInstallment, unpayInstallment: unpayReceivableInstallment } = useAccountsReceivable(activeCompanyId, logActivity);
   const { payables, handleSavePayable, deletePayable, settleBill, cancelBill } = useAccountsPayable(activeCompanyId, logActivity);
   const { categories: billCategories, saveCategory: saveBillCategory, deleteCategory: deleteBillCategory } = useBillCategories(activeCompanyId);
@@ -108,6 +108,7 @@ const App: React.FC = () => {
     deadlineWarningDays, setDeadlineWarningDays,
     deadlineUrgentDays, setDeadlineUrgentDays,
     idleTimeoutMinutes, setIdleTimeoutMinutes,
+    onSyncCloud,
   } = useSettings(setOrders, setSales, activeCompanyId);
 
   // Idle session timer
@@ -619,11 +620,11 @@ const App: React.FC = () => {
       case 'Canais de Vendas':
         return <SalesChannelsView channels={salesChannels} onSaveChannel={handleSaveSalesChannel} onDeleteChannel={handleDeleteSalesChannel} />;
       case 'Marcas':
-        return <BrandsView brands={brands} onSaveBrand={handleSaveBrand} onDeleteBrand={handleDeleteBrand} />;
+        return <BrandsView brands={brands} onSaveBrand={handleSaveBrand} onDeleteBrand={handleDeleteBrand} onSyncCloud={() => onSyncCloud('brands')} />;
       case 'Grupos de Produtos':
-        return <ProductGroupsView groups={productGroups} onSaveGroup={handleSaveProductGroup} onDeleteGroup={handleDeleteProductGroup} />;
+        return <ProductGroupsView groups={productGroups} onSaveGroup={handleSaveProductGroup} onDeleteGroup={handleDeleteProductGroup} onSyncCloud={() => onSyncCloud('product_groups')} />;
       case 'Grupos de Serviços':
-        return <ServiceGroupsView groups={serviceGroups} onSaveGroup={handleSaveServiceGroup} onDeleteGroup={handleDeleteServiceGroup} />;
+        return <ServiceGroupsView groups={serviceGroups} onSaveGroup={handleSaveServiceGroup} onDeleteGroup={handleDeleteServiceGroup} onSyncCloud={() => onSyncCloud('service_groups')} />;
       default:
         return <PlaceholderView title={currentView} />;
     }

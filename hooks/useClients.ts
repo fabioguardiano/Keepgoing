@@ -11,31 +11,48 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
     if (!companyId) { setLoadingClients(false); return; }
     setLoadingClients(true);
     try {
-      let query = supabase.from('clients').select('*');
-      query = query.eq('company_id', companyId);
+      let allClients: any[] = [];
+      let from = 0;
+      let limit = 1000;
+      let hasMore = true;
 
-      const { data, error } = await query.order('trading_name');
-      
-      if (error) throw error;
-      if (data) {
-        const mapped = data.map(c => ({
-          ...c,
-          legalName: c.legal_name || c.name,
-          tradingName: c.trading_name || c.name,
-          name: c.trading_name || c.legal_name || c.name,
-          rgInsc: c.rg_insc,
-          cellphone: c.cellphone || '',
-          birthDate: c.birth_date || undefined,
-          address: c.address,
-          deliveryAddress: c.delivery_address || undefined,
-          observations: c.observations,
-          code: c.client_code,
-          createdAt: c.created_at
-        }));
-        setClients(mapped as Client[]);
-        // Persistência local específica da empresa (ou legada)
-        ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_clients_${companyId || 'legacy'}`, JSON.stringify(mapped));
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('company_id', companyId)
+          .order('trading_name')
+          .range(from, from + limit - 1);
+        
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          allClients = [...allClients, ...data];
+          from += limit;
+          // Se trouxer menos que o limite, significa que acabaram os registros
+          if (data.length < limit) hasMore = false;
+        } else {
+          hasMore = false;
+        }
       }
+
+      const mapped = allClients.map(c => ({
+        ...c,
+        legalName: c.legal_name || c.name,
+        tradingName: c.trading_name || c.name,
+        name: c.trading_name || c.legal_name || c.name,
+        rgInsc: c.rg_insc,
+        cellphone: c.cellphone || '',
+        birthDate: c.birth_date || undefined,
+        address: c.address,
+        deliveryAddress: c.delivery_address || undefined,
+        observations: c.observations,
+        code: c.client_code,
+        createdAt: c.created_at
+      }));
+      setClients(mapped as Client[]);
+      // Persistência local específica da empresa (ou legada)
+      ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).setItem(`marmo_clients_${companyId || 'legacy'}`, JSON.stringify(mapped));
     } catch (err) {
       console.error('Erro ao carregar clientes do Supabase:', err);
       const saved = ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any).getItem(`marmo_clients_${companyId || 'legacy'}`);
@@ -138,16 +155,26 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
 
     for (const row of data) {
       try {
-        const nome = row.nome || row.name || 'Sem Nome';
+        // Mapeamento inteligente baseado na planilha do usuário (Imagem: H=Rua, I=Bairro, J=Cidade, K=Estado, L=CEP)
+        const nome = row.nome || row.name || row['NOME'] || row['CLIENTE'] || 'Sem Nome';
+        
         const address = {
-          street:       String(row.rua         || row.street       || ''),
-          number:       String(row.numero      || row.number       || ''),
-          complement:   String(row.complemento || row.complement   || ''),
-          neighborhood: String(row.bairro      || row.neighborhood || ''),
-          city:         String(row.cidade      || row.city         || ''),
-          state:        String(row.estado      || row.state        || ''),
-          zip:          String(row.cep         || row.zip          || ''),
+          street:       String(row.rua     || row.street     || row.logradouro || row['ENDEREÇO'] || row['ENDERECO'] || ''),
+          number:       String(row.numero  || row.number     || ''),
+          complement:   String(row.complemento || row.complement || ''),
+          neighborhood: String(row.bairro  || row.neighborhood || row['BAIRRO'] || ''),
+          city:         String(row.cidade  || row.city         || row['CIDADE'] || ''),
+          state:        String(row.estado  || row.state        || row.uf || row['ESTADO'] || row['UF'] || ''),
+          zip:          String(row.cep     || row.zip          || row['CEP'] || ''),
         };
+
+        // Tratamento de Código (Preservando zeros se possível)
+        let rawCode = row.codigo || row.code || row['CÓDIGO'] || row['CODIGO'];
+        let clientCode = undefined;
+        if (rawCode !== undefined && rawCode !== null) {
+          const stringCode = String(rawCode).trim();
+          clientCode = /^\d+$/.test(stringCode) ? stringCode.padStart(4, '0') : stringCode;
+        }
 
         const payload = {
           company_id:   finalCompanyId,
@@ -168,7 +195,7 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
             state:        up(address.state)        ?? address.state,
           },
           status:       'ativo',
-          client_code:  isNaN(Number(row.codigo)) ? undefined : Number(row.codigo),
+          client_code:  clientCode,
         };
 
         const { error } = await supabase.from('clients').insert(payload);

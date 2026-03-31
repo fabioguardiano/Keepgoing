@@ -84,7 +84,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
       setFormData({
         name: '',
         type: defaultType,
-        code: nextCode.toString(),
+        code: nextCode.toString().padStart(4, '0'),
         registrationDate: new Date().toISOString().split('T')[0],
         group: '',
         brand: '',

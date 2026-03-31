@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import confetti from 'canvas-confetti';
-import { ShoppingBag, Plus, Search, FileText, CheckCircle2, Clock, XCircle, MoreVertical, ExternalLink, Printer, LayoutGrid, List, ArrowRight, X, Edit2, GripVertical, Trash2, Check, DollarSign, Calendar, MoreHorizontal, User, AlertTriangle, Lock, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
+import { ShoppingBag, Plus, Search, FileText, CheckCircle2, Clock, XCircle, MoreVertical, ExternalLink, Printer, LayoutGrid, List, ArrowRight, X, Edit2, GripVertical, Trash2, Check, DollarSign, Calendar, MoreHorizontal, User, AlertTriangle, Lock, ArrowUpDown, ChevronUp, ChevronDown, RotateCw } from 'lucide-react';
 import { SalesOrder, Client, Material, AppUser, Architect, ProductService, SalesChannel, CompanyInfo, SalesPhaseConfig, ServiceGroup, PaymentMethod, WorkOrder, VendasScope } from '../types';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { NewSaleModal } from './NewSaleModal';
@@ -99,10 +99,14 @@ export const SalesView: React.FC<SalesViewProps> = ({
       onReorderSalesPhases(source.index, destination.index);
     } else {
       const saleId = draggableId;
+      const sale = sales.find(s => s.id === saleId);
+      
+      // Bloqueia movimentação se não tiver permissão de edição
+      if (sale && !canEditSale(sale)) return;
+
       const targetPhase = destination.droppableId;
 
       if (targetPhase === 'lost-zone') {
-        const sale = sales.find(s => s.id === saleId);
         if (sale) {
           setLostSaleDetails({ saleId, reason: companyInfo.lostReasonOptions?.[0] || '', details: '' });
         }
@@ -110,7 +114,6 @@ export const SalesView: React.FC<SalesViewProps> = ({
       }
 
       if (targetPhase === 'win-zone') {
-        const sale = sales.find(s => s.id === saleId);
         if (sale) {
           const missing: string[] = [];
           if (!sale.paymentMethodId) missing.push('Forma de pagamento');
@@ -126,7 +129,6 @@ export const SalesView: React.FC<SalesViewProps> = ({
         return;
       }
 
-      const sale = sales.find(s => s.id === saleId);
       if (sale) {
         // Block Pedido from returning to regular columns without auth
         if (sale.status === 'Pedido') {
@@ -193,19 +195,24 @@ export const SalesView: React.FC<SalesViewProps> = ({
   }, []);
 
   // Helpers de escopo por vendedor
-  const isOwnSale = (s: SalesOrder) =>
-    s.seller === currentUser?.name || s.seller === currentUser?.email;
+  const isOwnSale = useCallback((s: SalesOrder) =>
+    s.seller === currentUser?.name || s.seller === currentUser?.email,
+  [currentUser]);
 
-  const canEditSale = (s: SalesOrder) => {
+  const canEditSale = useCallback((s: SalesOrder) => {
     if (!canEdit) return false;
     if (vendasScope === 'own' || vendasScope === 'view_all_edit_own') return isOwnSale(s);
     return true;
-  };
+  }, [canEdit, vendasScope, isOwnSale]);
+
+  // Escopo de visibilidade inicial (antes de filtros de data/busca)
+  const scopedSales = useMemo(() => {
+    return sales.filter(s => vendasScope === 'own' ? isOwnSale(s) : true);
+  }, [sales, vendasScope, isOwnSale]);
 
   const filteredSales = useMemo(() => {
     const now = new Date();
-    return sales
-      .filter(s => vendasScope === 'own' ? isOwnSale(s) : true)
+    return scopedSales
       .filter(s => statusFilter === 'todos' || s.status === statusFilter)
       .filter(s => {
         const d = new Date(s.createdAt);
@@ -258,6 +265,13 @@ export const SalesView: React.FC<SalesViewProps> = ({
           <p className="text-slate-500 font-medium">Gestão comercial e conversão de pedidos</p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => window.location.reload()}
+            className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-400 hover:text-[var(--primary-color)] transition-all shadow-sm"
+            title="Atualizar dados"
+          >
+            <RotateCw size={20} />
+          </button>
           <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl flex">
             <button 
               onClick={() => setViewMode('kanban')}
@@ -287,22 +301,22 @@ export const SalesView: React.FC<SalesViewProps> = ({
         <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center">
           <Clock className="text-[var(--primary-color)] mb-2" size={24} />
           <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Orçamentos</span>
-          <p className="text-2xl font-black text-slate-800 dark:text-white">{sales.filter(s => s.status === 'Orçamento').length}</p>
+          <p className="text-2xl font-black text-slate-800 dark:text-white">{scopedSales.filter(s => s.status === 'Orçamento').length}</p>
         </div>
         <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center">
           <CheckCircle2 className="text-[var(--primary-color)] mb-2" size={24} />
           <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Confirmados</span>
-          <p className="text-2xl font-black text-slate-800 dark:text-white">{sales.filter(s => s.status === 'Confirmado' || s.status === 'Pedido').length}</p>
+          <p className="text-2xl font-black text-slate-800 dark:text-white">{scopedSales.filter(s => s.status === 'Confirmado' || s.status === 'Pedido').length}</p>
         </div>
         <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center">
           <ShoppingBag className="text-[var(--primary-color)] mb-2" size={24} />
           <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Em Produção</span>
-          <p className="text-2xl font-black text-slate-800 dark:text-white">{sales.filter(s => s.status === 'Pedido' && s.phase !== 'Entregue').length}</p>
+          <p className="text-2xl font-black text-slate-800 dark:text-white">{scopedSales.filter(s => s.status === 'Pedido' && s.phase !== 'Entregue').length}</p>
         </div>
         <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center">
           <CheckCircle2 className="text-[var(--primary-color)] mb-2" size={24} />
           <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Finalizados</span>
-          <p className="text-2xl font-black text-slate-800 dark:text-white">{sales.filter(s => s.status === 'Finalizado' || s.phase === 'Entregue').length}</p>
+          <p className="text-2xl font-black text-slate-800 dark:text-white">{scopedSales.filter(s => s.status === 'Finalizado' || s.phase === 'Entregue').length}</p>
         </div>
       </div>
 
@@ -311,10 +325,10 @@ export const SalesView: React.FC<SalesViewProps> = ({
           {/* Abas de status */}
           <div className="flex items-center gap-1 px-4 pt-4 pb-0 border-b border-slate-100 dark:border-slate-800">
             {([
-              { key: 'todos',      label: 'Todos',       count: sales.length },
-              { key: 'Orçamento', label: 'Orçamentos',  count: sales.filter(s => s.status === 'Orçamento').length },
-              { key: 'Pedido',    label: 'Ganhos',       count: sales.filter(s => s.status === 'Pedido').length },
-              { key: 'Cancelado', label: 'Perdidos',     count: sales.filter(s => s.status === 'Cancelado').length },
+              { key: 'todos',      label: 'Todos',       count: scopedSales.length },
+              { key: 'Orçamento', label: 'Orçamentos',  count: scopedSales.filter(s => s.status === 'Orçamento').length },
+              { key: 'Pedido',    label: 'Ganhos',       count: scopedSales.filter(s => s.status === 'Pedido').length },
+              { key: 'Cancelado', label: 'Perdidos',     count: scopedSales.filter(s => s.status === 'Cancelado').length },
             ] as { key: typeof statusFilter; label: string; count: number }[]).map(tab => (
               <button
                 key={tab.key}
@@ -573,8 +587,10 @@ export const SalesView: React.FC<SalesViewProps> = ({
                   const phase = phaseConfig.name;
                   const isEditing = editingPhase === phase;
                   const isFirstPhase = index === 0;
-                  const phaseSales = sales.filter(s =>
-                    s.status !== 'Pedido' && s.status !== 'Cancelado' && (
+                  const phaseSales = filteredSales.filter(s =>
+                    // No Kanban não mostramos os itens na coluna regular se já estiverem em Pedido (o que significa Ganho/Geral)
+                    // EXCETO se o filtro de status for especificamente Pedido (nesse caso a pessoa quer ver o kanban de ganhos)
+                    (statusFilter === 'todos' ? (s.status !== 'Pedido' && s.status !== 'Cancelado') : true) && (
                       s.salesPhase === phase ||
                       (isFirstPhase && (!s.salesPhase || !salesPhases.some(p => p.name === s.salesPhase)))
                     )

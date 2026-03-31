@@ -1765,25 +1765,73 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
               </div>
               <div className="max-h-[360px] overflow-y-auto custom-scrollbar space-y-1">
                 {(() => {
-                  const allItems = (services || [])
-                    .map(s => ({ label: s.description, type: 'Serviço', price: null as number | null }))
-                    .filter(item => item.label.toLowerCase().includes(productSearch.toLowerCase()));
-                  return allItems.length > 0 ? allItems.map((item, i) => (
+                  const q = productSearch.toLowerCase();
+                  const allItems = [
+                    ...(services || [])
+                      .filter(s => s.description.toLowerCase().includes(q))
+                      .map(s => ({ 
+                        label: s.description, 
+                        type: 'Serviço', 
+                        price: (s as any).sellingPrice || 0,
+                        isFromMetadata: true 
+                      })),
+                      
+                    ...(products || [])
+                      .filter(p => p.description.toLowerCase().includes(q))
+                      .map(p => {
+                        // Se a categoria for de serviço, mostramos como 'Serviço' no selo
+                        const isServiceCategory = ['Serviços', 'Colocação', 'Acabamentos'].includes(p.type);
+                        return { 
+                          label: p.description, 
+                          type: (isServiceCategory ? 'Serviço' : 'Produto') as 'Serviço' | 'Produto', 
+                          price: p.sellingPrice,
+                          isFromMetadata: false 
+                        };
+                      })
+                  ];
+
+                  // Remover duplicados (se houver o mesmo nome no metadata e na tabela de produtos, prioriza o metadata)
+                  const seen = new Set();
+                  const filteredItems = allItems.filter(item => {
+                    if (seen.has(item.label)) return false;
+                    seen.add(item.label);
+                    return true;
+                  });
+                  
+                  return filteredItems.length > 0 ? filteredItems.map((item, i) => (
                     <button
                       key={i}
                       onClick={() => {
                         setItemDesc(item.label);
+                        if (item.price) {
+                          setItemPrice(item.price);
+                          // Se for produto físico ou se tiver material correspondente, tentamos preencher
+                          if (item.type === 'Produto' || !item.isFromMetadata) {
+                             setItemMaterialId(item.label);
+                          }
+                        }
                         setProductPickerOpen(false);
                         setTimeout(() => materialRef.current?.focus(), 100);
                       }}
                       className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-[var(--primary-color)] hover:bg-orange-50 dark:hover:bg-[var(--primary-color)]/5 transition-all text-left group"
                     >
-                      <span className="font-bold text-sm text-slate-800 dark:text-white group-hover:text-[var(--primary-color)]">{item.label}</span>
-                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-400 group-hover:bg-[var(--primary-color)] group-hover:text-white transition-all">Serviço</span>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-sm text-slate-800 dark:text-white group-hover:text-[var(--primary-color)]">{item.label}</span>
+                        {(item.price || 0) > 0 && (
+                          <span className="text-[10px] text-slate-400 font-bold">R$ {item.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        )}
+                      </div>
+                      <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg transition-all ${
+                        item.type === 'Serviço' 
+                          ? 'bg-blue-500/10 text-blue-600 group-hover:bg-blue-500 group-hover:text-white' 
+                          : 'bg-amber-500/10 text-amber-600 group-hover:bg-amber-500 group-hover:text-white'
+                      }`}>
+                        {item.type}
+                      </span>
                     </button>
                   )) : (
                     <div className="py-10 text-center text-slate-400">
-                      <p className="font-bold text-sm">Nenhum serviço encontrado</p>
+                      <p className="font-bold text-sm">Nenhum item encontrado</p>
                     </div>
                   );
                 })()}

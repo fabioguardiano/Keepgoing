@@ -329,8 +329,8 @@ export interface OrderService {
   phaseHistory?: PhaseRecord[];
   responsibleStaffName?: string;
   salesChannel?: string;
-  salesPhase: SalesPhase;
-  isOsGenerated: boolean;
+  salesPhase?: SalesPhase;
+  isOsGenerated?: boolean;
   status?: 'Orçamento' | 'Pedido' | 'Confirmado' | 'Cancelado' | 'Finalizado';
   discountValue?: number;
   discountPercentage?: number;

@@ -178,13 +178,6 @@ const FinanceiroTabContent: React.FC<FinanceiroTabProps> = ({ payablePMs, paymen
                           ? <ToggleRight size={16} className="text-emerald-500" />
                           : <ToggleLeft size={16} className="text-slate-300" />}
                       </button>
-                      <button
-                        onClick={() => onDelete(pm.id)}
-                        title="Excluir"
-                        className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
-                      >
-                        <Trash2 size={13} />
-                      </button>
                     </div>
                   </div>
                 )}
@@ -587,12 +580,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                                             className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
                                                                         >
                                                                             <Edit2 size={16} />
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => onDeletePhase(phase.name)}
-                                                                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                                                                        >
-                                                                            <Trash2 size={16} />
                                                                         </button>
                                                                     </div>
                                                                 </div>

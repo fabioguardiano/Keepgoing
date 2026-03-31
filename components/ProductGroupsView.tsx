@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Box, Plus, Search, Edit2, PowerOff, X, ArrowUpDown } from 'lucide-react';
+import { Box, Plus, Search, Edit2, PowerOff, X, ArrowUpDown, Cloud, Loader2 } from 'lucide-react';
 import { ProductGroup } from '../types';
 
 type SortField = 'code' | 'description' | 'createdAt';
@@ -9,15 +9,28 @@ interface ProductGroupsViewProps {
   groups: ProductGroup[];
   onSaveGroup: (group: ProductGroup) => void;
   onDeleteGroup: (id: string) => void;
+  onSyncCloud?: () => Promise<void>;
 }
 
-export const ProductGroupsView: React.FC<ProductGroupsViewProps> = ({ groups, onSaveGroup, onDeleteGroup }) => {
+export const ProductGroupsView: React.FC<ProductGroupsViewProps> = ({ groups, onSaveGroup, onDeleteGroup, onSyncCloud }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [editingGroup, setEditingGroup] = useState<ProductGroup | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showInactive, setShowInactive] = useState(false);
   const [sortField, setSortField] = useState<SortField>('code');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
+  const handleSync = async () => {
+    if (!onSyncCloud) return;
+    setSyncing(true);
+    try {
+      await onSyncCloud();
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const [formData, setFormData] = useState<Omit<ProductGroup, 'id' | 'createdAt'>>({
     code: '',
     description: ''
@@ -78,19 +91,32 @@ export const ProductGroupsView: React.FC<ProductGroupsViewProps> = ({ groups, on
           <h1 className="text-2xl font-black text-slate-800 tracking-tight">Grupos de Produtos</h1>
           <p className="text-slate-500 font-medium">Controle e organização por categoria de estoque</p>
         </div>
-        <button
-          onClick={() => {
-            const nextCode = groups.filter(g => !g.status || g.status === 'ativo').length > 0
-              ? String(Math.max(...groups.map(g => parseInt(g.code) || 0)) + 1).padStart(2, '0')
-              : '01';
-            setEditingGroup(null);
-            setFormData({ code: nextCode, description: '' });
-            setIsModalOpen(true);
-          }}
-          className="bg-primary text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-secondary transition-all transform hover:scale-[1.02] active:scale-95"
-        >
-          <Plus size={20} /> Novo Grupo
-        </button>
+        <div className="flex items-center gap-3">
+          {onSyncCloud && (
+            <button
+              onClick={handleSync}
+              disabled={syncing}
+              className={`p-3 rounded-2xl border border-slate-200 bg-white text-slate-500 hover:text-primary hover:border-primary/30 transition-all shadow-sm flex items-center justify-center gap-2 group ${syncing ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title="Sincronizar com a Nuvem (Cloud)"
+            >
+              {syncing ? <Loader2 size={20} className="animate-spin text-primary" /> : <Cloud size={20} className="group-hover:scale-110 transition-transform" />}
+              <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">Nuvem</span>
+            </button>
+          )}
+          <button
+            onClick={() => {
+              const nextCode = groups.filter(g => !g.status || g.status === 'ativo').length > 0
+                ? String(Math.max(...groups.map(g => parseInt(g.code) || 0)) + 1).padStart(2, '0')
+                : '01';
+              setEditingGroup(null);
+              setFormData({ code: nextCode, description: '' });
+              setIsModalOpen(true);
+            }}
+            className="bg-primary text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-secondary transition-all transform hover:scale-[1.02] active:scale-95"
+          >
+            <Plus size={20} /> Novo Grupo
+          </button>
+        </div>
       </div>
 
       {/* Search Header */}

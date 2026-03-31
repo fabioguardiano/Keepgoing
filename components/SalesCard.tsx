@@ -64,11 +64,11 @@ export const SalesCard: React.FC<SalesCardProps> = ({
   };
 
   const borderClass = sale.status === 'Pedido' 
-    ? 'border-green-200 dark:border-green-900/50 bg-green-50/30 dark:bg-green-900/10' 
-    : statusClasses[deadlineStatus as keyof typeof statusClasses];
+    ? 'border-2 border-green-200 dark:border-green-900/50 bg-green-50/30 dark:bg-green-900/10' 
+    : `${deadlineStatus !== 'none' ? 'border-2' : 'border'} ${statusClasses[deadlineStatus as keyof typeof statusClasses]}`;
 
   return (
-    <Draggable key={sale.id} draggableId={sale.id} index={index}>
+    <Draggable key={sale.id} draggableId={sale.id} index={index} isDragDisabled={!canEdit}>
       {(provided, snapshot) => (
         <div 
           {...provided.draggableProps}
@@ -149,7 +149,7 @@ export const SalesCard: React.FC<SalesCardProps> = ({
             </div>
           </div>
 
-          {phase === 'Pedido/Ganho' && !sale.isOsGenerated && (
+          {phase === 'Pedido/Ganho' && !sale.isOsGenerated && canEdit && (
             <button 
               onClick={(e) => {
                 e.stopPropagation();
