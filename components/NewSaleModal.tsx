@@ -685,14 +685,14 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
         {/* Header */}
         <div className="px-6 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-xl ${saleType === 'Orçamento' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
+            <div className={`p-2 rounded-xl ${saleType === 'Orçamento' ? 'bg-blue-100 text-black' : 'bg-green-100 text-black'}`}>
               <ShoppingBag size={18} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-black text-slate-800 dark:text-white tracking-tight">Manutenção de Venda</h2>
+                <h2 className="text-lg font-black text-black dark:text-white tracking-tight">Manutenção de Venda</h2>
                 {isLocked && (
-                  <span className="flex items-center gap-1 bg-green-100 text-green-700 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  <span className="flex items-center gap-1 bg-green-100 text-black text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
                     <Lock size={9} /> Somente Leitura
                   </span>
                 )}
@@ -725,7 +725,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                       }
                     }}
                   />
-                  <span className={`text-xs font-bold ${saleType === 'Orçamento' ? 'text-blue-600' : isLocked ? 'text-amber-500 hover:text-amber-600' : 'text-slate-400'}`}>
+                  <span className={`text-xs font-bold ${saleType === 'Orçamento' ? 'text-black' : isLocked ? 'text-black hover:text-amber-600' : 'text-black'}`}>
                     {isLocked ? '⚠ Reverter para Orçamento' : 'Orçamento'}
                   </span>
                 </label>
@@ -738,7 +738,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     onChange={() => !isLocked && setSaleType('Pedido')}
                     disabled={isLocked}
                   />
-                  <span className={`text-xs font-bold ${saleType === 'Pedido' ? 'text-green-600' : 'text-slate-400'}`}>Pedido</span>
+                  <span className={`text-xs font-bold ${saleType === 'Pedido' ? 'text-black' : 'text-black'}`}>Pedido</span>
                 </label>
               </div>
             </div>
@@ -753,7 +753,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     onChange={(e) => setBlurMeasurements(e.target.checked)}
                     className="w-4 h-4 rounded text-[var(--primary-color)] focus:ring-[var(--primary-color)]"
                   />
-                  <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 group-hover:text-slate-800 dark:group-hover:text-white transition-colors">
+                  <span className="text-[11px] font-bold text-black dark:text-slate-300 group-hover:text-black dark:group-hover:text-white transition-colors">
                     Ocultar Medidas
                   </span>
                 </label>
@@ -765,7 +765,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     onChange={(e) => setHideM2Unit(e.target.checked)}
                     className="w-4 h-4 rounded text-[var(--primary-color)] focus:ring-[var(--primary-color)]"
                   />
-                  <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 group-hover:text-slate-800 dark:group-hover:text-white transition-colors">
+                  <span className="text-[11px] font-bold text-black dark:text-slate-300 group-hover:text-black dark:group-hover:text-white transition-colors">
                     Ocultar M² / Unidade
                   </span>
                 </label>
@@ -780,7 +780,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 <div className="w-px h-6 bg-orange-200 dark:bg-slate-600"></div>
                 <button
                   onClick={() => syncPricesWithMaterials()}
-                  className="p-2 text-blue-600 hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all flex items-center gap-1.5 font-bold text-[11px]"
+                  className="p-2 text-black hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all flex items-center gap-1.5 font-bold text-[11px]"
                   title="Sincronizar preços com o cadastro de materiais"
                 >
                   <RotateCcw size={15} /> Atualizar Preços
@@ -799,7 +799,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 )}
               </div>
             )}
-            <button onClick={onClose} className="p-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-800 rounded-2xl transition-all shadow-sm">
+            <button onClick={onClose} className="p-3 text-black hover:text-black dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-800 rounded-2xl transition-all shadow-sm">
               <X size={28} />
             </button>
           </div>
@@ -811,16 +811,16 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
           <div className="space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div className="md:col-span-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">
+                <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-1 block">
                   {saleType === 'Orçamento' ? 'Nº Orçamento' : 'Nº Pedido'}
                 </label>
-                <div className="w-full p-2.5 bg-slate-100 dark:bg-slate-800/50 border-2 border-transparent rounded-xl font-black text-slate-800 dark:text-white transition-all text-base flex items-center">
+                <div className="w-full p-2.5 bg-slate-100 dark:bg-slate-800/50 border-2 border-transparent rounded-xl font-black text-black dark:text-white transition-all text-base flex items-center">
                   {orderNumber}
                 </div>
               </div>
 
               <div className="md:col-span-3">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">Cliente</label>
+                <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Cliente</label>
                 <button
                   type="button"
                   ref={clientBtnRef}
@@ -833,23 +833,23 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   className="flex items-center justify-between w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent hover:border-[var(--primary-color)] focus:border-[var(--primary-color)] rounded-xl cursor-pointer transition-all group outline-none"
                 >
                   <div className="flex items-center gap-2">
-                    <User size={16} className="text-slate-400 group-hover:text-[var(--primary-color)]" />
-                    <span className={`font-bold text-sm ${selectedClient ? 'text-slate-800 dark:text-white' : 'text-slate-400'}`}>
+                    <User size={16} className="text-black group-hover:text-[var(--primary-color)]" />
+                    <span className={`font-bold text-sm ${selectedClient ? 'text-black dark:text-white' : 'text-black'}`}>
                       {selectedClient ? selectedClient.name : 'Selecionar Cliente...'}
                     </span>
                   </div>
-                  <Search size={16} className="text-slate-400" />
+                  <Search size={16} className="text-black" />
                 </button>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">Canal de Venda</label>
+                <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Canal de Venda</label>
                 <select
                   value={salesChannel}
                   onChange={(e) => setSalesChannel(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-slate-800 dark:text-white transition-all appearance-none"
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-black dark:text-white transition-all appearance-none"
                 >
                   <option value="">Selecione...</option>
                   {salesChannels.map(channel => (
@@ -859,18 +859,18 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
               </div>
 
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">Vendedor</label>
+                <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Vendedor</label>
                 <select
                   value={seller}
                   onChange={(e) => setSeller(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-slate-800 dark:text-white transition-all appearance-none"
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-black dark:text-white transition-all appearance-none"
                 >
                   {appUsers.map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">Arquiteto / Parceiro</label>
+                <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Arquiteto / Parceiro</label>
                 <select
                   value={architect}
                   onChange={(e) => {
@@ -879,7 +879,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     const arch = architects.find(a => (a.tradingName || a.legalName) === selectedName);
                     setArchitectId(arch?.id || '');
                   }}
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-slate-800 dark:text-white transition-all appearance-none"
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-black dark:text-white transition-all appearance-none"
                 >
                   <option value="">Nenhum parceiro</option>
                   {architects?.filter(a => a.status === 'ativo').map(a => (
@@ -891,9 +891,9 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
               </div>
 
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">Fase do Orçamento</label>
+                <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Fase do Orçamento</label>
                 {isLocked ? (
-                  <div className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl font-bold text-sm text-green-700 dark:text-green-400">
+                  <div className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl font-bold text-sm text-black dark:text-green-400">
                     Ganho ✓
                   </div>
                 ) : initialData?.status === 'Cancelado' ? (
@@ -904,7 +904,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   <select
                     value={salesPhase}
                     onChange={(e) => setSalesPhase(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-slate-800 dark:text-white transition-all appearance-none"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-black dark:text-white transition-all appearance-none"
                   >
                     {salesPhases.map(phase => (
                       <option key={phase.name} value={phase.name}>{phase.name}</option>
@@ -930,39 +930,39 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                         <div className="w-1.5 h-7 bg-[var(--primary-color)] rounded-full flex-shrink-0"></div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <h3 className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-widest">{env}</h3>
+                            <h3 className="text-xs font-black text-black dark:text-slate-200 uppercase tracking-widest">{env}</h3>
                             <div className="flex items-center gap-1 opacity-0 group-hover/header:opacity-100 transition-opacity">
                               <button
                                 onClick={() => syncPricesWithMaterials(env)}
-                                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                className="p-1.5 text-black hover:text-black hover:bg-blue-50 rounded-lg transition-all"
                                 title="Atualizar preços deste ambiente"
                               >
                                 <RotateCcw size={14} />
                               </button>
                               <button
                                 onClick={() => renameEnvironment(env === 'Sem Ambiente' ? '' : env)}
-                                className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
+                                className="p-1.5 text-black hover:text-black hover:bg-blue-50 rounded-lg transition-all"
                                 title="Renomear Ambiente"
                               >
                                 <Pencil size={14} />
                               </button>
                               <button
                                 onClick={() => duplicateEnvironment(env === 'Sem Ambiente' ? '' : env)}
-                                className="p-1.5 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all"
+                                className="p-1.5 text-black hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all"
                                 title="Duplicar Ambiente"
                               >
                                 <Copy size={14} />
                               </button>
                               <button
                                 onClick={() => deleteEnvironment(env === 'Sem Ambiente' ? '' : env)}
-                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                className="p-1.5 text-black hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                                 title="Excluir Ambiente"
                               >
                                 <Trash2 size={14} />
                               </button>
                             </div>
                           </div>
-                          <span className="text-[10px] font-bold text-slate-400">
+                          <span className="text-[10px] font-bold text-black">
                             {envItems.length} {envItems.length === 1 ? 'item' : 'itens'} lançados nesta área
                           </span>
                         </div>
@@ -971,7 +971,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                       {/* Centro: seletor de matéria prima */}
                       <div className="flex-1 flex justify-center">
                         <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter whitespace-nowrap">Trocar Matéria Prima:</span>
+                          <span className="text-[9px] font-black text-black uppercase tracking-tighter whitespace-nowrap">Trocar Matéria Prima:</span>
                           <select
                             className="text-[10px] font-bold text-[var(--primary-color)] bg-transparent outline-none cursor-pointer max-w-[180px]"
                             value=""
@@ -996,8 +996,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
                       {/* Direita: subtotal */}
                       <div className="text-right flex-shrink-0">
-                        <span className="text-[9px] font-black text-slate-400 uppercase block leading-none mb-0.5">Subtotal {env}</span>
-                        <span className="text-base font-black text-slate-800 dark:text-white">R$ {(envTotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="text-[9px] font-black text-black uppercase block leading-none mb-0.5">Subtotal {env}</span>
+                        <span className="text-base font-black text-black dark:text-white">R$ {(envTotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                     </div>
 
@@ -1010,7 +1010,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                         >
                           <table className="w-full text-left border-collapse">
                             <thead>
-                              <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none border-b border-slate-50 dark:border-slate-800">
+                              <tr className="text-[10px] font-black text-black uppercase tracking-widest leading-none border-b border-slate-50 dark:border-slate-800">
                                 <th className="px-4 py-3">Descrição do Produto/Serviço</th>
                                 <th className="px-4 py-3 min-w-[200px]">Matéria Prima</th>
                                 <th className="px-4 py-3 text-center">Qtde</th>
@@ -1033,32 +1033,32 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                       {...provided.dragHandleProps}
                                       className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group ${editingItemId === item.id ? 'bg-orange-50/50 dark:bg-orange-900/10' : ''} ${snapshot.isDragging ? 'bg-white dark:bg-slate-800 shadow-2xl opacity-80 scale-[1.02] border-2 border-[var(--primary-color)] rounded-xl' : ''}`}
                                     >
-                                      <td className="px-4 py-3 text-[11px] font-bold text-slate-800 dark:text-white">{item.description}</td>
-                                      <td className="px-4 py-3 text-[11px] font-bold text-slate-600 dark:text-slate-300 min-w-[200px]">
+                                      <td className="px-4 py-3 text-[11px] font-bold text-black dark:text-white">{item.description}</td>
+                                      <td className="px-4 py-3 text-[11px] font-bold text-black dark:text-slate-300 min-w-[200px]">
                                         {materials.find(m => m.id === item.materialId)?.name || products.find(p => p.id === item.materialId)?.description || item.materialName || '-'}
                                       </td>
-                                      <td className="px-4 py-3 text-center text-[11px] font-bold text-slate-600 dark:text-slate-300">{Number(item.quantity || 0).toFixed(2)}</td>
+                                      <td className="px-4 py-3 text-center text-[11px] font-bold text-black dark:text-slate-300">{Number(item.quantity || 0).toFixed(2)}</td>
                                       {(() => {
                                         const isMat = materials.some(m => m.id === item.materialId);
                                         const missingLen = isMat && !(item.length > 0);
                                         const missingWid = isMat && !(item.width > 0);
                                         return (
                                           <>
-                                            <td className={`px-4 py-3 text-center text-[11px] font-bold ${missingLen ? 'text-red-500 bg-red-50' : 'text-slate-600 dark:text-slate-300'}`}>
+                                            <td className={`px-4 py-3 text-center text-[11px] font-bold ${missingLen ? 'text-red-500 bg-red-50' : 'text-black dark:text-slate-300'}`}>
                                               {missingLen ? <span title="Comprimento obrigatório">⚠ 0.000</span> : Number(item.length).toFixed(3)}
                                             </td>
-                                            <td className={`px-4 py-3 text-center text-[11px] font-bold ${missingWid ? 'text-red-500 bg-red-50' : 'text-slate-600 dark:text-slate-300'}`}>
+                                            <td className={`px-4 py-3 text-center text-[11px] font-bold ${missingWid ? 'text-red-500 bg-red-50' : 'text-black dark:text-slate-300'}`}>
                                               {missingWid ? <span title="Largura obrigatória">⚠ 0.000</span> : Number(item.width).toFixed(3)}
                                             </td>
                                           </>
                                         );
                                       })()}
-                                      <td className="px-4 py-3 text-center text-[11px] font-bold text-slate-600 dark:text-slate-300">{Number(item.m2 || 0).toFixed(2) || '0.00'}</td>
-                                      <td className="px-4 py-3 text-right text-[11px] font-bold text-slate-600 dark:text-slate-300">R$ {(item.unitPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                      <td className="px-4 py-3 text-center text-[11px] font-bold text-black dark:text-slate-300">{Number(item.m2 || 0).toFixed(2) || '0.00'}</td>
+                                      <td className="px-4 py-3 text-right text-[11px] font-bold text-black dark:text-slate-300">R$ {(item.unitPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                       <td className="px-4 py-3 text-center text-[10px] whitespace-nowrap min-w-[105px]">
                                         <div className="flex flex-col items-center">
-                                          <span className="font-bold text-blue-500">{Number(item.servicePercentage || 0).toFixed(2)}%</span>
-                                          <span className="text-[9px] font-black text-slate-400">
+                                          <span className="font-bold text-black">{Number(item.servicePercentage || 0).toFixed(2)}%</span>
+                                          <span className="text-[9px] font-black text-black">
                                             {(() => {
                                               const bTotal = (item.m2 || item.quantity) ? ((item.m2 || 0) > 0 ? (item.m2 || 0) * item.unitPrice : item.quantity * item.unitPrice) : 0;
                                               return `R$ ${(bTotal * ((item.servicePercentage || 0) / 100)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -1066,7 +1066,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                           </span>
                                         </div>
                                       </td>
-                                      <td className="px-4 py-3 text-right text-[11px] font-black text-slate-800 dark:text-white whitespace-nowrap">R$ {(item.totalPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                      <td className="px-4 py-3 text-right text-[11px] font-black text-black dark:text-white whitespace-nowrap">R$ {(item.totalPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                       <td className="px-4 py-3 text-center">
                                         <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                           <button 
@@ -1074,7 +1074,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                               setActiveEnvironment(env === 'Sem Ambiente' ? '' : env);
                                               editItem(item);
                                             }} 
-                                            className={`p-2 rounded-xl transition-all ${editingItemId === item.id ? 'text-orange-600 bg-orange-100' : 'text-blue-400 hover:text-blue-600 hover:bg-blue-50'}`}
+                                            className={`p-2 rounded-xl transition-all ${editingItemId === item.id ? 'text-orange-600 bg-orange-100' : 'text-blue-400 hover:text-black hover:bg-blue-50'}`}
                                             title="Editar item"
                                           >
                                             <Edit2 size={16} />
@@ -1168,7 +1168,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                 }} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" /></td>
                                 <td className="p-1.5">
                                   {isProductMaterial && activeEnvironment === (env === 'Sem Ambiente' ? '' : env)
-                                    ? <div className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] text-slate-400 text-center">—</div>
+                                    ? <div className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] text-black text-center">—</div>
                                     : <input type="number" step="0.001" ref={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? lengthRef : null} value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemLength : 0} onChange={e => setItemLength(parseFloat(e.target.value))} onKeyDown={e => {
                                         if (e.key === 'Enter') {
                                           e.preventDefault();
@@ -1179,7 +1179,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                 </td>
                                 <td className="p-1.5">
                                   {isProductMaterial && activeEnvironment === (env === 'Sem Ambiente' ? '' : env)
-                                    ? <div className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] text-slate-400 text-center">—</div>
+                                    ? <div className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] text-black text-center">—</div>
                                     : <input type="number" step="0.001" ref={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? widthRef : null} value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemWidth : 0} onChange={e => setItemWidth(parseFloat(e.target.value))} onKeyDown={e => {
                                         if (e.key === 'Enter') {
                                           e.preventDefault();
@@ -1188,7 +1188,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                       }} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" />
                                   }
                                 </td>
-                                <td className="p-1.5 text-center text-[10px] font-black text-slate-400">
+                                <td className="p-1.5 text-center text-[10px] font-black text-black">
                                   {isProductMaterial && activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? '—' : activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? calculateM2(itemLength, itemWidth, itemQty).toFixed(2) : '0.00'}
                                 </td>
                                 <td className="p-1.5"><input type="number" step="0.01" ref={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? priceRef : null} value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemPrice : 0} onChange={e => setItemPrice(parseFloat(e.target.value))} onKeyDown={e => {
@@ -1283,7 +1283,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                         setTimeout(() => itemDescRef.current?.focus(), 100);
                       }
                     }}
-                    className="w-full p-2.5 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-xl outline-none font-bold text-sm text-slate-800 dark:text-white focus:border-[var(--primary-color)] transition-all"
+                    className="w-full p-2.5 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-xl outline-none font-bold text-sm text-black dark:text-white focus:border-[var(--primary-color)] transition-all"
                   />
                 </div>
                 <button
@@ -1306,17 +1306,17 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-3">
               <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 block">Observações</label>
+                <label className="text-[9px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Observações</label>
                 <textarea
                   value={paymentConditions}
                   onChange={e => setPaymentConditions(e.target.value)}
                   placeholder="Observações adicionais sobre o pagamento..."
-                  className="w-full p-2 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-xs text-slate-800 dark:text-white transition-all h-48 resize-none"
+                  className="w-full p-2 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-xs text-black dark:text-white transition-all h-48 resize-none"
                 ></textarea>
               </div>
               <div>
-                <label className={`text-[9px] font-black uppercase tracking-[0.2em] mb-1 block ${!(parseInt(deliveryDeadline) > 0) ? 'text-red-400' : 'text-slate-400'}`}>
-                  Prazo de Entrega {!(parseInt(deliveryDeadline) > 0) && <span className="normal-case font-bold">— obrigatório</span>}
+                <label className="text-[9px] font-black uppercase tracking-[0.2em] mb-1 block text-black">
+                  Prazo de Entrega
                 </label>
                 <div className="relative w-40">
                   <input
@@ -1325,9 +1325,9 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     value={deliveryDeadline}
                     onChange={e => setDeliveryDeadline(e.target.value)}
                     placeholder="0"
-                    className={`w-full p-1.5 bg-slate-50 dark:bg-slate-800 border-2 focus:border-[var(--primary-color)] rounded-lg outline-none font-bold text-xs text-slate-800 dark:text-white transition-all ${!(parseInt(deliveryDeadline) > 0) ? 'border-red-300' : 'border-transparent'}`}
+                    className="w-full p-1.5 bg-slate-50 dark:bg-slate-800 border-2 focus:border-[var(--primary-color)] rounded-lg outline-none font-bold text-xs text-black dark:text-white transition-all border-transparent"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-400 uppercase tracking-wider pointer-events-none">dias úteis</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-black uppercase tracking-wider pointer-events-none">dias úteis</span>
                 </div>
               </div>
             </div>
@@ -1335,8 +1335,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
             <div className="space-y-3">
               {/* Bloco de Pagamento */}
               <div className={`rounded-xl p-3 space-y-2 border-2 ${saleType === 'Pedido' ? 'border-[var(--primary-color)]/30 bg-orange-50/40 dark:bg-slate-800/60' : 'border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30'}`}>
-                <p className={`text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5 ${saleType === 'Pedido' ? 'text-[var(--primary-color)]' : 'text-slate-400'}`}>
-                  Condições de Pagamento {saleType === 'Pedido' && <span className="text-red-400">*</span>}
+                <p className={`text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5 ${saleType === 'Pedido' ? 'text-[var(--primary-color)]' : 'text-black'}`}>
+                  Condições de Pagamento
                 </p>
                 {/* ── Entrada ── */}
                 <div>
@@ -1355,33 +1355,33 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     <p className="text-[8px] font-black text-amber-700 uppercase tracking-widest">Entrada</p>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Valor (R$)</label>
+                        <label className="text-[9px] font-bold text-black uppercase tracking-widest block mb-1">Valor (R$)</label>
                         <input
                           type="number"
                           min="0"
                           step="0.01"
                           value={downPaymentValue || ''}
                           onChange={e => setDownPaymentValue(parseFloat(e.target.value) || 0)}
-                          className="w-full p-1.5 bg-white rounded-lg border-2 border-transparent focus:border-amber-400 outline-none font-bold text-xs text-slate-800 transition-all"
+                          className="w-full p-1.5 bg-white rounded-lg border-2 border-transparent focus:border-amber-400 outline-none font-bold text-xs text-black transition-all"
                           placeholder="0,00"
                         />
                       </div>
                       <div>
-                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Vencimento</label>
+                        <label className="text-[9px] font-bold text-black uppercase tracking-widest block mb-1">Vencimento</label>
                         <input
                           type="date"
                           value={downPaymentDueDate}
                           onChange={e => setDownPaymentDueDate(e.target.value)}
-                          className="w-full p-1.5 bg-white rounded-lg border-2 border-transparent focus:border-amber-400 outline-none font-bold text-xs text-slate-800 transition-all"
+                          className="w-full p-1.5 bg-white rounded-lg border-2 border-transparent focus:border-amber-400 outline-none font-bold text-xs text-black transition-all"
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Forma de Pag. da Entrada</label>
+                      <label className="text-[9px] font-bold text-black uppercase tracking-widest block mb-1">Forma de Pag. da Entrada</label>
                       <select
                         value={downPaymentMethodId}
                         onChange={e => setDownPaymentMethodId(e.target.value)}
-                        className="w-full p-1.5 bg-white rounded-lg border-2 border-transparent focus:border-amber-400 outline-none font-bold text-xs text-slate-800 appearance-none transition-all"
+                        className="w-full p-1.5 bg-white rounded-lg border-2 border-transparent focus:border-amber-400 outline-none font-bold text-xs text-black appearance-none transition-all"
                       >
                         <option value="">-- Selecione --</option>
                         {paymentMethods.filter(p => p.active).map(p => (
@@ -1393,7 +1393,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 )}
 
                 <div>
-                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Forma de Pagamento{downPaymentEnabled && downPaymentValue > 0 ? ' do Restante' : ''}</label>
+                  <label className="text-[9px] font-bold text-black uppercase tracking-widest block mb-1">Forma de Pagamento{downPaymentEnabled && downPaymentValue > 0 ? ' do Restante' : ''}</label>
                   <select
                     value={paymentMethodId}
                     onChange={e => {
@@ -1401,7 +1401,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                       setPaymentMethodId(e.target.value);
                       setPaymentInstallments(pm?.type === 'aprazo' ? (pm.installments ?? 1) : 1);
                     }}
-                    className={`w-full p-1.5 bg-white dark:bg-slate-700 rounded-lg border-2 outline-none font-bold text-xs text-slate-800 dark:text-white appearance-none transition-all ${saleType === 'Pedido' && !paymentMethodId ? 'border-red-300' : 'border-transparent focus:border-[var(--primary-color)]'}`}
+                    className={`w-full p-1.5 bg-white dark:bg-slate-700 rounded-lg border-2 outline-none font-bold text-xs text-black dark:text-white appearance-none transition-all ${saleType === 'Pedido' && !paymentMethodId ? 'border-red-300' : 'border-transparent focus:border-[var(--primary-color)]'}`}
                   >
                     <option value="">-- Selecione --</option>
                     {paymentMethods.filter(p => p.active).map(p => (
@@ -1411,11 +1411,11 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 </div>
                 {paymentMethods.find(p => p.id === paymentMethodId)?.type === 'aprazo' && (
                   <div>
-                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Parcelas</label>
+                    <label className="text-[9px] font-bold text-black uppercase tracking-widest block mb-1">Parcelas</label>
                     <select
                       value={paymentInstallments}
                       onChange={e => setPaymentInstallments(parseInt(e.target.value))}
-                      className="w-full p-1.5 bg-white dark:bg-slate-700 rounded-lg border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-xs text-slate-800 dark:text-white appearance-none"
+                      className="w-full p-1.5 bg-white dark:bg-slate-700 rounded-lg border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-xs text-black dark:text-white appearance-none"
                     >
                       {Array.from({ length: paymentMethods.find(p => p.id === paymentMethodId)?.installments ?? 1 }, (_, i) => i + 1).map(n => (
                         <option key={n} value={n}>{n === 1 ? '1x (à vista)' : `${n}x`}</option>
@@ -1424,14 +1424,14 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   </div>
                 )}
                 <div>
-                  <label className={`text-[9px] font-bold uppercase tracking-widest block mb-1 ${saleType === 'Pedido' && !firstDueDate ? 'text-red-400' : 'text-slate-400'}`}>
-                    Data do 1º Vencimento {saleType === 'Pedido' && <span className="text-red-400">*</span>}
+                  <label className="text-[9px] font-bold uppercase tracking-widest block mb-1 text-black">
+                    Data do 1º Vencimento
                   </label>
                   <input
                     type="date"
                     value={firstDueDate}
                     onChange={e => setFirstDueDate(e.target.value)}
-                    className={`w-full p-1.5 bg-white dark:bg-slate-700 rounded-lg border-2 outline-none font-bold text-xs text-slate-800 dark:text-white transition-all ${saleType === 'Pedido' && !firstDueDate ? 'border-red-300' : 'border-transparent focus:border-[var(--primary-color)]'}`}
+                    className={`w-full p-1.5 bg-white dark:bg-slate-700 rounded-lg border-2 outline-none font-bold text-xs text-black dark:text-white transition-all ${saleType === 'Pedido' && !firstDueDate ? 'border-red-300' : 'border-transparent focus:border-[var(--primary-color)]'}`}
                   />
                 </div>
                 {/* ── Preview de parcelas ao vivo ── */}
@@ -1482,7 +1482,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex-1">
-                    <label className="text-[9px] font-black text-slate-400 uppercase mb-1 block">Desconto (%)</label>
+                    <label className="text-[9px] font-black text-black uppercase mb-1 block">Desconto (%)</label>
                     <input 
                       type="number" 
                       step="0.01"
@@ -1496,12 +1496,12 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                         setDiscountValue(valNum);
                         setDiscountValueInput(valNum > 0 ? valNum.toFixed(2) : '');
                       }}
-                      className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-bold text-slate-800 dark:text-white"
+                      className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-bold text-black dark:text-white"
                       placeholder="0,00"
                     />
                   </div>
                   <div className="flex-1">
-                    <label className="text-[9px] font-black text-slate-400 uppercase mb-1 block">Valor Desconto (R$)</label>
+                    <label className="text-[9px] font-black text-black uppercase mb-1 block">Valor Desconto (R$)</label>
                     <input 
                       type="text" 
                       value={discountValue > 0 ? discountValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : ''}
@@ -1514,12 +1514,12 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                         setDiscountPercentage(perc);
                         setDiscountPercentageInput(perc > 0 ? perc.toFixed(2) : '');
                       }}
-                      className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-bold text-slate-800 dark:text-white"
+                      className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-bold text-black dark:text-white"
                       placeholder="R$ 0,00"
                     />
                     {companyInfo.maxDiscountPct !== undefined && (
                       <div className="mt-1 flex justify-between items-center px-1">
-                        <span className="text-[8px] font-bold text-slate-400 uppercase">Limite ({companyInfo.maxDiscountPct}%)</span>
+                        <span className="text-[8px] font-bold text-black uppercase">Limite ({companyInfo.maxDiscountPct}%)</span>
                         <span className="text-[8px] font-black text-slate-500">
                           R$ {(subtotal * (companyInfo.maxDiscountPct / 100)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
@@ -1529,18 +1529,18 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 </div>
                 <div className="pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between items-end">
                   <div>
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Total Geral</span>
-                    <p className="text-lg font-black text-[var(--primary-color)] tracking-tight">R$ {(totalGeral || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    <span className="text-[9px] font-black text-black uppercase tracking-widest block mb-0.5">Total Geral</span>
+                    <p className="text-lg font-black text-black tracking-tight">R$ {(totalGeral || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   </div>
                   {isLocked ? (
-                    <div className="flex items-center gap-2 px-4 py-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl text-green-700 dark:text-green-400 text-xs font-black">
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl text-black dark:text-green-400 text-xs font-black">
                       <Eye size={14} /> Somente leitura — Reverter para Orçamento para editar
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
                       {hasPayments && (
                          <div className="hidden sm:block text-right mr-2">
-                           <p className="text-[8px] font-black uppercase text-amber-500 tracking-tighter leading-none">Modo de Ajuste</p>
+                           <p className="text-[8px] font-black uppercase text-black tracking-tighter leading-none">Modo de Ajuste</p>
                            <p className="text-[7.5px] font-bold text-amber-400 leading-tight">Saldo será reconciliado</p>
                          </div>
                       )}
@@ -1672,7 +1672,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                           : prev.toReplace.filter(m => m !== mat)
                       } : prev)}
                     />
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{mat}</span>
+                    <span className="text-sm font-bold text-black dark:text-slate-200">{mat}</span>
                     <span className="ml-auto text-xs text-slate-400">{envItems.filter(i => i.materialName === mat).length} item(s)</span>
                   </label>
                 ))}
@@ -1680,7 +1680,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
               <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex gap-3">
                 <button
                   onClick={() => setMaterialSwap(null)}
-                  className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-sm text-black dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
                 >
                   Cancelar
                 </button>
@@ -1744,7 +1744,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
               )}
             </div>
             <div className="p-5 pt-0 flex gap-3">
-              <button onClick={() => setShowRevert(false)} className="flex-1 py-3 px-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all">
+              <button onClick={() => setShowRevert(false)} className="flex-1 py-3 px-4 bg-slate-100 dark:bg-slate-800 text-black dark:text-slate-300 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all">
                 Cancelar
               </button>
               <button
@@ -1771,7 +1771,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
               <button onClick={() => {
                 setProductPickerOpen(false);
                 setTimeout(() => itemDescRef.current?.focus(), 100);
-              }} className="p-2 text-slate-400 hover:text-slate-600 rounded-xl transition-colors">
+              }} className="p-2 text-slate-400 hover:text-black rounded-xl transition-colors">
                 <X size={20} />
               </button>
             </div>
@@ -1847,7 +1847,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                       </div>
                       <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg transition-all ${
                         item.type === 'Serviço' 
-                          ? 'bg-blue-500/10 text-blue-600 group-hover:bg-blue-500 group-hover:text-white' 
+                          ? 'bg-blue-500/10 text-black group-hover:bg-blue-500 group-hover:text-white' 
                           : 'bg-amber-500/10 text-amber-600 group-hover:bg-amber-500 group-hover:text-white'
                       }`}>
                         {item.type}
@@ -1877,7 +1877,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
               <button onClick={() => {
                 setMaterialPickerOpen(false);
                 setTimeout(() => materialRef.current?.focus(), 100);
-              }} className="p-2 text-slate-400 hover:text-slate-600 rounded-xl transition-colors">
+              }} className="p-2 text-slate-400 hover:text-black rounded-xl transition-colors">
                 <X size={20} />
               </button>
             </div>
