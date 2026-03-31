@@ -1018,7 +1018,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                 <th className="px-4 py-3 text-center">Larg.</th>
                                 <th className="px-4 py-3 text-center">M² / Un</th>
                                 <th className="px-4 py-3 text-right">Vl. Unit</th>
-                                <th className="px-4 py-3 text-center min-w-[100px]">Svc %/R$</th>
+                                <th className="px-4 py-3 text-center min-w-[85px]">Svc %/R$</th>
                                 <th className="px-4 py-3 text-right">Total</th>
                                 <th className="px-4 py-3 text-center">Ações</th>
                               </tr>
@@ -1199,7 +1199,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                 }} 
                                 readOnly={!canEditPrice && !!itemMaterialId}
                                 className={`w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-right transition-all ${!canEditPrice && !!itemMaterialId ? 'opacity-50 cursor-not-allowed grayscale' : ''}`} /></td>
-                                <td className="p-1.5 min-w-[100px]">
+                                <td className="p-1 min-w-[85px]">
                                   <div className="flex items-center gap-1">
                                     <input 
                                       type="number" 
@@ -1219,7 +1219,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                           serviceValueRef.current?.focus();
                                         }
                                       }} 
-                                      className="w-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[10px] font-bold outline-none focus:border-[var(--primary-color)] text-center transition-all px-1" 
+                                      className="w-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-1 text-[9px] font-bold outline-none focus:border-[var(--primary-color)] text-center transition-all px-0.5" 
                                       placeholder="%"
                                     />
                                     <input 
@@ -1236,7 +1236,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                         setItemService(parseFloat(perc.toFixed(2)));
                                       }}
                                       onKeyDown={e => e.key === 'Enter' && addItem()}
-                                      className="flex-1 min-w-[60px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-1.5 text-[10px] font-bold outline-none focus:border-[var(--primary-color)] text-right transition-all"
+                                      className="flex-1 min-w-[50px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-1 text-[9px] font-bold outline-none focus:border-[var(--primary-color)] text-right transition-all"
                                       placeholder="R$ 0,00"
                                     />
                                   </div>
