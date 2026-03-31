@@ -238,6 +238,12 @@ export const useSettings = (
               if (cached.length > 0) needsSync.brands = cached;
             } catch {}
           }
+          if ((!data.sales_phases || data.sales_phases.length === 0) && ls) {
+            try {
+              const cached = JSON.parse(ls.getItem('marmo_sales_phases') || '[]');
+              if (cached.length > 0) needsSync.sales_phases = cached;
+            } catch {}
+          }
           if (Object.keys(needsSync).length > 0) {
             supabase.from('companies').update(needsSync).eq('id', companyId)
               .then(({ error: e }) => {
