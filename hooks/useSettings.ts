@@ -140,10 +140,10 @@ export const useSettings = (
 
   // Categories & Lists
   const DEFAULT_SALES_CHANNELS: SalesChannel[] = [
-    { id: '1', name: 'GOOGLE', createdAt: new Date().toISOString() },
-    { id: '2', name: 'INDICAÇÃO', createdAt: new Date().toISOString() },
-    { id: '3', name: 'INSTAGRAM', createdAt: new Date().toISOString() },
-    { id: '4', name: 'SHOWROOM', createdAt: new Date().toISOString() },
+    { id: '1', code: 1, name: 'GOOGLE', createdAt: new Date().toISOString() },
+    { id: '2', code: 2, name: 'INDICAÇÃO', createdAt: new Date().toISOString() },
+    { id: '3', code: 3, name: 'INSTAGRAM', createdAt: new Date().toISOString() },
+    { id: '4', code: 4, name: 'SHOWROOM', createdAt: new Date().toISOString() },
   ];
   const [salesChannels, setSalesChannels] = useState<SalesChannel[]>(() => {
     try {
@@ -301,9 +301,20 @@ export const useSettings = (
         (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem('marmo_service_groups', JSON.stringify(sg));
       }
       if (data.sales_channels && Array.isArray(data.sales_channels) && data.sales_channels.length > 0) {
-        const sc = data.sales_channels.map((c: any) => ({ ...c, name: up(c.name) ?? c.name }));
+        let nextCode = 1;
+        const sc = data.sales_channels.map((c: any) => {
+          const normalized = { ...c, name: up(c.name) ?? c.name };
+          if (!normalized.code) {
+            normalized.code = nextCode++;
+          } else {
+            nextCode = Math.max(nextCode, normalized.code + 1);
+          }
+          return normalized;
+        });
+        const needsBackfill = sc.some((c: any, i: number) => c.code !== data.sales_channels[i].code);
         setSalesChannels(sc);
         (typeof window !== 'undefined' ? window.localStorage : ({getItem:(k:any)=>null,setItem:(k:any,v:any)=>{},removeItem:(k:any)=>{}} as any)).setItem('marmo_sales_channels', JSON.stringify(sc));
+        if (needsBackfill) syncCompanyMetadata('sales_channels', sc);
       }
     };
 
