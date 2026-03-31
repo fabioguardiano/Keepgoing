@@ -290,6 +290,7 @@ export const SuppliersView: React.FC<SuppliersViewProps> = ({ suppliers, onSaveS
         onClose={() => setIsModalOpen(false)}
         onSave={onSaveSupplier}
         editingSupplier={editingSupplier}
+        suppliers={suppliers}
       />
     </div>
   );

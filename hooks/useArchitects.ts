@@ -43,10 +43,37 @@ export const useArchitects = (companyId?: string, logActivity?: any) => {
 
   useEffect(() => {
     fetchArchitects();
+    if (!companyId) return;
+
+    const channel = supabase
+      .channel('architects_realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'architects',
+        filter: `company_id=eq.${companyId}`
+      }, () => {
+        fetchArchitects();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [companyId]);
 
   const handleSaveArchitect = async (a: Architect) => {
     const finalCompanyId = companyId || '00000000-0000-0000-0000-000000000000';
+    
+    let finalCode = a.code;
+    if (!finalCode) {
+      const codes = architects
+        .map(arch => typeof arch.code === 'number' ? arch.code : parseInt(String(arch.code).replace(/\D/g, '')))
+        .filter(n => !isNaN(n));
+      const maxCode = codes.length > 0 ? Math.max(...codes) : 0;
+      finalCode = maxCode + 1;
+    }
+
     try {
       const payload = {
         id: (a.id && a.id.length > 20) ? a.id : undefined,
@@ -62,7 +89,7 @@ export const useArchitects = (companyId?: string, logActivity?: any) => {
         address: a.address,
         observations: up(a.observations),
         rg_insc: a.rgInsc,
-        architect_code: a.code
+        architect_code: finalCode
       };
 
       const { data, error } = await supabase

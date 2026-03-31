@@ -31,11 +31,12 @@ interface NewSaleModalProps {
   getEnvironmentOSMap?: (saleId: string) => Record<string, WorkOrder[]>;
   onRequestDiscount?: (admin: AppUser, requestedPct: number, maxPct: number) => void;
   canEditPrice?: boolean;
+  hasPayments?: boolean;
 }
 
 export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   onClose, onSave, clients, architects, appUsers, materials, products, services, salesChannels, paymentMethods, initialData, companyInfo, nextOrderNumber, salesPhases, readOnly = false,
-  companyId, createWorkOrders, getEnvironmentOSMap, onRequestDiscount, canEditPrice = true
+  companyId, createWorkOrders, getEnvironmentOSMap, onRequestDiscount, canEditPrice = true, hasPayments = false
 }) => {
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [printingSale, setPrintingSale] = useState<SalesOrder | null>(null);
@@ -44,12 +45,19 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const [showGenerateOS, setShowGenerateOS] = useState(false);
   const [showDiscountRequest, setShowDiscountRequest] = useState(false);
   // Revert-to-Orçamento flow (only when readOnly=true)
-  const [isLocked, setIsLocked] = useState(readOnly);
+  const [isLocked, setIsLocked] = useState(readOnly && !hasPayments);
   const [showRevert, setShowRevert] = useState(false);
   const [revertPassword, setRevertPassword] = useState('');
   const [revertJustification, setRevertJustification] = useState('');
   const [revertError, setRevertError] = useState('');
   const [revertLoading, setRevertLoading] = useState(false);
+
+  useEffect(() => {
+    // If the sale is a Pedido but has payments, we unlock it but show a warning
+    if (initialData?.status === 'Pedido' && hasPayments) {
+      setIsLocked(false);
+    }
+  }, [initialData?.status, hasPayments]);
 
   const handlePrint = () => {
     // Generate a temporary sale object to print if current form is valid
@@ -688,7 +696,17 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     <Lock size={9} /> Somente Leitura
                   </span>
                 )}
+                {hasPayments && (
+                  <span className="flex items-center gap-1 bg-amber-100 text-amber-700 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
+                    <AlertTriangle size={10} /> Ajuste Financeiro Ativo
+                  </span>
+                )}
               </div>
+              {hasPayments && (
+                <p className="text-[10px] text-amber-600 font-bold mt-0.5">
+                  Este pedido possui pagamentos. Alterações de valor serão reconciliadas automaticamente nas parcelas pendentes.
+                </p>
+              )}
               <div className="flex gap-4 mt-0.5">
                 <label className={`flex items-center gap-1.5 ${isLocked ? 'cursor-pointer' : 'cursor-pointer group'}`}>
                   <input
@@ -1515,24 +1533,30 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     <p className="text-lg font-black text-[var(--primary-color)] tracking-tight">R$ {(totalGeral || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   </div>
                   {isLocked ? (
-                    <div className="flex items-center gap-2 px-4 py-2.5 bg-green-50 border border-green-200 rounded-xl text-green-700 text-xs font-black">
-                      <Eye size={14} /> Somente leitura — use "Reverter para Orçamento" para editar
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl text-green-700 dark:text-green-400 text-xs font-black">
+                      <Eye size={14} /> Somente leitura — Reverter para Orçamento para editar
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
+                      {hasPayments && (
+                         <div className="hidden sm:block text-right mr-2">
+                           <p className="text-[8px] font-black uppercase text-amber-500 tracking-tighter leading-none">Modo de Ajuste</p>
+                           <p className="text-[7.5px] font-bold text-amber-400 leading-tight">Saldo será reconciliado</p>
+                         </div>
+                      )}
                       <button
                         onClick={() => handleSave(true)}
                         disabled={isSaving}
-                        className="px-4 py-2.5 bg-white dark:bg-slate-800 border-2 border-[var(--primary-color)] text-[var(--primary-color)] rounded-xl font-black hover:bg-orange-50 dark:hover:bg-slate-700 transition-all flex items-center gap-2 text-xs disabled:opacity-50"
+                        className={`px-4 py-2.5 border-2 rounded-xl font-black transition-all flex items-center gap-2 text-xs disabled:opacity-50 ${hasPayments ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-300 text-amber-700' : 'bg-white dark:bg-slate-800 border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-orange-50 dark:hover:bg-slate-700'}`}
                       >
-                        {isSaving ? 'Gravando...' : 'Gravar'}
+                        {isSaving ? 'Gravando...' : hasPayments ? 'Reconciliar e Salvar' : 'Gravar'}
                       </button>
                       <button
                         onClick={() => handleSave(false)}
                         disabled={isSaving}
-                        className="px-4 py-2.5 bg-[var(--primary-color)] text-white rounded-xl font-black shadow-xl shadow-[var(--primary-color)]/30 hover:opacity-90 transition-all flex items-center gap-2 text-xs disabled:opacity-50"
+                        className={`px-4 py-2.5 text-white rounded-xl font-black shadow-xl transition-all flex items-center gap-2 text-xs disabled:opacity-50 ${hasPayments ? 'bg-amber-600 shadow-amber-600/30 hover:bg-amber-700' : 'bg-[var(--primary-color)] shadow-[var(--primary-color)]/30 hover:opacity-90'}`}
                       >
-                        {isSaving ? 'Gravando...' : 'Gravar e Sair'}
+                        {isSaving ? 'Gravando...' : hasPayments ? 'Concluir Ajuste' : 'Gravar e Sair'}
                       </button>
                     </div>
                   )}

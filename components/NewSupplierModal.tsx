@@ -27,9 +27,10 @@ interface NewSupplierModalProps {
   onClose: () => void;
   onSave: (supplier: Supplier) => void;
   editingSupplier: Supplier | null;
+  suppliers?: Supplier[];
 }
 
-export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onClose, onSave, editingSupplier }) => {
+export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onClose, onSave, editingSupplier, suppliers = [] }) => {
   const [formData, setFormData] = useState<Omit<Supplier, 'id' | 'createdAt'>>({
     type: 'Pessoa Jurídica',
     document: '',
@@ -63,6 +64,11 @@ export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onCl
       const { id, createdAt, ...rest } = editingSupplier;
       setFormData(rest);
     } else {
+      const codes = suppliers
+        .map(sup => typeof sup.code === 'number' ? sup.code : parseInt(String(sup.code).replace(/\D/g, '')))
+        .filter(n => !isNaN(n));
+      const nextCode = codes.length > 0 ? Math.max(...codes) + 1 : 1;
+
       setFormData({
         type: 'Pessoa Jurídica',
         document: '',
@@ -82,10 +88,11 @@ export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onCl
         rgInsc: '',
         cellphone: '',
         contactName: '',
-        observations: ''
+        observations: '',
+        code: nextCode
       });
     }
-  }, [editingSupplier, isOpen]);
+  }, [editingSupplier, isOpen, suppliers]);
 
   const geocodeAddress = async (street: string, number: string, city: string, state: string, zipCode: string) => {
     if (!city && !zipCode) return;
@@ -303,7 +310,16 @@ export const NewSupplierModal: React.FC<NewSupplierModalProps> = ({ isOpen, onCl
                 ))}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className={labelClass}><ShieldCheck size={14} /> Código</label>
+                  <input 
+                    readOnly
+                    className={`${inputClass} bg-slate-100 text-slate-400 cursor-not-allowed`}
+                    value={formData.code || ''}
+                    placeholder="Auto-gerado"
+                  />
+                </div>
                 <div>
                   <label className={labelClass}>{formData.type === 'Pessoa Jurídica' ? 'CNPJ' : 'CPF'} {isFetchingCNPJ && <span className="text-white animate-pulse font-normal lowercase">(Consultando...)</span>}</label>
                   <input 

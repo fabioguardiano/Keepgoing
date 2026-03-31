@@ -71,11 +71,21 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
 
   const handleSaveMaterial = async (m: Material) => {
     const finalCompanyId = companyId || '00000000-0000-0000-0000-000000000000';
+    let finalCode = m.code;
+    if (!finalCode) {
+      // Pega o maior código numérico atual para gerar o próximo
+      const codes = materials
+        .map(x => parseInt(String(x.code).replace(/\D/g, '')))
+        .filter(n => !isNaN(n));
+      const maxCode = codes.length > 0 ? Math.max(...codes) : 0;
+      finalCode = String(maxCode + 1).padStart(4, '0');
+    }
+
     try {
       const payload = {
         id: (m.id && m.id.length > 20) ? m.id : undefined,
         company_id: finalCompanyId,
-        code: /^\d+$/.test(m.code || '') ? m.code.padStart(4, '0') : m.code,
+        code: finalCode,
         name: up(m.name),
         type: m.type,
         status: m.status,

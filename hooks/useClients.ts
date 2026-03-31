@@ -64,17 +64,63 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
 
   useEffect(() => {
     fetchClients();
+    if (!companyId) return;
+
+    const channel = supabase
+      .channel('clients_realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'clients',
+        filter: `company_id=eq.${companyId}`
+      }, () => {
+        fetchClients();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [companyId]);
 
   const handleSaveClient = async (c: Client) => {
     // Se o usuário não tem empresa identificada no momento, usamos um fallback temporário (UUID zero)
     const finalCompanyId = companyId || '00000000-0000-0000-0000-000000000000';
     
+    // Validar duplicidade de CPF/CNPJ antes de prosseguir
+    if (c.document) {
+      const cleanDoc = c.document.replace(/\D/g, '');
+      if (cleanDoc) { // Apenas se houver números
+        const isDuplicate = clients.some(cl => 
+          cl.id !== c.id && 
+          (cl.document || '').replace(/\D/g, '') === cleanDoc
+        );
+
+        if (isDuplicate) {
+          const existing = clients.find(cl => (cl.document || '').replace(/\D/g, '') === cleanDoc);
+          const docType = c.type === 'Pessoa Física' ? 'CPF' : 'CNPJ';
+          const msg = `Não é possível cadastrar: O ${docType} ${c.document} já pertence ao cliente "${existing?.tradingName || existing?.legalName}" (Cód: ${existing?.code || 'S/N'}).`;
+          alert(msg);
+          throw new Error('DUPLICATE_DOCUMENT');
+        }
+      }
+    }
+    
+    let finalCode = c.code;
+    if (!finalCode) {
+      // Pega o maior código numérico atual para gerar o próximo
+      const codes = clients
+        .map(cl => typeof cl.code === 'number' ? cl.code : parseInt(String(cl.code).replace(/\D/g, '')))
+        .filter(n => !isNaN(n));
+      const maxCode = codes.length > 0 ? Math.max(...codes) : 0;
+      finalCode = maxCode + 1;
+    }
+
     try {
       const payload = {
         id: (c.id && c.id.length > 20) ? c.id : undefined,
         company_id: finalCompanyId,
-        name: up(c.tradingName || c.legalName) || 'Sem Nome', // Coluna obrigatória no banco
+        name: up(c.tradingName || c.legalName) || 'Sem Nome', 
         type: c.type || 'Pessoa Física',
         document: c.document || '',
         legal_name: up(c.legalName || c.tradingName) || '',
@@ -94,7 +140,7 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
         delivery_address: c.deliveryAddress || null,
         rg_insc: c.rgInsc || '',
         observations: up(c.observations) || '',
-        client_code: c.code
+        client_code: finalCode
       };
 
       const { data, error } = await supabase
@@ -174,6 +220,18 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
         if (rawCode !== undefined && rawCode !== null) {
           const stringCode = String(rawCode).trim();
           clientCode = /^\d+$/.test(stringCode) ? stringCode.padStart(4, '0') : stringCode;
+        }
+
+        // Verificar duplicidade antes de inserir
+        const docToImport = String(row.documento || row.document || '');
+        if (docToImport && docToImport.replace(/\D/g, '')) {
+          const cleanImportDoc = docToImport.replace(/\D/g, '');
+          const isDuplicate = clients.some(c => (c.document || '').replace(/\D/g, '') === cleanImportDoc);
+          if (isDuplicate) {
+            console.warn(`Pulando cliente duplicado na importação: ${nome} (${docToImport})`);
+            errors++;
+            continue;
+          }
         }
 
         const payload = {

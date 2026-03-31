@@ -302,6 +302,7 @@ export const ClientsView: React.FC<ClientsViewProps> = ({ clients, onSaveClient,
         onClose={() => setIsModalOpen(false)}
         onSave={onSaveClient}
         editingClient={editingClient}
+        clients={clients}
       />
     </div>
   );

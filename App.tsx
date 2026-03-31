@@ -132,32 +132,82 @@ const App: React.FC = () => {
 
   // 6. Handlers de Negócio Orquestrados
   const handleSaveSale = async (s: SalesOrder) => {
-    // ── Retorno Pedido → Orçamento: protege o financeiro ──────────────────────
-    if (s.status === 'Orçamento' && s.id) {
-      const previousSale = sales.find(x => x.id === s.id);
-      if (previousSale?.status === 'Pedido') {
-        // Cancela TODOS os ARs vinculados (entrada + parcelas regulares)
-        const linkedARs = receivables.filter(r => r.saleId === s.id && r.status !== 'cancelado');
-        const hasPaid = linkedARs.some(ar => ar.installments.some(i => i.status === 'pago'));
-        if (hasPaid) {
-          throw new Error(
-            'Este pedido possui pagamentos registrados no Contas a Receber. ' +
-            'Estorne os pagamentos antes de retornar para Orçamento.'
-          );
-        }
-        for (const ar of linkedARs) {
-          await handleSaveReceivable({ ...ar, status: 'cancelado' });
-        }
-      }
+    // ── Prepara reconciliação se for alteração de pedido existente ─────────────
+    let diffToReconcile = 0;
+    const isEditingPedido = s.id && sales.find(x => x.id === s.id)?.status === 'Pedido';
+    
+    // ── Logica de Reconciliação Financeira ────────────────────────────────────
+    if (isEditingPedido && s.status === 'Pedido') {
+      const oldSale = sales.find(x => x.id === s.id);
+      const oldTotal = oldSale?.totals?.geral || 0;
+      const newTotal = s.totals?.geral || 0;
+      const oldDP = oldSale?.downPaymentValue || 0;
+      const newDP = s.downPaymentValue || 0;
+      
+      // Calculamos a diferença líquida que deve ser refletida nas parcelas
+      // (Novo Total - Nova Entrada) - (Total Antigo - Entrada Antiga)
+      diffToReconcile = Math.round(((newTotal - newDP) - (oldTotal - oldDP)) * 100) / 100;
     }
-    // ──────────────────────────────────────────────────────────────────────────
 
     try {
       const savedSale = await saveSaleBase(s);
       const saleId = (savedSale as any)?.id || s.id;
 
-      // Auto-cria Conta(s) a Receber quando venda vira Pedido
-      if (s.status === 'Pedido') {
+      // 1. Executa Reconciliação se necessário
+      if (isEditingPedido && Math.abs(diffToReconcile) > 0.01) {
+        const saleAR = receivables.find(r => r.saleId === saleId && r.category === 'Venda' && r.status !== 'cancelado');
+        if (saleAR) {
+          const newInstallments = [...saleAR.installments];
+          
+          if (diffToReconcile > 0) {
+            // Aumento: adiciona na última parcela pendente ou cria uma nova
+            const lastPending = [...newInstallments].reverse().find(i => i.status === 'pendente');
+            if (lastPending) {
+              lastPending.value = Math.round((lastPending.value + diffToReconcile) * 100) / 100;
+            } else {
+              newInstallments.push({
+                id: crypto.randomUUID(),
+                number: newInstallments.length + 1,
+                dueDate: new Date().toISOString().split('T')[0],
+                value: diffToReconcile,
+                status: 'pendente',
+                notes: 'Ajuste de Aditivo de Pedido'
+              } as any);
+            }
+          } else {
+            // Redução: abate das parcelas pendentes (da última para a primeira)
+            let remainingToSub = Math.abs(diffToReconcile);
+            const pendingIndices = newInstallments
+              .map((inst, idx) => ({ inst, idx }))
+              .filter(x => x.inst.status === 'pendente')
+              .sort((a, b) => b.inst.number - a.inst.number);
+
+            for (const { idx } of pendingIndices) {
+              if (remainingToSub <= 0) break;
+              const sub = Math.min(newInstallments[idx].value, remainingToSub);
+              newInstallments[idx].value = Math.round((newInstallments[idx].value - sub) * 100) / 100;
+              remainingToSub = Math.round((remainingToSub - sub) * 100) / 100;
+            }
+          }
+
+          // Filtra parcelas com valor zero e atualiza totais
+          const finalInsts = newInstallments.filter(i => i.value > 0 || i.status === 'pago');
+          const updatedTotal = finalInsts.reduce((acc, i) => acc + i.value, 0);
+          const paidValue = finalInsts.filter(i => i.status === 'pago').reduce((acc, i) => acc + (i.paidValue || i.value), 0);
+
+          await handleSaveReceivable({
+            ...saleAR,
+            installments: finalInsts,
+            totalValue: updatedTotal,
+            paidValue: paidValue,
+            status: (updatedTotal - paidValue) <= 0 ? 'quitado' : (paidValue > 0 ? 'parcial' : 'pendente'),
+            notes: (saleAR.notes || '') + `\n[RECONCILIAÇÃO ${new Date().toLocaleDateString('pt-BR')}] Ajuste de valor: ${diffToReconcile > 0 ? '+' : ''}${diffToReconcile.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`
+          });
+        }
+      }
+
+      // 2. Criação Inicial de AR (fluxo normal quando vira pedido pela primeira vez)
+      if (s.status === 'Pedido' && !isEditingPedido) {
         const existingARs = receivables.filter(r => r.saleId === saleId && r.status !== 'cancelado');
 
         // ── AR de Entrada ──
@@ -174,7 +224,6 @@ const App: React.FC = () => {
               orderNumber: s.orderNumber || '',
               totalValue: s.downPaymentValue,
               paidValue: 0,
-              remainingValue: s.downPaymentValue,
               installments: [{
                 id: crypto.randomUUID(),
                 number: 1,
@@ -488,6 +537,7 @@ const App: React.FC = () => {
             canEdit={getAccess('vendas') === 'full'}
             vendasScope={getVendasScope()}
             currentUser={user}
+            receivables={receivables}
           />
         );
       case 'Matéria Prima':

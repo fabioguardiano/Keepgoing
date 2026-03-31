@@ -290,6 +290,7 @@ export const ArchitectsView: React.FC<ArchitectsViewProps> = ({ architects, onSa
         onClose={() => setIsModalOpen(false)}
         onSave={onSaveArchitect}
         editingArchitect={editingArchitect}
+        architects={architects}
       />
     </div>
   );

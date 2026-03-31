@@ -271,7 +271,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
               <div className="grid grid-cols-12 gap-4">
                 <div className="col-span-2">
                   <label className={labelClass}>Código</label>
-                  <input className={inputClass} value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})} />
+                  <input readOnly className={`${inputClass} bg-slate-100 text-slate-400 cursor-not-allowed`} value={formData.code} />
                 </div>
                 <div className="col-span-2">
                   <label className={labelClass}>Data Cadastro</label>

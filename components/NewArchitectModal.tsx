@@ -26,9 +26,10 @@ interface NewArchitectModalProps {
   onClose: () => void;
   onSave: (architect: Architect) => void;
   editingArchitect: Architect | null;
+  architects?: Architect[];
 }
 
-export const NewArchitectModal: React.FC<NewArchitectModalProps> = ({ isOpen, onClose, onSave, editingArchitect }) => {
+export const NewArchitectModal: React.FC<NewArchitectModalProps> = ({ isOpen, onClose, onSave, editingArchitect, architects = [] }) => {
   const [formData, setFormData] = useState<Omit<Architect, 'id' | 'createdAt'>>({
     type: 'Pessoa Jurídica',
     document: '',
@@ -57,6 +58,11 @@ export const NewArchitectModal: React.FC<NewArchitectModalProps> = ({ isOpen, on
       const { id, createdAt, ...rest } = editingArchitect;
       setFormData(rest);
     } else {
+      const codes = architects
+        .map(arch => typeof arch.code === 'number' ? arch.code : parseInt(String(arch.code).replace(/\D/g, '')))
+        .filter(n => !isNaN(n));
+      const nextCode = codes.length > 0 ? Math.max(...codes) + 1 : 1;
+
       setFormData({
         type: 'Pessoa Jurídica',
         document: '',
@@ -73,10 +79,11 @@ export const NewArchitectModal: React.FC<NewArchitectModalProps> = ({ isOpen, on
           state: '',
           zipCode: ''
         },
-        observations: ''
+        observations: '',
+        code: nextCode
       });
     }
-  }, [editingArchitect, isOpen]);
+  }, [editingArchitect, isOpen, architects]);
 
   const geocodeAddress = async (street: string, number: string, city: string, state: string) => {
     if (!city || !street) return;
@@ -206,7 +213,16 @@ export const NewArchitectModal: React.FC<NewArchitectModalProps> = ({ isOpen, on
                 ))}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className={labelClass}><ShieldCheck size={14} /> Código</label>
+                  <input 
+                    readOnly
+                    className={`${inputClass} bg-slate-100 text-slate-400 cursor-not-allowed`}
+                    value={formData.code || ''}
+                    placeholder="Auto-gerado"
+                  />
+                </div>
                 <div>
                   <label className={labelClass}>{formData.type === 'Pessoa Jurídica' ? 'CNPJ' : 'CPF'}</label>
                   <input 

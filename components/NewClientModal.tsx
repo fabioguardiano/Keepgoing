@@ -28,9 +28,10 @@ interface NewClientModalProps {
   onClose: () => void;
   onSave: (client: Client) => void;
   editingClient?: Client | null;
+  clients?: Client[];
 }
 
-export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose, onSave, editingClient }) => {
+export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose, onSave, editingClient, clients = [] }) => {
   const [formData, setFormData] = useState<Omit<Client, 'id' | 'createdAt'>>({
     legalName: '',
     tradingName: '',
@@ -49,7 +50,8 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
       city: '',
       state: '',
       zipCode: ''
-    }
+    },
+    code: undefined
   });
 
   const [activeTab, setActiveTab] = useState<'geral' | 'endereco' | 'entrega'>('geral');
@@ -63,6 +65,11 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
       const { id, createdAt, ...rest } = editingClient;
       setFormData(rest);
     } else {
+      const codes = clients
+        .map(cl => typeof cl.code === 'number' ? cl.code : parseInt(String(cl.code).replace(/\D/g, '')))
+        .filter(n => !isNaN(n));
+      const nextCode = codes.length > 0 ? Math.max(...codes) + 1 : 1;
+
       setFormData({
         legalName: '',
         tradingName: '',
@@ -73,10 +80,11 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
         phone: '',
         cellphone: '',
         useSpecialTable: false,
-        address: { street: '', number: '', complement: '', neighborhood: '', city: '', state: '', zipCode: '' }
+        address: { street: '', number: '', complement: '', neighborhood: '', city: '', state: '', zipCode: '' },
+        code: nextCode
       });
     }
-  }, [editingClient, isOpen]);
+  }, [editingClient, isOpen, clients]);
 
   // Automatic geocoding for existing addresses without coordinates
   useEffect(() => {
@@ -269,21 +277,42 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (formData.document && !validateDocument(formData.document, formData.type)) {
-      setIsDocumentInvalid(true);
-      alert(`O ${formData.type === 'Pessoa Física' ? 'CPF' : 'CNPJ'} informado é inválido. Por favor, verifique os números.`);
-      return;
+    if (formData.document) {
+      if (!validateDocument(formData.document, formData.type)) {
+        setIsDocumentInvalid(true);
+        alert(`O ${formData.type === 'Pessoa Física' ? 'CPF' : 'CNPJ'} informado é inválido. Por favor, verifique os números.`);
+        return;
+      }
+
+      // Verificação extra de duplicidade antes de fechar o modal
+      const cleanDoc = formData.document.replace(/\D/g, '');
+      const isDuplicate = clients.some(c => 
+        c.id !== editingClient?.id && 
+        (c.document || '').replace(/\D/g, '') === cleanDoc
+      );
+
+      if (isDuplicate) {
+        const existing = clients.find(c => (c.document || '').replace(/\D/g, '') === cleanDoc);
+        const docName = formData.type === 'Pessoa Física' ? 'CPF' : 'CNPJ';
+        alert(`Não é possível cadastrar: O ${docName} ${formData.document} já pertence ao cliente "${existing?.tradingName || existing?.legalName}" (Cód: ${existing?.code || 'S/N'}).`);
+        return;
+      }
     }
 
-    onSave({
-      ...formData,
-      id: editingClient?.id || String(Date.now()),
-      createdAt: editingClient?.createdAt || new Date().toISOString().split('T')[0]
-    } as Client);
-    onClose();
+    try {
+      await onSave({
+        ...formData,
+        id: editingClient?.id || String(Date.now()),
+        createdAt: editingClient?.createdAt || new Date().toISOString().split('T')[0]
+      } as Client);
+      onClose();
+    } catch (err) {
+      console.error('Erro ao salvar cliente no Modal:', err);
+      // O erro já deve ter sido mostrado pelo hook via alert
+    }
   };
 
   const inputClass = "w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all disabled:opacity-50";
@@ -349,6 +378,16 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div>
+                  <label className={labelClass}><FileText size={14} /> Código do Cliente</label>
+                  <input 
+                    type="number"
+                    readOnly
+                    className={`${inputClass} bg-slate-100 text-slate-400 cursor-not-allowed`}
+                    value={formData.code || ''}
+                    placeholder="Auto-gerado"
+                  />
+                </div>
+                <div>
                   <label className={labelClass}><ShieldCheck size={14} /> Tipo de Pessoa</label>
                   <select 
                     className={inputClass}
@@ -408,7 +447,21 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                     }}
                     onBlur={() => {
                       if (formData.document) {
-                        setIsDocumentInvalid(!validateDocument(formData.document, formData.type));
+                        const isValid = validateDocument(formData.document, formData.type);
+                        setIsDocumentInvalid(!isValid);
+
+                        // Check duplicate on blur as well
+                        if (isValid) {
+                          const cleanDoc = formData.document.replace(/\D/g, '');
+                          const isDuplicate = clients.some(c => 
+                            c.id !== editingClient?.id && 
+                            (c.document || '').replace(/\D/g, '') === cleanDoc
+                          );
+                          if (isDuplicate) {
+                             const existing = clients.find(c => (c.document || '').replace(/\D/g, '') === cleanDoc);
+                             alert(`Atenção: Já existe um cliente (${existing?.tradingName || existing?.legalName}) com este documento.`);
+                          }
+                        }
                       }
                     }}
                     placeholder={formData.type === 'Pessoa Física' ? "000.000.000-00" : "00.000.000/0000-00"}

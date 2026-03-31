@@ -706,15 +706,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                             <div
                                                                 ref={draggableProvided.innerRef}
                                                                 {...draggableProvided.draggableProps}
-                                                                className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-2xl hover:border-orange-200 hover:bg-white transition-all gap-4"
+                                                                className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-2xl hover:border-primary/20 hover:bg-white transition-all gap-4"
                                                             >
-                                                                <div className="flex items-center gap-3 flex-1 min-w-0">
-                                                                    <div {...draggableProvided.dragHandleProps} className="cursor-grab active:cursor-grabbing text-slate-300">
+                                                                <div className="flex items-center gap-4 flex-1 min-w-0">
+                                                                    <div {...draggableProvided.dragHandleProps} className="cursor-grab active:cursor-grabbing text-slate-300 shrink-0">
                                                                         <GripVertical size={18} />
                                                                     </div>
 
                                                                     {editingPhase === phase.name ? (
-                                                                        <div className="flex items-center gap-2 flex-1">
+                                                                        <div className="flex-1">
                                                                             <input
                                                                                 autoFocus
                                                                                 value={tempName}
@@ -729,66 +729,70 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                                                         setEditingPhase(null);
                                                                                     }
                                                                                 }}
-                                                                                className="w-full bg-white border border-primary rounded-lg px-2 py-1 text-xs font-bold focus:outline-none"
+                                                                                className="w-full bg-white border-2 border-primary rounded-xl px-3 py-1.5 text-sm font-bold focus:outline-none"
                                                                             />
                                                                         </div>
                                                                     ) : (
-                                                                        <span className="text-sm font-bold text-slate-700 truncate">{phase.name}</span>
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <span className="text-sm font-black text-slate-800 block truncate">{phase.name}</span>
+                                                                        </div>
                                                                     )}
                                                                 </div>
 
-                                                                <div className="flex items-center gap-4">
+                                                                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 sm:flex-nowrap shrink-0">
                                                                     <div className="flex items-center gap-2">
-                                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Código</label>
-                                                                        <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2 py-1">
+                                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-tighter whitespace-nowrap">Seq.</label>
+                                                                        <div className="flex items-center bg-white border border-slate-200 rounded-lg px-2 py-1">
                                                                             <input
                                                                                 type="text"
                                                                                 value={phase.code ?? ''}
                                                                                 onChange={e => onUpdateSalesPhase(phase.name, { code: e.target.value })}
                                                                                 placeholder="--"
-                                                                                className="w-10 text-xs font-bold text-slate-700 bg-transparent focus:outline-none text-center"
+                                                                                className="w-8 text-xs font-bold text-slate-700 bg-transparent focus:outline-none text-center"
                                                                             />
                                                                         </div>
                                                                     </div>
                                                                     <div className="flex items-center gap-2">
-                                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Tempo Desejável</label>
-                                                                        <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2 py-1">
+                                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-tighter whitespace-nowrap">Tempo</label>
+                                                                        <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-2 py-1">
                                                                             <input
                                                                                 type="number"
                                                                                 min={1}
                                                                                 value={phase.desirableDays ?? ''}
                                                                                 onChange={e => onUpdateSalesPhase(phase.name, { desirableDays: parseInt(e.target.value) || undefined })}
                                                                                 placeholder="--"
-                                                                                className="w-10 text-xs font-bold text-slate-700 bg-transparent focus:outline-none text-center"
+                                                                                className="w-8 text-xs font-bold text-slate-700 bg-transparent focus:outline-none text-center"
                                                                             />
-                                                                            <span className="text-[10px] font-bold text-slate-400">dias</span>
+                                                                            <span className="text-[10px] font-bold text-slate-300">d</span>
                                                                         </div>
                                                                     </div>
                                                                     <div className="flex items-center gap-2">
-                                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Alerta</label>
-                                                                        <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2 py-1">
+                                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-tighter whitespace-nowrap">Alerta</label>
+                                                                        <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-2 py-1">
                                                                             <input
                                                                                 type="number"
                                                                                 min={1}
                                                                                 value={phase.alertDays ?? ''}
                                                                                 onChange={e => onUpdateSalesPhase(phase.name, { alertDays: parseInt(e.target.value) || undefined })}
                                                                                 placeholder="--"
-                                                                                className="w-10 text-xs font-bold text-slate-700 bg-transparent focus:outline-none text-center"
+                                                                                className="w-8 text-xs font-bold text-slate-700 bg-transparent focus:outline-none text-center"
                                                                             />
-                                                                            <span className="text-[10px] font-bold text-slate-400">dias</span>
+                                                                            <span className="text-[10px] font-bold text-slate-300">d</span>
                                                                         </div>
                                                                     </div>
 
-                                                                    <div className="flex items-center gap-1">
+                                                                    <div className="flex items-center gap-1 ml-2 border-l border-slate-200 pl-2">
                                                                         <button
                                                                             onClick={() => { setEditingPhase(phase.name); setTempName(phase.name); }}
-                                                                            className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
+                                                                            title="Editar"
+                                                                            className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all"
                                                                         >
                                                                             <Edit2 size={16} />
                                                                         </button>
                                                                         <button
                                                                             onClick={() => onDeleteSalesPhase(phase.name)}
-                                                                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                                                            title="Excluir"
+                                                                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                                                                         >
                                                                             <Trash2 size={16} />
                                                                         </button>
@@ -797,6 +801,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                             </div>
                                                         )}
                                                     </Draggable>
+
                                                 ))}
                                                 {provided.placeholder}
                                             </div>

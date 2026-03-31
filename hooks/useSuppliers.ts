@@ -43,10 +43,37 @@ export const useSuppliers = (companyId?: string, logActivity?: any) => {
 
   useEffect(() => {
     fetchSuppliers();
+    if (!companyId) return;
+
+    const channel = supabase
+      .channel('suppliers_realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'suppliers',
+        filter: `company_id=eq.${companyId}`
+      }, () => {
+        fetchSuppliers();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [companyId]);
 
   const handleSaveSupplier = async (s: Supplier) => {
     const finalCompanyId = companyId || '00000000-0000-0000-0000-000000000000';
+    
+    let finalCode = s.code;
+    if (!finalCode) {
+      const codes = suppliers
+        .map(sup => typeof sup.code === 'number' ? sup.code : parseInt(String(sup.code).replace(/\D/g, '')))
+        .filter(n => !isNaN(n));
+      const maxCode = codes.length > 0 ? Math.max(...codes) : 0;
+      finalCode = maxCode + 1;
+    }
+
     try {
       const payload = {
         id: (s.id && s.id.length > 20) ? s.id : undefined,
@@ -63,7 +90,7 @@ export const useSuppliers = (companyId?: string, logActivity?: any) => {
         rg_insc: s.rgInsc,
         cellphone: s.cellphone,
         observations: up(s.observations),
-        supplier_code: s.code
+        supplier_code: finalCode
       };
 
       const { data, error } = await supabase

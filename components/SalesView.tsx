@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { ShoppingBag, Plus, Search, FileText, CheckCircle2, Clock, XCircle, MoreVertical, ExternalLink, Printer, LayoutGrid, List, ArrowRight, X, Edit2, GripVertical, Trash2, Check, DollarSign, Calendar, MoreHorizontal, User, AlertTriangle, Lock, ArrowUpDown, ChevronUp, ChevronDown, RotateCw } from 'lucide-react';
-import { SalesOrder, Client, Material, AppUser, Architect, ProductService, SalesChannel, CompanyInfo, SalesPhaseConfig, ServiceGroup, PaymentMethod, WorkOrder, VendasScope } from '../types';
+import { SalesOrder, Client, Material, AppUser, Architect, ProductService, SalesChannel, CompanyInfo, SalesPhaseConfig, ServiceGroup, PaymentMethod, WorkOrder, VendasScope, AccountReceivable } from '../types';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { NewSaleModal } from './NewSaleModal';
 import { PrintBudget } from './PrintBudget';
@@ -33,12 +33,14 @@ interface SalesViewProps {
   canEdit?: boolean;
   vendasScope?: VendasScope;
   currentUser?: AppUser | null;
+  receivables: AccountReceivable[];
 }
 
 export const SalesView: React.FC<SalesViewProps> = ({
   sales, clients, materials, onSaveSale, appUsers, architects, products, salesChannels, paymentMethods, companyInfo, nextOrderNumber,
   salesPhases, services, onRenameSalesPhase, onDeleteSalesPhase, onReorderSalesPhases,
-  companyId, createWorkOrders, getEnvironmentOSMap, onRequestDiscount, canEdit = true, vendasScope = 'all', currentUser
+  companyId, createWorkOrders, getEnvironmentOSMap, onRequestDiscount, canEdit = true, vendasScope = 'all', currentUser,
+  receivables
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('kanban');
@@ -713,7 +715,8 @@ export const SalesView: React.FC<SalesViewProps> = ({
           nextOrderNumber={nextOrderNumber}
           salesPhases={salesPhases}
           initialData={editingSale || undefined}
-          readOnly={!(editingSale ? canEditSale(editingSale) : canEdit) || editingSale?.status === 'Pedido'}
+          readOnly={!(editingSale ? canEditSale(editingSale) : canEdit)}
+          hasPayments={editingSale ? receivables.some(r => r.saleId === editingSale.id && r.paidValue > 0) : false}
           companyId={companyId}
           createWorkOrders={createWorkOrders}
           getEnvironmentOSMap={getEnvironmentOSMap}
