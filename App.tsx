@@ -429,6 +429,7 @@ const App: React.FC = () => {
             currentUserName={user?.name || user?.email || 'Usuário'}
             canCancelOS={getAccess('producao') === 'full'}
             canEditDeadline={getAccess('producao') === 'full'}
+            canMoveCards={getAccess('producao') === 'full'}
             deadlineWarningDays={deadlineWarningDays}
             deadlineUrgentDays={deadlineUrgentDays}
             onUpdatePhase={updateWorkOrderPhase}

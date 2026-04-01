@@ -12,6 +12,7 @@ interface WorkOrderKanbanProps {
   currentUserName: string;
   canCancelOS: boolean;
   canEditDeadline: boolean;
+  canMoveCards: boolean;
   deadlineWarningDays: number;
   deadlineUrgentDays: number;
   onUpdatePhase: (id: string, toPhase: string, fromPhase: string, userName: string) => void;
@@ -60,9 +61,10 @@ interface WOCardProps {
   deadlineWarningDays: number;
   deadlineUrgentDays: number;
   onClick: (wo: WorkOrder) => void;
+  dragDisabled: boolean;
 }
 
-const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, deadlineWarningDays, deadlineUrgentDays, onClick }) => {
+const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, deadlineWarningDays, deadlineUrgentDays, onClick, dragDisabled }) => {
   const priority = workOrder.priority || 'media';
   const priorityCfg = PRIORITY_CONFIG[priority];
   const drawings = workOrder.drawingUrls?.length ? workOrder.drawingUrls : (workOrder.drawingUrl ? [workOrder.drawingUrl] : []);
@@ -74,7 +76,7 @@ const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, deadli
   };
 
   return (
-    <Draggable draggableId={workOrder.id} index={index}>
+    <Draggable draggableId={workOrder.id} index={index} isDragDisabled={dragDisabled}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
@@ -257,9 +259,10 @@ interface KanbanColumnProps {
   deadlineWarningDays: number;
   deadlineUrgentDays: number;
   onCardClick: (wo: WorkOrder) => void;
+  dragDisabled: boolean;
 }
 
-const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkOrders, deadlineWarningDays, deadlineUrgentDays, onCardClick }) => {
+const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkOrders, deadlineWarningDays, deadlineUrgentDays, onCardClick, dragDisabled }) => {
   const totalM2 = workOrders.reduce((acc, wo) => acc + (wo.totalM2 || 0), 0);
   const totalLinear = workOrders.reduce((acc, wo) => acc + (wo.totalLinear || 0), 0);
 
@@ -304,7 +307,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkO
             ${snapshot.isDraggingOver ? 'bg-[var(--primary-color)]/10' : 'bg-gray-100/60'}`}
         >
           {workOrders.map((wo, index) => (
-            <WOCard key={wo.id} workOrder={wo} allWorkOrders={allWorkOrders} index={index} deadlineWarningDays={deadlineWarningDays} deadlineUrgentDays={deadlineUrgentDays} onClick={onCardClick} />
+            <WOCard key={wo.id} workOrder={wo} allWorkOrders={allWorkOrders} index={index} deadlineWarningDays={deadlineWarningDays} deadlineUrgentDays={deadlineUrgentDays} onClick={onCardClick} dragDisabled={dragDisabled} />
           ))}
           {provided.placeholder}
         </div>
@@ -323,6 +326,7 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
   currentUserName,
   canCancelOS,
   canEditDeadline,
+  canMoveCards,
   deadlineWarningDays,
   deadlineUrgentDays,
   onUpdatePhase,
@@ -369,6 +373,7 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
   });
 
   const handleDragEnd = (result: DropResult) => {
+    if (!canMoveCards) return;
     if (!result.destination) return;
     const toPhase = result.destination.droppableId;
     const fromPhase = result.source.droppableId;
@@ -412,6 +417,7 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
               deadlineWarningDays={deadlineWarningDays}
               deadlineUrgentDays={deadlineUrgentDays}
               onCardClick={setSelectedWorkOrder}
+              dragDisabled={!canMoveCards}
             />
           ))}
         </div>
