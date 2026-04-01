@@ -516,15 +516,22 @@ const AccountRow = ({ account, onEdit, onDelete, onPayInstallment, onUnpayInstal
                   </div>
                   {/* Histórico de pagamentos da parcela */}
                   {inst.payments && inst.payments.length > 0 && (
-                    <div className="ml-10 mt-1 space-y-1 pb-1">
-                      {inst.payments.map(p => (
-                        <div key={p.id} className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0" />
-                          <span>{fmtDate(p.date)}</span>
-                          <span className="font-bold text-green-600">R$ {fmt(p.value)}</span>
-                          {p.bankAccountName && <span className="text-slate-400">→ {p.bankAccountName}</span>}
-                        </div>
-                      ))}
+                    <div className="ml-10 mt-1 mb-1 space-y-1 border-l-2 border-slate-200 dark:border-slate-700 pl-3">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Histórico</p>
+                      {inst.payments.map(p => {
+                        const ts = p.updatedAt ? new Date(p.updatedAt) : null;
+                        const timeStr = ts ? ts.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : fmtDate(p.date);
+                        return (
+                          <div key={p.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-slate-500 dark:text-slate-400">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />
+                            <span className="font-bold text-green-600">R$ {fmt(p.value)}</span>
+                            <span>·</span>
+                            <span>{timeStr}</span>
+                            {p.updatedBy && <><span>·</span><span className="font-bold text-slate-600 dark:text-slate-300">{p.updatedBy}</span></>}
+                            {p.bankAccountName && <><span>·</span><span className="text-slate-400">→ {p.bankAccountName}</span></>}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                   </React.Fragment>

@@ -88,7 +88,7 @@ const App: React.FC = () => {
   const { suppliers, handleSaveSupplier, deleteSupplier, setSuppliers } = useSuppliers(activeCompanyId, logActivity);
   const { architects, handleSaveArchitect, deleteArchitect, setArchitects } = useArchitects(activeCompanyId, logActivity);
   const { products, handleSaveProduct, deleteProduct } = useProducts(activeCompanyId, logActivity);
-  const { receivables, handleSaveReceivable, deleteReceivable, payInstallment: payReceivableInstallment, unpayInstallment: unpayReceivableInstallment } = useAccountsReceivable(activeCompanyId, logActivity);
+  const { receivables, handleSaveReceivable, deleteReceivable, payInstallment: payReceivableInstallmentBase, unpayInstallment: unpayReceivableInstallment } = useAccountsReceivable(activeCompanyId, logActivity);
   const { payables, handleSavePayable, deletePayable, settleBill, cancelBill } = useAccountsPayable(activeCompanyId, logActivity);
   const { categories: billCategories, saveCategory: saveBillCategory, deleteCategory: deleteBillCategory } = useBillCategories(activeCompanyId);
   const { paymentMethods, handleSavePaymentMethod, deletePaymentMethod, toggleActive } = usePaymentMethods(activeCompanyId);
@@ -125,6 +125,12 @@ const App: React.FC = () => {
     onLogout: handleLogout,
     enabled: !!user,
   });
+
+  // Wrapper que injeta o nome do usuário logado no histórico de baixa de parcelas
+  const payReceivableInstallment = (arId: string, instId: string, pv: number, pd: string, baId?: string, baName?: string) => {
+    const userName = appUsers.find(u => u.email === user?.email)?.name || user?.name || user?.email || 'Usuário';
+    return payReceivableInstallmentBase(arId, instId, pv, pd, baId, baName, userName);
+  };
 
   // Função de acesso por módulo (e opcionalmente sub-módulo) para o usuário logado
   const getAccess = (module: import('./types').ModuleKey, subModule?: import('./types').SubModuleKey) =>

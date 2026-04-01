@@ -112,6 +112,7 @@ export const useAccountsReceivable = (companyId?: string, logActivity?: LogFn) =
     paidDate: string,
     bankAccountId?: string,
     bankAccountName?: string,
+    updatedBy?: string,
   ) => {
     const { data: fresh, error: fetchErr } = await supabase
       .from('accounts_receivable').select('*').eq('id', arId).single();
@@ -133,6 +134,8 @@ export const useAccountsReceivable = (companyId?: string, logActivity?: LogFn) =
     const newPaymentEntry = {
       id: crypto.randomUUID(),
       date: paidDate,
+      updatedAt: new Date().toISOString(),
+      updatedBy: updatedBy || 'Sistema',
       value: paidValue,
       bankAccountId,
       bankAccountName,

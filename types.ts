@@ -595,7 +595,9 @@ export interface BankAccount {
 
 export interface InstallmentPayment {
   id: string;
-  date: string;
+  date: string;        // data do pagamento (informada pelo usuário)
+  updatedAt: string;   // timestamp exato do registro (ISO 8601)
+  updatedBy: string;   // nome do usuário que registrou
   value: number;
   bankAccountId?: string;
   bankAccountName?: string;
