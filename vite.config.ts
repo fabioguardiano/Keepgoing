@@ -14,6 +14,20 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
+      },
+      build: {
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              'vendor-react':    ['react', 'react-dom'],
+              'vendor-supabase': ['@supabase/supabase-js'],
+              'vendor-maps':     ['leaflet', 'react-leaflet'],
+              'vendor-pdf':      ['jspdf', 'jspdf-autotable'],
+              'vendor-xlsx':     ['xlsx'],
+              'vendor-dnd':      ['@hello-pangea/dnd'],
+            },
+          },
+        },
       }
     };
 });

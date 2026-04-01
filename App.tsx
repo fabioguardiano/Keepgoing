@@ -1,30 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { Login } from './components/Login';
 import { PlaceholderView } from './components/PlaceholderView';
-import { TeamView } from './components/TeamView';
-import { ReportsView } from './components/ReportsView';
-import { SettingsView } from './components/SettingsView';
 import { IdleWarningModal } from './components/IdleWarningModal';
 import { useIdleTimer } from './hooks/useIdleTimer';
 import { RecentActivity } from './components/RecentActivity';
-import { DeliverySchedule } from './components/DeliverySchedule';
-import { ClientsView } from './components/ClientsView';
-import { SalesView } from './components/SalesView';
-import { InventoryView } from './components/InventoryView';
-import { FinanceView } from './components/FinanceView';
-import { AccountsView } from './components/AccountsView';
-import { PaymentMethodsView } from './components/PaymentMethodsView';
-import { PaymentTypesView } from './components/PaymentTypesView';
-import { SuppliersView } from './components/SuppliersView';
-import { ArchitectsView } from './components/ArchitectsView';
-import { SalesChannelsView } from './components/SalesChannelsView';
-import { ProductsView } from './components/ProductsView';
-import { BrandsView } from './components/BrandsView';
-import { ProductGroupsView } from './components/ProductGroupsView';
-import { ServiceGroupsView } from './components/ServiceGroupsView';
 import { View, ProductionPhase, SalesOrder, OrderService } from './types';
 import { useAuth } from './hooks/useAuth';
 import { useActivities } from './hooks/useActivities';
@@ -40,8 +22,6 @@ import { useSettings } from './hooks/useSettings';
 import { useAccountsReceivable } from './hooks/useAccountsReceivable';
 import { useAccountsPayable } from './hooks/useAccountsPayable';
 import { useBillCategories } from './hooks/useBillCategories';
-import { PayablesView } from './components/PayablesView';
-import { BankAccountsView } from './components/BankAccountsView';
 import { usePaymentMethods } from './hooks/usePaymentMethods';
 import { usePaymentTypes } from './hooks/usePaymentTypes';
 import { usePayablePaymentMethods } from './hooks/usePayablePaymentMethods';
@@ -51,13 +31,34 @@ import { useDriverTracking } from './hooks/useDriverTracking';
 import { useOrderService } from './hooks/useOrderService';
 import { useExchangeRates } from './hooks/useExchangeRates';
 import { getModuleAccess, VIEW_MODULE_MAP, VIEW_SUBMODULE_MAP } from './lib/permissions';
-import { WorkOrdersView } from './components/WorkOrdersView';
-import { WorkOrderKanban } from './components/WorkOrderKanban';
 import { useMeasurements } from './hooks/useMeasurements';
-import { MeasurementSchedule } from './components/MeasurementSchedule';
 import { useLegacyMigration } from './hooks/useLegacyMigration';
 import { useBankAccounts } from './hooks/useBankAccounts';
-import 'leaflet/dist/leaflet.css';
+
+// Lazy-loaded views — só carregam quando o usuário abre a tela
+const TeamView          = lazy(() => import('./components/TeamView').then(m => ({ default: m.TeamView })));
+const ReportsView       = lazy(() => import('./components/ReportsView').then(m => ({ default: m.ReportsView })));
+const SettingsView      = lazy(() => import('./components/SettingsView').then(m => ({ default: m.SettingsView })));
+const DeliverySchedule  = lazy(() => import('./components/DeliverySchedule').then(m => ({ default: m.DeliverySchedule })));
+const ClientsView       = lazy(() => import('./components/ClientsView').then(m => ({ default: m.ClientsView })));
+const SalesView         = lazy(() => import('./components/SalesView').then(m => ({ default: m.SalesView })));
+const InventoryView     = lazy(() => import('./components/InventoryView').then(m => ({ default: m.InventoryView })));
+const FinanceView       = lazy(() => import('./components/FinanceView').then(m => ({ default: m.FinanceView })));
+const AccountsView      = lazy(() => import('./components/AccountsView').then(m => ({ default: m.AccountsView })));
+const PaymentMethodsView = lazy(() => import('./components/PaymentMethodsView').then(m => ({ default: m.PaymentMethodsView })));
+const PaymentTypesView  = lazy(() => import('./components/PaymentTypesView').then(m => ({ default: m.PaymentTypesView })));
+const SuppliersView     = lazy(() => import('./components/SuppliersView').then(m => ({ default: m.SuppliersView })));
+const ArchitectsView    = lazy(() => import('./components/ArchitectsView').then(m => ({ default: m.ArchitectsView })));
+const SalesChannelsView = lazy(() => import('./components/SalesChannelsView').then(m => ({ default: m.SalesChannelsView })));
+const ProductsView      = lazy(() => import('./components/ProductsView').then(m => ({ default: m.ProductsView })));
+const BrandsView        = lazy(() => import('./components/BrandsView').then(m => ({ default: m.BrandsView })));
+const ProductGroupsView = lazy(() => import('./components/ProductGroupsView').then(m => ({ default: m.ProductGroupsView })));
+const ServiceGroupsView = lazy(() => import('./components/ServiceGroupsView').then(m => ({ default: m.ServiceGroupsView })));
+const PayablesView      = lazy(() => import('./components/PayablesView').then(m => ({ default: m.PayablesView })));
+const BankAccountsView  = lazy(() => import('./components/BankAccountsView').then(m => ({ default: m.BankAccountsView })));
+const WorkOrdersView    = lazy(() => import('./components/WorkOrdersView').then(m => ({ default: m.WorkOrdersView })));
+const WorkOrderKanban   = lazy(() => import('./components/WorkOrderKanban').then(m => ({ default: m.WorkOrderKanban })));
+const MeasurementSchedule = lazy(() => import('./components/MeasurementSchedule').then(m => ({ default: m.MeasurementSchedule })));
 
 
 const App: React.FC = () => {
@@ -753,7 +754,9 @@ const App: React.FC = () => {
         <RecentActivity activities={activities} isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} currentUserName={user?.name || user?.email} />
         <main className="flex-1 overflow-x-auto p-4 kanban-container">
           <ErrorBoundary>
-            {renderContent()}
+            <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-8 h-8 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin" /></div>}>
+              {renderContent()}
+            </Suspense>
           </ErrorBoundary>
         </main>
       </div>
