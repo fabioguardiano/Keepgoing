@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-// import { Database } from '../types_supabase';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
@@ -8,4 +7,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Variáveis do Supabase não configuradas no .env');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// sessionStorage: sessão expira ao fechar o navegador/aba (segurança)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storage: window.sessionStorage,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,
+  },
+});

@@ -36,6 +36,11 @@ export const useAuth = () => {
   const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
+    // Limpa sessões antigas gravadas em localStorage (migração para sessionStorage)
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('sb-'))
+      .forEach(k => localStorage.removeItem(k));
+
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
