@@ -241,15 +241,7 @@ const App: React.FC = () => {
       //    Também cobre Pedidos antigos que não tiveram AR criado (ex: bloqueio RLS anterior).
       if (s.status === 'Pedido') {
         const existingARs = receivables.filter(r => r.saleId === saleId && r.status !== 'cancelado');
-        console.log('[handleSaveSale] AR check:', {
-          saleId,
-          paymentMethodId: s.paymentMethodId,
-          firstDueDate: s.firstDueDate,
-          downPaymentValue: s.downPaymentValue,
-          downPaymentDueDate: s.downPaymentDueDate,
-          existingARs: existingARs.length,
-          companyId: activeCompanyId,
-        });
+
 
         // ── AR de Entrada ──
         if (s.downPaymentValue && s.downPaymentValue > 0 && s.downPaymentDueDate) {

@@ -278,7 +278,7 @@ export const useSettings = (
   // Salva no Supabase + atualiza estado local
   const setCompanyInfo = async (info: CompanyInfo) => {
     setCompanyInfoState(info);
-    if (!companyId) return;
+    if (!companyId || companyId === '00000000-0000-0000-0000-000000000000') return;
     try {
       const { error } = await supabase.from('companies').update({
         name: up(info.name) ?? info.name,
@@ -306,7 +306,7 @@ export const useSettings = (
    * Sincronização genérica para listas de metadados
    */
   const syncCompanyMetadata = (columnName: string, data: any) => {
-    if (!companyId) return;
+    if (!companyId || companyId === '00000000-0000-0000-0000-000000000000') return;
     supabase.from('companies')
       .update({ [columnName]: data })
       .eq('id', companyId)
