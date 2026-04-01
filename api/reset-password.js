@@ -35,7 +35,7 @@ export default async function handler(req, res) {
   const isManager = callerRole === 'manager';
 
   // ── Validar body ──────────────────────────────────────────────────────────
-  const { userId, newPassword, action, email, userData } = req.body;
+  const { userId, newPassword, action, email, newEmail, userData } = req.body;
 
   if (action === 'reset' && (!userId || !newPassword)) {
     return res.status(400).json({ error: 'Parâmetros insuficientes para reset.' });
@@ -43,17 +43,20 @@ export default async function handler(req, res) {
   if (action === 'create' && (!email || !newPassword)) {
     return res.status(400).json({ error: 'Parâmetros insuficientes para criação.' });
   }
+  if (action === 'update_email' && (!userId || !newEmail)) {
+    return res.status(400).json({ error: 'Parâmetros insuficientes para troca de email.' });
+  }
   if (newPassword && newPassword.length < 8) {
     return res.status(400).json({ error: 'A senha deve ter no mínimo 8 caracteres.' });
   }
 
-  // Criação de usuário: apenas admin ou manager
-  if (action === 'create' && !isAdmin && !isManager) {
-    return res.status(403).json({ error: 'Sem permissão para criar usuários.' });
+  // Criação e troca de email: apenas admin ou manager
+  if ((action === 'create' || action === 'update_email') && !isAdmin && !isManager) {
+    return res.status(403).json({ error: 'Sem permissão para esta operação.' });
   }
 
   // Reset de senha: admin/manager podem resetar qualquer um; usuário comum só o próprio
-  if (action !== 'create') {
+  if (action !== 'create' && action !== 'update_email') {
     const isSelf = callerUser.id === userId;
     if (!isAdmin && !isManager && !isSelf) {
       return res.status(403).json({ error: 'Sem permissão para alterar a senha deste usuário.' });
@@ -81,6 +84,15 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: error.message });
       }
       return res.status(200).json({ success: true, user: data.user });
+
+    } else if (action === 'update_email') {
+      const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+        email: newEmail.toLowerCase().trim(),
+        email_confirm: true,
+      });
+
+      if (error) return res.status(400).json({ error: error.message });
+      return res.status(200).json({ success: true, message: 'Email atualizado' });
 
     } else {
       const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {

@@ -387,7 +387,23 @@ export const useSettings = (
 
     // Edição de usuário existente — persiste no Supabase
     try {
-      // Se tiver password numa edição, chama nossa rota serverless para Admin API
+      const existingUser = appUsers.find(x => x.id === u.id);
+      const emailChanged = existingUser && existingUser.email.toLowerCase() !== u.email.toLowerCase();
+
+      // Troca de email — atualiza no Supabase Auth via Admin API
+      if (emailChanged) {
+        const response = await fetch('/api/reset-password', {
+          method: 'POST',
+          headers: await getAuthHeaders(),
+          body: JSON.stringify({ action: 'update_email', userId: u.id, newEmail: u.email })
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          return `Erro ao atualizar email no Auth: ${result.error || 'Erro desconhecido'}`;
+        }
+      }
+
+      // Troca de senha — chama Admin API
       if (password && u.code) {
         const response = await fetch('/api/reset-password', {
           method: 'POST',
@@ -396,7 +412,7 @@ export const useSettings = (
         });
         const result = await response.json();
         if (!response.ok) {
-           return `Aviso: não foi possível alterar a conta no Vercel: ${result.error || 'Erro desconhecido'}`;
+           return `Aviso: não foi possível alterar a senha: ${result.error || 'Erro desconhecido'}`;
         }
       }
 

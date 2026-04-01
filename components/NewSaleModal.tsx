@@ -353,10 +353,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
   const handleDescKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Tab' && itemDesc) {
-      const combined = [
-        ...services.map(s => s.description),
-        ...products.map(p => p.description)
-      ];
+      const combined = services.map(s => s.description);
       const filtered = combined.filter(d => d.toLowerCase().includes(itemDesc.toLowerCase()));
       if (filtered.length === 1 && itemDesc !== filtered[0]) {
         setItemDesc(filtered[0]);
@@ -365,10 +362,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
     if (e.key === 'Enter') {
       e.preventDefault();
       // If there's a match, use it, otherwise open picker
-      const combined = [
-        ...services.map(s => s.description),
-        ...products.map(p => p.description)
-      ];
+      const combined = services.map(s => s.description);
       const filtered = combined.filter(d => d.toLowerCase().includes(itemDesc.toLowerCase()));
       if (filtered.length === 1) {
         setItemDesc(filtered[0]);
@@ -381,22 +375,32 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   };
 
   const handleMaterialKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const q = itemMaterialId.toLowerCase();
+    const allMaterials = [
+      ...(materials || []).map(m => ({ name: m.name, price: m.sellingPrice, isProduct: false })),
+      ...(products || [])
+        .filter(p => p.type === 'Acabamentos' || p.type === 'Produtos de Revenda')
+        .map(p => ({ name: p.description, price: p.sellingPrice, isProduct: true })),
+    ];
     if (e.key === 'Tab' && itemMaterialId) {
-      const filtered = materials.filter(m => m.name.toLowerCase().includes(itemMaterialId.toLowerCase()));
+      const filtered = allMaterials.filter(m => m.name.toLowerCase().includes(q));
       if (filtered.length === 1 && itemMaterialId !== filtered[0].name) {
         const mat = filtered[0];
         setItemMaterialId(mat.name);
-        if (mat.sellingPrice) setItemPrice(mat.sellingPrice);
+        if (mat.price) setItemPrice(mat.price);
         if (!itemDesc) setItemDesc(mat.name);
+        if (mat.isProduct) { setItemLength(0); setItemWidth(0); }
       }
     }
     if (e.key === 'Enter') {
       e.preventDefault();
-      const filtered = materials.filter(m => m.name.toLowerCase().includes(itemMaterialId.toLowerCase()));
+      const filtered = allMaterials.filter(m => m.name.toLowerCase().includes(q));
       if (filtered.length === 1) {
         const mat = filtered[0];
         setItemMaterialId(mat.name);
-        if (mat.sellingPrice) setItemPrice(mat.sellingPrice);
+        if (mat.price) setItemPrice(mat.price);
+        if (!itemDesc) setItemDesc(mat.name);
+        if (mat.isProduct) { setItemLength(0); setItemWidth(0); }
         qtyRef.current?.focus();
       } else {
         setMaterialSearch(itemMaterialId);
@@ -1318,16 +1322,16 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 <label className="text-[9px] font-black uppercase tracking-[0.2em] mb-1 block text-black">
                   Prazo de Entrega
                 </label>
-                <div className="relative w-40">
+                <div className="relative w-28">
                   <input
                     type="number"
                     min="1"
                     value={deliveryDeadline}
                     onChange={e => setDeliveryDeadline(e.target.value)}
                     placeholder="0"
-                    className="w-full p-1.5 bg-slate-50 dark:bg-slate-800 border-2 focus:border-[var(--primary-color)] rounded-lg outline-none font-bold text-xs text-black dark:text-white transition-all border-transparent"
+                    className="w-full p-1.5 bg-slate-50 dark:bg-slate-800 border-2 focus:border-[var(--primary-color)] rounded-lg outline-none font-bold text-xs text-black dark:text-white transition-all border-transparent pr-10"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-black uppercase tracking-wider pointer-events-none">dias úteis</span>
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-black text-black uppercase tracking-wider pointer-events-none">d.úteis</span>
                 </div>
               </div>
             </div>
@@ -1765,7 +1769,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
           <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
               <div>
-                <h2 className="text-base font-black text-slate-800 dark:text-white tracking-tight">Selecionar Produto / Serviço</h2>
+                <h2 className="text-base font-black text-slate-800 dark:text-white tracking-tight">Selecionar Serviço</h2>
                 <p className="text-xs text-slate-500 font-medium">Pesquise e clique para selecionar</p>
               </div>
               <button onClick={() => {
@@ -1781,7 +1785,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 <input
                   autoFocus
                   type="text"
-                  placeholder="Buscar produto ou serviço..."
+                  placeholder="Buscar serviço..."
                   value={productSearch}
                   onChange={e => setProductSearch(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none transition-all font-medium text-sm text-slate-800 dark:text-white"
@@ -1790,50 +1794,21 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
               <div className="max-h-[360px] overflow-y-auto custom-scrollbar space-y-1">
                 {(() => {
                   const q = productSearch.toLowerCase();
-                  const allItems = [
-                    ...(services || [])
-                      .filter(s => s.description.toLowerCase().includes(q))
-                      .map(s => ({ 
-                        label: s.description, 
-                        type: 'Serviço', 
-                        price: (s as any).sellingPrice || 0,
-                        isFromMetadata: true 
-                      })),
-                      
-                    ...(products || [])
-                      .filter(p => p.description.toLowerCase().includes(q))
-                      .map(p => {
-                        // Se a categoria for de serviço, mostramos como 'Serviço' no selo
-                        const isServiceCategory = ['Serviços', 'Colocação', 'Acabamentos'].includes(p.type);
-                        return { 
-                          label: p.description, 
-                          type: (isServiceCategory ? 'Serviço' : 'Produto') as 'Serviço' | 'Produto', 
-                          price: p.sellingPrice,
-                          isFromMetadata: false 
-                        };
-                      })
-                  ];
-
-                  // Remover duplicados (se houver o mesmo nome no metadata e na tabela de produtos, prioriza o metadata)
-                  const seen = new Set();
-                  const filteredItems = allItems.filter(item => {
-                    if (seen.has(item.label)) return false;
-                    seen.add(item.label);
-                    return true;
-                  });
+                  const filteredItems = (services || [])
+                    .filter(s => s.description.toLowerCase().includes(q))
+                    .map(s => ({
+                      label: s.description,
+                      type: 'Serviço' as const,
+                      price: (s as any).sellingPrice || 0,
+                      isFromMetadata: true
+                    }));
                   
                   return filteredItems.length > 0 ? filteredItems.map((item, i) => (
                     <button
                       key={i}
                       onClick={() => {
                         setItemDesc(item.label);
-                        if (item.price) {
-                          setItemPrice(item.price);
-                          // Se for produto físico ou se tiver material correspondente, tentamos preencher
-                          if (item.type === 'Produto' || !item.isFromMetadata) {
-                             setItemMaterialId(item.label);
-                          }
-                        }
+                        if (item.price) setItemPrice(item.price);
                         setProductPickerOpen(false);
                         setTimeout(() => materialRef.current?.focus(), 100);
                       }}

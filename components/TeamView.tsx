@@ -65,8 +65,12 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, existingEmails, 
 
   const isEditing = !!initial?.id;
 
-  // Validação de email duplicado (só para novos usuários)
-  const emailDuplicate = !isEditing && existingEmails.includes(email.toLowerCase());
+  const emailChanged = isEditing && email !== (initial?.email ?? '').toLowerCase();
+
+  // Validação de email duplicado (exclui o próprio email ao editar)
+  const emailDuplicate = existingEmails
+    .filter(e => !isEditing || e !== (initial?.email ?? '').toLowerCase())
+    .includes(email.toLowerCase());
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,7 +130,9 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, existingEmails, 
               </p>
               <p className="text-sm text-slate-500">
                 {isEditing
-                  ? <>As alterações de <span className="font-bold text-slate-700">{name}</span> foram salvas com sucesso.</>
+                  ? emailChanged
+                    ? <>As alterações de <span className="font-bold text-slate-700">{name}</span> foram salvas. O novo email de login é <span className="font-bold text-slate-700">{email}</span>.</>
+                    : <>As alterações de <span className="font-bold text-slate-700">{name}</span> foram salvas com sucesso.</>
                   : <>Um email de confirmação foi enviado para <span className="font-bold text-slate-700">{email}</span>. O usuário precisará clicar no link para ativar o acesso.</>
                 }
               </p>
@@ -161,7 +167,7 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, existingEmails, 
               <input
                 required
                 type="email"
-                disabled={loading || isEditing}
+                disabled={loading}
                 value={email}
                 onChange={e => { setEmail(e.target.value.toLowerCase()); setError(null); }}
                 className={`${inputClass} ${emailDuplicate ? 'border-red-400 focus:border-red-400' : ''}`}
@@ -170,6 +176,11 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, existingEmails, 
               {emailDuplicate && (
                 <p className="mt-1.5 ml-1 text-xs font-bold text-red-500 flex items-center gap-1">
                   <AlertCircle size={12} /> Este email já está cadastrado.
+                </p>
+              )}
+              {isEditing && emailChanged && !emailDuplicate && (
+                <p className="mt-1.5 ml-1 text-xs font-bold text-amber-600 flex items-center gap-1">
+                  <AlertCircle size={12} /> O email de login no sistema será atualizado.
                 </p>
               )}
             </div>
