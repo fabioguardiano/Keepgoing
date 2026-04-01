@@ -139,7 +139,10 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const [deliveryDeadline, setDeliveryDeadline] = useState(initialData?.deliveryDeadline || '');
   const [discountValue, setDiscountValue] = useState(initialData?.discountValue || 0);
   const [discountPercentage, setDiscountPercentage] = useState(initialData?.discountPercentage || 0);
-  const [salesPhase, setSalesPhase] = useState<string>(initialData?.salesPhase || (salesPhases.length > 0 ? salesPhases[0].name : ''));
+  const isNewSale = !initialData?.id;
+  const [salesPhase, setSalesPhase] = useState<string>(
+    initialData?.salesPhase || (salesPhases.find(p => p.name === 'Oportunidade')?.name ?? salesPhases[0]?.name ?? '')
+  );
 
   // Form states for new item
   const [itemDesc, setItemDesc] = useState('');
@@ -904,6 +907,11 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 ) : initialData?.status === 'Cancelado' ? (
                   <div className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl font-bold text-sm text-red-600 dark:text-red-400">
                     Perdido
+                  </div>
+                ) : isNewSale ? (
+                  <div className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl font-bold text-sm text-slate-400 flex items-center justify-between">
+                    <span className="text-black dark:text-white">{salesPhase}</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Salve para alterar</span>
                   </div>
                 ) : (
                   <select
