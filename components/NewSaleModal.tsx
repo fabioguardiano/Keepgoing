@@ -1011,16 +1011,16 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                           <table className="w-full text-left border-collapse">
                             <thead>
                               <tr className="text-[10px] font-black text-black uppercase tracking-widest leading-none border-b border-slate-50 dark:border-slate-800">
-                                <th className="px-4 py-3">Descrição do Produto/Serviço</th>
-                                <th className="px-4 py-3 min-w-[450px]">Matéria Prima</th>
-                                <th className="px-4 py-3 text-center">Qtde</th>
-                                <th className="px-4 py-3 text-center">Comp.</th>
-                                <th className="px-4 py-3 text-center">Larg.</th>
-                                <th className="px-4 py-3 text-center">M² / Un</th>
-                                <th className="px-4 py-3 text-right">Vl. Unit</th>
-                                <th className="px-4 py-3 text-center w-[80px]">% / R$</th>
-                                <th className="px-4 py-3 text-right">Total</th>
-                                <th className="px-4 py-3 text-center">Ações</th>
+                                <th className="px-3 py-3 w-[160px]">Descrição do Produto/Serviço</th>
+                                <th className="px-3 py-3 w-[200px]">Matéria Prima</th>
+                                <th className="px-3 py-3 text-center w-[60px]">Qtde</th>
+                                <th className="px-3 py-3 text-center w-[70px]">Comp.</th>
+                                <th className="px-3 py-3 text-center w-[70px]">Larg.</th>
+                                <th className="px-3 py-3 text-center w-[60px]">M² / Un</th>
+                                <th className="px-3 py-3 text-right w-[80px]">Vl. Unit</th>
+                                <th className="px-3 py-3 text-center w-[80px]">% / R$</th>
+                                <th className="px-3 py-3 text-right w-[90px]">Total</th>
+                                <th className="px-3 py-3 text-center w-[60px]">Ações</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
@@ -1033,29 +1033,29 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                       {...provided.dragHandleProps}
                                       className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group ${editingItemId === item.id ? 'bg-orange-50/50 dark:bg-orange-900/10' : ''} ${snapshot.isDragging ? 'bg-white dark:bg-slate-800 shadow-2xl opacity-80 scale-[1.02] border-2 border-[var(--primary-color)] rounded-xl' : ''}`}
                                     >
-                                      <td className="px-4 py-3 text-[11px] font-bold text-black dark:text-white">{item.description}</td>
-                                      <td className="px-4 py-3 text-[11px] font-bold text-black dark:text-slate-300 min-w-[450px]">
+                                      <td className="px-3 py-3 text-[11px] font-bold text-black dark:text-white w-[160px] max-w-[160px] truncate">{item.description}</td>
+                                      <td className="px-3 py-3 text-[11px] font-bold text-black dark:text-slate-300 w-[200px] max-w-[200px] truncate">
                                         {materials.find(m => m.id === item.materialId)?.name || products.find(p => p.id === item.materialId)?.description || item.materialName || '-'}
                                       </td>
-                                      <td className="px-4 py-3 text-center text-[11px] font-bold text-black dark:text-slate-300">{Number(item.quantity || 0).toFixed(2)}</td>
+                                      <td className="px-3 py-3 text-center text-[11px] font-bold text-black dark:text-slate-300">{Number(item.quantity || 0).toFixed(2)}</td>
                                       {(() => {
                                         const isMat = materials.some(m => m.id === item.materialId);
                                         const missingLen = isMat && !(item.length > 0);
                                         const missingWid = isMat && !(item.width > 0);
                                         return (
                                           <>
-                                            <td className={`px-4 py-3 text-center text-[11px] font-bold ${missingLen ? 'text-red-500 bg-red-50' : 'text-black dark:text-slate-300'}`}>
+                                            <td className={`px-3 py-3 text-center text-[11px] font-bold ${missingLen ? 'text-red-500 bg-red-50' : 'text-black dark:text-slate-300'}`}>
                                               {missingLen ? <span title="Comprimento obrigatório">⚠ 0.000</span> : Number(item.length).toFixed(3)}
                                             </td>
-                                            <td className={`px-4 py-3 text-center text-[11px] font-bold ${missingWid ? 'text-red-500 bg-red-50' : 'text-black dark:text-slate-300'}`}>
+                                            <td className={`px-3 py-3 text-center text-[11px] font-bold ${missingWid ? 'text-red-500 bg-red-50' : 'text-black dark:text-slate-300'}`}>
                                               {missingWid ? <span title="Largura obrigatória">⚠ 0.000</span> : Number(item.width).toFixed(3)}
                                             </td>
                                           </>
                                         );
                                       })()}
-                                      <td className="px-4 py-3 text-center text-[11px] font-bold text-black dark:text-slate-300">{Number(item.m2 || 0).toFixed(2) || '0.00'}</td>
-                                      <td className="px-4 py-3 text-right text-[11px] font-bold text-black dark:text-slate-300">R$ {(item.unitPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                      <td className="px-4 py-3 text-center text-[10px] whitespace-nowrap min-w-[85px]">
+                                      <td className="px-3 py-3 text-center text-[11px] font-bold text-black dark:text-slate-300">{Number(item.m2 || 0).toFixed(2) || '0.00'}</td>
+                                      <td className="px-3 py-3 text-right text-[11px] font-bold text-black dark:text-slate-300">R$ {(item.unitPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                      <td className="px-3 py-3 text-center text-[10px] whitespace-nowrap w-[80px]">
                                         <div className="flex flex-col items-center">
                                           <span className="font-bold text-black">{Number(item.servicePercentage || 0).toFixed(2)}%</span>
                                           <span className="text-[9px] font-black text-black">
@@ -1066,8 +1066,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                           </span>
                                         </div>
                                       </td>
-                                      <td className="px-4 py-3 text-right text-[11px] font-black text-black dark:text-white whitespace-nowrap">R$ {(item.totalPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                      <td className="px-4 py-3 text-center">
+                                      <td className="px-3 py-3 text-right text-[11px] font-black text-black dark:text-white whitespace-nowrap">R$ {(item.totalPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                      <td className="px-3 py-3 text-center">
                                         <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                           <button 
                                             onClick={() => {
