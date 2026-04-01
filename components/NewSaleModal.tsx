@@ -158,6 +158,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const [productSearch, setProductSearch] = useState('');
   const [materialSearch, setMaterialSearch] = useState('');
   const [materialSwap, setMaterialSwap] = useState<{ env: string; newMaterialName: string; toReplace: string[] } | null>(null);
+  const [swapPickerEnv, setSwapPickerEnv] = useState<string | null>(null);
 
   // Refs for focus management
   const itemDescRef = useRef<HTMLInputElement>(null);
@@ -976,25 +977,18 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                       <div className="flex-1 flex justify-center">
                         <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                           <span className="text-[9px] font-black text-black uppercase tracking-tighter whitespace-nowrap">Trocar Matéria Prima:</span>
-                          <select
-                            className="text-[10px] font-bold text-[var(--primary-color)] bg-transparent outline-none cursor-pointer max-w-[180px]"
-                            value=""
-                            onChange={(e) => {
-                              const newMat = e.target.value;
-                              if (!newMat) return;
-                              const distinct = Array.from(new Set(envItems.map(i => i.materialName || '').filter(Boolean)));
-                              if (distinct.length <= 1) {
-                                updateEnvironmentMaterial(env, newMat, distinct.length === 1 ? distinct : undefined);
-                              } else {
-                                setMaterialSwap({ env, newMaterialName: newMat, toReplace: [] });
-                              }
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSwapPickerEnv(env === 'Sem Ambiente' ? '' : env);
+                              setMaterialSearch('');
+                              setMaterialPickerOpen(true);
                             }}
+                            className="text-[10px] font-bold text-[var(--primary-color)] bg-transparent outline-none cursor-pointer flex items-center gap-1 hover:opacity-70 transition-opacity"
                           >
-                            <option value="">Selecione...</option>
-                            {materials.map(m => (
-                              <option key={m.id} value={m.name}>{m.name}</option>
-                            ))}
-                          </select>
+                            <Search size={11} />
+                            Selecione...
+                          </button>
                         </div>
                       </div>
 
@@ -1015,7 +1009,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                           <table className="w-full text-left border-collapse">
                             <thead>
                               <tr className="text-[10px] font-black text-black uppercase tracking-widest leading-none border-b border-slate-50 dark:border-slate-800">
-                                <th className="px-3 py-3 w-[160px]">Descrição do Produto/Serviço</th>
+                                <th className="px-3 py-3 w-[160px]">Item</th>
                                 <th className="px-3 py-3 w-[200px]">Matéria Prima</th>
                                 <th className="px-3 py-3 text-center w-[60px]">Qtde</th>
                                 <th className="px-3 py-3 text-center w-[70px]">Comp.</th>
@@ -1846,12 +1840,15 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
           <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
               <div>
-                <h2 className="text-base font-black text-slate-800 dark:text-white tracking-tight">Selecionar Material</h2>
+                <h2 className="text-base font-black text-slate-800 dark:text-white tracking-tight">
+                  {swapPickerEnv !== null ? 'Trocar Matéria Prima' : 'Selecionar Material'}
+                </h2>
                 <p className="text-xs text-slate-500 font-medium">Matéria Prima, Acabamentos e Produtos de Revenda</p>
               </div>
               <button onClick={() => {
                 setMaterialPickerOpen(false);
-                setTimeout(() => materialRef.current?.focus(), 100);
+                setSwapPickerEnv(null);
+                if (!swapPickerEnv) setTimeout(() => materialRef.current?.focus(), 100);
               }} className="p-2 text-slate-400 hover:text-black rounded-xl transition-colors">
                 <X size={20} />
               </button>
@@ -1882,16 +1879,30 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     <button
                       key={item.id}
                       onClick={() => {
-                        setItemMaterialId(item.name);
-                        if (item.price) setItemPrice(item.price);
-                        if (!itemDesc) setItemDesc(item.name);
-                        // Clear dimensions if selecting a product (no m² needed)
-                        if (item.badge === 'Acabamentos' || item.badge === 'Produtos de Revenda') {
-                          setItemLength(0);
-                          setItemWidth(0);
+                        if (swapPickerEnv !== null) {
+                          // Modo: trocar matéria prima do ambiente
+                          const envKey = swapPickerEnv || 'Sem Ambiente';
+                          const envItemsForSwap = items.filter(i => (i.environment || 'Sem Ambiente') === envKey);
+                          const distinct = Array.from(new Set(envItemsForSwap.map(i => i.materialName || '').filter(Boolean)));
+                          if (distinct.length <= 1) {
+                            updateEnvironmentMaterial(swapPickerEnv, item.name, distinct.length === 1 ? distinct : undefined);
+                          } else {
+                            setMaterialSwap({ env: swapPickerEnv, newMaterialName: item.name, toReplace: [] });
+                          }
+                          setSwapPickerEnv(null);
+                          setMaterialPickerOpen(false);
+                        } else {
+                          // Modo: selecionar matéria prima para novo item
+                          setItemMaterialId(item.name);
+                          if (item.price) setItemPrice(item.price);
+                          if (!itemDesc) setItemDesc(item.name);
+                          if (item.badge === 'Acabamentos' || item.badge === 'Produtos de Revenda') {
+                            setItemLength(0);
+                            setItemWidth(0);
+                          }
+                          setMaterialPickerOpen(false);
+                          setTimeout(() => qtyRef.current?.focus(), 100);
                         }
-                        setMaterialPickerOpen(false);
-                        setTimeout(() => qtyRef.current?.focus(), 100);
                       }}
                       className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-[var(--primary-color)] hover:bg-orange-50 dark:hover:bg-[var(--primary-color)]/5 transition-all text-left group"
                     >
