@@ -580,6 +580,7 @@ export interface PayablePaymentMethod {
 
 export interface BankAccount {
   id: string;
+  code?: number;
   name: string;
   bankName: string;
   accountType: 'corrente' | 'poupanca' | 'pagamento' | 'investimento' | 'caixa';

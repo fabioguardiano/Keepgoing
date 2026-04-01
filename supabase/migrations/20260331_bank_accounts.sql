@@ -4,6 +4,7 @@
 CREATE TABLE IF NOT EXISTS bank_accounts (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id  UUID NOT NULL,
+  code        INTEGER,
   name        TEXT NOT NULL,
   bank_name   TEXT NOT NULL DEFAULT '',
   account_type TEXT NOT NULL DEFAULT 'corrente',

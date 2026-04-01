@@ -4,6 +4,7 @@ import { BankAccount } from '../types';
 
 const map = (r: any): BankAccount => ({
   id: r.id,
+  code: r.code,
   name: r.name,
   bankName: r.bank_name,
   accountType: r.account_type,
@@ -37,9 +38,17 @@ export const useBankAccounts = (companyId?: string) => {
   const saveBankAccount = async (ba: Partial<BankAccount> & { name: string }) => {
     if (!companyId) return;
     const isNew = !ba.id;
+
+    let finalCode = ba.code;
+    if (!finalCode) {
+      const codes = bankAccounts.map(b => b.code ?? 0).filter(n => n > 0);
+      finalCode = (codes.length > 0 ? Math.max(...codes) : 0) + 1;
+    }
+
     const payload: any = {
       id: ba.id || undefined,
       company_id: companyId,
+      code: finalCode,
       name: ba.name,
       bank_name: ba.bankName || '',
       account_type: ba.accountType || 'corrente',

@@ -149,6 +149,7 @@ export const BankAccountsView: React.FC<BankAccountsViewProps> = ({ bankAccounts
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
+                    {ba.code && <span className="text-[10px] font-black text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">#{ba.code}</span>}
                     <p className="font-black text-slate-800 dark:text-white text-sm">{ba.name}</p>
                     {!ba.active && <span className="text-[10px] font-black text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">Inativo</span>}
                   </div>
