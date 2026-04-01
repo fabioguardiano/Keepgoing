@@ -41,6 +41,7 @@ import { useAccountsReceivable } from './hooks/useAccountsReceivable';
 import { useAccountsPayable } from './hooks/useAccountsPayable';
 import { useBillCategories } from './hooks/useBillCategories';
 import { PayablesView } from './components/PayablesView';
+import { BankAccountsView } from './components/BankAccountsView';
 import { usePaymentMethods } from './hooks/usePaymentMethods';
 import { usePaymentTypes } from './hooks/usePaymentTypes';
 import { usePayablePaymentMethods } from './hooks/usePayablePaymentMethods';
@@ -55,6 +56,7 @@ import { WorkOrderKanban } from './components/WorkOrderKanban';
 import { useMeasurements } from './hooks/useMeasurements';
 import { MeasurementSchedule } from './components/MeasurementSchedule';
 import { useLegacyMigration } from './hooks/useLegacyMigration';
+import { useBankAccounts } from './hooks/useBankAccounts';
 import 'leaflet/dist/leaflet.css';
 
 
@@ -90,6 +92,7 @@ const App: React.FC = () => {
   const { payables, handleSavePayable, deletePayable, settleBill, cancelBill } = useAccountsPayable(activeCompanyId, logActivity);
   const { categories: billCategories, saveCategory: saveBillCategory, deleteCategory: deleteBillCategory } = useBillCategories(activeCompanyId);
   const { paymentMethods, handleSavePaymentMethod, deletePaymentMethod, toggleActive } = usePaymentMethods(activeCompanyId);
+  const { bankAccounts, saveBankAccount, deleteBankAccount, toggleBankAccount } = useBankAccounts(activeCompanyId);
   const { paymentTypes, handleSavePaymentType, deletePaymentType: handleDeletePaymentType } = usePaymentTypes(activeCompanyId);
   const { payablePMs, handleSave: handleSavePayablePM, handleDelete: deletePayablePM, toggleActive: togglePayablePM } = usePayablePaymentMethods(activeCompanyId);
   const { workOrders, loadingWO, createWorkOrders, updateWorkOrderStatus, updateWorkOrderPhase, updateWorkOrder, updateDeliveryDate, cancelWorkOrder, addDrawing, deleteDrawing, getEnvironmentOSMap, refreshWorkOrders } = useWorkOrders(activeCompanyId);
@@ -606,11 +609,22 @@ const App: React.FC = () => {
             mode="receber"
             accounts={receivables}
             paymentMethods={paymentMethods}
+            bankAccounts={bankAccounts}
             clients={clients}
             onSave={handleSaveReceivable}
             onDelete={deleteReceivable}
             onPayInstallment={payReceivableInstallment}
             onUnpayInstallment={unpayReceivableInstallment}
+            canEdit={getAccess('financeiro') === 'full'}
+          />
+        );
+      case 'Contas Bancárias':
+        return (
+          <BankAccountsView
+            bankAccounts={bankAccounts}
+            onSave={saveBankAccount}
+            onDelete={deleteBankAccount}
+            onToggle={toggleBankAccount}
             canEdit={getAccess('financeiro') === 'full'}
           />
         );

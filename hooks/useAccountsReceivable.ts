@@ -104,25 +104,64 @@ export const useAccountsReceivable = (companyId?: string, logActivity?: LogFn) =
     }
   };
 
-  // Registra pagamento de uma parcela — busca registro fresco para evitar race condition
-  const payInstallment = async (arId: string, installmentId: string, paidValue: number, paidDate: string) => {
+  // Registra pagamento de uma parcela — suporta pagamento parcial e sobrepagamento
+  const payInstallment = async (
+    arId: string,
+    installmentId: string,
+    paidValue: number,
+    paidDate: string,
+    bankAccountId?: string,
+    bankAccountName?: string,
+  ) => {
     const { data: fresh, error: fetchErr } = await supabase
       .from('accounts_receivable').select('*').eq('id', arId).single();
     if (fetchErr || !fresh) return;
     const ar = map(fresh);
-    const updatedInstallments = ar.installments.map(i =>
-      i.id === installmentId
-        ? { ...i, status: 'pago' as const, paidValue, paidDate }
-        : i
-    );
-    const totalPaid = updatedInstallments
-      .filter(i => i.status === 'pago')
-      .reduce((acc, i) => acc + (i.paidValue ?? i.value), 0);
+
+    let installments = ar.installments.map(i => ({ ...i }));
+    const idx = installments.findIndex(i => i.id === installmentId);
+    if (idx === -1) return;
+
+    const inst = installments[idx];
+    const roundCents = (n: number) => Math.round(n * 100) / 100;
+
+    if (paidValue >= inst.value) {
+      // Pagamento integral ou excedente
+      const excess = roundCents(paidValue - inst.value);
+      installments[idx] = { ...inst, status: 'pago', paidValue: inst.value, paidDate, bankAccountId, bankAccountName };
+
+      if (excess > 0.009) {
+        // Desconta o excedente das próximas parcelas pendentes, em ordem
+        let remaining = excess;
+        for (let i = idx + 1; i < installments.length && remaining > 0.009; i++) {
+          if (installments[i].status !== 'pendente' && installments[i].status !== 'atrasado') continue;
+          const deduct = Math.min(installments[i].value, remaining);
+          installments[i] = { ...installments[i], value: roundCents(installments[i].value - deduct) };
+          remaining = roundCents(remaining - deduct);
+          if (installments[i].value <= 0) {
+            installments[i] = { ...installments[i], status: 'pago', paidValue: 0, paidDate };
+          }
+        }
+      }
+    } else {
+      // Pagamento parcial — marca como 'parcial', registra o quanto foi pago
+      installments[idx] = { ...inst, status: 'parcial', paidValue, paidDate, bankAccountId, bankAccountName };
+    }
+
+    // Remove parcelas zeradas (descontadas por excedente)
+    installments = installments.filter(i => i.value > 0 || i.status === 'pago' || i.status === 'parcial');
+
+    const totalPaid = installments.reduce((acc, i) => {
+      if (i.status === 'pago') return acc + (i.paidValue ?? i.value);
+      if (i.status === 'parcial') return acc + (i.paidValue ?? 0);
+      return acc;
+    }, 0);
+    const totalValue = installments.reduce((acc, i) => acc + i.value, 0);
     const newStatus: AccountReceivable['status'] =
-      totalPaid >= ar.totalValue ? 'quitado'
+      totalPaid >= totalValue ? 'quitado'
       : totalPaid > 0 ? 'parcial'
       : 'pendente';
-    await handleSaveReceivable({ ...ar, installments: updatedInstallments, paidValue: totalPaid, status: newStatus });
+    await handleSaveReceivable({ ...ar, installments, totalValue, paidValue: totalPaid, status: newStatus });
     if (logActivity) {
       await logActivity('update', `Registrou pagamento de parcela: ${ar.description} — R$ ${paidValue.toFixed(2)}`, arId, undefined, 'financeiro', 'account_receivable');
     }

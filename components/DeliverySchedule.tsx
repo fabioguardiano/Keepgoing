@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { MapPin, Clock, Calendar, Plus, Search, Truck, ChevronRight, X, Navigation, Phone, Map as MapIcon, Building2, Info, History, Edit2, Trash2 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { Delivery, OrderService, DriverStatus } from '../types';
+import { Delivery, WorkOrder, DriverStatus } from '../types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { FileDown } from 'lucide-react';
@@ -25,7 +25,7 @@ const MapController = ({ center }: { center: [number, number] }) => {
 };
 
 interface DeliveryScheduleProps {
-  orders: OrderService[];
+  orders: WorkOrder[];
   deliveries: Delivery[];
   onAddDelivery: (delivery: Omit<Delivery, 'id'>) => void;
   onUpdateDeliveryStatus: (id: string, status: Delivery['status']) => void;
@@ -36,6 +36,7 @@ interface DeliveryScheduleProps {
   companyName: string;
   companyLogoUrl?: string;
   driverTrackingLocations?: Record<string, DriverStatus>;
+  phases?: { name: string }[];
 }
 
 export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({ 
@@ -49,7 +50,8 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
   companyAddress,
   companyName,
   companyLogoUrl,
-  driverTrackingLocations = {}
+  driverTrackingLocations = {},
+  phases = []
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -243,8 +245,8 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
 
       onAddDelivery({
         orderId: order.id,
-        osNumber: order.osNumber,
-        clientName: order.clientName,
+        osNumber: `${order.osNumber}${order.osSubNumber > 1 ? `/${order.osSubNumber}` : ''}`,
+        clientName: order.clientName || '',
         address: newDelivery.address,
         date: newDelivery.date,
         time: newDelivery.time,
@@ -746,15 +748,26 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
                       ...newDelivery, 
                       orderId: e.target.value,
                       // Pre-fill address if order found (optional, user preference)
+                      address: order ? (order.clientName ? `${order.clientName} - O.S. #${order.osNumber}` : '') : ''
                     });
                   }}
                   required
                   disabled={!!editingDeliveryId}
                 >
                   <option value="">Selecione uma ordem de serviço...</option>
-                  {/* If editing, allow the current order to be shown even if not in "A Entregar" anymore */}
-                  {orders.filter(o => o.phase === 'A Entregar' || o.id === newDelivery.orderId).map(o => (
-                    <option key={o.id} value={o.id}>{o.osNumber} - {o.clientName}</option>
+                  {orders.filter(o => {
+                    const phase = (o.productionPhase || '').toLowerCase().trim();
+                    const isCandidate = 
+                      phase.includes('entregar') || 
+                      phase.includes('entrega') || 
+                      phase.includes('retirar') ||
+                      phase.includes('pronto');
+                    
+                    return isCandidate || o.id === newDelivery.orderId;
+                  }).map(o => (
+                    <option key={o.id} value={o.id}>
+                      OS #{o.osNumber}{o.osSubNumber > 1 ? `/${o.osSubNumber}` : ''} - {o.clientName}
+                    </option>
                   ))}
                 </select>
               </div>

@@ -578,14 +578,30 @@ export interface PayablePaymentMethod {
   createdAt: string;
 }
 
+export interface BankAccount {
+  id: string;
+  name: string;
+  bankName: string;
+  accountType: 'corrente' | 'poupanca' | 'pagamento' | 'investimento' | 'caixa';
+  agency: string;
+  accountNumber: string;
+  pixKey: string;
+  notes: string;
+  active: boolean;
+  companyId?: string;
+  createdAt: string;
+}
+
 export interface AccountInstallment {
   id: string;
   number: number;
   dueDate: string;
   value: number;
-  status: 'pendente' | 'pago' | 'atrasado';
+  status: 'pendente' | 'pago' | 'parcial' | 'atrasado';
   paidDate?: string;
   paidValue?: number;
+  bankAccountId?: string;
+  bankAccountName?: string;
   paymentMethodId?: string;
   paymentMethodName?: string;
   notes?: string;
@@ -776,6 +792,7 @@ export type View =
   | 'Contas a Receber'
   | 'Contas a Pagar'
   | 'Formas de Pagamento'
-  | 'Tipos de Pagamento';
+  | 'Tipos de Pagamento'
+  | 'Contas Bancárias';
 
 export type User = AppUser;

@@ -92,7 +92,7 @@ export const SalesCard: React.FC<SalesCardProps> = ({
               )}
               {deadlineStatus !== 'none' && (
                 <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase flex items-center gap-1 
-                  ${deadlineStatus === 'alert' ? 'bg-red-100 text-red-600 animate-pulse' : 
+                  ${deadlineStatus === 'alert' ? 'bg-slate-200 text-black' : 
                     deadlineStatus === 'warning' ? 'bg-orange-100 text-orange-600' : 
                     'bg-emerald-100 text-emerald-600'}`}>
                   {daysElapsed === 0 ? 'Recente' : `${daysElapsed} ${daysElapsed === 1 ? 'Dia' : 'Dias'}`}

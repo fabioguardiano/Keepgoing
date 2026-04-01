@@ -114,12 +114,12 @@ const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, deadli
             const isWarning = remaining > deadlineUrgentDays && remaining <= deadlineWarningDays;
             return (
               <div className={`flex items-center justify-between mt-1.5 px-2 py-0.5 rounded-lg text-[9px] font-semibold
-                ${isLate || isUrgent ? 'bg-red-50 text-red-600' : isWarning ? 'bg-amber-50 text-amber-600' : 'bg-gray-50 text-gray-500'}`}>
+                ${isLate || isUrgent ? 'bg-slate-100 text-black border border-black/10' : isWarning ? 'bg-amber-50 text-amber-600' : 'bg-gray-50 text-gray-500'}`}>
                 <div className="flex items-center gap-1">
                   <Clock size={9} />
                   <span>{workOrder.deliveryDeadline} dias úteis</span>
                 </div>
-                <span className={`font-black ${isLate || isUrgent ? 'text-red-600' : isWarning ? 'text-amber-600' : 'text-gray-600'}`}>
+                <span className={`font-black ${isLate || isUrgent ? 'text-black' : isWarning ? 'text-amber-600' : 'text-gray-600'}`}>
                   {isLate ? `${Math.abs(remaining)}d atrasado` : remaining === 0 ? 'Vence hoje' : `${remaining}d restantes`}
                 </span>
               </div>

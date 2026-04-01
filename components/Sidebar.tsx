@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Diamond, LayoutDashboard, Package, BarChart3, Users, Settings, PlusCircle, MapPin, ShoppingBag, Wallet, Box, ChevronDown, ChevronRight, Truck, Briefcase, Wrench, TrendingUp, ClipboardList } from 'lucide-react';
+import { Diamond, LayoutDashboard, Package, BarChart3, Users, Settings, PlusCircle, MapPin, ShoppingBag, Wallet, Box, ChevronDown, ChevronRight, Truck, Briefcase, Wrench, TrendingUp, ClipboardList, Landmark } from 'lucide-react';
 import { View, CompanyInfo, ModuleKey, SubModuleKey, AccessLevel } from '../types';
 
 interface SidebarProps {
@@ -74,6 +74,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
       subItems: [
         { icon: TrendingUp, label: 'Contas a Receber',    view: 'Contas a Receber' as View,    module: 'financeiro', subModule: 'contas_receber' as SubModuleKey },
         { icon: Wallet,     label: 'Contas a Pagar',      view: 'Contas a Pagar' as View,      module: 'financeiro', subModule: 'contas_pagar' as SubModuleKey },
+        { icon: Landmark,   label: 'Contas Bancárias',    view: 'Contas Bancárias' as View,    module: 'financeiro' },
         { icon: ShoppingBag,label: 'Formas de Pagamento', view: 'Formas de Pagamento' as View, module: 'financeiro', subModule: 'formas_pagamento' as SubModuleKey },
         { icon: Wallet,     label: 'Tipos de Pagamento',  view: 'Tipos de Pagamento' as View,  module: 'financeiro' },
       ]

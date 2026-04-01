@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Check, AlertCircle, X, ChevronDown, ChevronUp, Trash2, CheckCircle2, Search } from 'lucide-react';
-import { AccountReceivable, AccountPayable, AccountInstallment, PaymentMethod, Client, Supplier } from '../types';
+import { Plus, Check, AlertCircle, X, ChevronDown, ChevronUp, Trash2, CheckCircle2, Search, Landmark } from 'lucide-react';
+import { AccountReceivable, AccountPayable, AccountInstallment, PaymentMethod, Client, Supplier, BankAccount } from '../types';
 import { fmt, fmtDate } from '../utils/formatting';
 
 // ─────────────────────────────────────────────
@@ -12,7 +12,7 @@ const isAccountOverdue = (a: { status: string; dueDate: string; installments: Ac
   // Se tem parcelas, só é atrasado se houver parcela não paga com vencimento passado
   if (a.installments && a.installments.length > 0) {
     return a.installments.some(
-      inst => inst.status !== 'pago' && new Date(inst.dueDate + 'T23:59:59') < now
+      inst => inst.status !== 'pago' && inst.status !== 'parcial' && new Date(inst.dueDate + 'T23:59:59') < now
     );
   }
   // Sem parcelas: usa o vencimento geral da conta
@@ -271,14 +271,23 @@ const NewAccountModal: React.FC<NewAccountModalProps> = ({ mode, paymentMethods,
 interface PayInstallmentModalProps {
   account: AccountReceivable | AccountPayable;
   installment: AccountInstallment;
-  onConfirm: (paidValue: number, paidDate: string) => Promise<void>;
+  bankAccounts: BankAccount[];
+  onConfirm: (paidValue: number, paidDate: string, bankAccountId?: string, bankAccountName?: string) => Promise<void>;
   onClose: () => void;
 }
 
-const PayInstallmentModal: React.FC<PayInstallmentModalProps> = ({ installment, onConfirm, onClose }) => {
+const PayInstallmentModal: React.FC<PayInstallmentModalProps> = ({ installment, bankAccounts, onConfirm, onClose }) => {
   const [paidValue, setPaidValue] = useState(installment.value.toString());
   const [paidDate, setPaidDate] = useState(new Date().toISOString().split('T')[0]);
+  const [bankAccountId, setBankAccountId] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const parsed = parseFloat(paidValue) || 0;
+  const diff = Math.round((parsed - installment.value) * 100) / 100;
+  const isPartial = diff < -0.009;
+  const isExcess = diff > 0.009;
+
+  const activeBanks = bankAccounts.filter(b => b.active);
 
   return (
     <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -287,18 +296,62 @@ const PayInstallmentModal: React.FC<PayInstallmentModalProps> = ({ installment, 
           <h3 className="font-black text-slate-800 dark:text-white">Registrar Pagamento</h3>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400"><X size={16} /></button>
         </div>
-        <p className="text-sm text-slate-500">Parcela {installment.number} — venc. {fmtDate(installment.dueDate)}</p>
+        <p className="text-sm text-slate-500">Parcela {installment.number} — venc. {fmtDate(installment.dueDate)} — valor: <span className="font-bold text-slate-700 dark:text-white">R$ {fmt(installment.value)}</span></p>
+
         <div>
           <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-1">Valor Pago (R$)</label>
           <input type="number" step={0.01} value={paidValue} onChange={e => setPaidValue(e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-sm" />
         </div>
+
+        {isPartial && (
+          <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-3">
+            <AlertCircle size={14} className="text-amber-500 mt-0.5 shrink-0" />
+            <p className="text-xs text-amber-700 dark:text-amber-300">
+              Pagamento parcial. Saldo restante de <strong>R$ {fmt(Math.abs(diff))}</strong> ficará na parcela.
+            </p>
+          </div>
+        )}
+        {isExcess && (
+          <div className="flex items-start gap-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-3">
+            <Check size={14} className="text-blue-500 mt-0.5 shrink-0" />
+            <p className="text-xs text-blue-700 dark:text-blue-300">
+              Excedente de <strong>R$ {fmt(diff)}</strong> será descontado das próximas parcelas pendentes.
+            </p>
+          </div>
+        )}
+
         <div>
           <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-1">Data do Pagamento</label>
           <input type="date" value={paidDate} onChange={e => setPaidDate(e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-sm" />
         </div>
+
+        {activeBanks.length > 0 && (
+          <div>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-1">
+              <Landmark size={10} className="inline mr-1" />Conta de Destino
+            </label>
+            <select value={bankAccountId} onChange={e => setBankAccountId(e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-sm appearance-none">
+              <option value="">Não especificada</option>
+              {activeBanks.map(b => (
+                <option key={b.id} value={b.id}>{b.name}{b.bankName ? ` — ${b.bankName}` : ''}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className="flex gap-3 pt-2">
           <button onClick={onClose} className="flex-1 py-2.5 rounded-2xl border border-slate-200 font-bold text-slate-500 hover:bg-slate-50 transition-all">Cancelar</button>
-          <button disabled={saving} onClick={async () => { setSaving(true); await onConfirm(parseFloat(paidValue) || 0, paidDate); onClose(); setSaving(false); }} className="flex-1 py-2.5 rounded-2xl bg-green-500 text-white font-bold flex items-center justify-center gap-2 hover:bg-green-600 transition-all disabled:opacity-60">
+          <button
+            disabled={saving || parsed <= 0}
+            onClick={async () => {
+              setSaving(true);
+              const ba = bankAccounts.find(b => b.id === bankAccountId);
+              await onConfirm(parsed, paidDate, bankAccountId || undefined, ba?.name);
+              onClose();
+              setSaving(false);
+            }}
+            className="flex-1 py-2.5 rounded-2xl bg-green-500 text-white font-bold flex items-center justify-center gap-2 hover:bg-green-600 transition-all disabled:opacity-60"
+          >
             <CheckCircle2 size={16} /> {saving ? '...' : 'Confirmar'}
           </button>
         </div>
@@ -388,19 +441,28 @@ const AccountRow = ({ account, onEdit, onDelete, onPayInstallment, onUnpayInstal
               ) : account.installments.map(inst => {
                 const instOverdue = inst.status !== 'pago' && new Date(inst.dueDate + 'T23:59:59') < new Date();
                 return (
-                  <div key={inst.id} className={`flex items-center gap-3 px-4 py-2 rounded-xl border ${inst.status === 'pago' ? 'bg-green-50 border-green-200 dark:border-green-900' : instOverdue ? 'bg-red-50 border-red-200 dark:border-red-900' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}>
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${inst.status === 'pago' ? 'bg-green-500 text-white' : instOverdue ? 'bg-red-400 text-white' : 'bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-200'}`}>
+                  <div key={inst.id} className={`flex items-center gap-3 px-4 py-2 rounded-xl border ${inst.status === 'pago' ? 'bg-green-50 border-green-200 dark:border-green-900' : inst.status === 'parcial' ? 'bg-amber-50 border-amber-200 dark:border-amber-900' : instOverdue ? 'bg-red-50 border-red-200 dark:border-red-900' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${inst.status === 'pago' ? 'bg-green-500 text-white' : inst.status === 'parcial' ? 'bg-amber-400 text-white' : instOverdue ? 'bg-red-400 text-white' : 'bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-200'}`}>
                       {inst.status === 'pago' ? <Check size={10} /> : inst.number}
                     </div>
                     <div className="flex-1">
                       <span className="text-xs font-bold text-slate-700 dark:text-white">Parcela {inst.number} — </span>
                       <span className="text-xs text-slate-500">{fmtDate(inst.dueDate)}</span>
-                      {instOverdue && inst.status !== 'pago' && <span className="ml-2 text-[10px] text-red-500 font-bold">ATRASADO</span>}
+                      {instOverdue && inst.status !== 'pago' && inst.status !== 'parcial' && <span className="ml-2 text-[10px] text-red-500 font-bold">ATRASADO</span>}
+                      {inst.status === 'parcial' && inst.paidValue != null && (
+                        <span className="ml-2 text-[10px] text-amber-600 font-bold">
+                          Pago parcial R$ {fmt(inst.paidValue)} — restam R$ {fmt(inst.value - inst.paidValue)}
+                        </span>
+                      )}
+                      {inst.bankAccountName && <span className="ml-2 text-[10px] text-slate-400">→ {inst.bankAccountName}</span>}
                     </div>
                     <span className="font-black text-sm text-slate-800 dark:text-white">R$ {fmt(inst.value)}</span>
                     {inst.status === 'pago' ? (
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[10px] text-green-600 font-bold">Pago {fmtDate(inst.paidDate || '')}</span>
+                        <div className="text-right">
+                          <span className="text-[10px] text-green-600 font-bold block">Pago {fmtDate(inst.paidDate || '')}</span>
+                          {inst.bankAccountName && <span className="text-[10px] text-slate-400">→ {inst.bankAccountName}</span>}
+                        </div>
                         {canEdit && (
                           <button
                             onClick={() => { if (window.confirm(`Estornar baixa da parcela ${inst.number}?`)) onUnpayInstallment(inst); }}
@@ -412,8 +474,8 @@ const AccountRow = ({ account, onEdit, onDelete, onPayInstallment, onUnpayInstal
                         )}
                       </div>
                     ) : canEdit ? (
-                      <button onClick={() => onPayInstallment(inst)} className="px-3 py-1 rounded-xl bg-green-500 text-white text-xs font-bold hover:bg-green-600 transition-all flex items-center gap-1 shrink-0">
-                        <CheckCircle2 size={12} /> Baixar
+                      <button onClick={() => onPayInstallment(inst)} className={`px-3 py-1 rounded-xl text-white text-xs font-bold transition-all flex items-center gap-1 shrink-0 ${inst.status === 'parcial' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-green-500 hover:bg-green-600'}`}>
+                        <CheckCircle2 size={12} /> {inst.status === 'parcial' ? 'Complementar' : 'Baixar'}
                       </button>
                     ) : null}
                   </div>
@@ -434,17 +496,18 @@ interface AccountsViewProps {
   mode: 'receber' | 'pagar';
   accounts: AccountReceivable[] | AccountPayable[];
   paymentMethods: PaymentMethod[];
+  bankAccounts?: BankAccount[];
   clients?: Client[];
   suppliers?: Supplier[];
   onSave: (data: any) => Promise<any>;
   onDelete: (id: string) => Promise<void>;
-  onPayInstallment: (accountId: string, installmentId: string, paidValue: number, paidDate: string) => Promise<void>;
+  onPayInstallment: (accountId: string, installmentId: string, paidValue: number, paidDate: string, bankAccountId?: string, bankAccountName?: string) => Promise<void>;
   onUnpayInstallment: (accountId: string, installmentId: string) => Promise<void>;
   canEdit?: boolean;
 }
 
 export const AccountsView: React.FC<AccountsViewProps> = ({
-  mode, accounts, paymentMethods, clients, suppliers, onSave, onDelete, onPayInstallment, onUnpayInstallment, canEdit = true,
+  mode, accounts, paymentMethods, bankAccounts = [], clients, suppliers, onSave, onDelete, onPayInstallment, onUnpayInstallment, canEdit = true,
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [editData, setEditData] = useState<AccountReceivable | AccountPayable | null>(null);
@@ -641,7 +704,8 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
         <PayInstallmentModal
           account={payingInst.account}
           installment={payingInst.inst}
-          onConfirm={(pv, pd) => onPayInstallment(payingInst.account.id, payingInst.inst.id, pv, pd)}
+          bankAccounts={bankAccounts}
+          onConfirm={(pv, pd, baId, baName) => onPayInstallment(payingInst.account.id, payingInst.inst.id, pv, pd, baId, baName)}
           onClose={() => setPayingInst(null)}
         />
       )}

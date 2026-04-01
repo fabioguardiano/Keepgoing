@@ -145,6 +145,13 @@ export const SalesView: React.FC<SalesViewProps> = ({
     }
   };
 
+  const revertSalePaidTotal = useMemo(() => {
+    if (!revertPending) return 0;
+    return (receivables || [])
+      .filter(r => r.saleId === revertPending.sale.id)
+      .reduce((sum, r) => sum + (r.paidValue || 0), 0);
+  }, [revertPending, receivables]);
+
   const handleRevertConfirm = async () => {
     if (!revertPending) return;
     if (!revertJustification.trim()) {
@@ -716,7 +723,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
           salesPhases={salesPhases}
           initialData={editingSale || undefined}
           readOnly={!(editingSale ? canEditSale(editingSale) : canEdit)}
-          hasPayments={editingSale ? receivables.some(r => r.saleId === editingSale.id && r.paidValue > 0) : false}
+          paidAmount={editingSale ? (receivables || []).filter(r => r.saleId === editingSale.id).reduce((sum, r) => sum + (r.paidValue || 0), 0) : 0}
           companyId={companyId}
           createWorkOrders={createWorkOrders}
           getEnvironmentOSMap={getEnvironmentOSMap}
@@ -845,6 +852,23 @@ export const SalesView: React.FC<SalesViewProps> = ({
               <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-3 text-xs text-slate-600 dark:text-slate-300 font-medium">
                 O pedido <span className="font-black text-slate-800 dark:text-white">#{revertPending.sale.orderNumber}</span> de <span className="font-black text-slate-800 dark:text-white">{revertPending.sale.clientName}</span> voltará ao status <span className="font-black text-amber-600">Orçamento</span> na coluna <span className="font-black text-[var(--primary-color)]">Negociação</span>.
               </div>
+
+              {revertSalePaidTotal > 0 && (
+                <div className="p-4 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-800/50 rounded-2xl flex gap-3">
+                  <div className="w-10 h-10 bg-red-100 dark:bg-red-900/40 rounded-xl flex items-center justify-center text-red-600 shrink-0">
+                    <DollarSign size={20} />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-red-600 dark:text-red-400 uppercase tracking-widest leading-none">Pagamento Confirmado</p>
+                    <p className="text-xs text-red-700 dark:text-red-300 font-bold leading-tight">
+                      Este pedido possui <span className="text-sm font-black underline decoration-red-400">R$ {revertSalePaidTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span> já recebidos no Bradesco/Financeiro.
+                    </p>
+                    <p className="text-[10px] text-red-500 dark:text-red-400 font-medium leading-relaxed italic">
+                      Ao retornar para orçamento, o financeiro NÃO será excluído automaticamente.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 block">Justificativa obrigatória</label>

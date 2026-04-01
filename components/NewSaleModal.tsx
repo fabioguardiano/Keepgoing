@@ -31,12 +31,12 @@ interface NewSaleModalProps {
   getEnvironmentOSMap?: (saleId: string) => Record<string, WorkOrder[]>;
   onRequestDiscount?: (admin: AppUser, requestedPct: number, maxPct: number) => void;
   canEditPrice?: boolean;
-  hasPayments?: boolean;
+  paidAmount?: number;
 }
 
 export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   onClose, onSave, clients, architects, appUsers, materials, products, services, salesChannels, paymentMethods, initialData, companyInfo, nextOrderNumber, salesPhases, readOnly = false,
-  companyId, createWorkOrders, getEnvironmentOSMap, onRequestDiscount, canEditPrice = true, hasPayments = false
+  companyId, createWorkOrders, getEnvironmentOSMap, onRequestDiscount, canEditPrice = true, paidAmount = 0
 }) => {
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [printingSale, setPrintingSale] = useState<SalesOrder | null>(null);
@@ -45,7 +45,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const [showGenerateOS, setShowGenerateOS] = useState(false);
   const [showDiscountRequest, setShowDiscountRequest] = useState(false);
   // Revert-to-Orçamento flow (only when readOnly=true)
-  const [isLocked, setIsLocked] = useState(readOnly && !hasPayments);
+  const [isLocked, setIsLocked] = useState(readOnly && !(paidAmount > 0));
   const [showRevert, setShowRevert] = useState(false);
   const [revertPassword, setRevertPassword] = useState('');
   const [revertJustification, setRevertJustification] = useState('');
@@ -54,10 +54,10 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
   useEffect(() => {
     // If the sale is a Pedido but has payments, we unlock it but show a warning
-    if (initialData?.status === 'Pedido' && hasPayments) {
+    if (initialData?.status === 'Pedido' && paidAmount > 0) {
       setIsLocked(false);
     }
-  }, [initialData?.status, hasPayments]);
+  }, [initialData?.status, paidAmount]);
 
   const handlePrint = () => {
     // Generate a temporary sale object to print if current form is valid
@@ -696,13 +696,13 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     <Lock size={9} /> Somente Leitura
                   </span>
                 )}
-                {hasPayments && (
+                {paidAmount > 0 && (
                   <span className="flex items-center gap-1 bg-amber-100 text-amber-700 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
                     <AlertTriangle size={10} /> Ajuste Financeiro Ativo
                   </span>
                 )}
               </div>
-              {hasPayments && (
+              {paidAmount > 0 && (
                 <p className="text-[10px] text-amber-600 font-bold mt-0.5">
                   Este pedido possui pagamentos. Alterações de valor serão reconciliadas automaticamente nas parcelas pendentes.
                 </p>
@@ -1012,13 +1012,13 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                             <thead>
                               <tr className="text-[10px] font-black text-black uppercase tracking-widest leading-none border-b border-slate-50 dark:border-slate-800">
                                 <th className="px-4 py-3">Descrição do Produto/Serviço</th>
-                                <th className="px-4 py-3 min-w-[200px]">Matéria Prima</th>
+                                <th className="px-4 py-3 min-w-[450px]">Matéria Prima</th>
                                 <th className="px-4 py-3 text-center">Qtde</th>
                                 <th className="px-4 py-3 text-center">Comp.</th>
                                 <th className="px-4 py-3 text-center">Larg.</th>
                                 <th className="px-4 py-3 text-center">M² / Un</th>
                                 <th className="px-4 py-3 text-right">Vl. Unit</th>
-                                <th className="px-4 py-3 text-center min-w-[105px]">% / R$</th>
+                                <th className="px-4 py-3 text-center w-[80px]">% / R$</th>
                                 <th className="px-4 py-3 text-right">Total</th>
                                 <th className="px-4 py-3 text-center">Ações</th>
                               </tr>
@@ -1034,7 +1034,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                       className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group ${editingItemId === item.id ? 'bg-orange-50/50 dark:bg-orange-900/10' : ''} ${snapshot.isDragging ? 'bg-white dark:bg-slate-800 shadow-2xl opacity-80 scale-[1.02] border-2 border-[var(--primary-color)] rounded-xl' : ''}`}
                                     >
                                       <td className="px-4 py-3 text-[11px] font-bold text-black dark:text-white">{item.description}</td>
-                                      <td className="px-4 py-3 text-[11px] font-bold text-black dark:text-slate-300 min-w-[200px]">
+                                      <td className="px-4 py-3 text-[11px] font-bold text-black dark:text-slate-300 min-w-[450px]">
                                         {materials.find(m => m.id === item.materialId)?.name || products.find(p => p.id === item.materialId)?.description || item.materialName || '-'}
                                       </td>
                                       <td className="px-4 py-3 text-center text-[11px] font-bold text-black dark:text-slate-300">{Number(item.quantity || 0).toFixed(2)}</td>
@@ -1055,7 +1055,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                       })()}
                                       <td className="px-4 py-3 text-center text-[11px] font-bold text-black dark:text-slate-300">{Number(item.m2 || 0).toFixed(2) || '0.00'}</td>
                                       <td className="px-4 py-3 text-right text-[11px] font-bold text-black dark:text-slate-300">R$ {(item.unitPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                      <td className="px-4 py-3 text-center text-[10px] whitespace-nowrap min-w-[105px]">
+                                      <td className="px-4 py-3 text-center text-[10px] whitespace-nowrap min-w-[85px]">
                                         <div className="flex flex-col items-center">
                                           <span className="font-bold text-black">{Number(item.servicePercentage || 0).toFixed(2)}%</span>
                                           <span className="text-[9px] font-black text-black">
@@ -1129,7 +1129,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                     </button>
                                   </div>
                                 </td>
-                                <td className="p-1.5 min-w-[200px]">
+                                <td className="p-1.5 min-w-[350px]">
                                   <div className="relative group">
                                     <input
                                       type="text"
@@ -1143,7 +1143,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                       onKeyDown={handleMaterialKeyDown}
                                       onFocus={() => setActiveEnvironment(env === 'Sem Ambiente' ? '' : env)}
                                       autoComplete="off"
-                                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] transition-colors pr-8"
+                                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] transition-colors pr-8 text-black"
                                     />
                                     <button
                                       type="button"
@@ -1153,7 +1153,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                         setMaterialSearch(itemMaterialId);
                                         setMaterialPickerOpen(true);
                                       }}
-                                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-300 hover:text-[var(--primary-color)] p-1"
+                                      className="absolute right-2 top-1/2 -translate-y-1/2 text-black hover:text-[var(--primary-color)] p-1"
                                     >
                                       <Search size={14} />
                                     </button>
@@ -1199,7 +1199,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                 }} 
                                 readOnly={!canEditPrice && !!itemMaterialId}
                                 className={`w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-right transition-all ${!canEditPrice && !!itemMaterialId ? 'opacity-50 cursor-not-allowed grayscale' : ''}`} /></td>
-                                <td className="p-1 min-w-[105px]">
+                                <td className="p-1 w-[80px]">
                                   <div className="flex items-center gap-0.5">
                                     <input 
                                       type="number" 
@@ -1219,7 +1219,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                           serviceValueRef.current?.focus();
                                         }
                                       }} 
-                                      className="w-[34px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-1 py-2 text-[10px] font-bold outline-none focus:border-[var(--primary-color)] text-center transition-all" 
+                                      className="w-[28px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-0.5 py-1.5 text-[10px] font-bold outline-none focus:border-[var(--primary-color)] text-center transition-all text-black" 
                                       placeholder="%"
                                     />
                                     <input 
@@ -1236,7 +1236,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                         setItemService(parseFloat(perc.toFixed(2)));
                                       }}
                                       onKeyDown={e => e.key === 'Enter' && addItem()}
-                                      className="w-[62px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-1 py-2 text-[10px] font-bold outline-none focus:border-[var(--primary-color)] text-right transition-all"
+                                      className="w-[48px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-0.5 py-1.5 text-[10px] font-bold outline-none focus:border-[var(--primary-color)] text-right transition-all text-black"
                                       placeholder="R$ 0,00"
                                     />
                                   </div>
@@ -1538,7 +1538,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      {hasPayments && (
+                      {paidAmount > 0 && (
                          <div className="hidden sm:block text-right mr-2">
                            <p className="text-[8px] font-black uppercase text-black tracking-tighter leading-none">Modo de Ajuste</p>
                            <p className="text-[7.5px] font-bold text-amber-400 leading-tight">Saldo será reconciliado</p>
@@ -1547,16 +1547,16 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                       <button
                         onClick={() => handleSave(true)}
                         disabled={isSaving}
-                        className={`px-4 py-2.5 border-2 rounded-xl font-black transition-all flex items-center gap-2 text-xs disabled:opacity-50 ${hasPayments ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-300 text-amber-700' : 'bg-white dark:bg-slate-800 border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-orange-50 dark:hover:bg-slate-700'}`}
+                        className={`px-4 py-2.5 border-2 rounded-xl font-black transition-all flex items-center gap-2 text-xs disabled:opacity-50 ${paidAmount > 0 ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-300 text-amber-700' : 'bg-white dark:bg-slate-800 border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-orange-50 dark:hover:bg-slate-700'}`}
                       >
-                        {isSaving ? 'Gravando...' : hasPayments ? 'Reconciliar e Salvar' : 'Gravar'}
+                        {isSaving ? 'Gravando...' : paidAmount > 0 ? 'Reconciliar e Salvar' : 'Gravar'}
                       </button>
                       <button
                         onClick={() => handleSave(false)}
                         disabled={isSaving}
-                        className={`px-4 py-2.5 text-white rounded-xl font-black shadow-xl transition-all flex items-center gap-2 text-xs disabled:opacity-50 ${hasPayments ? 'bg-amber-600 shadow-amber-600/30 hover:bg-amber-700' : 'bg-[var(--primary-color)] shadow-[var(--primary-color)]/30 hover:opacity-90'}`}
+                        className={`px-4 py-2.5 text-white rounded-xl font-black shadow-xl transition-all flex items-center gap-2 text-xs disabled:opacity-50 ${paidAmount > 0 ? 'bg-amber-600 shadow-amber-600/30 hover:bg-amber-700' : 'bg-[var(--primary-color)] shadow-[var(--primary-color)]/30 hover:opacity-90'}`}
                       >
-                        {isSaving ? 'Gravando...' : hasPayments ? 'Concluir Ajuste' : 'Gravar e Sair'}
+                        {isSaving ? 'Gravando...' : paidAmount > 0 ? 'Concluir Ajuste' : 'Gravar e Sair'}
                       </button>
                     </div>
                   )}

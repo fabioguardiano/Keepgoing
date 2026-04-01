@@ -641,17 +641,16 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
               className="max-w-full max-h-[85vh] object-contain shadow-sm"
             />
             
-            {/* Marca d'água de Segurança */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
-               <div className="border-[4px] border-red-600/15 p-6 rounded-[30px] transform -rotate-[30deg]">
-                 <span className="text-5xl font-black text-red-600/10 text-center leading-none uppercase tracking-[0.2em] whitespace-nowrap block">
-                   CÓPIA NÃO OFICIAL
-                 </span>
-                 <span className="text-lg font-black text-red-600/5 text-center block mt-3 uppercase tracking-widest">
-                   USE O DESENHO ORIGINAL
-                 </span>
-               </div>
-            </div>
+             <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden text-black/5">
+                <div className="border-[1px] border-current p-3 rounded-[20px] transform -rotate-[35deg]">
+                  <span className="text-xl font-black text-center leading-none uppercase tracking-[0.25em] whitespace-nowrap block">
+                    CÓPIA NÃO OFICIAL
+                  </span>
+                  <span className="text-[8px] font-black text-center block mt-1 uppercase tracking-widest">
+                    USE O DESENHO ORIGINAL
+                  </span>
+                </div>
+             </div>
 
             {/* Rodapé da Impressão */}
             <div className="absolute bottom-4 left-8 right-8 flex justify-between text-[10px] text-gray-400 font-bold border-t border-gray-100 pt-2">
