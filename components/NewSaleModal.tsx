@@ -91,9 +91,11 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
       deliveryDeadline,
       discountValue: calculatedDiscount,
       discountPercentage,
+      deliveryFee: safeDeliveryFee,
       totals: {
         vendas: subtotal,
         desconto: calculatedDiscount,
+        frete: safeDeliveryFee,
         geral: totalGeral
       },
       imageUrls: []
@@ -139,6 +141,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const [deliveryDeadline, setDeliveryDeadline] = useState(initialData?.deliveryDeadline || '');
   const [discountValue, setDiscountValue] = useState(initialData?.discountValue || 0);
   const [discountPercentage, setDiscountPercentage] = useState(initialData?.discountPercentage || 0);
+  const [deliveryFee, setDeliveryFee] = useState(initialData?.deliveryFee || 0);
   const isNewSale = !initialData?.id;
   const [salesPhase, setSalesPhase] = useState<string>(
     initialData?.salesPhase || (salesPhases.find(p => p.name === 'Oportunidade')?.name ?? salesPhases[0]?.name ?? '')
@@ -535,7 +538,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   // em reais seja o que realmente vai para o total, usamos o discountValue se ele existir.
   // Só usamos a porcentagem se ela for > 0 e o valor for 0 (caso clássico de carregar do banco só % se existisse)
   const calculatedDiscount = Math.max(safeDiscVal, subtotal * (safeDiscPct / 100));
-  const totalGeral = Math.max(0, subtotal - calculatedDiscount);
+  const safeDeliveryFee = isFinite(deliveryFee) && deliveryFee > 0 ? deliveryFee : 0;
+  const totalGeral = Math.max(0, subtotal - calculatedDiscount + safeDeliveryFee);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async (keepOpen: boolean = false) => {
@@ -631,9 +635,11 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
       deliveryDeadline,
       discountValue: calculatedDiscount,
       discountPercentage,
+      deliveryFee: safeDeliveryFee || undefined,
       totals: {
         vendas: subtotal,
         desconto: calculatedDiscount,
+        frete: safeDeliveryFee,
         geral: totalGeral
       },
       salesPhase,
@@ -1485,6 +1491,19 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 <div className="flex justify-between items-center text-slate-500">
                   <span className="font-bold text-[10px]">Total dos Itens</span>
                   <span className="font-black text-[10px]">R$ {(subtotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <label className="text-[9px] font-black text-black uppercase whitespace-nowrap">Frete / Entrega (R$)</label>
+                  <input
+                    type="text"
+                    value={deliveryFee > 0 ? deliveryFee.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : ''}
+                    onChange={e => {
+                      const raw = e.target.value.replace(/\D/g, '');
+                      setDeliveryFee(parseInt(raw || '0') / 100);
+                    }}
+                    className="w-[120px] p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-bold text-black dark:text-white text-right"
+                    placeholder="R$ 0,00"
+                  />
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex-1">

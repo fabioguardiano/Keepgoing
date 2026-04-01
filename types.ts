@@ -345,9 +345,11 @@ export interface OrderService {
   downPaymentMethodName?: string;
   downPaymentDueDate?: string;
   deliveryDeadline?: string;
+  deliveryFee?: number;
   totals?: {
     vendas: number;
     desconto: number;
+    frete: number;
     geral: number;
   };
   crmNotes?: CRMNote[];

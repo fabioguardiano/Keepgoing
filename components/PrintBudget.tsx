@@ -44,8 +44,9 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
   const deliveryDays = sale.deliveryDeadline ? parseInt(sale.deliveryDeadline as string) : null;
 
   const subtotal = sale.totals?.vendas || (sale.items || []).reduce((a, i) => a + (i.totalPrice || 0), 0);
-  const discount = (subtotal > (sale.totals?.geral || 0)) ? subtotal - (sale.totals?.geral || 0) : 0;
-  const total = sale.totals?.geral || subtotal;
+  const frete = sale.totals?.frete || sale.deliveryFee || 0;
+  const discount = sale.totals?.desconto ?? ((subtotal + frete > (sale.totals?.geral || 0)) ? subtotal + frete - (sale.totals?.geral || 0) : 0);
+  const total = sale.totals?.geral || (subtotal + frete);
 
   const addr = client?.address;
   const del = client?.deliveryAddress;
@@ -343,6 +344,12 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
                   <span style={{ fontWeight: 700 }}>Sub-Total Geral</span>
                   <span style={{ fontWeight: 700 }}>R$ {fmt(subtotal)}</span>
                 </div>
+                {frete > 0 && (
+                  <div style={{ padding: '5px 10px', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0' }}>
+                    <span style={{ fontWeight: 700 }}>Frete / Entrega</span>
+                    <span style={{ fontWeight: 700 }}>+ R$ {fmt(frete)}</span>
+                  </div>
+                )}
                 {discount > 0 && (
                   <div style={{ padding: '5px 10px', display: 'flex', justifyContent: 'space-between', color: '#b91c1c', borderBottom: '1px solid #e2e8f0' }}>
                     <span style={{ fontWeight: 700 }}>Desconto</span>
