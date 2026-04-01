@@ -83,9 +83,9 @@ export const CRMSection: React.FC<CRMSectionProps> = ({ sale, onSaveSale, curren
             <UserIcon size={18} />
           </div>
           <div>
-            <h3 className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-widest flex items-center gap-2">
+            <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100 uppercase tracking-[0.15em] flex items-center gap-2">
               CRM / Gestão Comercial
-              <ChevronDown size={14} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+              <ChevronDown size={14} className={`transition-transform text-slate-400 ${isExpanded ? 'rotate-180' : ''}`} />
             </h3>
             <span className="text-[10px] font-bold text-slate-400">
               {allNotes.length} interação{allNotes.length !== 1 ? 'es' : ''} registrada{allNotes.length !== 1 ? 's' : ''}

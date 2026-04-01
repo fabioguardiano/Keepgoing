@@ -311,106 +311,83 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     };
 
     return (
-        <div className="h-full max-w-5xl mx-auto space-y-6">
-            <div className="flex items-center gap-3 mb-8">
-                <div className="p-3 bg-white border border-slate-200 rounded-2xl shadow-sm text-primary">
-                    <Settings size={28} />
+        <div className="h-full max-w-7xl mx-auto space-y-8 px-4 sm:px-6">
+            <div className="flex flex-col gap-8">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3.5 bg-white border border-slate-200 rounded-2xl shadow-sm text-primary">
+                            <Settings size={28} />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-black text-slate-800 tracking-tight leading-none mb-1">Configurações do Sistema</h1>
+                            <p className="text-sm text-slate-500 font-medium opacity-60">Personalize o fluxo de trabalho e informações da empresa</p>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <h1 className="text-xl font-black text-slate-800 tracking-tight leading-none mb-1">Configurações do Sistema</h1>
-                    <p className="text-xs text-slate-500 font-medium">Personalize o fluxo de trabalho e informações da empresa</p>
-                </div>
-            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Sidebar Nav */}
-                <div className="space-y-2">
+                <div className="flex items-center p-1.5 bg-slate-100/50 rounded-[24px] border border-slate-200/60 shadow-inner overflow-x-auto no-scrollbar scroll-smooth w-full lg:w-fit">
                     <button 
                         onClick={() => setActiveTab('fluxo')}
-                        className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-sm font-bold border transition-all ${activeTab === 'fluxo' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
+                        className={`flex items-center gap-2.5 px-5 py-2.5 rounded-[18px] text-xs font-black transition-all whitespace-nowrap ${activeTab === 'fluxo' ? 'bg-white text-primary shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
                     >
-                        <div className="flex items-center gap-3">
-                            <Layout size={18} />
-                            Fluxo de Produção
-                        </div>
-                        <ChevronRight size={14} />
+                        <Layout size={16} />
+                        Fluxo de Produção
                     </button>
                     <button 
                         onClick={() => setActiveTab('vendas')}
-                        className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-sm font-bold border transition-all ${activeTab === 'vendas' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
+                        className={`flex items-center gap-2.5 px-5 py-2.5 rounded-[18px] text-xs font-black transition-all whitespace-nowrap ${activeTab === 'vendas' ? 'bg-white text-primary shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
                     >
-                        <div className="flex items-center gap-3">
-                            <ShoppingBag size={18} />
-                            Fluxo de Vendas
-                        </div>
-                        <ChevronRight size={14} />
+                        <ShoppingBag size={16} />
+                        Fluxo de Vendas
                     </button>
                     <button 
                         onClick={() => setActiveTab('empresa')}
-                        className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-sm font-bold border transition-all ${activeTab === 'empresa' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
+                        className={`flex items-center gap-2.5 px-5 py-2.5 rounded-[18px] text-xs font-black transition-all whitespace-nowrap ${activeTab === 'empresa' ? 'bg-white text-primary shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
                     >
-                        <div className="flex items-center gap-3">
-                            <Building2 size={18} />
-                            Cadastro da Empresa
-                        </div>
-                        <ChevronRight size={14} />
+                        <Building2 size={16} />
+                        Cadastro da Empresa
                     </button>
                     <button 
                         onClick={() => setActiveTab('dados')}
-                        className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-sm font-bold border transition-all ${activeTab === 'dados' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
+                        className={`flex items-center gap-2.5 px-5 py-2.5 rounded-[18px] text-xs font-black transition-all whitespace-nowrap ${activeTab === 'dados' ? 'bg-white text-primary shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
                     >
-                        <div className="flex items-center gap-3">
-                            <FileSpreadsheet size={18} />
-                            Importação de Dados
-                        </div>
-                        <ChevronRight size={14} />
+                        <FileSpreadsheet size={16} />
+                        Importação de Dados
                     </button>
                     <button
                         onClick={() => setActiveTab('financeiro')}
-                        className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-sm font-bold border transition-all ${activeTab === 'financeiro' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
+                        className={`flex items-center gap-2.5 px-5 py-2.5 rounded-[18px] text-xs font-black transition-all whitespace-nowrap ${activeTab === 'financeiro' ? 'bg-white text-primary shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
                     >
-                        <div className="flex items-center gap-3">
-                            <Wallet size={18} />
-                            Financeiro
-                        </div>
-                        <ChevronRight size={14} />
+                        <Wallet size={16} />
+                        Financeiro
                     </button>
                     <button
                         onClick={() => setActiveTab('geral')}
-                        className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-sm font-bold border transition-all ${activeTab === 'geral' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
+                        className={`flex items-center gap-2.5 px-5 py-2.5 rounded-[18px] text-xs font-black transition-all whitespace-nowrap ${activeTab === 'geral' ? 'bg-white text-primary shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
                     >
-                        <div className="flex items-center gap-3">
-                            <Settings size={18} />
-                            Geral
-                        </div>
-                        <ChevronRight size={14} />
+                        <Settings size={16} />
+                        Geral
                     </button>
                     <button
                         onClick={() => setActiveTab('permissoes')}
-                        className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-sm font-bold border transition-all ${activeTab === 'permissoes' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
+                        className={`flex items-center gap-2.5 px-5 py-2.5 rounded-[18px] text-xs font-black transition-all whitespace-nowrap ${activeTab === 'permissoes' ? 'bg-white text-primary shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
                     >
-                        <div className="flex items-center gap-3">
-                            <Shield size={18} />
-                            Permissões
-                        </div>
-                        <ChevronRight size={14} />
+                        <Shield size={16} />
+                        Permissões
                     </button>
                     {currentUser?.role === 'admin' && (
                         <button
                             onClick={() => setActiveTab('auditoria')}
-                            className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-sm font-bold border transition-all ${activeTab === 'auditoria' ? 'bg-primary/5 text-primary border-primary/10' : 'text-slate-500 bg-white border-transparent hover:bg-slate-50'}`}
+                            className={`flex items-center gap-2.5 px-5 py-2.5 rounded-[18px] text-xs font-black transition-all whitespace-nowrap ${activeTab === 'auditoria' ? 'bg-white text-primary shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
                         >
-                            <div className="flex items-center gap-3">
-                                <Shield size={18} />
-                                Auditoria
-                            </div>
-                            <ChevronRight size={14} />
+                            <Shield size={16} />
+                            Auditoria
                         </button>
                     )}
                 </div>
+            </div>
 
-                {/* Content Area */}
-                <div className="lg:col-span-2 space-y-6">
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
                     {activeTab === 'auditoria' ? (
                         <AuditLogView
                             activities={activities}
@@ -1208,7 +1185,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             </div>
                         </div>
                     )}
-                </div>
             </div>
         </div>
     );

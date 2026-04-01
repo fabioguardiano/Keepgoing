@@ -108,15 +108,15 @@ export const SalesCard: React.FC<SalesCardProps> = ({
           </div>
 
           <h4 className="font-black text-slate-800 dark:text-white text-sm mb-1 group-hover:text-[var(--primary-color)] transition-colors line-clamp-1">{sale.clientName}</h4>
-          <p className="text-[10px] text-slate-400 font-bold mb-3 line-clamp-2 leading-relaxed">{sale.projectDescription || 'Sem descrição'}</p>
+          {sale.projectDescription && <p className="text-[10px] text-slate-400 font-bold mb-3 line-clamp-2 leading-relaxed">{sale.projectDescription}</p>}
           
           <div className="space-y-2 mb-3">
-            <div className="flex items-center gap-2 text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              <Calendar size={12} className="text-slate-400" />
+            <div className="flex items-center gap-2 text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">
+              <Calendar size={13} className="text-slate-400" />
               <span>{sale.createdAt ? new Date(sale.createdAt).toLocaleDateString('pt-BR') : 'Sem data'}</span>
             </div>
-            <div className="flex items-center gap-2 text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              <UserIcon size={12} className="text-slate-400" />
+            <div className="flex items-center gap-2 text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">
+              <UserIcon size={13} className="text-slate-400" />
               <span>{sale.seller || 'Sem vendedor'}</span>
             </div>
           </div>
@@ -134,9 +134,6 @@ export const SalesCard: React.FC<SalesCardProps> = ({
 
           <div className="flex items-center justify-between pt-3 mt-2 border-t border-slate-50 dark:border-slate-800/50">
             <div className="flex items-center gap-1.5">
-              <div className="w-5 h-5 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400 text-[8px] font-black border border-orange-200 dark:border-orange-800/50">
-                {sale.seller?.charAt(0)?.toUpperCase() || '?'}
-              </div>
               <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider">{sale.salesChannel || 'Direto'}</span>
             </div>
             <div className="text-right">

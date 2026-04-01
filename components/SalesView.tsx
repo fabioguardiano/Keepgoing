@@ -66,6 +66,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
     direction: 'desc'
   });
   const [expandedCrmSaleId, setExpandedCrmSaleId] = useState<string | null>(null);
+  const [kanbanApplyFilters, setKanbanApplyFilters] = useState(false);
 
   const handleSort = (key: string) => {
     setSortConfig(prev => ({
@@ -259,7 +260,16 @@ export const SalesView: React.FC<SalesViewProps> = ({
         if (valA > valB) return direction === 'asc' ? 1 : -1;
         return 0;
       });
-  }, [sales, statusFilter, dateFilter, dateFrom, dateTo, searchTerm, sortConfig]);
+  }, [scopedSales, statusFilter, dateFilter, dateFrom, dateTo, searchTerm, sortConfig]);
+
+  // Kanban specifically ignores date/status filters by default to avoid losing track of old active budgets
+  const kanbanSales = useMemo(() => {
+    if (kanbanApplyFilters) return filteredSales;
+    
+    return scopedSales
+      .filter(s => (s.clientName || '').toLowerCase().includes(searchTerm.toLowerCase()) || (s.orderNumber || '').includes(searchTerm))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [scopedSales, kanbanApplyFilters, filteredSales, searchTerm]);
 
   const totalFiltrado = useMemo(
     () => filteredSales.reduce((acc, s) => acc + (s.totals?.geral || 0), 0),
@@ -585,6 +595,31 @@ export const SalesView: React.FC<SalesViewProps> = ({
               )}
             </Droppable>
           </div>
+
+          <div className="flex items-center gap-4 mb-4">
+            <div className="flex-1 max-w-md relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input
+                type="text"
+                placeholder="Pesquisar no Kanban (cliente ou nº)..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all shadow-sm"
+              />
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <div 
+                onClick={() => setKanbanApplyFilters(!kanbanApplyFilters)}
+                className={`w-10 h-6 rounded-full transition-all relative ${kanbanApplyFilters ? 'bg-[var(--primary-color)]' : 'bg-slate-200 dark:bg-slate-700'}`}
+              >
+                <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${kanbanApplyFilters ? 'left-5' : 'left-1'}`} />
+              </div>
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-700 transition-colors">
+                Aplicar filtros globais (Data/Status)
+              </span>
+            </label>
+          </div>
+
           <Droppable droppableId="board" type="column" direction="horizontal">
             {(provided) => (
               <div 
@@ -596,10 +631,10 @@ export const SalesView: React.FC<SalesViewProps> = ({
                   const phase = phaseConfig.name;
                   const isEditing = editingPhase === phase;
                   const isFirstPhase = index === 0;
-                  const phaseSales = filteredSales.filter(s =>
+                  const phaseSales = kanbanSales.filter(s =>
                     // No Kanban não mostramos os itens na coluna regular se já estiverem em Pedido (o que significa Ganho/Geral)
                     // EXCETO se o filtro de status for especificamente Pedido (nesse caso a pessoa quer ver o kanban de ganhos)
-                    (statusFilter === 'todos' ? (s.status !== 'Pedido' && s.status !== 'Cancelado') : true) && (
+                    (!kanbanApplyFilters ? (s.status !== 'Pedido' && s.status !== 'Cancelado') : true) && (
                       s.salesPhase === phase ||
                       (isFirstPhase && (!s.salesPhase || !salesPhases.some(p => p.name === s.salesPhase)))
                     )
