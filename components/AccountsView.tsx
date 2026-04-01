@@ -276,17 +276,32 @@ interface PayInstallmentModalProps {
   onClose: () => void;
 }
 
+// Formata centavos inteiros → "1.234,56"
+const centsToBRL = (cents: number) =>
+  (cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+// Converte string de input de moeda → centavos inteiros
+const brlToCents = (raw: string) => {
+  const digits = raw.replace(/\D/g, '');
+  return parseInt(digits || '0', 10);
+};
+
 const PayInstallmentModal: React.FC<PayInstallmentModalProps> = ({ installment, bankAccounts, onConfirm, onClose }) => {
   const isComplement = installment.status === 'parcial';
   const alreadyPaid = isComplement ? (installment.paidValue ?? 0) : 0;
   const remaining = Math.round((installment.value - alreadyPaid) * 100) / 100;
 
-  const [paidValue, setPaidValue] = useState(remaining.toString());
+  const [cents, setCents] = useState(Math.round(remaining * 100));
   const [paidDate, setPaidDate] = useState(new Date().toISOString().split('T')[0]);
   const [bankAccountId, setBankAccountId] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const parsed = parseFloat(paidValue) || 0;
+  const handleCurrencyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = brlToCents(e.target.value);
+    setCents(raw);
+  };
+
+  const parsed = cents / 100;
   // diff é relativo ao saldo restante, não ao valor total da parcela
   const diff = Math.round((parsed - remaining) * 100) / 100;
   const isPartial = diff < -0.009;
@@ -310,7 +325,16 @@ const PayInstallmentModal: React.FC<PayInstallmentModalProps> = ({ installment, 
 
         <div>
           <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-1">Valor Pago (R$)</label>
-          <input type="number" step={0.01} value={paidValue} onChange={e => setPaidValue(e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-sm" />
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-black text-slate-400">R$</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={centsToBRL(cents)}
+              onChange={handleCurrencyChange}
+              className="w-full pl-9 pr-3 p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-sm"
+            />
+          </div>
         </div>
 
         {isPartial && (
@@ -352,7 +376,7 @@ const PayInstallmentModal: React.FC<PayInstallmentModalProps> = ({ installment, 
         <div className="flex gap-3 pt-2">
           <button onClick={onClose} className="flex-1 py-2.5 rounded-2xl border border-slate-200 font-bold text-slate-500 hover:bg-slate-50 transition-all">Cancelar</button>
           <button
-            disabled={saving || parsed <= 0}
+            disabled={saving || cents <= 0}
             onClick={async () => {
               setSaving(true);
               const ba = bankAccounts.find(b => b.id === bankAccountId);
