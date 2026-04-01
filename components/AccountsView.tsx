@@ -277,13 +277,18 @@ interface PayInstallmentModalProps {
 }
 
 const PayInstallmentModal: React.FC<PayInstallmentModalProps> = ({ installment, bankAccounts, onConfirm, onClose }) => {
-  const [paidValue, setPaidValue] = useState(installment.value.toString());
+  const isComplement = installment.status === 'parcial';
+  const alreadyPaid = isComplement ? (installment.paidValue ?? 0) : 0;
+  const remaining = Math.round((installment.value - alreadyPaid) * 100) / 100;
+
+  const [paidValue, setPaidValue] = useState(remaining.toString());
   const [paidDate, setPaidDate] = useState(new Date().toISOString().split('T')[0]);
   const [bankAccountId, setBankAccountId] = useState('');
   const [saving, setSaving] = useState(false);
 
   const parsed = parseFloat(paidValue) || 0;
-  const diff = Math.round((parsed - installment.value) * 100) / 100;
+  // diff é relativo ao saldo restante, não ao valor total da parcela
+  const diff = Math.round((parsed - remaining) * 100) / 100;
   const isPartial = diff < -0.009;
   const isExcess = diff > 0.009;
 
@@ -293,10 +298,15 @@ const PayInstallmentModal: React.FC<PayInstallmentModalProps> = ({ installment, 
     <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-sm w-full p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-black text-slate-800 dark:text-white">Registrar Pagamento</h3>
+          <h3 className="font-black text-slate-800 dark:text-white">{isComplement ? 'Complementar Pagamento' : 'Registrar Pagamento'}</h3>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400"><X size={16} /></button>
         </div>
-        <p className="text-sm text-slate-500">Parcela {installment.number} — venc. {fmtDate(installment.dueDate)} — valor: <span className="font-bold text-slate-700 dark:text-white">R$ {fmt(installment.value)}</span></p>
+        <div className="space-y-1">
+          <p className="text-sm text-slate-500">Parcela {installment.number} — venc. {fmtDate(installment.dueDate)} — valor total: <span className="font-bold text-slate-700 dark:text-white">R$ {fmt(installment.value)}</span></p>
+          {isComplement && (
+            <p className="text-sm text-amber-600 font-bold">Já pago: R$ {fmt(alreadyPaid)} — Saldo restante: R$ {fmt(remaining)}</p>
+          )}
+        </div>
 
         <div>
           <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-1">Valor Pago (R$)</label>
@@ -307,7 +317,7 @@ const PayInstallmentModal: React.FC<PayInstallmentModalProps> = ({ installment, 
           <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-3">
             <AlertCircle size={14} className="text-amber-500 mt-0.5 shrink-0" />
             <p className="text-xs text-amber-700 dark:text-amber-300">
-              Pagamento parcial. Saldo restante de <strong>R$ {fmt(Math.abs(diff))}</strong> ficará na parcela.
+              Ficará pendente um saldo de <strong>R$ {fmt(Math.abs(diff))}</strong> nessa parcela.
             </p>
           </div>
         )}
@@ -441,7 +451,8 @@ const AccountRow = ({ account, onEdit, onDelete, onPayInstallment, onUnpayInstal
               ) : account.installments.map(inst => {
                 const instOverdue = inst.status !== 'pago' && new Date(inst.dueDate + 'T23:59:59') < new Date();
                 return (
-                  <div key={inst.id} className={`flex items-center gap-3 px-4 py-2 rounded-xl border ${inst.status === 'pago' ? 'bg-green-50 border-green-200 dark:border-green-900' : inst.status === 'parcial' ? 'bg-amber-50 border-amber-200 dark:border-amber-900' : instOverdue ? 'bg-red-50 border-red-200 dark:border-red-900' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}>
+                  <React.Fragment key={inst.id}>
+                  <div className={`flex items-center gap-3 px-4 py-2 rounded-xl border ${inst.status === 'pago' ? 'bg-green-50 border-green-200 dark:border-green-900' : inst.status === 'parcial' ? 'bg-amber-50 border-amber-200 dark:border-amber-900' : instOverdue ? 'bg-red-50 border-red-200 dark:border-red-900' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}>
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${inst.status === 'pago' ? 'bg-green-500 text-white' : inst.status === 'parcial' ? 'bg-amber-400 text-white' : instOverdue ? 'bg-red-400 text-white' : 'bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-200'}`}>
                       {inst.status === 'pago' ? <Check size={10} /> : inst.number}
                     </div>
@@ -457,28 +468,42 @@ const AccountRow = ({ account, onEdit, onDelete, onPayInstallment, onUnpayInstal
                       {inst.bankAccountName && <span className="ml-2 text-[10px] text-slate-400">→ {inst.bankAccountName}</span>}
                     </div>
                     <span className="font-black text-sm text-slate-800 dark:text-white">R$ {fmt(inst.value)}</span>
-                    {inst.status === 'pago' ? (
-                      <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0">
+                      {inst.status === 'pago' && (
                         <div className="text-right">
-                          <span className="text-[10px] text-green-600 font-bold block">Pago {fmtDate(inst.paidDate || '')}</span>
+                          <span className="text-[10px] text-green-600 font-bold block">Quitado {fmtDate(inst.paidDate || '')}</span>
                           {inst.bankAccountName && <span className="text-[10px] text-slate-400">→ {inst.bankAccountName}</span>}
                         </div>
-                        {canEdit && (
-                          <button
-                            onClick={() => { if (window.confirm(`Estornar baixa da parcela ${inst.number}?`)) onUnpayInstallment(inst); }}
-                            className="px-2 py-1 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 text-[10px] font-bold hover:bg-red-50 hover:text-red-500 transition-all flex items-center gap-1"
-                            title="Estornar baixa"
-                          >
-                            <X size={10} /> Estornar
-                          </button>
-                        )}
-                      </div>
-                    ) : canEdit ? (
-                      <button onClick={() => onPayInstallment(inst)} className={`px-3 py-1 rounded-xl text-white text-xs font-bold transition-all flex items-center gap-1 shrink-0 ${inst.status === 'parcial' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-green-500 hover:bg-green-600'}`}>
-                        <CheckCircle2 size={12} /> {inst.status === 'parcial' ? 'Complementar' : 'Baixar'}
-                      </button>
-                    ) : null}
+                      )}
+                      {canEdit && (inst.status === 'pago' || inst.status === 'parcial') && (
+                        <button
+                          onClick={() => { if (window.confirm(`Estornar todos os pagamentos da parcela ${inst.number}?`)) onUnpayInstallment(inst); }}
+                          className="px-2 py-1 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 text-[10px] font-bold hover:bg-red-50 hover:text-red-500 transition-all flex items-center gap-1"
+                        >
+                          <X size={10} /> Estornar
+                        </button>
+                      )}
+                      {canEdit && inst.status !== 'pago' && (
+                        <button onClick={() => onPayInstallment(inst)} className={`px-3 py-1 rounded-xl text-white text-xs font-bold transition-all flex items-center gap-1 ${inst.status === 'parcial' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-green-500 hover:bg-green-600'}`}>
+                          <CheckCircle2 size={12} /> {inst.status === 'parcial' ? 'Complementar' : 'Baixar'}
+                        </button>
+                      )}
+                    </div>
                   </div>
+                  {/* Histórico de pagamentos da parcela */}
+                  {inst.payments && inst.payments.length > 0 && (
+                    <div className="ml-10 mt-1 space-y-1 pb-1">
+                      {inst.payments.map(p => (
+                        <div key={p.id} className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400">
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0" />
+                          <span>{fmtDate(p.date)}</span>
+                          <span className="font-bold text-green-600">R$ {fmt(p.value)}</span>
+                          {p.bankAccountName && <span className="text-slate-400">→ {p.bankAccountName}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  </React.Fragment>
                 );
               })}
             </div>

@@ -593,6 +593,15 @@ export interface BankAccount {
   createdAt: string;
 }
 
+export interface InstallmentPayment {
+  id: string;
+  date: string;
+  value: number;
+  bankAccountId?: string;
+  bankAccountName?: string;
+  notes?: string;
+}
+
 export interface AccountInstallment {
   id: string;
   number: number;
@@ -606,6 +615,7 @@ export interface AccountInstallment {
   paymentMethodId?: string;
   paymentMethodName?: string;
   notes?: string;
+  payments?: InstallmentPayment[];
 }
 
 export interface AccountReceivable {

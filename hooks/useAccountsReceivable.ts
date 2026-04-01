@@ -125,10 +125,24 @@ export const useAccountsReceivable = (companyId?: string, logActivity?: LogFn) =
     const inst = installments[idx];
     const roundCents = (n: number) => Math.round(n * 100) / 100;
 
-    if (paidValue >= inst.value) {
+    // Acumula pagamentos anteriores (caso seja um complemento)
+    const previouslyPaid = inst.status === 'parcial' ? (inst.paidValue ?? 0) : 0;
+    const totalPaidOnInst = roundCents(previouslyPaid + paidValue);
+
+    // Registra no histórico
+    const newPaymentEntry = {
+      id: crypto.randomUUID(),
+      date: paidDate,
+      value: paidValue,
+      bankAccountId,
+      bankAccountName,
+    };
+    const updatedPayments = [...(inst.payments ?? []), newPaymentEntry];
+
+    if (totalPaidOnInst >= inst.value) {
       // Pagamento integral ou excedente
-      const excess = roundCents(paidValue - inst.value);
-      installments[idx] = { ...inst, status: 'pago', paidValue: inst.value, paidDate, bankAccountId, bankAccountName };
+      const excess = roundCents(totalPaidOnInst - inst.value);
+      installments[idx] = { ...inst, status: 'pago', paidValue: inst.value, paidDate, bankAccountId, bankAccountName, payments: updatedPayments };
 
       if (excess > 0.009) {
         // Desconta o excedente das próximas parcelas pendentes, em ordem
@@ -144,8 +158,8 @@ export const useAccountsReceivable = (companyId?: string, logActivity?: LogFn) =
         }
       }
     } else {
-      // Pagamento parcial — marca como 'parcial', registra o quanto foi pago
-      installments[idx] = { ...inst, status: 'parcial', paidValue, paidDate, bankAccountId, bankAccountName };
+      // Pagamento parcial — acumula o total pago até agora
+      installments[idx] = { ...inst, status: 'parcial', paidValue: totalPaidOnInst, paidDate, bankAccountId, bankAccountName, payments: updatedPayments };
     }
 
     // Remove parcelas zeradas (descontadas por excedente)
@@ -174,7 +188,7 @@ export const useAccountsReceivable = (companyId?: string, logActivity?: LogFn) =
     const ar = map(fresh);
     const updatedInstallments = ar.installments.map(i =>
       i.id === installmentId
-        ? { ...i, status: 'pendente' as const, paidValue: undefined, paidDate: undefined }
+        ? { ...i, status: 'pendente' as const, paidValue: undefined, paidDate: undefined, bankAccountId: undefined, bankAccountName: undefined, payments: [] }
         : i
     );
     const totalPaid = updatedInstallments
