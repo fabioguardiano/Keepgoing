@@ -474,15 +474,6 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
               </div>
             )}
 
-            {!isFullscreen && (
-              <button
-                onClick={() => setIsFullscreen(true)}
-                className="group flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 border-2 border-[var(--primary-color)]/20 text-[var(--primary-color)] hover:bg-[var(--primary-color)] hover:text-white rounded-2xl shadow-lg transition-all transform hover:scale-105 active:scale-95"
-              >
-                <Maximize2 size={18} className="group-hover:rotate-12 transition-transform" />
-                <span className="text-xs font-black uppercase tracking-wider">Modo Monitor (Full Screen)</span>
-              </button>
-            )}
           </div>
 
           {isFullscreen && (
