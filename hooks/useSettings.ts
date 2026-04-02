@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { up } from '../lib/uppercase';
 import {
@@ -17,6 +17,7 @@ export const useSettings = (
   // App Users — Supabase como fonte principal
   const [appUsers, setAppUsers] = useState<AppUser[]>([]);
   const [loadingSettings, setLoadingSettings] = useState(true);
+  const saveTimeoutRef = useRef<any>(null);
 
   // Carrega app_users do Supabase quando companyId estiver disponível
   useEffect(() => {
@@ -280,31 +281,51 @@ export const useSettings = (
     }
   }, [companyInfo]);
 
-  // Salva no Supabase + atualiza estado local
+  // Salva no Supabase + atualiza estado local (com debounce para evitar flood)
   const setCompanyInfo = async (info: CompanyInfo) => {
+    // 1. Atualiza estado local instantaneamente para feedback na UI
     setCompanyInfoState(info);
+    
     if (!companyId || companyId === '00000000-0000-0000-0000-000000000000') return;
-    try {
-      const { error } = await supabase.from('companies').update({
-        name: up(info.name) ?? info.name,
-        document: info.document || null,
-        address: up(info.address) ?? info.address ?? null,
-        phone: info.phone || null,
-        email: info.email || null,
-        logo_url: info.logoUrl || null,
-        print_logo_url: info.printLogoUrl || null,
-        icon_url: info.iconUrl || null,
-        sidebar_color: info.sidebarColor || null,
-        sidebar_text_color: info.sidebarTextColor || null,
-        button_color: info.buttonColor || null,
-        lost_reason_options: info.lostReasonOptions || [],
-        legal_note: info.legalNote || null,
-        max_discount_pct: info.maxDiscountPct ?? null,
-      }).eq('id', companyId);
-      if (error) throw error;
-    } catch (err) {
-      console.error('Erro ao salvar dados da empresa:', err);
+
+    // 2. Cancela qualquer salvamento pendente (debounce)
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
     }
+
+    // 3. Agenda o salvamento no banco de dados para 800ms após a última mudança
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        console.log('[useSettings] Persistindo dados da empresa no Supabase...', { 
+          buttonColor: info.buttonColor,
+          sidebarColor: info.sidebarColor 
+        });
+
+        const { error } = await supabase.from('companies').update({
+          name: up(info.name) ?? info.name,
+          document: info.document || null,
+          address: up(info.address) ?? info.address ?? null,
+          phone: info.phone || null,
+          email: info.email || null,
+          logo_url: info.logoUrl || null,
+          print_logo_url: info.printLogoUrl || null,
+          icon_url: info.iconUrl || null,
+          sidebar_color: info.sidebarColor || null,
+          sidebar_text_color: info.sidebarTextColor || null,
+          button_color: info.buttonColor || null,
+          lost_reason_options: info.lostReasonOptions || [],
+          legal_note: info.legalNote || null,
+          max_discount_pct: info.maxDiscountPct ?? null,
+        }).eq('id', companyId);
+
+        if (error) throw error;
+        console.log('[useSettings] Dados da empresa salvos com sucesso.');
+      } catch (err) {
+        console.error('[useSettings] Erro ao salvar dados da empresa no Supabase:', err);
+      } finally {
+        saveTimeoutRef.current = null;
+      }
+    }, 800); // 800ms de debounce
   };
 
   /**
