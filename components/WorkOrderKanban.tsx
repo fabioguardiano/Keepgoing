@@ -4,7 +4,7 @@ import { Image as ImageIcon, Calendar, ChevronLeft, ChevronRight, UserRound, Clo
 import { WorkOrder, PhaseConfig, AppUser } from '../types';
 import { WorkOrderModal } from './WorkOrderModal';
 import { formatOsLabel } from '../hooks/useWorkOrders';
-import { useKanbanZoom } from '../hooks/useKanbanZoom';
+import { useKanbanInteraction } from '../hooks/useKanbanInteraction';
 
 interface WorkOrderKanbanProps {
   workOrders: WorkOrder[];
@@ -339,7 +339,7 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
 }) => {
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrder | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const { zoomLevel, resetZoom, containerRef, zoomStyle } = useKanbanZoom(1.0);
+  const { zoomLevel, resetZoom, containerRef, zoomStyle, scrollProps } = useKanbanInteraction(1.0);
 
   // Handle ESC key to exit fullscreen
   useEffect(() => {
@@ -410,7 +410,9 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
     <DragDropContext onDragEnd={handleDragEnd}>
       <div 
         ref={containerRef}
-        className={`h-full overflow-hidden relative group/kanban ${isFullscreen ? 'px-6' : ''}`}
+        {...scrollProps}
+        className={`h-full overflow-x-auto overflow-y-hidden relative group/kanban kanban-background custom-scrollbar ${isFullscreen ? 'px-6' : ''}`}
+        style={{ scrollbarWidth: 'auto', scrollbarColor: 'var(--primary-color) #f1f5f9' }}
       >
         {/* Zoom Indicator */}
         {zoomLevel !== 1 && (
@@ -428,9 +430,10 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
         )}
         
         <div 
-          className="flex gap-4 min-w-max px-1 py-1 h-full overflow-x-auto pb-4 transition-all duration-300"
-          style={zoomStyle}
+          className="flex gap-4 min-w-max px-1 py-1 min-h-full pb-4 transition-all duration-300 pointer-events-none"
+          style={{ ...zoomStyle, width: 'max-content' }}
         >
+          <div className="flex gap-4 pointer-events-auto min-h-full">
           {phases.map(phase => (
             <KanbanColumn
               key={phase.name}
@@ -443,6 +446,7 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
               dragDisabled={!canMoveCards}
             />
           ))}
+          </div>
         </div>
       </div>
     </DragDropContext>
@@ -492,7 +496,7 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
           )}
         </div>
 
-        <div className={`flex-1 overflow-hidden ${isFullscreen ? 'px-6' : ''}`}>
+        <div className={`flex-1 ${isFullscreen ? 'px-6' : ''}`}>
           {kanbanBoard}
         </div>
       </div>

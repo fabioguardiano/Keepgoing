@@ -8,7 +8,7 @@ import { PrintBudget } from './PrintBudget';
 import { SalesCard } from './SalesCard';
 import { CRMSection } from './CRMSection';
 import { supabase } from '../lib/supabase';
-import { useKanbanZoom } from '../hooks/useKanbanZoom';
+import { useKanbanInteraction } from '../hooks/useKanbanInteraction';
 
 interface SalesViewProps {
   sales: SalesOrder[];
@@ -68,7 +68,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
   });
   const [expandedCrmSaleId, setExpandedCrmSaleId] = useState<string | null>(null);
   const [kanbanApplyFilters, setKanbanApplyFilters] = useState(false);
-  const { zoomLevel, resetZoom, containerRef, zoomStyle } = useKanbanZoom(1.0);
+  const { zoomLevel, resetZoom, containerRef, zoomStyle, scrollProps } = useKanbanInteraction(1.0);
 
   const handleSort = (key: string) => {
     setSortConfig(prev => ({
@@ -624,7 +624,12 @@ export const SalesView: React.FC<SalesViewProps> = ({
 
           <div 
             ref={containerRef} 
-            className="relative overflow-hidden group/kanban"
+            {...scrollProps}
+            className="relative overflow-x-auto overflow-y-hidden group/kanban custom-scrollbar select-none active:cursor-grabbing kanban-background"
+            style={{ 
+              scrollbarWidth: 'auto', 
+              scrollbarColor: 'var(--primary-color) #f1f5f9'
+            }}
           >
             {/* Zoom Indicator */}
             {zoomLevel !== 1 && (
@@ -646,9 +651,10 @@ export const SalesView: React.FC<SalesViewProps> = ({
                 <div 
                   {...provided.droppableProps}
                   ref={provided.innerRef}
-                  className="flex gap-6 overflow-x-auto pb-6 custom-scrollbar min-h-[600px] items-start transition-all duration-300"
-                  style={zoomStyle}
+                  className="flex gap-6 pb-6 pt-4 px-4 min-h-[600px] items-start transition-all duration-300 pointer-events-none"
+                  style={{ ...zoomStyle, width: 'max-content' }}
                 >
+                  <div className="flex gap-6 pointer-events-auto">
                 {salesPhases.map((phaseConfig, index) => {
                   const phase = phaseConfig.name;
                   const isEditing = editingPhase === phase;
@@ -757,12 +763,12 @@ export const SalesView: React.FC<SalesViewProps> = ({
                   );
                 })}
 
-                {/* New Column Column */}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </div>
+                  </div>
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </div>
       </DragDropContext>
     )}
 
