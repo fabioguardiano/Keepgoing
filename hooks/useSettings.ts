@@ -16,6 +16,7 @@ export const useSettings = (
 ) => {
   // App Users — Supabase como fonte principal
   const [appUsers, setAppUsers] = useState<AppUser[]>([]);
+  const [loadingSettings, setLoadingSettings] = useState(true);
 
   // Carrega app_users do Supabase quando companyId estiver disponível
   useEffect(() => {
@@ -224,6 +225,10 @@ export const useSettings = (
         }
       } catch (err) {
         console.error('Erro ao carregar dados da empresa:', err);
+      } finally {
+        // Delay técnico proposital de 800ms para garantir que a SplashScreen seja vista
+        // e as variáveis CSS sejam aplicadas antes de revelar o app
+        setTimeout(() => setLoadingSettings(false), 800);
       }
     };
 
@@ -712,5 +717,6 @@ export const useSettings = (
     deadlineUrgentDays, setDeadlineUrgentDays: saveDeadlineUrgentDays,
     idleTimeoutMinutes, setIdleTimeoutMinutes: saveIdleTimeoutMinutes,
     onSyncCloud,
+    loadingSettings
   };
 };

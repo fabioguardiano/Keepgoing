@@ -3,6 +3,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { Login } from './components/Login';
+import { SplashScreen } from './components/SplashScreen';
 import { PlaceholderView } from './components/PlaceholderView';
 import { IdleWarningModal } from './components/IdleWarningModal';
 import { useIdleTimer } from './hooks/useIdleTimer';
@@ -118,6 +119,7 @@ const App: React.FC = () => {
     deadlineUrgentDays, setDeadlineUrgentDays,
     idleTimeoutMinutes, setIdleTimeoutMinutes,
     onSyncCloud,
+    loadingSettings,
   } = useSettings(setOrders, setSales, activeCompanyId);
 
   // Idle session timer
@@ -396,6 +398,16 @@ const App: React.FC = () => {
 
   // 8. Lógica de Renderização
   if (!user) return <Login onLogin={handleLogin} />;
+  
+  if (loadingSettings) {
+    return (
+      <SplashScreen 
+        logoUrl={companyInfo.logoUrl} 
+        companyName={companyInfo.name} 
+        primaryColor={companyInfo.buttonColor} 
+      />
+    );
+  }
 
   const filteredOrders = orders.filter(o =>
     (o.clientName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
