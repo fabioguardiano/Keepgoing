@@ -8,6 +8,7 @@ import { PrintBudget } from './PrintBudget';
 import { SalesCard } from './SalesCard';
 import { CRMSection } from './CRMSection';
 import { supabase } from '../lib/supabase';
+import { useKanbanZoom } from '../hooks/useKanbanZoom';
 
 interface SalesViewProps {
   sales: SalesOrder[];
@@ -67,6 +68,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
   });
   const [expandedCrmSaleId, setExpandedCrmSaleId] = useState<string | null>(null);
   const [kanbanApplyFilters, setKanbanApplyFilters] = useState(false);
+  const { zoomLevel, resetZoom, containerRef, zoomStyle } = useKanbanZoom(1.0);
 
   const handleSort = (key: string) => {
     setSortConfig(prev => ({
@@ -620,13 +622,33 @@ export const SalesView: React.FC<SalesViewProps> = ({
             </label>
           </div>
 
-          <Droppable droppableId="board" type="column" direction="horizontal">
-            {(provided) => (
-              <div 
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-                className="flex gap-6 overflow-x-auto pb-6 custom-scrollbar min-h-[600px] items-start"
-              >
+          <div 
+            ref={containerRef} 
+            className="relative overflow-hidden group/kanban"
+          >
+            {/* Zoom Indicator */}
+            {zoomLevel !== 1 && (
+              <div className="absolute top-2 right-4 z-[70] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-full shadow-xl flex items-center gap-2 animate-in slide-in-from-top-4 duration-300">
+                <span className="text-[10px] font-black text-[var(--primary-color)] uppercase tracking-widest">
+                  Zoom: {Math.round(zoomLevel * 100)}%
+                </span>
+                <button 
+                  onClick={resetZoom}
+                  className="text-[9px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                >
+                  Resetar
+                </button>
+              </div>
+            )}
+            
+            <Droppable droppableId="board" type="column" direction="horizontal">
+              {(provided) => (
+                <div 
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                  className="flex gap-6 overflow-x-auto pb-6 custom-scrollbar min-h-[600px] items-start transition-all duration-300"
+                  style={zoomStyle}
+                >
                 {salesPhases.map((phaseConfig, index) => {
                   const phase = phaseConfig.name;
                   const isEditing = editingPhase === phase;
@@ -740,8 +762,9 @@ export const SalesView: React.FC<SalesViewProps> = ({
               </div>
             )}
           </Droppable>
-        </DragDropContext>
-      )}
+        </div>
+      </DragDropContext>
+    )}
 
       {isNewSaleModalOpen && (
         <NewSaleModal

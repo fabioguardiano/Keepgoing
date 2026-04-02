@@ -4,6 +4,7 @@ import { Image as ImageIcon, Calendar, ChevronLeft, ChevronRight, UserRound, Clo
 import { WorkOrder, PhaseConfig, AppUser } from '../types';
 import { WorkOrderModal } from './WorkOrderModal';
 import { formatOsLabel } from '../hooks/useWorkOrders';
+import { useKanbanZoom } from '../hooks/useKanbanZoom';
 
 interface WorkOrderKanbanProps {
   workOrders: WorkOrder[];
@@ -338,6 +339,7 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
 }) => {
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrder | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const { zoomLevel, resetZoom, containerRef, zoomStyle } = useKanbanZoom(1.0);
 
   // Handle ESC key to exit fullscreen
   useEffect(() => {
@@ -406,8 +408,29 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
 
   const kanbanBoard = (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className={`h-full overflow-x-auto pb-4 ${isFullscreen ? 'px-6' : ''}`}>
-        <div className="flex gap-4 min-w-max px-1 py-1 h-full">
+      <div 
+        ref={containerRef}
+        className={`h-full overflow-hidden relative group/kanban ${isFullscreen ? 'px-6' : ''}`}
+      >
+        {/* Zoom Indicator */}
+        {zoomLevel !== 1 && (
+          <div className="absolute top-2 right-4 z-[70] bg-white border border-gray-200 px-3 py-1.5 rounded-full shadow-xl flex items-center gap-2 animate-in slide-in-from-top-4 duration-300">
+            <span className="text-[10px] font-black text-[var(--primary-color)] uppercase tracking-widest">
+              Zoom: {Math.round(zoomLevel * 100)}%
+            </span>
+            <button 
+              onClick={resetZoom}
+              className="text-[9px] font-bold text-gray-400 hover:text-gray-600"
+            >
+              Resetar
+            </button>
+          </div>
+        )}
+        
+        <div 
+          className="flex gap-4 min-w-max px-1 py-1 h-full overflow-x-auto pb-4 transition-all duration-300"
+          style={zoomStyle}
+        >
           {phases.map(phase => (
             <KanbanColumn
               key={phase.name}
