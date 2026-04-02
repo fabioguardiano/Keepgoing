@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --primary-color: #ec5b13;
+  --primary-color: #004D4D;
   --secondary-color: #d84a0d;
   --accent-color: #7f13ec;
   --sidebar-bg: #0f172a;
@@ -12,7 +12,8 @@
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900 font-sans;
+    @apply bg-gray-50 text-gray-900;
+    font-family: 'Poppins', sans-serif;
   }
 }
 

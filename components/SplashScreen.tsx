@@ -1,5 +1,4 @@
-import React from 'react';
-import { Layers } from 'lucide-react';
+import { KeepGoingLogo } from './KeepGoingLogo';
 
 interface SplashScreenProps {
   logoUrl?: string;
@@ -9,11 +8,11 @@ interface SplashScreenProps {
 
 export const SplashScreen: React.FC<SplashScreenProps> = ({ 
   logoUrl, 
-  companyName = 'KeepGoing',
-  primaryColor = '#ec5b13' 
+  companyName = 'keepGoing',
+  primaryColor = '#004D4D' 
 }) => {
   return (
-    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#f8f6f6] dark:bg-[#0f172a] transition-colors duration-500">
+    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#f8f6f6] dark:bg-[#0f172a] transition-colors duration-500 font-['Poppins']">
       
       {/* Elementos decorativos de fundo para efeito Premium */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
@@ -32,7 +31,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
         />
 
         {/* Logo Container */}
-        <div className="relative z-10 w-24 h-24 mb-6 flex items-center justify-center">
+        <div className="relative z-10 w-32 h-32 mb-6 flex items-center justify-center">
           {logoUrl ? (
             <img 
               src={logoUrl} 
@@ -40,11 +39,8 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
               className="w-full h-full object-contain animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]" 
             />
           ) : (
-            <div 
-              className="w-20 h-20 rounded-2xl flex items-center justify-center shadow-2xl animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]"
-              style={{ backgroundColor: primaryColor }}
-            >
-              <Layers className="text-white w-10 h-10" />
+            <div className="animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]">
+              <KeepGoingLogo size={80} color={primaryColor} showText={false} />
             </div>
           )}
         </div>

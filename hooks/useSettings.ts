@@ -111,14 +111,14 @@ export const useSettings = (
 
   // Company Info — fonte de verdade: Supabase.
   const defaultCompanyData: CompanyInfo = {
-    name: 'Tok de Art',
+    name: 'keepGoing',
     document: '14.092.404/0001-67',
     address: 'Rua Américo Brasiliense, 1853 - Vila Seixas - Ribeirão Preto - SP',
     phone: '(16) 3636-0114',
     email: 'vendas@tokdeart.com.br',
     logoUrl: '',
     lostReasonOptions: ['Tinha preço menor', 'Prazo de entrega melhor', 'Desistiu de fazer', 'Não aprovaram o material', 'Distância da obra'],
-    buttonColor: '#ec5b13',
+    buttonColor: '#004D4D',
     sidebarColor: '#0f172a',
     sidebarTextColor: '#cbd5e1',
   };
@@ -141,7 +141,7 @@ export const useSettings = (
         iconUrl: data.icon_url || '',
         sidebarColor: data.sidebar_color || '#0f172a',
         sidebarTextColor: data.sidebar_text_color || '#cbd5e1',
-        buttonColor: data.button_color || '#ec5b13',
+        buttonColor: data.button_color || '#004D4D',
         lostReasonOptions: data.lost_reason_options || [],
         legalNote: data.legal_note || undefined,
         maxDiscountPct: data.max_discount_pct ?? undefined,
@@ -255,7 +255,7 @@ export const useSettings = (
   // Sincroniza variáveis CSS de tema sempre que companyInfo mudar
   useEffect(() => {
     const root = document.documentElement;
-    const primary = companyInfo.buttonColor || '#ec5b13';
+    const primary = companyInfo.buttonColor || '#004D4D';
     root.style.setProperty('--primary-color', primary);
     root.style.setProperty('--sidebar-bg', companyInfo.sidebarColor || '#0f172a');
     root.style.setProperty('--sidebar-text', companyInfo.sidebarTextColor || '#cbd5e1');
