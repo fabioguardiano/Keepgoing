@@ -63,7 +63,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
           <img
             src="/Logotipo Keepgoing Alta.png"
             alt="KeepGoing"
-            className="w-64 h-auto"
+            className="w-56 h-auto rounded-2xl"
           />
         </div>
       </div>
