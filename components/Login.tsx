@@ -53,7 +53,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
     <div className="min-h-screen flex font-['Poppins']">
       
       {/* Left Side: Logo (Hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-1/2 bg-[#004D4D] items-center justify-center p-12 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-[#345c70] items-center justify-center p-12 relative overflow-hidden">
         {/* Decorative background element */}
         <div className="absolute top-0 left-0 w-full h-full opacity-10">
           <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-white/20 blur-3xl"></div>
