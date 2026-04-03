@@ -1,4 +1,3 @@
-import { KeepGoingLogo } from './KeepGoingLogo';
 
 interface SplashScreenProps {
   logoUrl?: string;
@@ -32,17 +31,11 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
 
         {/* Logo Container */}
         <div className="relative z-10 w-32 h-32 mb-6 flex items-center justify-center">
-          {logoUrl ? (
-            <img 
-              src={logoUrl} 
-              alt="Logo" 
-              className="w-full h-full object-contain animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]" 
-            />
-          ) : (
-            <div className="animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]">
-              <KeepGoingLogo size={80} color={primaryColor} showText={false} />
-            </div>
-          )}
+          <img
+            src={logoUrl || '/Logotipo Keepgoing Alta.png'}
+            alt="Logo"
+            className="w-full h-full object-contain rounded-2xl animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]"
+          />
         </div>
 
         {/* Text */}
