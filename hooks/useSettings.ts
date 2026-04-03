@@ -286,7 +286,7 @@ export const useSettings = (
     // 1. Atualiza estado local instantaneamente para feedback na UI
     setCompanyInfoState(info);
     
-    if (!companyId || companyId === '00000000-0000-0000-0000-000000000000') return;
+    if (!companyId) return;
 
     // 2. Cancela qualquer salvamento pendente (debounce)
     if (saveTimeoutRef.current) {
@@ -296,8 +296,8 @@ export const useSettings = (
     // 3. Agenda o salvamento no banco de dados para 500ms após a última mudança
     saveTimeoutRef.current = setTimeout(async () => {
       try {
-        if (!companyId || companyId === '00000000-0000-0000-0000-000000000000') {
-           console.warn('[useSettings] Tentativa de salvamento abortada: ID da empresa inválido.');
+        if (!companyId) {
+           console.warn('[useSettings] Tentativa de salvamento abortada: companyId ausente.');
            return;
         }
 
@@ -337,7 +337,7 @@ export const useSettings = (
    * Sincronização genérica para listas de metadados
    */
   const syncCompanyMetadata = (columnName: string, data: any) => {
-    if (!companyId || companyId === '00000000-0000-0000-0000-000000000000') return;
+    if (!companyId) return;
     supabase.from('companies')
       .update({ [columnName]: data })
       .eq('id', companyId)
