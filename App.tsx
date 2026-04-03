@@ -1,4 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
+import 'leaflet/dist/leaflet.css';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
@@ -36,30 +37,37 @@ import { useMeasurements } from './hooks/useMeasurements';
 import { useLegacyMigration } from './hooks/useLegacyMigration';
 import { useBankAccounts } from './hooks/useBankAccounts';
 
+// Retry automático quando chunk falha por deploy (hash antigo não existe mais)
+const lazyRetry = <T,>(fn: () => Promise<T>): Promise<T> =>
+  fn().catch(() => {
+    window.location.reload();
+    return new Promise(() => {});
+  });
+
 // Lazy-loaded views — só carregam quando o usuário abre a tela
-const TeamView          = lazy(() => import('./components/TeamView').then(m => ({ default: m.TeamView })));
-const ReportsView       = lazy(() => import('./components/ReportsView').then(m => ({ default: m.ReportsView })));
-const SettingsView      = lazy(() => import('./components/SettingsView').then(m => ({ default: m.SettingsView })));
-const DeliverySchedule  = lazy(() => import('./components/DeliverySchedule').then(m => ({ default: m.DeliverySchedule })));
-const ClientsView       = lazy(() => import('./components/ClientsView').then(m => ({ default: m.ClientsView })));
-const SalesView         = lazy(() => import('./components/SalesView').then(m => ({ default: m.SalesView })));
-const InventoryView     = lazy(() => import('./components/InventoryView').then(m => ({ default: m.InventoryView })));
-const FinanceView       = lazy(() => import('./components/FinanceView').then(m => ({ default: m.FinanceView })));
-const AccountsView      = lazy(() => import('./components/AccountsView').then(m => ({ default: m.AccountsView })));
-const PaymentMethodsView = lazy(() => import('./components/PaymentMethodsView').then(m => ({ default: m.PaymentMethodsView })));
-const PaymentTypesView  = lazy(() => import('./components/PaymentTypesView').then(m => ({ default: m.PaymentTypesView })));
-const SuppliersView     = lazy(() => import('./components/SuppliersView').then(m => ({ default: m.SuppliersView })));
-const ArchitectsView    = lazy(() => import('./components/ArchitectsView').then(m => ({ default: m.ArchitectsView })));
-const SalesChannelsView = lazy(() => import('./components/SalesChannelsView').then(m => ({ default: m.SalesChannelsView })));
-const ProductsView      = lazy(() => import('./components/ProductsView').then(m => ({ default: m.ProductsView })));
-const BrandsView        = lazy(() => import('./components/BrandsView').then(m => ({ default: m.BrandsView })));
-const ProductGroupsView = lazy(() => import('./components/ProductGroupsView').then(m => ({ default: m.ProductGroupsView })));
-const ServiceGroupsView = lazy(() => import('./components/ServiceGroupsView').then(m => ({ default: m.ServiceGroupsView })));
-const PayablesView      = lazy(() => import('./components/PayablesView').then(m => ({ default: m.PayablesView })));
-const BankAccountsView  = lazy(() => import('./components/BankAccountsView').then(m => ({ default: m.BankAccountsView })));
-const WorkOrdersView    = lazy(() => import('./components/WorkOrdersView').then(m => ({ default: m.WorkOrdersView })));
-const WorkOrderKanban   = lazy(() => import('./components/WorkOrderKanban').then(m => ({ default: m.WorkOrderKanban })));
-const MeasurementSchedule = lazy(() => import('./components/MeasurementSchedule').then(m => ({ default: m.MeasurementSchedule })));
+const TeamView          = lazy(() => lazyRetry(() => import('./components/TeamView').then(m => ({ default: m.TeamView }))));
+const ReportsView       = lazy(() => lazyRetry(() => import('./components/ReportsView').then(m => ({ default: m.ReportsView }))));
+const SettingsView      = lazy(() => lazyRetry(() => import('./components/SettingsView').then(m => ({ default: m.SettingsView }))));
+const DeliverySchedule  = lazy(() => lazyRetry(() => import('./components/DeliverySchedule').then(m => ({ default: m.DeliverySchedule }))));
+const ClientsView       = lazy(() => lazyRetry(() => import('./components/ClientsView').then(m => ({ default: m.ClientsView }))));
+const SalesView         = lazy(() => lazyRetry(() => import('./components/SalesView').then(m => ({ default: m.SalesView }))));
+const InventoryView     = lazy(() => lazyRetry(() => import('./components/InventoryView').then(m => ({ default: m.InventoryView }))));
+const FinanceView       = lazy(() => lazyRetry(() => import('./components/FinanceView').then(m => ({ default: m.FinanceView }))));
+const AccountsView      = lazy(() => lazyRetry(() => import('./components/AccountsView').then(m => ({ default: m.AccountsView }))));
+const PaymentMethodsView = lazy(() => lazyRetry(() => import('./components/PaymentMethodsView').then(m => ({ default: m.PaymentMethodsView }))));
+const PaymentTypesView  = lazy(() => lazyRetry(() => import('./components/PaymentTypesView').then(m => ({ default: m.PaymentTypesView }))));
+const SuppliersView     = lazy(() => lazyRetry(() => import('./components/SuppliersView').then(m => ({ default: m.SuppliersView }))));
+const ArchitectsView    = lazy(() => lazyRetry(() => import('./components/ArchitectsView').then(m => ({ default: m.ArchitectsView }))));
+const SalesChannelsView = lazy(() => lazyRetry(() => import('./components/SalesChannelsView').then(m => ({ default: m.SalesChannelsView }))));
+const ProductsView      = lazy(() => lazyRetry(() => import('./components/ProductsView').then(m => ({ default: m.ProductsView }))));
+const BrandsView        = lazy(() => lazyRetry(() => import('./components/BrandsView').then(m => ({ default: m.BrandsView }))));
+const ProductGroupsView = lazy(() => lazyRetry(() => import('./components/ProductGroupsView').then(m => ({ default: m.ProductGroupsView }))));
+const ServiceGroupsView = lazy(() => lazyRetry(() => import('./components/ServiceGroupsView').then(m => ({ default: m.ServiceGroupsView }))));
+const PayablesView      = lazy(() => lazyRetry(() => import('./components/PayablesView').then(m => ({ default: m.PayablesView }))));
+const BankAccountsView  = lazy(() => lazyRetry(() => import('./components/BankAccountsView').then(m => ({ default: m.BankAccountsView }))));
+const WorkOrdersView    = lazy(() => lazyRetry(() => import('./components/WorkOrdersView').then(m => ({ default: m.WorkOrdersView }))));
+const WorkOrderKanban   = lazy(() => lazyRetry(() => import('./components/WorkOrderKanban').then(m => ({ default: m.WorkOrderKanban }))));
+const MeasurementSchedule = lazy(() => lazyRetry(() => import('./components/MeasurementSchedule').then(m => ({ default: m.MeasurementSchedule }))));
 
 
 const App: React.FC = () => {
