@@ -416,7 +416,7 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
       >
         {/* Zoom Indicator */}
         {zoomLevel !== 1 && (
-          <div className="absolute top-2 right-4 z-[70] bg-white border border-gray-200 px-3 py-1.5 rounded-full shadow-xl flex items-center gap-2 animate-in slide-in-from-top-4 duration-300">
+          <div className="absolute bottom-4 right-4 z-[70] bg-white border border-gray-200 px-3 py-1.5 rounded-full shadow-xl flex items-center gap-2 animate-in slide-in-from-bottom-4 duration-300">
             <span className="text-[10px] font-black text-[var(--primary-color)] uppercase tracking-widest">
               Zoom: {Math.round(zoomLevel * 100)}%
             </span>
