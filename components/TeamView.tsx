@@ -174,7 +174,7 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, existingEmails, 
             )}
 
             {/* Avatar */}
-            <div className="flex justify-center pb-2">
+            <div className="flex flex-col items-center gap-2 pb-2">
               <div className="relative group">
                 <div
                   className="w-20 h-20 rounded-2xl overflow-hidden bg-primary flex items-center justify-center cursor-pointer border-4 border-white shadow-lg"
@@ -201,6 +201,10 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, existingEmails, 
                   onChange={handleAvatarChange}
                 />
               </div>
+              <p className="text-[10px] text-slate-400 text-center leading-relaxed">
+                <span className="font-bold text-slate-500">JPG, PNG ou WEBP</span> · máx. 5 MB<br />
+                Recomendado: quadrado · mín. 200×200 px
+              </p>
             </div>
 
             {isEditing && (
