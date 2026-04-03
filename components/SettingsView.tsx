@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Settings, Layout, Check, ChevronRight, Plus, Trash2, Edit2, GripVertical, Info, Building2, MapPin, Phone, Mail, ShoppingBag, FileSpreadsheet, Download, Upload, AlertCircle, Loader2, Wallet, Shield, Bell, ToggleLeft, ToggleRight, X, Pencil, Box } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { PaymentTypesView } from './PaymentTypesView';
@@ -291,6 +291,36 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const [tempReasonName, setTempReasonName] = useState('');
     const [importLoading, setImportLoading] = useState(false);
     const [importStats, setImportStats] = useState<{ total: number; success: number; errors: number; } | null>(null);
+
+    // Estados locais para cores para garantir fluidez total na UI durante o ajuste
+    const [localButtonColor, setLocalButtonColor] = useState(companyInfo.buttonColor || '#004D4D');
+    const [localSidebarColor, setLocalSidebarColor] = useState(companyInfo.sidebarColor || '#0f172a');
+    const [localSidebarTextColor, setLocalSidebarTextColor] = useState(companyInfo.sidebarTextColor || '#cbd5e1');
+
+    // Sincroniza estados locais se o companyInfo mudar externamente (ex: primeiro carregamento)
+    useEffect(() => {
+        if (companyInfo.buttonColor) setLocalButtonColor(companyInfo.buttonColor);
+        if (companyInfo.sidebarColor) setLocalSidebarColor(companyInfo.sidebarColor);
+        if (companyInfo.sidebarTextColor) setLocalSidebarTextColor(companyInfo.sidebarTextColor);
+    }, [companyInfo.buttonColor, companyInfo.sidebarColor, companyInfo.sidebarTextColor]);
+
+    // Função específica para mudança de cor com feedback visual instantâneo via CSS Vars
+    const handleColorChange = (field: 'buttonColor' | 'sidebarColor' | 'sidebarTextColor', value: string) => {
+        // 1. Atualiza estado local para o input/label
+        if (field === 'buttonColor') {
+            setLocalButtonColor(value);
+            document.documentElement.style.setProperty('--primary-color', value);
+        } else if (field === 'sidebarColor') {
+            setLocalSidebarColor(value);
+            document.documentElement.style.setProperty('--sidebar-bg', value);
+        } else if (field === 'sidebarTextColor') {
+            setLocalSidebarTextColor(value);
+            document.documentElement.style.setProperty('--sidebar-text', value);
+        }
+
+        // 2. Dispara o salvamento (que já tem debounce no hook)
+        onUpdateCompany({ ...companyInfo, [field]: value });
+    };
 
     const handleUpdateCompany = (field: keyof CompanyInfo, value: string) => {
         onUpdateCompany({ ...companyInfo, [field]: value });
@@ -1021,12 +1051,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                 <div className="flex items-center gap-3">
                                                     <input 
                                                         type="color" 
-                                                        value={companyInfo.buttonColor || '#ec5b13'}
-                                                        onChange={(e) => handleUpdateCompany('buttonColor', e.target.value)}
+                                                        value={localButtonColor}
+                                                        onChange={(e) => handleColorChange('buttonColor', e.target.value)}
                                                         className="w-12 h-12 rounded-xl bg-white border-4 border-white shadow-sm cursor-pointer"
                                                     />
                                                     <div className="flex-1">
-                                                        <p className="text-xs font-black text-slate-700 font-mono uppercase leading-none mb-1">{companyInfo.buttonColor || '#EC5B13'}</p>
+                                                        <p className="text-xs font-black text-slate-700 font-mono uppercase leading-none mb-1">{localButtonColor}</p>
                                                         <p className="text-[10px] text-slate-400 font-medium italic">Cor principal dos elementos</p>
                                                     </div>
                                                 </div>
@@ -1036,12 +1066,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                 <div className="flex items-center gap-3">
                                                     <input 
                                                         type="color" 
-                                                        value={companyInfo.sidebarColor || '#0f172a'}
-                                                        onChange={(e) => handleUpdateCompany('sidebarColor', e.target.value)}
+                                                        value={localSidebarColor}
+                                                        onChange={(e) => handleColorChange('sidebarColor', e.target.value)}
                                                         className="w-12 h-12 rounded-xl bg-white border-4 border-white shadow-sm cursor-pointer"
                                                     />
                                                     <div className="flex-1">
-                                                        <p className="text-xs font-black text-slate-700 font-mono uppercase leading-none mb-1">{companyInfo.sidebarColor || '#0F172A'}</p>
+                                                        <p className="text-xs font-black text-slate-700 font-mono uppercase leading-none mb-1">{localSidebarColor}</p>
                                                         <p className="text-[10px] text-slate-400 font-medium italic">Cor de fundo da sidebar</p>
                                                     </div>
                                                 </div>
@@ -1051,12 +1081,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                 <div className="flex items-center gap-3">
                                                     <input 
                                                         type="color" 
-                                                        value={companyInfo.sidebarTextColor || '#cbd5e1'}
-                                                        onChange={(e) => handleUpdateCompany('sidebarTextColor', e.target.value)}
+                                                        value={localSidebarTextColor}
+                                                        onChange={(e) => handleColorChange('sidebarTextColor', e.target.value)}
                                                         className="w-12 h-12 rounded-xl bg-white border-4 border-white shadow-sm cursor-pointer"
                                                     />
                                                     <div className="flex-1">
-                                                        <p className="text-xs font-black text-slate-700 font-mono uppercase leading-none mb-1">{companyInfo.sidebarTextColor || '#CBD5E1'}</p>
+                                                        <p className="text-xs font-black text-slate-700 font-mono uppercase leading-none mb-1">{localSidebarTextColor}</p>
                                                         <p className="text-[10px] text-slate-400 font-medium italic">Cor de contraste para as fontes</p>
                                                     </div>
                                                 </div>

@@ -293,9 +293,14 @@ export const useSettings = (
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // 3. Agenda o salvamento no banco de dados para 800ms após a última mudança
+    // 3. Agenda o salvamento no banco de dados para 500ms após a última mudança
     saveTimeoutRef.current = setTimeout(async () => {
       try {
+        if (!companyId || companyId === '00000000-0000-0000-0000-000000000000') {
+           console.warn('[useSettings] Tentativa de salvamento abortada: ID da empresa inválido.');
+           return;
+        }
+
         console.log('[useSettings] Persistindo dados da empresa no Supabase...', { 
           buttonColor: info.buttonColor,
           sidebarColor: info.sidebarColor 
@@ -325,7 +330,7 @@ export const useSettings = (
       } finally {
         saveTimeoutRef.current = null;
       }
-    }, 800); // 800ms de debounce
+    }, 500); // 500ms de debounce
   };
 
   /**
