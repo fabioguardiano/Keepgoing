@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Users, Shield, HardHat, Plus, X, Mail, Edit2, Trash2, ChevronDown, Search, PowerOff, ArrowUpDown, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import React, { useState, useMemo, useRef } from 'react';
+import { Users, Shield, HardHat, Plus, X, Mail, Edit2, Trash2, ChevronDown, Search, PowerOff, ArrowUpDown, Loader2, CheckCircle2, AlertCircle, Camera } from 'lucide-react';
 
 type SortField = 'name' | 'email' | 'createdAt' | 'position' | 'hourlyRate';
 type SortDirection = 'asc' | 'desc';
@@ -62,6 +62,27 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, existingEmails, 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(initial?.avatarUrl);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const canvas = document.createElement('canvas');
+    const img = new Image();
+    img.onload = () => {
+      const size = 200;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d')!;
+      const min = Math.min(img.width, img.height);
+      const sx = (img.width - min) / 2;
+      const sy = (img.height - min) / 2;
+      ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+      setAvatarUrl(canvas.toDataURL('image/jpeg', 0.85));
+    };
+    img.src = URL.createObjectURL(file);
+  };
 
   const isEditing = !!initial?.id;
 
@@ -86,6 +107,7 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, existingEmails, 
       company_id: initial?.company_id,
       status: initial?.status || 'ativo',
       createdAt: initial?.createdAt || new Date().toISOString().slice(0, 10),
+      avatarUrl: avatarUrl || undefined,
     }, password);
 
     setLoading(false);
@@ -150,6 +172,36 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, existingEmails, 
                 <p className="text-sm font-medium text-red-700">{error}</p>
               </div>
             )}
+
+            {/* Avatar */}
+            <div className="flex justify-center pb-2">
+              <div className="relative group">
+                <div
+                  className="w-20 h-20 rounded-2xl overflow-hidden bg-primary flex items-center justify-center cursor-pointer border-4 border-white shadow-lg"
+                  onClick={() => avatarInputRef.current?.click()}
+                >
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-white font-bold text-2xl">{initials(name || 'U')}</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="absolute -bottom-2 -right-2 w-7 h-7 bg-primary text-white rounded-full flex items-center justify-center shadow-md hover:opacity-90 transition-opacity"
+                >
+                  <Camera size={13} />
+                </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarChange}
+                />
+              </div>
+            </div>
 
             {isEditing && (
               <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl mb-2">
@@ -493,8 +545,11 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
                     </td>
                     <td className="px-6 py-6">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center text-white font-bold text-sm shrink-0">
-                          {initials(user.name)}
+                        <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center text-white font-bold text-sm shrink-0 overflow-hidden">
+                          {user.avatarUrl
+                            ? <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                            : initials(user.name)
+                          }
                         </div>
                         <div className="text-sm font-black text-slate-800 leading-tight">{user.name}</div>
                       </div>

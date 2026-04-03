@@ -108,6 +108,7 @@ export interface AppUser {
   profileId?: string; // ID do PermissionProfile atribuído
   company_id?: string;
   createdAt: string;
+  avatarUrl?: string;
 }
 
 export interface ProductionStaff {
