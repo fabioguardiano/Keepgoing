@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, LogIn, Headset, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { KeepGoingLogo } from './KeepGoingLogo';
 
 interface LoginProps {
   onLogin: (user: any) => void;
@@ -61,15 +60,11 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
         </div>
         
         <div className="relative z-10 flex flex-col items-center">
-          <KeepGoingLogo 
-            size={180} 
-            color="#FFFFFF" 
-            textColor="#FFFFFF" 
-            className="mb-4"
+          <img
+            src="/Logotipo Keepgoing Alta.png"
+            alt="KeepGoing"
+            className="w-64 h-auto"
           />
-          <p className="text-white/60 text-sm tracking-widest uppercase font-light mt-4">
-            Embrace Your Growth & Momentum
-          </p>
         </div>
       </div>
 
