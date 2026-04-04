@@ -4,6 +4,7 @@ import { Users, Shield, HardHat, Plus, X, Mail, Edit2, Trash2, ChevronDown, Sear
 type SortField = 'name' | 'email' | 'createdAt' | 'position' | 'hourlyRate';
 type SortDirection = 'asc' | 'desc';
 import { AppUser, ProductionStaff, StaffPosition, PermissionProfile } from '../types';
+import { getInitials } from '../utils/userUtils';
 
 const POSITION_LABELS: Record<StaffPosition, string> = {
   serrador: 'Serrador',
@@ -35,7 +36,7 @@ const ROLE_COLORS: Record<AppUser['role'], string> = {
 
 const AVATAR_COLORS = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-pink-500', 'bg-teal-500'];
 const avatarColor = (id: string) => AVATAR_COLORS[parseInt(id) % AVATAR_COLORS.length] || 'bg-slate-500';
-const initials = (name: string) => name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
+const initials = (name: string) => getInitials(name);
 const formatDateBR = (dateStr: string) => {
   if (!dateStr) return '';
   const parts = dateStr.includes('T') ? dateStr.split('T')[0].split('-') : dateStr.split('-');
@@ -193,6 +194,20 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, existingEmails, 
                 >
                   <Camera size={13} />
                 </button>
+                {avatarUrl && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setAvatarUrl(undefined);
+                      if (avatarInputRef.current) avatarInputRef.current.value = '';
+                    }}
+                    className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md hover:bg-red-600 transition-colors"
+                    title="Remover foto"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                )}
                 <input
                   ref={avatarInputRef}
                   type="file"

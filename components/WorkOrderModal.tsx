@@ -3,6 +3,7 @@ import { X, Upload, Image as ImageIcon, Plus, Briefcase, Calendar, Layers, User,
 import { createPortal } from 'react-dom';
 import { WorkOrder, WorkOrderLog, PhaseConfig, AppUser } from '../types';
 import { formatOsLabel } from '../hooks/useWorkOrders';
+import { getInitials } from '../utils/userUtils';
 
 interface WorkOrderModalProps {
   workOrder: WorkOrder;
@@ -44,7 +45,7 @@ const PRIORITY_CONFIG = {
   baixa: { label: 'Baixa', bg: 'bg-green-500',  text: 'text-white' },
 };
 
-const getInitials = (name: string) => name.trim().slice(0, 2).toUpperCase();
+const getInitialsLocal = (name: string) => getInitials(name);
 
 const AVATAR_COLORS = [
   'bg-blue-500','bg-purple-500','bg-pink-500','bg-indigo-500',
@@ -490,7 +491,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                     {(workOrder.assignedUsers || []).map(u => (
                       <div key={u.name} className="flex items-center gap-2.5">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${getAvatarColor(u.name)}`}>
-                          {getInitials(u.name)}
+                          {getInitialsLocal(u.name)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-gray-800 truncate">{u.name}</p>

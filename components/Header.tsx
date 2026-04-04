@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, Bell, LogOut, User as UserIcon, History, ShieldAlert, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { User, DiscountAuthorization } from '../types';
+import { getInitials } from '../utils/userUtils';
 
 interface HeaderProps {
   user: User;
@@ -187,8 +188,12 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onSearch, onTogg
           </div>
 
           <div className="relative group cursor-pointer">
-            <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-[var(--primary-color)]/20 overflow-hidden flex items-center justify-center relative">
-              <UserIcon className="text-slate-500" />
+            <div className="w-10 h-10 rounded-full bg-[var(--primary-color)] border-2 border-[var(--primary-color)]/20 overflow-hidden flex items-center justify-center relative shadow-sm">
+              {user.avatarUrl ? (
+                <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-white font-black text-sm">{getInitials(user.name)}</span>
+              )}
             </div>
 
             <div className="absolute right-0 top-12 w-48 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-all z-50 py-2">

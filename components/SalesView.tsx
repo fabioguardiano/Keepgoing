@@ -750,6 +750,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
                                     phase={phase}
                                     phaseConfig={phaseConfig}
                                     currentUser={currentUser}
+                                    appUsers={appUsers}
                                     canEdit={canEditSale(sale)}
                                   />
                                 ))}

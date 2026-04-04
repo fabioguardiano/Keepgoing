@@ -3,6 +3,7 @@ import { Draggable } from '@hello-pangea/dnd';
 import { Calendar, User as UserIcon, DollarSign, CheckCircle2, Lock, GripVertical, ArrowRight, EyeOff } from 'lucide-react';
 import { SalesOrder, AppUser, SalesPhaseConfig } from '../types';
 import { CRMSection } from './CRMSection';
+import { getInitials } from '../utils/userUtils';
 
 interface SalesCardProps {
   sale: SalesOrder;
@@ -12,11 +13,12 @@ interface SalesCardProps {
   phase: string;
   phaseConfig?: SalesPhaseConfig;
   currentUser?: AppUser | null;
+  appUsers?: AppUser[];
   canEdit?: boolean;
 }
 
 export const SalesCard: React.FC<SalesCardProps> = ({ 
-  sale, index, handleEdit, onSaveSale, phase, phaseConfig, currentUser, canEdit = true 
+  sale, index, handleEdit, onSaveSale, phase, phaseConfig, currentUser, appUsers = [], canEdit = true 
 }) => {
   const daysElapsed = React.useMemo(() => {
     // 1. Pega a criação ou interação oficial (se a coluna no banco existir)
@@ -55,6 +57,10 @@ export const SalesCard: React.FC<SalesCardProps> = ({
     
     return 'success';
   }, [daysElapsed, phaseConfig, sale.status]);
+
+  const sellerUser = React.useMemo(() => {
+    return appUsers.find(u => u.name === sale.seller || u.email === sale.seller);
+  }, [appUsers, sale.seller]);
 
   const statusClasses = {
     alert: 'border-red-400 dark:border-red-900/50 bg-red-50/10 dark:bg-red-900/10 shadow-red-100 dark:shadow-none shadow-lg',
@@ -103,6 +109,11 @@ export const SalesCard: React.FC<SalesCardProps> = ({
                   <EyeOff size={8} /> Só visualização
                 </span>
               )}
+              {sale.salesChannel && (
+                <span className="bg-slate-100 dark:bg-slate-800 text-slate-500 text-[8px] font-black px-1.5 py-0.5 rounded uppercase flex items-center gap-1 border border-slate-200 dark:border-slate-700">
+                  {sale.salesChannel}
+                </span>
+              )}
             </div>
             <GripVertical className="text-slate-300 group-hover:text-slate-400 transition-colors w-4 h-4 shrink-0" />
           </div>
@@ -114,10 +125,6 @@ export const SalesCard: React.FC<SalesCardProps> = ({
             <div className="flex items-center gap-2 text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">
               <Calendar size={13} className="text-slate-400" />
               <span>{sale.createdAt ? new Date(sale.createdAt).toLocaleDateString('pt-BR') : 'Sem data'}</span>
-            </div>
-            <div className="flex items-center gap-2 text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">
-              <UserIcon size={13} className="text-slate-400" />
-              <span>{sale.seller || 'Sem vendedor'}</span>
             </div>
           </div>
 
@@ -133,8 +140,17 @@ export const SalesCard: React.FC<SalesCardProps> = ({
           </div>
 
           <div className="flex items-center justify-between pt-3 mt-2 border-t border-slate-50 dark:border-slate-800/50">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider">{sale.salesChannel || 'Direto'}</span>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-black text-[10px] shrink-0 overflow-hidden border border-primary/20 shadow-sm">
+                {sellerUser?.avatarUrl ? (
+                  <img src={sellerUser.avatarUrl} alt={sale.seller} className="w-full h-full object-cover" />
+                ) : (
+                  getInitials(sale.seller)
+                )}
+              </div>
+              <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-tight truncate max-w-[120px]">
+                {sale.seller || 'Sem vendedor'}
+              </span>
             </div>
             <div className="text-right">
               <div className="flex items-center gap-1 justify-end">

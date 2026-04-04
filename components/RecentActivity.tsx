@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Clock, Move, Plus, Image as ImageIcon, Trash2, FileEdit, User } from 'lucide-react';
 import { ActivityLog } from '../types';
+import { getInitials } from '../utils/userUtils';
 
 interface RecentActivityProps {
     activities: ActivityLog[];
@@ -108,9 +109,11 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities, isOp
                                             </div>
                                             <div className="pb-6 min-w-0 flex-1">
                                                 <div className="flex items-center justify-between gap-2 mb-1">
-                                                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                                                        <User size={12} className="text-slate-400" />
-                                                        {activity.userName}
+                                                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5 min-w-0">
+                                                        <div className="w-5 h-5 rounded-full bg-[var(--primary-color)] flex items-center justify-center text-white text-[8px] font-black shrink-0">
+                                                            {getInitials(activity.userName)}
+                                                        </div>
+                                                        <span className="truncate">{activity.userName}</span>
                                                     </span>
                                                     <span className="text-[10px] font-medium text-slate-400">{formatTime(activity.timestamp)}</span>
                                                 </div>

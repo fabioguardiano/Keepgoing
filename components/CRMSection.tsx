@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Mic, Save, Loader2, Clock, ChevronDown, User as UserIcon } from 'lucide-react';
 import { SalesOrder, AppUser, CRMNote } from '../types';
+import { getInitials } from '../utils/userUtils';
 
 interface CRMSectionProps {
   sale: SalesOrder;
@@ -114,8 +115,8 @@ export const CRMSection: React.FC<CRMSectionProps> = ({ sale, onSaveSale, curren
                 <div key={note.id} className="bg-slate-50 dark:bg-slate-800/30 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50 transition-all hover:border-[var(--primary-color)]/30 group">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-[var(--primary-color)] flex items-center justify-center text-white text-[10px] font-black shadow-sm">
-                        {note.userName.charAt(0).toUpperCase()}
+                      <div className="w-6 h-6 rounded-full bg-[var(--primary-color)] flex items-center justify-center text-white text-[10px] font-black shadow-sm shrink-0">
+                        {getInitials(note.userName)}
                       </div>
                       <span className="text-[11px] font-black text-slate-700 dark:text-slate-200 uppercase tracking-wide">{note.userName}</span>
                     </div>

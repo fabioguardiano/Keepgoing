@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Shield, Search, Download, RefreshCw, LogIn, LogOut, Plus, Edit2, Trash2, MoveRight, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ActivityLog } from '../types';
+import { getInitials } from '../utils/userUtils';
 
 interface AuditLogViewProps {
   activities: ActivityLog[];
@@ -265,7 +266,12 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ activities, loadingA
                       {formatDate(log.timestamp)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="font-semibold text-slate-700">{log.userName}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-full bg-[var(--primary-color)] flex items-center justify-center text-white text-[8px] font-black shrink-0">
+                          {getInitials(log.userName)}
+                        </div>
+                        <span className="font-semibold text-slate-700">{log.userName}</span>
+                      </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[10px] ${ACTION_COLORS[log.action] ?? 'bg-slate-100 text-slate-500'}`}>
