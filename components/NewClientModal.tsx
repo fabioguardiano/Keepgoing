@@ -1,27 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Building2, MapPin, Phone, Mail, Globe, CreditCard, Calendar, UserCheck, ShieldCheck, Info, FileText } from 'lucide-react';
+import { 
+  X, User, MapPin, Phone, Mail, FileText, Building2, 
+  UserCheck, ShieldCheck, CreditCard, Info, Calendar, Search
+} from 'lucide-react';
 import { Client } from '../types';
-import { formatCPF, formatCNPJ, validateDocument, formatPhone } from '../utils/documentValidation';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-
-// Fix Leaflet marker icon issues
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
-
-// Component to handle map view reset
-const MapController = ({ center }: { center: [number, number] }) => {
-  const map = useMap();
-  useEffect(() => {
-    map.setView(center, map.getZoom());
-  }, [center, map]);
-  return null;
-};
+import { formatCPF, formatCNPJ, formatPhone, validateDocument } from '../utils/documentValidation';
+import { MapComponent } from './MapComponent';
+import { geocodeAddress as mapboxGeocode } from '../lib/mapsService';
 
 interface NewClientModalProps {
   isOpen: boolean;
@@ -97,87 +82,24 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
   }, [activeTab, isOpen, formData.address.street, formData.deliveryAddress?.street, formData.address.zipCode, formData.deliveryAddress?.zipCode]);
 
   const geocodeAddress = async (street: string, number: string, city: string, state: string, zipCode: string, fieldType: 'address' | 'deliveryAddress') => {
-    if (!city && !zipCode) return;
+    if (!street && !zipCode) return;
     
     setIsGeocoding(true);
-    const cleanZip = zipCode.replace(/\D/g, '');
-    console.log(`Buscando coordenadas para: ${street}, ${number}, ${city}, ${cleanZip}`);
-    
     try {
-      const fetchWithHeaders = (query: string) => fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`, {
-        headers: { 'Accept-Language': 'pt-BR,pt;q=0.9', 'User-Agent': 'KeepGoing-ERP/1.0' }
-      });
-
-      let finalData = null;
-
-      // STEP 1: Full Address Search
-      if (street && city) {
-        const query = `${street}${number ? `, ${number}` : ''}, ${city}, ${state}, Brasil`;
-        const res = await fetchWithHeaders(query);
-        const data = await res.json();
-        if (data && data[0]) finalData = data[0];
-      }
-
-      // STEP 2: Fallback to ZIP Code (Highly reliable for neighborhood level)
-      if (!finalData && cleanZip.length === 8) {
-        console.log('Tentando fallback por CEP...');
-        const res = await fetchWithHeaders(`${cleanZip}, Brasil`);
-        const data = await res.json();
-        if (data && data[0]) finalData = data[0];
-      }
-
-      // STEP 3: Fallback without number
-      if (!finalData && street && city) {
-        console.log('Tentando fallback sem número...');
-        const res = await fetchWithHeaders(`${street}, ${city}, ${state}, Brasil`);
-        const data = await res.json();
-        if (data && data[0]) finalData = data[0];
-      }
-
-      // STEP 4: Aggressive Cleaning (R., Rua, Av. etc)
-      if (!finalData && street && city) {
-        const cleanStreet = street
-          .replace(/^(R\.|RUA|AV\.|AVENIDA|PRACA|PRAÇA|TRAVESSA|TRAV\.|RODOVIA|ROD\.)\s+/i, '')
-          .trim();
-        
-        if (cleanStreet !== street) {
-          console.log(`Tentando fallback com rua limpa: ${cleanStreet}`);
-          const res = await fetchWithHeaders(`${cleanStreet}, ${city}, ${state}, Brasil`);
-          const data = await res.json();
-          if (data && data[0]) finalData = data[0];
-        }
-      }
-
-      // STEP 5: Partial Street Search
-      if (!finalData && street && city && street.length > 8) {
-        const parts = street.split(' ');
-        if (parts.length > 2) {
-          const partial = parts.slice(0, -1).join(' ');
-          console.log(`Tentando fallback parcial: ${partial}`);
-          const res = await fetchWithHeaders(`${partial}, ${city}, ${state}, Brasil`);
-          const data = await res.json();
-          if (data && data[0]) finalData = data[0];
-        }
-      }
-
-      if (finalData) {
-        const lat = parseFloat(finalData.lat);
-        const lng = parseFloat(finalData.lon);
-        console.log('Localização encontrada:', lat, lng);
-        
+      const result = await mapboxGeocode(street, number, city, state, zipCode);
+      
+      if (result) {
         setFormData(prev => ({
           ...prev,
           [fieldType === 'address' ? 'address' : 'deliveryAddress']: {
             ...(fieldType === 'address' ? prev.address : (prev.deliveryAddress || {})),
-            lat,
-            lng
+            lat: result.lat,
+            lng: result.lng
           }
         }));
-      } else {
-        console.warn('Nenhuma localização encontrada.');
       }
     } catch (error) {
-      console.error('Erro na geocodificação:', error);
+      console.error('Erro na geocodificação Mapbox:', error);
     } finally {
       setIsGeocoding(false);
     }
@@ -318,13 +240,15 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
   const inputClass = "w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all disabled:opacity-50";
   const labelClass = "text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-2";
 
-  const mapCenter: [number, number] = (formData.address.lat && formData.address.lng) 
-    ? [formData.address.lat, formData.address.lng] 
-    : [-23.5505, -46.6333]; // Default to SP if not found
+  const mapCenter = {
+    lat: formData.address.lat || -23.5505,
+    lng: formData.address.lng || -46.6333
+  };
 
-  const deliveryMapCenter: [number, number] = (formData.deliveryAddress?.lat && formData.deliveryAddress?.lng)
-    ? [formData.deliveryAddress.lat, formData.deliveryAddress.lng]
-    : [-23.5505, -46.6333]; // Default to SP if not found
+  const deliveryMapCenter = {
+    lat: formData.deliveryAddress?.lat || -23.5505,
+    lng: formData.deliveryAddress?.lng || -46.6333
+  };
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[3000] flex items-center justify-center p-4">
@@ -653,20 +577,17 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                       </div>
                     </div>
                   )}
-                  <MapContainer center={mapCenter} zoom={15} style={{ height: '100%', width: '100%' }}>
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                    <MapController center={mapCenter} />
-                    {formData.address.lat && formData.address.lng && (
-                      <Marker position={[formData.address.lat, formData.address.lng]}>
-                        <Popup>
-                          <div className="text-xs font-bold leading-tight">
-                            <p className="text-slate-400 font-black uppercase tracking-widest text-[9px] mb-1">Localização do Cliente</p>
-                            <p>{formData.address.street}, {formData.address.number}</p>
-                          </div>
-                        </Popup>
-                      </Marker>
-                    )}
-                  </MapContainer>
+                  <MapComponent 
+                    center={mapCenter} 
+                    markerTitle={formData.tradingName || formData.legalName}
+                    popupContent={
+                      <div className="text-xs font-bold leading-tight min-w-[120px]">
+                        <p className="text-primary font-black uppercase tracking-widest text-[9px] mb-1">Localização do Cliente</p>
+                        <p className="text-slate-700">{formData.address.street}, {formData.address.number}</p>
+                        <p className="text-slate-400 text-[10px] mt-1 italic">{formData.address.city} - {formData.address.state}</p>
+                      </div>
+                    }
+                  />
                 </div>
               </div>
             </div>
@@ -826,20 +747,17 @@ export const NewClientModal: React.FC<NewClientModalProps> = ({ isOpen, onClose,
                       </div>
                     </div>
                   )}
-                  <MapContainer center={deliveryMapCenter} zoom={15} style={{ height: '100%', width: '100%' }}>
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                    <MapController center={deliveryMapCenter} />
-                    {formData.deliveryAddress?.lat && formData.deliveryAddress?.lng && (
-                      <Marker position={[formData.deliveryAddress.lat, formData.deliveryAddress.lng]}>
-                        <Popup>
-                          <div className="text-xs font-bold leading-tight">
-                            <p className="text-slate-400 font-black uppercase tracking-widest text-[9px] mb-1">Local da Entrega</p>
-                            <p>{formData.deliveryAddress.street}, {formData.deliveryAddress.number}</p>
-                          </div>
-                        </Popup>
-                      </Marker>
-                    )}
-                  </MapContainer>
+                  <MapComponent 
+                    center={deliveryMapCenter} 
+                    markerTitle="Local de Entrega"
+                    popupContent={
+                      <div className="text-xs font-bold leading-tight min-w-[120px]">
+                        <p className="text-primary font-black uppercase tracking-widest text-[9px] mb-1">Local da Entrega</p>
+                        <p className="text-slate-700">{formData.deliveryAddress?.street}, {formData.deliveryAddress?.number}</p>
+                        <p className="text-slate-400 text-[10px] mt-1 italic">{formData.deliveryAddress?.city} - {formData.deliveryAddress?.state}</p>
+                      </div>
+                    }
+                  />
                 </div>
               </div>
             </div>

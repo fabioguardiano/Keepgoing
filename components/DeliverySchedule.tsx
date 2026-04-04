@@ -1,28 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { MapPin, Clock, Calendar, Plus, Search, Truck, ChevronRight, X, Navigation, Phone, Map as MapIcon, Building2, Info, History, Edit2, Trash2 } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import { Delivery, WorkOrder, DriverStatus } from '../types';
+import { MapComponent, MapMarker, MapRoute } from './MapComponent';
+import { geocodeAddress, decodePolyline6 } from '../lib/mapsService';
+import { Delivery, WorkOrder, DriverStatus, AppUser } from '../types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { FileDown } from 'lucide-react';
-
-// Fix Leaflet marker icon issues
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
-
-// Component to handle map view reset
-const MapController = ({ center }: { center: [number, number] }) => {
-  const map = useMap();
-  useEffect(() => {
-    map.setView(center, map.getZoom());
-  }, [center, map]);
-  return null;
-};
 
 interface DeliveryScheduleProps {
   orders: WorkOrder[];
@@ -72,101 +55,71 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
   const [driverLocation, setDriverLocation] = useState<DriverStatus | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
 
-  const createCompanyIcon = () => {
-    return L.divIcon({
-      html: `
-        <div style="
-          width: 40px;
-          height: 40px;
-          background-color: white;
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-          border: 2px solid white;
-          overflow: hidden;
-        ">
-          ${(companyIconUrl || companyLogoUrl)
-            ? `<img src="${companyIconUrl || companyLogoUrl}" style="width: 100%; height: 100%; object-fit: contain;" />`
-            : `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>`
-          }
-        </div>
-      `,
-      className: '',
-      iconSize: [40, 40],
-      iconAnchor: [20, 20],
-    });
-  };
+  // Funções de renderização de ícones como componentes React
+  const renderCompanyIcon = () => (
+    <div style={{
+      width: '40px',
+      height: '40px',
+      backgroundColor: 'white',
+      borderRadius: '12px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+      border: '2px solid white',
+      overflow: 'hidden',
+    }}>
+      {(companyIconUrl || companyLogoUrl)
+        ? <img src={companyIconUrl || companyLogoUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        : <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+      }
+    </div>
+  );
 
-  const createNumberedIcon = (number: number, color: string) => {
-    return L.divIcon({
-      html: `
-        <div style="
-          width: 32px;
-          height: 32px;
-          background-color: ${color};
-          border-radius: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-weight: 900;
-          font-size: 14px;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-          border: 2px solid white;
-        ">
-          ${number}
-        </div>
-      `,
-      className: '',
-      iconSize: [32, 32],
-      iconAnchor: [16, 16],
-    });
-  };
+  const renderNumberedIcon = (number: number, color: string) => (
+    <div style={{
+      width: '32px',
+      height: '32px',
+      backgroundColor: color,
+      borderRadius: '10px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: 'white',
+      fontWeight: '900',
+      fontSize: '14px',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+      border: '2px solid white',
+    }}>
+      {number}
+    </div>
+  );
 
-  const createDriverIcon = () => {
-    return L.divIcon({
-      html: `
-        <div style="
-          width: 44px;
-          height: 44px;
-          background-color: #2563eb;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          box-shadow: 0 0 20px rgba(37, 99, 235, 0.5);
-          border: 3px solid white;
-          animation: pulse 2s infinite;
-        ">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-2.48-3.1a1 1 0 0 0-.78-.326H15"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>
-        </div>
-        <style>
-          @keyframes pulse {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); }
-            70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(37, 99, 235, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
-          }
-        </style>
-      `,
-      className: '',
-      iconSize: [44, 44],
-      iconAnchor: [22, 22],
-    });
-  };
+  const renderDriverIcon = () => (
+    <div className="driver-marker-pulse" style={{
+      width: '44px',
+      height: '44px',
+      backgroundColor: '#2563eb',
+      borderRadius: '50%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: 'white',
+      boxShadow: '0 0 20px rgba(37, 99, 235, 0.5)',
+      border: '3px solid white',
+    }}>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-2.48-3.1a1 1 0 0 0-.78-.326H15"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>
+    </div>
+  );
 
-  // Geocoding effect
+  // Geocoding effect (Mapbox)
   useEffect(() => {
     const geocode = async (address: string) => {
       if (coords[address]) return;
       try {
-        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
-        const data = await response.json();
-        if (data && data[0]) {
-          setCoords(prev => ({ ...prev, [address]: [parseFloat(data[0].lat), parseFloat(data[0].lon)] }));
+        const res = await geocodeAddress(address, '', '', '', '');
+        if (res) {
+          setCoords(prev => ({ ...prev, [address]: [res.lat, res.lng] }));
         }
       } catch (e) {
         console.error("Geocoding failed for", address, e);
@@ -175,9 +128,9 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
 
     geocode(companyAddress);
     deliveries.forEach(d => geocode(d.address));
-  }, [companyAddress, deliveries, coords]);
+  }, [companyAddress, deliveries]);
 
-  // Routing effect (OSRM - Road paths) grouped by routeGroup
+  // Routing effect (Valhalla - Road paths for Mapbox GeoJSON)
   useEffect(() => {
     const fetchRoutes = async () => {
       const groups = Array.from(new Set(deliveries.map(d => d.routeGroup || 'Manhã')));
@@ -185,36 +138,45 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
 
       for (const group of groups) {
         const groupDeliveries = deliveries.filter(d => (d.routeGroup || 'Manhã') === group);
-        const positions: [number, number][] = [];
+        const waypoints: [number, number][] = [];
         
-        if (coords[companyAddress]) positions.push(coords[companyAddress]);
+        if (coords[companyAddress]) waypoints.push(coords[companyAddress]);
         groupDeliveries.forEach(d => {
-          if (coords[d.address]) positions.push(coords[d.address]);
+          if (coords[d.address]) waypoints.push(coords[d.address]);
         });
         
         // Add back to company (Round Trip)
-        if (coords[companyAddress] && positions.length > 1) {
-          positions.push(coords[companyAddress]);
+        if (coords[companyAddress] && waypoints.length > 1) {
+          waypoints.push(coords[companyAddress]);
         }
 
-        if (positions.length < 2) {
-          newPaths[group] = positions;
+        if (waypoints.length < 2) {
+          newPaths[group] = waypoints;
           continue;
         }
 
         try {
-          const query = positions.map(pos => `${pos[1]},${pos[0]}`).join(';');
-          const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${query}?overview=full&geometries=geojson&steps=false`);
+          const response = await fetch('https://valhalla1.openstreetmap.de/route', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              locations: waypoints.map(([lat, lon]) => ({ lat, lon })),
+              costing: 'auto',
+              directions_options: { units: 'km' }
+            })
+          });
           const data = await response.json();
           
-          if (data.routes && data.routes[0]) {
-            newPaths[group] = data.routes[0].geometry.coordinates.map((coord: [number, number]) => [coord[1], coord[0]]);
+          if (data.trip?.legs) {
+            const allCoords = data.trip.legs.flatMap((leg: any) => decodePolyline6(leg.shape));
+            // Convert to [lng, lat] for Mapbox
+            newPaths[group] = allCoords.map((c: [number, number]) => [c[1], c[0]]);
           } else {
-            newPaths[group] = positions;
+            newPaths[group] = waypoints.map(w => [w[1], w[0]]);
           }
         } catch (e) {
           console.error(`Routing failed for group ${group}`, e);
-          newPaths[group] = positions;
+          newPaths[group] = waypoints.map(w => [w[1], w[0]]);
         }
       }
       setRoadPaths(newPaths);
@@ -320,34 +282,35 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
     return (coords[target || ''] || [-21.1767, -47.8208]) as [number, number];
   }, [selectedDeliveryId, companyAddress, coords, deliveries]);
 
-  const routePositions = useMemo(() => {
+  const routeCoords = useMemo(() => {
     return Object.values(roadPaths).flat();
   }, [roadPaths]);
 
+
   // Driver Simulation Effect
   useEffect(() => {
-    if (!isSimulating || routePositions.length === 0) {
+    if (!isSimulating || routeCoords.length === 0) {
       if (!isSimulating) setDriverLocation(null);
       return;
     }
 
     let currentIndex = 0;
     const interval = setInterval(() => {
-      const pos = routePositions[currentIndex];
+      const pos = routeCoords[currentIndex]; // pos is [lng, lat]
       if (pos) {
         setDriverLocation({
-          lat: pos[0],
-          lng: pos[1],
+          lat: pos[1],
+          lng: pos[0],
           lastUpdate: new Date().toLocaleTimeString('pt-BR'),
           isOnline: true
         });
       }
 
-      currentIndex = (currentIndex + 1) % routePositions.length;
+      currentIndex = (currentIndex + 1) % routeCoords.length;
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isSimulating, routePositions]);
+  }, [isSimulating, routeCoords]);
 
   const moveDelivery = (id: string, direction: 'up' | 'down') => {
     if (!onReorderDeliveries) return;
@@ -559,170 +522,147 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
             </div>
           </div>
           
-          {/* Leaflet Map Integration */}
-          <div className="flex-1 relative z-0">
-
-
-            <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }} scrollWheelZoom={true}>
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              <MapController center={mapCenter} />
-              
-              {/* Company Home Marker */}
-              {coords[companyAddress] && (
-                <Marker position={coords[companyAddress] as L.LatLngTuple} icon={createCompanyIcon()}>
-                  <Popup>
+          <MapComponent 
+            center={{ lat: mapCenter[0], lng: mapCenter[1] }}
+            zoom={13}
+            routes={Object.entries(roadPaths).map(([group, coords], idx) => {
+              const colors = ['#2563eb', '#ec5b13', '#10b981', '#f59e0b', '#8b5cf6'];
+              return {
+                id: `route-${group}`,
+                coordinates: coords,
+                color: colors[idx % colors.length]
+              };
+            })}
+            markers={[
+              // Company Marker
+              ...(coords[companyAddress] ? [{
+                id: 'company',
+                lat: coords[companyAddress][0],
+                lng: coords[companyAddress][1],
+                icon: renderCompanyIcon() as React.ReactNode,
+                popupContent: (
+                  <div className="p-1">
+                    <p className="font-black text-xs uppercase text-gray-400 mb-1">Ponto de Saída</p>
+                    <p className="font-bold text-sm">{companyName}</p>
+                    <p className="text-xs text-gray-500">{companyAddress}</p>
+                  </div>
+                ) as React.ReactNode
+              } as MapMarker] : []),
+              // Delivery Markers
+              ...deliveries.map((d, i) => (
+                coords[d.address] ? {
+                  id: d.id,
+                  lat: coords[d.address][0],
+                  lng: coords[d.address][1],
+                  icon: renderNumberedIcon(i + 1, d.id === selectedDeliveryId ? '#2563eb' : '#ec5b13') as React.ReactNode,
+                  popupContent: (
                     <div className="p-1">
-                      <p className="font-black text-xs uppercase text-gray-400 mb-1">Ponto de Saída</p>
-                      <p className="font-bold text-sm">{companyName}</p>
-                      <p className="text-xs text-gray-500">{companyAddress}</p>
-                    </div>
-                  </Popup>
-                </Marker>
-              )}
-
-              {/* Delivery Markers */}
-              {deliveries.map((d, i) => (
-                coords[d.address] && (
-                  <Marker 
-                    key={d.id} 
-                    position={coords[d.address] as L.LatLngTuple} 
-                    icon={createNumberedIcon(i + 1, d.id === selectedDeliveryId ? '#2563eb' : 'var(--primary-color)')}
-                    eventHandlers={{ click: () => setSelectedDeliveryId(d.id) }}
-                  >
-                    <Popup>
-                      <div className="p-1">
-                        <p className="font-black text-[10px] uppercase text-gray-400 mb-1">Entrega {i + 1}</p>
-                        <p className="font-bold text-sm text-gray-900">{d.clientName}</p>
-                        <p className="text-[11px] font-bold text-[var(--primary-color)] mb-1">O.S. {d.osNumber}</p>
-                        <p className="text-xs text-gray-500 line-clamp-2">{d.address}</p>
-                        <div className="mt-2 text-[10px] font-black uppercase text-gray-400 flex items-center gap-1">
-                          <Clock size={10} /> {d.time}
-                        </div>
+                      <p className="font-black text-[10px] uppercase text-gray-400 mb-1">Entrega {i + 1}</p>
+                      <p className="font-bold text-sm text-gray-900">{d.clientName}</p>
+                      <p className="text-[11px] font-bold text-orange-600 mb-1">O.S. {d.osNumber}</p>
+                      <p className="text-xs text-gray-500 line-clamp-2">{d.address}</p>
+                      <div className="mt-2 text-[10px] font-black uppercase text-gray-400 flex items-center gap-1">
+                        <Clock size={10} /> {d.time}
                       </div>
-                    </Popup>
-                  </Marker>
-                )
-              ))}
+                    </div>
+                  ) as React.ReactNode
+                } as MapMarker : null
+              )).filter((m): m is MapMarker => m !== null),
+              // Tracking Markers
+              ...Object.entries(driverTrackingLocations).map(([name, location]) => ({
+                id: `driver-${name}`,
+                lat: location.lat,
+                lng: location.lng,
+                icon: renderDriverIcon() as React.ReactNode,
+                popupContent: (
+                  <div className="p-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      <p className="font-black text-xs uppercase text-green-600">Motorista Online</p>
+                    </div>
+                    <p className="font-bold text-sm">{name}</p>
+                    <p className="text-[10px] text-gray-500 font-medium">Última atualização: {location.lastUpdate}</p>
+                  </div>
+                ) as React.ReactNode
+              } as MapMarker)),
+              // Simulation Marker
+              ...(driverLocation && !driverTrackingLocations[companyName] ? [{
+                id: 'simulated-driver',
+                lat: driverLocation.lat,
+                lng: driverLocation.lng,
+                icon: renderDriverIcon() as React.ReactNode,
+                popupContent: (
+                  <div className="p-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      <p className="font-black text-xs uppercase text-green-600">Simulação Ativa</p>
+                    </div>
+                    <p className="font-bold text-sm">Caminhão de Entrega</p>
+                    <p className="text-[10px] text-gray-500 font-medium">Status: Simulado</p>
+                  </div>
+                ) as React.ReactNode
+              } as MapMarker] : [])
+            ]}
+            onMarkerClick={id => {
+              if (id !== 'company' && id !== 'simulated-driver' && !id.startsWith('driver-')) {
+                setSelectedDeliveryId(id);
+              }
+            }}
+          />
 
-              {/* Route Lines by Group */}
-              {Array.from(new Set(deliveries.map(d => d.routeGroup || 'Manhã'))).map((group, idx) => {
-                const colors = ['var(--primary-color)', '#2563eb', '#10b981', '#f59e0b', '#8b5cf6'];
-                const groupColor = colors[idx % colors.length];
-                const groupDeliveries = deliveries.filter(d => (d.routeGroup || 'Manhã') === group);
-                const positions: [number, number][] = [];
+          {/* Legend / Overlay */}
+          <div className="absolute bottom-6 left-6 space-y-2 z-[1000]">
+              <div className="bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-white flex flex-col gap-3 min-w-[280px] max-h-[400px] overflow-y-auto">
+                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b pb-2">Legenda das Rotas</h4>
                 
-                if (coords[companyAddress]) positions.push(coords[companyAddress] as [number, number]);
-                groupDeliveries.forEach(d => {
-                  if (coords[d.address]) positions.push(coords[d.address] as [number, number]);
-                });
-
-                if (positions.length < 2) return null;
-
-                return (
-                  <Polyline 
-                    key={group}
-                    positions={roadPaths[group] as L.LatLngExpression[]} 
-                    color={groupColor} 
-                    weight={5} 
-                    opacity={0.6}
-                  />
-                );
-              })}
-
-              {/* Driver Marker (Real-time tracking) */}
-              {Object.entries(driverTrackingLocations).map(([name, location]) => (
-                <Marker 
-                  key={name}
-                  position={[location.lat, location.lng]} 
-                  icon={createDriverIcon()}
-                >
-                  <Popup>
-                    <div className="p-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                        <p className="font-black text-xs uppercase text-green-600">Motorista Online</p>
-                      </div>
-                      <p className="font-bold text-sm">{name}</p>
-                      <p className="text-[10px] text-gray-500 font-medium">Última atualização: {location.lastUpdate}</p>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-
-              {/* Driver Marker (Simulation) */}
-              {driverLocation && !driverTrackingLocations[companyName] && (
-                <Marker position={[driverLocation.lat, driverLocation.lng]} icon={createDriverIcon()}>
-                  <Popup>
-                    <div className="p-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                        <p className="font-black text-xs uppercase text-green-600">Simulação Ativa</p>
-                      </div>
-                      <p className="font-bold text-sm">Caminhão de Entrega</p>
-                      <p className="text-[10px] text-gray-500 font-medium">Status: Simulado</p>
-                    </div>
-                  </Popup>
-                </Marker>
-              )}
-            </MapContainer>
-
-            {/* Legend / Overlay */}
-            <div className="absolute bottom-6 left-6 space-y-2 z-[1000]">
-                <div className="bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-white flex flex-col gap-3 min-w-[280px] max-h-[400px] overflow-y-auto">
-                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b pb-2">Legenda das Rotas</h4>
+                {Array.from(new Set(deliveries.map(d => d.routeGroup || 'Manhã'))).map((group, groupIdx) => {
+                  const colors = ['var(--primary-color)', '#2563eb', '#10b981', '#f59e0b', '#8b5cf6'];
+                  const groupColor = colors[groupIdx % colors.length];
                   
-                  {Array.from(new Set(deliveries.map(d => d.routeGroup || 'Manhã'))).map((group, groupIdx) => {
-                    const colors = ['var(--primary-color)', '#2563eb', '#10b981', '#f59e0b', '#8b5cf6'];
-                    const groupColor = colors[groupIdx % colors.length];
-                    
-                    return (
-                      <div key={group} className="space-y-2 pb-2 border-b border-gray-100 last:border-0">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: groupColor }} />
-                          <span className="text-[10px] font-black text-gray-500 uppercase">{group}</span>
+                  return (
+                    <div key={group} className="space-y-2 pb-2 border-b border-gray-100 last:border-0">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: groupColor }} />
+                        <span className="text-[10px] font-black text-gray-500 uppercase">{group}</span>
+                      </div>
+                      
+                      <div 
+                        className="flex items-center gap-3 cursor-pointer hover:bg-black/5 p-1 rounded-lg transition-all"
+                        onClick={() => setSelectedDeliveryId(null)}
+                      >
+                        <div className="w-8 h-8 bg-white border border-gray-200 text-gray-400 rounded-lg flex items-center justify-center shadow-sm overflow-hidden">
+                          {(companyIconUrl || companyLogoUrl) ? (
+                            <img src={companyIconUrl || companyLogoUrl} alt="Logo" className="w-full h-full object-contain" />
+                          ) : (
+                            <Building2 size={16} />
+                          )}
                         </div>
-                        
+                        <div>
+                          <p className="text-[10px] font-black text-gray-400 uppercase leading-none mb-1">Saída (Sede)</p>
+                          <p className="text-xs font-bold text-gray-800 line-clamp-1">{companyAddress}</p>
+                        </div>
+                      </div>
+
+                      {deliveries.filter(d => (d.routeGroup || 'Manhã') === group).map((d, i) => (
                         <div 
+                          key={d.id} 
                           className="flex items-center gap-3 cursor-pointer hover:bg-black/5 p-1 rounded-lg transition-all"
-                          onClick={() => setSelectedDeliveryId(null)}
+                          onClick={() => setSelectedDeliveryId(d.id)}
                         >
-                          <div className="w-8 h-8 bg-white border border-gray-200 text-gray-400 rounded-lg flex items-center justify-center shadow-sm overflow-hidden">
-                            {(companyIconUrl || companyLogoUrl) ? (
-                              <img src={companyIconUrl || companyLogoUrl} alt="Logo" className="w-full h-full object-contain" />
-                            ) : (
-                              <Building2 size={16} />
-                            )}
+                          <div className={`w-8 h-8 ${d.id === selectedDeliveryId ? 'bg-blue-600' : ''} text-white rounded-lg flex items-center justify-center font-black text-xs shadow-lg`} style={{ backgroundColor: d.id === selectedDeliveryId ? '#2563eb' : groupColor }}>
+                            {i + 1}
                           </div>
                           <div>
-                            <p className="text-[10px] font-black text-gray-400 uppercase leading-none mb-1">Saída (Sede)</p>
-                            <p className="text-xs font-bold text-gray-800 line-clamp-1">{companyAddress}</p>
+                            <p className="text-[10px] font-black text-gray-400 uppercase leading-none mb-1">Entrega {i + 1}</p>
+                            <p className="text-xs font-bold text-gray-800 line-clamp-1">{d.clientName}</p>
+                            <p className="text-[10px] text-gray-500 font-medium line-clamp-1">{d.address}</p>
                           </div>
                         </div>
-
-                        {deliveries.filter(d => (d.routeGroup || 'Manhã') === group).map((d, i) => (
-                          <div 
-                            key={d.id} 
-                            className="flex items-center gap-3 cursor-pointer hover:bg-black/5 p-1 rounded-lg transition-all"
-                            onClick={() => setSelectedDeliveryId(d.id)}
-                          >
-                            <div className={`w-8 h-8 ${d.id === selectedDeliveryId ? 'bg-blue-600' : ''} text-white rounded-lg flex items-center justify-center font-black text-xs shadow-lg`} style={{ backgroundColor: d.id === selectedDeliveryId ? '#2563eb' : groupColor }}>
-                              {i + 1}
-                            </div>
-                            <div>
-                              <p className="text-[10px] font-black text-gray-400 uppercase leading-none mb-1">Entrega {i + 1}</p>
-                              <p className="text-xs font-bold text-gray-800 line-clamp-1">{d.clientName}</p>
-                              <p className="text-[10px] text-gray-500 font-medium line-clamp-1">{d.address}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })}
-                </div>
-            </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
           </div>
         </div>
       </div>
@@ -834,3 +774,4 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
     </div>
   );
 };
+

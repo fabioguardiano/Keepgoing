@@ -4,23 +4,9 @@ import {
   Trash2, Edit2, X, CheckCircle2, Clock, Info, User as UserIcon,
   ChevronLeft, ChevronRight, Filter, AlertCircle, Phone, Truck, Building2, Map as MapIcon, List as ListIcon, FileDown
 } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import { Measurement, WorkOrder, DriverStatus, CompanyInfo, AppUser, ProductionStaff, PermissionProfile } from '../types';
-
-// O ícone padrão do Leaflet não funciona bem no Next.js/Vite sem isso
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-
-let DefaultIcon = L.icon({
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41]
-});
-
-L.Marker.prototype.options.icon = DefaultIcon;
+import { MapComponent, MapMarker, MapRoute } from './MapComponent';
+import { geocodeAddress, decodePolyline6 } from '../lib/mapsService';
+import { Measurement, WorkOrder, DriverStatus, AppUser, ProductionStaff, PermissionProfile } from '../types';
 
 interface MeasurementScheduleProps {
   measurements: Measurement[];
@@ -39,14 +25,7 @@ interface MeasurementScheduleProps {
   permissionProfiles: PermissionProfile[];
 }
 
-// Subcomponente para controlar o centro do mapa
-const MapController = ({ center }: { center: [number, number] }) => {
-  const map = useMap();
-  useEffect(() => {
-    map.flyTo(center, 13);
-  }, [center, map]);
-  return null;
-};
+// O MapController não é mais necessário pois o MapComponent gerencia o flyTo internamente
 
 export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
   measurements,
@@ -134,7 +113,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
             setViaCepData({ logradouro: data.logradouro, localidade: data.localidade, uf: data.uf });
             setNewMeasurement(prev => ({
               ...prev,
-              address: `${data.logradouro}, ${data.bairro}, ${data.localidade} - ${data.uf}`
+              address: `${data.logradouro.toUpperCase()}, ${data.bairro.toUpperCase()}, ${data.localidade.toUpperCase()} - ${data.uf.toUpperCase()}`
             }));
           }
         })
@@ -144,88 +123,64 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
     }
   }, [newMeasurement.cep]);
 
-  // Geocodificar preview do mapa no modal — efeito dedicado e isolado
+  // Geocodificar preview do mapa no modal usando Mapbox
   useEffect(() => {
     if (!viaCepData) { setPreviewMapCenter(null); return; }
     const number = newMeasurement.addressNumber?.trim();
-    const street = number
-      ? `${number}, ${viaCepData.logradouro}`
-      : viaCepData.logradouro;
-    const url = `https://nominatim.openstreetmap.org/search?format=json&street=${encodeURIComponent(street)}&city=${encodeURIComponent(viaCepData.localidade)}&state=${encodeURIComponent(viaCepData.uf)}&countrycodes=br&limit=1`;
-    fetch(url)
-      .then(r => r.json())
-      .then(data => {
-        if (data?.[0]) {
-          setPreviewMapCenter([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
-        }
-      })
-      .catch(() => {});
+    
+    geocodeAddress(
+      viaCepData.logradouro,
+      number || '',
+      viaCepData.localidade,
+      viaCepData.uf,
+      newMeasurement.cep
+    ).then(res => {
+      if (res) {
+        setPreviewMapCenter([res.lat, res.lng]);
+      }
+    });
   }, [viaCepData, newMeasurement.addressNumber]);
 
-  // Geocodificação Real via Nominatim (OpenStreetMap)
+  // Geocodificação Real via Mapbox
   useEffect(() => {
     const timer = setTimeout(() => {
       // Geocodificar endereço da empresa
       if (companyAddress && companyAddress.length >= 5 && !coords[companyAddress]) {
-        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(companyAddress)}&countrycodes=br&limit=1`)
-          .then(r => r.json())
-          .then(data => {
-            if (data?.[0]) setCoords(prev => ({ ...prev, [companyAddress]: [parseFloat(data[0].lat), parseFloat(data[0].lon)] }));
-          })
-          .catch(() => {});
+        // Fallback para geocodificação textual simples se não for estruturado
+        const parts = companyAddress.split(',');
+        geocodeAddress(parts[0], '', '', '', '').then(res => {
+          if (res) setCoords(prev => ({ ...prev, [companyAddress]: [res.lat, res.lng] }));
+        });
       }
 
-      // Geocodificar endereços das medições — usa query estruturada (rua + cidade) para melhor precisão
+      // Geocodificar endereços das medições
       measurements.forEach(m => {
         if (!m.address || m.address.length < 5 || coords[m.address]) return;
         const parts = m.address.split(',');
-        let url: string;
-        if (parts.length >= 3) {
-          // Formato ViaCEP: "Logradouro, Bairro, Cidade - UF"
-          const street = parts[0].trim();
-          const cityPart = parts[parts.length - 1].trim().replace(/ - \w{2}$/, '').trim();
-          url = `https://nominatim.openstreetmap.org/search?format=json&street=${encodeURIComponent(street)}&city=${encodeURIComponent(cityPart)}&countrycodes=br&limit=1`;
-        } else {
-          url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(m.address)}&countrycodes=br&limit=1`;
-        }
-        fetch(url)
-          .then(r => r.json())
-          .then(data => {
-            if (data?.[0]) setCoords(prev => ({ ...prev, [m.address]: [parseFloat(data[0].lat), parseFloat(data[0].lon)] }));
-          })
-          .catch(() => {});
+        const street = parts[0]?.trim();
+        const cityWithState = parts[parts.length - 1]?.trim() || '';
+        const [city] = cityWithState.split(' - ');
+
+        geocodeAddress(street || m.address, m.addressNumber || '', city?.trim() || '', '', m.cep || '').then(res => {
+          if (res) setCoords(prev => ({ ...prev, [m.address]: [res.lat, res.lng] }));
+        });
       });
 
-      // Geocodificar o endereço da nova medição usando dados estruturados (mais preciso)
+      // Geocodificar o endereço da nova medição
       if (!newMeasurement.address || newMeasurement.address.length < 5) return;
-
-      const fullAddr = newMeasurement.addressNumber
-        ? `${newMeasurement.address}, ${newMeasurement.addressNumber}`
-        : newMeasurement.address;
-
+      const fullAddr = newMeasurement.addressNumber ? `${newMeasurement.address}, ${newMeasurement.addressNumber}` : newMeasurement.address;
       if (coords[fullAddr]) return;
 
-      let geocodeUrl: string;
-      if (viaCepData && newMeasurement.addressNumber) {
-        const street = `${newMeasurement.addressNumber} ${viaCepData.logradouro}`;
-        geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&street=${encodeURIComponent(street)}&city=${encodeURIComponent(viaCepData.localidade)}&state=${encodeURIComponent(viaCepData.uf)}&countrycodes=br&limit=1`;
-      } else if (viaCepData) {
-        geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&street=${encodeURIComponent(viaCepData.logradouro)}&city=${encodeURIComponent(viaCepData.localidade)}&state=${encodeURIComponent(viaCepData.uf)}&countrycodes=br&limit=1`;
-      } else {
-        geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddr)}&countrycodes=br&limit=1`;
-      }
+      const streetPart = viaCepData ? viaCepData.logradouro : newMeasurement.address.split(',')[0];
+      const cityPart = viaCepData ? viaCepData.localidade : '';
+      const statePart = viaCepData ? viaCepData.uf : '';
 
-      fetch(geocodeUrl)
-        .then(r => r.json())
-        .then(data => {
-          if (data && data[0]) {
-            const lat = parseFloat(data[0].lat);
-            const lon = parseFloat(data[0].lon);
-            setCoords(prev => ({ ...prev, [fullAddr]: [lat, lon] }));
-            setMapCenter([lat, lon]);
-          }
-        })
-        .catch(err => console.error('Erro geocoding:', fullAddr, err));
+      geocodeAddress(streetPart, newMeasurement.addressNumber || '', cityPart, statePart, newMeasurement.cep).then(res => {
+        if (res) {
+          setCoords(prev => ({ ...prev, [fullAddr]: [res.lat, res.lng] }));
+          setMapCenter([res.lat, res.lng]);
+        }
+      });
     }, 1000);
 
     return () => clearTimeout(timer);
@@ -249,32 +204,18 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
     const dayMeas = measurements
       .filter(m => m.status !== 'Excluída' && m.date === selectedDate)
       .sort((a, b) => a.time.localeCompare(b.time));
+    
     if (dayMeas.length > 0) {
       const first = dayMeas[0];
-      if (coords[first.address]) setMapCenter(coords[first.address]);
+      if (coords[first.address]) {
+        setMapCenter(coords[first.address]);
+      }
     } else if (coords[companyAddress]) {
       setMapCenter(coords[companyAddress]);
     }
-  }, [selectedDate, measurements, coords]);
+  }, [selectedDate, measurements, coords, companyAddress]);
 
-  // Decoder de polyline Valhalla (precision 6)
-  const decodePolyline6 = (encoded: string): [number, number][] => {
-    const factor = 1e6;
-    const coords: [number, number][] = [];
-    let index = 0, lat = 0, lng = 0;
-    while (index < encoded.length) {
-      let b: number, shift = 0, result = 0;
-      do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
-      lat += (result & 1) ? ~(result >> 1) : (result >> 1);
-      shift = 0; result = 0;
-      do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
-      lng += (result & 1) ? ~(result >> 1) : (result >> 1);
-      coords.push([lat / factor, lng / factor]);
-    }
-    return coords;
-  };
-
-  // Buscar rota por ruas via Valhalla (OpenStreetMap) — global, cobre o Brasil
+  // Buscar rota por ruas via Valhalla (GeoJSON no Mapbox)
   useEffect(() => {
     const dayMeas = measurements
       .filter(m => m.status !== 'Excluída' && m.date === selectedDate)
@@ -307,7 +248,9 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
         const legs = data.trip?.legs;
         if (legs?.length) {
           const allCoords = legs.flatMap((leg: any) => decodePolyline6(leg.shape));
-          setRouteCoords(allCoords);
+          // Importante: Mapbox usa [lng, lat], mas Valhalla retorna [lat, lng]
+          // converteremos para [lng, lat] para o Source GeoJSON
+          setRouteCoords(allCoords.map(c => [c[1], c[0]]));
         } else {
           setRouteCoords([]);
         }
@@ -459,73 +402,60 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
     setIsModalOpen(true);
   };
 
-  // Pin gota SVG — destinos numerados com nome do cliente
-  const createNumberedIcon = (number: number, color: string, clientName?: string) => {
+  // Funções de rendering de ícones agora são componentes React
+  const renderNumberedIcon = (number: number, color: string, clientName?: string) => {
     const label = clientName
       ? clientName.split(' ').slice(0, 2).join(' ').substring(0, 16).toUpperCase()
       : '';
     const bubbleWidth = Math.max(80, label.length * 7 + 24);
-    return L.divIcon({
-      className: 'custom-div-icon',
-      html: `<div style="position:relative;width:${bubbleWidth}px;height:42px;filter:drop-shadow(0 4px 6px rgba(0,0,0,0.25))">
-        <!-- Pin gota centralizado -->
-        <div style="position:absolute;left:${bubbleWidth / 2 - 16}px;top:0;width:32px;height:42px">
+    
+    return (
+      <div style={{ position: 'relative', width: `${bubbleWidth}px`, height: '42px', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.25))' }}>
+        <div style={{ position: 'absolute', left: `${bubbleWidth / 2 - 16}px`, top: 0, width: '32px', height: '42px' }}>
           <svg viewBox="0 0 32 42" width="32" height="42" xmlns="http://www.w3.org/2000/svg">
-            <path d="M16 0C7.163 0 0 7.163 0 16c0 10.667 16 26 16 26S32 26.667 32 16C32 7.163 24.837 0 16 0z" fill="${color}"/>
+            <path d="M16 0C7.163 0 0 7.163 0 16c0 10.667 16 26 16 26S32 26.667 32 16C32 7.163 24.837 0 16 0z" fill={color}/>
             <circle cx="16" cy="15" r="9" fill="white" opacity="0.2"/>
           </svg>
-          <div style="position:absolute;top:6px;left:0;width:32px;text-align:center;color:white;font-weight:900;font-size:13px;font-family:sans-serif;line-height:1">${number}</div>
+          <div style={{ position: 'absolute', top: '6px', left: 0, width: '32px', textAlign: 'center', color: 'white', fontWeight: 900, fontSize: '13px', fontFamily: 'sans-serif', lineHeight: 1 }}>{number}</div>
         </div>
-        ${label ? `<!-- Label nome cliente -->
-        <div style="position:absolute;top:0;left:0;right:0;display:flex;justify-content:center">
-          <div style="margin-top:-18px;background:${color};color:white;font-weight:800;font-size:9px;font-family:sans-serif;padding:2px 6px;border-radius:4px;white-space:nowrap;letter-spacing:0.05em;box-shadow:0 2px 4px rgba(0,0,0,0.2)">
-            ${label}
+        {label && (
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+            <div style={{ marginTop: '-18px', background: color, color: 'white', fontWeight: 800, fontSize: '9px', fontFamily: 'sans-serif', padding: '2px 6px', borderRadius: '4px', whiteSpace: 'nowrap', letterSpacing: '0.05em', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+              {label}
+            </div>
           </div>
-        </div>` : ''}
-      </div>`,
-      iconSize: [bubbleWidth, 42],
-      iconAnchor: [bubbleWidth / 2, 42]
-    });
+        )}
+      </div>
+    );
   };
 
-  // Pin gota SVG — empresa (favicon ou ícone de prédio)
-  const createCompanyIcon = () => {
-    return L.divIcon({
-      className: 'custom-div-icon',
-      html: `<div style="position:relative;width:36px;height:48px;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.35))">
-        <svg viewBox="0 0 36 48" width="36" height="48" xmlns="http://www.w3.org/2000/svg">
-          <path d="M18 0C8.059 0 0 8.059 0 18c0 12 18 30 18 30S36 30 36 18C36 8.059 27.941 0 18 0z" fill="white" stroke="#e2e8f0" stroke-width="1.5"/>
-          <circle cx="18" cy="17" r="11" fill="#f1f5f9" opacity="0.8"/>
-        </svg>
-        <div style="position:absolute;top:4px;left:0;width:36px;height:26px;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:50%">
-          ${(companyIconUrl || companyLogoUrl)
-            ? `<img src="${companyIconUrl || companyLogoUrl}" style="width:20px;height:20px;object-fit:contain;border-radius:4px"/>`
-            : `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1f2937" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/></svg>`
-          }
-        </div>
-      </div>`,
-      iconSize: [36, 48],
-      iconAnchor: [18, 48]
-    });
-  };
+  const renderCompanyIcon = () => (
+    <div style={{ position: 'relative', width: '36px', height: '48px', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.35))' }}>
+      <svg viewBox="0 0 36 48" width="36" height="48" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 0C8.059 0 0 8.059 0 18c0 12 18 30 18 30S36 30 36 18C36 8.059 27.941 0 18 0z" fill="white" stroke="#e2e8f0" strokeWidth="1.5"/>
+        <circle cx="18" cy="17" r="11" fill="#f1f5f9" opacity="0.8"/>
+      </svg>
+      <div style={{ position: 'absolute', top: '4px', left: 0, width: '36px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: '50%' }}>
+        {(companyIconUrl || companyLogoUrl)
+          ? <img src={companyIconUrl || companyLogoUrl} style={{ width: '20px', height: '20px', objectFit: 'contain', borderRadius: '4px' }} />
+          : <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1f2937" strokeWidth="2"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/></svg>
+        }
+      </div>
+    </div>
+  );
 
-  // Pin gota SVG — medidor em trânsito (verde pulsante com ícone de carro)
-  const createMeasurerIcon = () => L.divIcon({
-    className: 'custom-div-icon',
-    html: `<div style="position:relative;width:36px;height:48px;filter:drop-shadow(0 4px 8px rgba(16,185,129,0.5))">
-      <style>.pulse-ring{animation:ping 1.5s cubic-bezier(0,0,0.2,1) infinite}@keyframes ping{0%{transform:scale(1);opacity:.8}100%{transform:scale(1.6);opacity:0}}</style>
-      <div class="pulse-ring" style="position:absolute;top:2px;left:2px;width:32px;height:32px;border-radius:50%;background:rgba(16,185,129,0.3)"></div>
+  const renderMeasurerIcon = () => (
+    <div style={{ position: 'relative', width: '36px', height: '48px', filter: 'drop-shadow(0 4px 8px rgba(16,185,129,0.5))' }}>
+      <div className="pulse-ring" style={{ position: 'absolute', top: '2px', left: '2px', width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(16,185,129,0.3)' }}></div>
       <svg viewBox="0 0 36 48" width="36" height="48" xmlns="http://www.w3.org/2000/svg">
         <path d="M18 0C8.059 0 0 8.059 0 18c0 12 18 30 18 30S36 30 36 18C36 8.059 27.941 0 18 0z" fill="#10b981"/>
         <circle cx="18" cy="17" r="11" fill="white" opacity="0.15"/>
       </svg>
-      <div style="position:absolute;top:5px;left:0;width:36px;display:flex;align-items:center;justify-content:center">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h11l3 4v6z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>
+      <div style={{ position: 'absolute', top: '5px', left: 0, width: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 17H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h11l3 4v6z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>
       </div>
-    </div>`,
-    iconSize: [36, 48],
-    iconAnchor: [18, 48]
-  });
+    </div>
+  );
 
   return (
     <div className="flex flex-col h-full bg-slate-50 overflow-hidden font-sans">
@@ -887,71 +817,68 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
            </div>
 
            <div className="flex-1 relative z-0">
-              <MapContainer center={mapCenter} zoom={13} className="w-full h-full">
-                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                  <MapController center={mapCenter} />
-                  
-                  {/* Company/Start marker */}
-                  {coords[companyAddress] && (
-                    <Marker position={coords[companyAddress]} icon={createCompanyIcon()}>
-                      <Popup>
-                        <div className="p-1">
-                          <p className="font-black text-[10px] uppercase text-slate-400">Ponto de Partida</p>
-                          <p className="font-bold text-xs">Sua Empresa</p>
-                        </div>
-                      </Popup>
-                    </Marker>
-                  )}
-
-                  {/* Measurement markers — geocoding salva sob m.address */}
-                  {mapMeasurements.map((m, i) => (
-                    coords[m.address] && (
-                      <Marker
-                        key={m.id}
-                        position={coords[m.address]}
-                        icon={createNumberedIcon(i + 1, '#2563eb', m.clientName)}
-                        eventHandlers={{ click: () => setSelectedMeasurementId(m.id) }}
-                      >
-                        <Popup>
-                          <div className="p-1 min-w-[120px]">
-                            <p className="font-black text-[9px] uppercase text-slate-400 mb-0.5">Medição {i + 1}</p>
-                            <p className="font-bold text-xs text-slate-900">{m.clientName}</p>
-                            <p className="text-[10px] text-blue-600 font-bold">{m.time}</p>
-                          </div>
-                        </Popup>
-                      </Marker>
-                    )
-                  ))}
-    
-                  {/* Route Path Line — rota por ruas via OSRM */}
-                  {routeCoords.length > 1 && (
-                    <Polyline
-                      positions={routeCoords}
-                      color="#2563eb"
-                      weight={4}
-                      opacity={0.75}
-                    />
-                  )}
-   
-                 {/* Real-time Tracking Markers */}
-                 {Object.entries(driverTrackingLocations).map(([name, location]) => (
-                   <Marker 
-                     key={name}
-                     position={[location.lat, location.lng]} 
-                     icon={createMeasurerIcon()}
-                   >
-                     <Popup>
-                       <div className="p-1">
-                         <div className="flex items-center gap-1.5 mb-1 text-emerald-600">
-                           <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                           <p className="font-black text-[10px] uppercase">Online</p>
-                         </div>
-                         <p className="font-bold text-xs tracking-tight">{name}</p>
+              <MapComponent 
+               center={{ lat: mapCenter[0], lng: mapCenter[1] }}
+               zoom={13}
+               routes={routeCoords.length > 0 ? [{
+                 id: 'measurement-route',
+                 coordinates: routeCoords,
+                 color: '#2563eb',
+                 weight: 4
+               }] : []}
+               markers={[
+                 // Company Marker
+                 ...(coords[companyAddress] ? [{
+                   id: 'company',
+                   lat: coords[companyAddress][0],
+                   lng: coords[companyAddress][1],
+                   icon: renderCompanyIcon() as React.ReactNode,
+                   popupContent: (
+                     <div className="p-1">
+                       <p className="font-black text-[10px] uppercase text-slate-400">Ponto de Partida</p>
+                       <p className="font-bold text-xs">{companyName}</p>
+                     </div>
+                   ) as React.ReactNode
+                 }] : []),
+                 // Measurement Markers
+                 ...mapMeasurements.map((m, i) => (
+                   coords[m.address] ? {
+                     id: m.id,
+                     lat: coords[m.address][0],
+                     lng: coords[m.address][1],
+                     icon: renderNumberedIcon(i + 1, '#2563eb', m.clientName) as React.ReactNode,
+                     popupContent: (
+                       <div className="p-1 min-w-[120px]">
+                         <p className="font-black text-[9px] uppercase text-slate-400 mb-0.5">Medição {i + 1}</p>
+                         <p className="font-bold text-xs text-slate-900">{m.clientName}</p>
+                         <p className="text-[10px] text-blue-600 font-bold">{m.time}</p>
                        </div>
-                     </Popup>
-                   </Marker>
-                 ))}
-               </MapContainer>
+                     ) as React.ReactNode
+                   } as MapMarker : null
+                 )).filter((m): m is MapMarker => m !== null),
+                 // Tracking Markers
+                 ...Object.entries(driverTrackingLocations).map(([name, location]) => ({
+                   id: `driver-${name}`,
+                   lat: location.lat,
+                   lng: location.lng,
+                   icon: renderMeasurerIcon() as React.ReactNode,
+                   popupContent: (
+                     <div className="p-1">
+                       <div className="flex items-center gap-1.5 mb-1 text-emerald-600">
+                         <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                         <p className="font-black text-[10px] uppercase">Online</p>
+                       </div>
+                       <p className="font-bold text-xs tracking-tight">{name}</p>
+                     </div>
+                   ) as React.ReactNode
+                 }))
+               ] as MapMarker[]}
+               onMarkerClick={(id) => {
+                 if (!id.startsWith('driver-') && id !== 'company') {
+                    setSelectedMeasurementId(id);
+                 }
+               }}
+            />
            </div>
         </div>
         </div> {/* end desktop layout */}
@@ -1062,43 +989,49 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
             </div>
           ) : (
             <div className="flex-1 relative">
-              <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }}>
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                <MapController center={mapCenter} />
-                {coords[companyAddress] && (
-                  <Marker position={coords[companyAddress]} icon={createCompanyIcon()}>
-                    <Popup>
+              <MapComponent 
+                center={{ lat: mapCenter[0], lng: mapCenter[1] }}
+                zoom={13}
+                routes={routeCoords.length > 0 ? [{
+                  id: 'mobile-route',
+                  coordinates: routeCoords,
+                  color: '#2563eb',
+                  weight: 4
+                }] : []}
+                markers={[
+                  ...(coords[companyAddress] ? [{
+                    id: 'mobile-company',
+                    lat: coords[companyAddress][0],
+                    lng: coords[companyAddress][1],
+                    icon: renderCompanyIcon() as React.ReactNode,
+                    popupContent: (
                       <div className="p-1">
                         <p className="font-black text-[10px] uppercase text-slate-400">Partida</p>
                         <p className="font-bold text-xs">{companyName}</p>
                       </div>
-                    </Popup>
-                  </Marker>
-                )}
-                {[...mapMeasurements].sort((a, b) => a.time.localeCompare(b.time)).map((m, i) => (
-                  coords[m.address] && (
-                    <Marker
-                      key={m.id}
-                      position={coords[m.address]}
-                      icon={createNumberedIcon(i + 1, '#2563eb', m.clientName)}
-                      eventHandlers={{ click: () => { setSelectedMeasurementId(m.id); setActiveMobileView('list'); } }}
-                    >
-                      <Popup>
+                    ) as React.ReactNode
+                  }] : []),
+                  ...mapMeasurements.map((m, i) => (
+                    coords[m.address] ? {
+                      id: m.id,
+                      lat: coords[m.address][0],
+                      lng: coords[m.address][1],
+                      icon: renderNumberedIcon(i + 1, '#2563eb', m.clientName) as React.ReactNode,
+                      popupContent: (
                         <div className="p-1 min-w-[120px]">
                           <p className="font-black text-[9px] uppercase text-slate-400 mb-0.5">Medição {i + 1}</p>
                           <p className="font-bold text-xs text-slate-900">{m.clientName}</p>
                           <p className="text-[10px] text-blue-600 font-bold">{m.time}</p>
                         </div>
-                      </Popup>
-                    </Marker>
-                  )
-                ))}
-                {routeCoords.length > 1 && (
-                  <Polyline positions={routeCoords} color="#2563eb" weight={4} opacity={0.75} />
-                )}
-                {Object.entries(driverTrackingLocations).map(([name, location]) => (
-                  <Marker key={name} position={[location.lat, location.lng]} icon={createMeasurerIcon()}>
-                    <Popup>
+                      ) as React.ReactNode
+                    } as MapMarker : null
+                  )).filter((m): m is MapMarker => m !== null),
+                  ...Object.entries(driverTrackingLocations).map(([name, location]) => ({
+                    id: `mobile-driver-${name}`,
+                    lat: location.lat,
+                    lng: location.lng,
+                    icon: renderMeasurerIcon() as React.ReactNode,
+                    popupContent: (
                       <div className="p-1">
                         <div className="flex items-center gap-1.5 mb-1 text-emerald-600">
                           <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
@@ -1106,10 +1039,16 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                         </div>
                         <p className="font-bold text-xs tracking-tight">{name}</p>
                       </div>
-                    </Popup>
-                  </Marker>
-                ))}
-              </MapContainer>
+                    ) as React.ReactNode
+                  }))
+                ] as MapMarker[]}
+                onMarkerClick={(id) => {
+                  if (!id.startsWith('mobile-driver-') && id !== 'mobile-company') {
+                    setSelectedMeasurementId(id);
+                    setActiveMobileView('list');
+                  }
+                }}
+              />
             </div>
           )}
 
@@ -1275,18 +1214,11 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                 {/* Map Preview in Modal */}
                 <div className="sm:col-span-2 h-32 rounded-2xl overflow-hidden border border-gray-100 relative">
                   {previewMapCenter ? (
-                    <MapContainer
-                      key={`modal-map-${previewMapCenter[0]}-${previewMapCenter[1]}`}
-                      center={previewMapCenter}
+                    <MapComponent
+                      center={{ lat: previewMapCenter[0], lng: previewMapCenter[1] }}
                       zoom={16}
-                      style={{ height: '100%', width: '100%' }}
-                      zoomControl={false}
-                      scrollWheelZoom={false}
-                      dragging={false}
-                    >
-                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                      <Marker position={previewMapCenter} />
-                    </MapContainer>
+                      interactive={false}
+                    />
                   ) : (
                     <div className="w-full h-full bg-slate-100 flex flex-col items-center justify-center gap-1">
                       <MapPin size={20} className="text-slate-300" />

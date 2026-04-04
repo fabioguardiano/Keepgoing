@@ -1,25 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, UserCheck, MapPin, Phone, Mail, Globe, ShieldCheck, Briefcase, MessageSquare, Plus } from 'lucide-react';
 import { Architect } from '../types';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-
-// Fix Leaflet marker icon issues
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
-
-const MapController = ({ center }: { center: [number, number] }) => {
-  const map = useMap();
-  useEffect(() => {
-    map.setView(center, map.getZoom());
-  }, [center, map]);
-  return null;
-};
+import { MapComponent } from './MapComponent';
+import { geocodeAddress as mapboxGeocode } from '../lib/mapsService';
 
 interface NewArchitectModalProps {
   isOpen: boolean;
@@ -89,17 +72,15 @@ export const NewArchitectModal: React.FC<NewArchitectModalProps> = ({ isOpen, on
     if (!city || !street) return;
     setIsGeocoding(true);
     try {
-      const query = `${street}, ${number}, ${city}, ${state}, Brasil`;
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
-      const data = await response.json();
-      if (data && data[0]) {
+      const result = await mapboxGeocode(street, number, city, state, '');
+      if (result) {
         setFormData(prev => ({
           ...prev,
-          address: { ...prev.address, lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
+          address: { ...prev.address, lat: result.lat, lng: result.lng }
         }));
       }
     } catch (error) {
-      console.error('Geocoding error:', error);
+      console.error('Erro na geocodificação Mapbox (Arquiteto):', error);
     } finally {
       setIsGeocoding(false);
     }
@@ -154,9 +135,10 @@ export const NewArchitectModal: React.FC<NewArchitectModalProps> = ({ isOpen, on
   const inputClass = "w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/20 font-medium text-slate-700 transition-all disabled:opacity-50";
   const labelClass = "block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1 flex items-center gap-2";
 
-  const mapCenter: [number, number] = (formData.address.lat && formData.address.lng) 
-    ? [formData.address.lat, formData.address.lng] 
-    : [-23.5505, -46.6333];
+  const mapCenter = {
+    lat: formData.address.lat || -23.5505,
+    lng: formData.address.lng || -46.6333
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
@@ -354,20 +336,17 @@ export const NewArchitectModal: React.FC<NewArchitectModalProps> = ({ isOpen, on
                       </div>
                     </div>
                   )}
-                  <MapContainer center={mapCenter} zoom={18} style={{ height: '100%', width: '100%' }}>
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                    <MapController center={mapCenter} />
-                    {formData.address.lat && formData.address.lng && (
-                      <Marker position={[formData.address.lat, formData.address.lng]}>
-                        <Popup>
-                          <div className="text-xs font-bold">
-                            <p className="text-slate-400 font-black uppercase text-[9px] mb-1">Escritório do Parceiro</p>
-                            <p>{formData.tradingName}</p>
-                          </div>
-                        </Popup>
-                      </Marker>
-                    )}
-                  </MapContainer>
+                  <MapComponent 
+                    center={mapCenter} 
+                    markerTitle={formData.tradingName}
+                    popupContent={
+                      <div className="text-xs font-bold leading-tight min-w-[120px]">
+                        <p className="text-primary font-black uppercase tracking-widest text-[9px] mb-1">Escritório do Arquiteto</p>
+                        <p className="text-slate-700">{formData.tradingName || formData.legalName}</p>
+                        <p className="text-slate-400 text-[10px] mt-1 italic">{formData.address.street}, {formData.address.number}</p>
+                      </div>
+                    }
+                  />
                 </div>
               </div>
             </div>
