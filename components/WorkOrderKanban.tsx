@@ -5,6 +5,7 @@ import { WorkOrder, PhaseConfig, AppUser } from '../types';
 import { WorkOrderModal } from './WorkOrderModal';
 import { formatOsLabel } from '../hooks/useWorkOrders';
 import { useKanbanInteraction } from '../hooks/useKanbanInteraction';
+import { getInitials as globalGetInitials } from '../utils/userUtils';
 
 interface WorkOrderKanbanProps {
   workOrders: WorkOrder[];
@@ -42,9 +43,6 @@ const AVATAR_COLORS = [
 const getAvatarColor = (name: string): string =>
   AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
 
-const getInitials = (name: string): string =>
-  name.trim().slice(0, 2).toUpperCase();
-
 
 
 const PRIORITY_CONFIG = {
@@ -63,13 +61,18 @@ interface WOCardProps {
   deadlineUrgentDays: number;
   onClick: (wo: WorkOrder) => void;
   dragDisabled: boolean;
+  appUsers: AppUser[];
 }
 
-const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, deadlineWarningDays, deadlineUrgentDays, onClick, dragDisabled }) => {
+const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, deadlineWarningDays, deadlineUrgentDays, onClick, dragDisabled, appUsers }) => {
   const priority = workOrder.priority || 'media';
   const priorityCfg = PRIORITY_CONFIG[priority];
   const drawings = workOrder.drawingUrls?.length ? workOrder.drawingUrls : (workOrder.drawingUrl ? [workOrder.drawingUrl] : []);
   const [imgIndex, setImgIndex] = useState(0);
+
+  const sellerUser = React.useMemo(() => {
+    return appUsers.find(u => u.name === workOrder.sellerName || u.email === workOrder.sellerName);
+  }, [appUsers, workOrder.sellerName]);
 
   const handleNav = (e: React.MouseEvent, dir: 1 | -1) => {
     e.stopPropagation();
@@ -101,9 +104,17 @@ const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, deadli
             {workOrder.environments.length > 0 && ` · ${workOrder.environments.join(', ')}`}
           </p>
           {workOrder.sellerName && (
-            <div className="flex items-center gap-1 mt-0.5">
-              <UserRound size={9} className="text-gray-300 flex-shrink-0" />
-              <span className="text-[9px] text-gray-400 truncate">{workOrder.sellerName}</span>
+            <div className="flex items-center gap-2 mt-1.5 p-1.5 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800/50 group/seller transition-all hover:border-[var(--primary-color)]/30">
+              <div className={`w-5 h-5 rounded-md flex items-center justify-center text-white text-[8px] font-black shrink-0 shadow-sm overflow-hidden ${getAvatarColor(workOrder.sellerName)}`}>
+                {sellerUser?.avatarUrl ? (
+                  <img src={sellerUser.avatarUrl} alt={workOrder.sellerName} className="w-full h-full object-cover" />
+                ) : (
+                  globalGetInitials(workOrder.sellerName)
+                )}
+              </div>
+              <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-tight truncate group-hover/seller:text-[var(--primary-color)] transition-colors">
+                {workOrder.sellerName}
+              </span>
             </div>
           )}
 
@@ -217,7 +228,7 @@ const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, deadli
                       title={u.name}
                       className={`w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold border-2 border-white ${getAvatarColor(u.name)} ${i > 0 ? '-ml-1.5' : ''}`}
                     >
-                      {getInitials(u.name)}
+                      {globalGetInitials(u.name)}
                     </div>
                   ))}
                   {(workOrder.assignedUsers || []).length > 4 && (
@@ -261,9 +272,10 @@ interface KanbanColumnProps {
   deadlineUrgentDays: number;
   onCardClick: (wo: WorkOrder) => void;
   dragDisabled: boolean;
+  appUsers: AppUser[];
 }
 
-const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkOrders, deadlineWarningDays, deadlineUrgentDays, onCardClick, dragDisabled }) => {
+const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkOrders, deadlineWarningDays, deadlineUrgentDays, onCardClick, dragDisabled, appUsers }) => {
   const totalM2 = workOrders.reduce((acc, wo) => acc + (wo.totalM2 || 0), 0);
   const totalLinear = workOrders.reduce((acc, wo) => acc + (wo.totalLinear || 0), 0);
 
@@ -308,7 +320,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkO
             ${snapshot.isDraggingOver ? 'bg-[var(--primary-color)]/10' : 'bg-gray-100/60'}`}
         >
           {workOrders.map((wo, index) => (
-            <WOCard key={wo.id} workOrder={wo} allWorkOrders={allWorkOrders} index={index} deadlineWarningDays={deadlineWarningDays} deadlineUrgentDays={deadlineUrgentDays} onClick={onCardClick} dragDisabled={dragDisabled} />
+            <WOCard key={wo.id} workOrder={wo} allWorkOrders={allWorkOrders} index={index} deadlineWarningDays={deadlineWarningDays} deadlineUrgentDays={deadlineUrgentDays} onClick={onCardClick} dragDisabled={dragDisabled} appUsers={appUsers} />
           ))}
           {provided.placeholder}
         </div>
@@ -444,6 +456,7 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
               deadlineUrgentDays={deadlineUrgentDays}
               onCardClick={setSelectedWorkOrder}
               dragDisabled={!canMoveCards}
+              appUsers={appUsers}
             />
           ))}
           </div>
