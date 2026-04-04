@@ -52,19 +52,28 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
     <div className="min-h-screen flex font-['Poppins']">
       
       {/* Left Side: Logo (Hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-1/2 bg-[#345c70] items-center justify-center p-12 relative overflow-hidden">
-        {/* Decorative background element */}
-        <div className="absolute top-0 left-0 w-full h-full opacity-10">
-          <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-white/20 blur-3xl"></div>
-          <div className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full bg-white/20 blur-3xl"></div>
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#345c70] via-[#2a4a5a] to-[#1a2e38] items-center justify-center p-12 relative overflow-hidden">
+        {/* Decorative background elements */}
+        <div className="absolute top-0 left-0 w-full h-full">
+          <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-white/5 blur-3xl animate-pulse"></div>
+          <div className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full bg-[#004D4D]/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 0)', backgroundSize: '30px 30px' }} />
         </div>
         
         <div className="relative z-10 flex flex-col items-center">
-          <img
-            src="/Logotipo Keepgoing Alta.png"
-            alt="KeepGoing"
-            className="w-56 h-auto rounded-2xl"
-          />
+          <div className="relative group">
+            <div className="absolute -inset-4 bg-white/5 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+            <img
+              src="/Logotipo Keepgoing Alta.png"
+              alt="KeepGoing"
+              className="w-72 h-auto drop-shadow-[0_20px_50px_rgba(0,0,0,0.3)] animate-[float_6s_ease-in-out_infinite]"
+            />
+          </div>
+          
+          <div className="mt-8 text-center">
+            <div className="h-1 w-12 bg-[#004D4D] mx-auto rounded-full mb-4 opacity-50"></div>
+            <p className="text-white/60 text-sm font-medium tracking-[0.3em] uppercase">Excelência em Gestão</p>
+          </div>
         </div>
       </div>
 
