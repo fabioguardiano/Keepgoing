@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
             manualChunks: {
               'vendor-react':    ['react', 'react-dom'],
               'vendor-supabase': ['@supabase/supabase-js'],
-              'vendor-maps':     ['leaflet', 'react-leaflet'],
+              'vendor-maps':     ['mapbox-gl', 'react-map-gl'],
               'vendor-pdf':      ['jspdf', 'jspdf-autotable'],
               'vendor-xlsx':     ['xlsx'],
               'vendor-dnd':      ['@hello-pangea/dnd'],
