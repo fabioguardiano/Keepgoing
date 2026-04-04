@@ -707,25 +707,6 @@ const App: React.FC = () => {
             phases={phases}
           />
         );
-      case 'Agenda de Medição':
-        return (
-          <MeasurementSchedule 
-            measurements={measurements}
-            orders={workOrders}
-            onAddMeasurement={createMeasurement}
-            onUpdateMeasurement={updateMeasurement}
-            onDeleteMeasurement={deleteMeasurement}
-            onRestoreMeasurement={restoreMeasurement}
-            driverTrackingLocations={driverLocations}
-            companyAddress={companyInfo.address}
-            companyName={companyInfo.name}
-            companyLogoUrl={companyInfo.logoUrl}
-            companyIconUrl={companyInfo.iconUrl}
-            appUsers={appUsers}
-            staff={staff}
-            permissionProfiles={permissionProfiles}
-          />
-        );
       case 'Fornecedores':
         return <SuppliersView suppliers={suppliers} onSaveSupplier={handleSaveSupplier} onDeleteSupplier={deleteSupplier} />;
       case 'Arquitetos':

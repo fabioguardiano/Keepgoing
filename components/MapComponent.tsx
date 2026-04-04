@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import Map, { Marker, Popup, NavigationControl, FullscreenControl, MapRef, Source, Layer } from 'react-map-gl';
+import Map, { Marker, Popup, NavigationControl, FullscreenControl, MapRef, Source, Layer } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
