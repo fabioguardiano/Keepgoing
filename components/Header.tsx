@@ -186,10 +186,11 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onSearch, onTogg
             <p className="text-sm font-bold leading-none dark:text-white mb-1">{user.name}</p>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
               {user.role === 'admin' ? 'Gerente Produção' : 
+               user.role === 'manager' ? 'Gerente' :
                user.role === 'seller' ? 'Consultor de Vendas' : 
                user.role === 'production' ? 'Produção' : 
-               user.role === 'manager' ? 'Gerente' :
                user.role === 'driver' ? 'Logística / Motorista' :
+               user.role === 'viewer' ? 'Visualizador' :
                user.role}
             </p>
           </div>

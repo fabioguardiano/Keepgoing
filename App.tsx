@@ -745,7 +745,7 @@ const App: React.FC = () => {
       />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header
-          user={user}
+          user={appUsers.find(u => u.email === user?.email) || user!}
           onLogout={handleLogout}
           onSearch={setSearchQuery}
           onToggleActivity={() => setIsHistoryOpen(!isHistoryOpen)}
