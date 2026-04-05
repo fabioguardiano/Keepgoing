@@ -836,8 +836,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
           {/* Section 1: Header Info */}
           <div className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <div className="md:col-span-1">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+              <div className="md:col-span-2">
                 <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-1 block">
                   {saleType === 'Orçamento' ? 'Nº Orçamento' : 'Nº Pedido'}
                 </label>
@@ -846,7 +846,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 </div>
               </div>
 
-              <div className="md:col-span-3">
+              <div className="md:col-span-7">
                 <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Cliente</label>
                 <button
                   type="button"
@@ -868,10 +868,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   <Search size={16} className="text-black" />
                 </button>
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <div>
+              <div className="md:col-span-3">
                 <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Canal de Venda</label>
                 <select
                   value={salesChannel}
@@ -884,7 +882,9 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   ))}
                 </select>
               </div>
+            </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div>
                 <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Vendedor</label>
                 <select
@@ -916,40 +916,39 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                       </option>
                     ))}
                 </select>
+              </div>
 
-                {/* Comissão do arquiteto */}
-                {architect && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <div className="flex-1">
-                      <label className="text-[9px] font-black text-black uppercase tracking-widest mb-1 block">Comissão Arquiteto (%)</label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          min="0"
-                          max={maxCommPct ?? 100}
-                          step="0.5"
-                          value={architectCommissionPct || ''}
-                          onChange={e => {
-                            let v = parseFloat(e.target.value) || 0;
-                            if (maxCommPct !== undefined && v > maxCommPct) v = maxCommPct;
-                            setArchitectCommissionPct(v);
-                          }}
-                          placeholder="0"
-                          className="w-full p-2 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-black dark:text-white transition-all"
-                        />
-                      </div>
-                    </div>
-                    <div className="text-right pt-4">
-                      <p className="text-[9px] font-bold text-slate-500 uppercase">Valor</p>
-                      <p className="text-sm font-black text-black">
-                        R$ {architectCommissionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                    </div>
+              {/* Comissão do arquiteto */}
+              <div>
+                <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Comissão Arquiteto (%)</label>
+                <div className={`p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent rounded-xl flex items-center gap-4 ${!architect ? 'opacity-30' : ''}`}>
+                  <div className="flex-1 border-r border-slate-200 dark:border-slate-700 pr-4">
+                    <input
+                      type="number"
+                      min="0"
+                      max={maxCommPct ?? 100}
+                      step="0.5"
+                      disabled={!architect}
+                      value={architectCommissionPct || ''}
+                      onChange={e => {
+                        let v = parseFloat(e.target.value) || 0;
+                        if (maxCommPct !== undefined && v > maxCommPct) v = maxCommPct;
+                        setArchitectCommissionPct(v);
+                      }}
+                      placeholder="0"
+                      className="w-full bg-transparent outline-none font-black text-sm text-black dark:text-white"
+                    />
                   </div>
-                )}
+                  <div className="text-right whitespace-nowrap">
+                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Valor</p>
+                    <p className={`text-sm font-black transition-colors ${architectCommissionValue > 0 ? 'text-black dark:text-white' : 'text-slate-300'}`}>
+                      R$ {architectCommissionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                </div>
                 {architect && maxCommPct !== undefined && (
                   <p className="text-[8px] font-bold text-amber-600 mt-1">
-                    Limite máximo de comissão: {maxCommPct}%
+                    Limite máximo: {maxCommPct}%
                   </p>
                 )}
               </div>
