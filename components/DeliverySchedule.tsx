@@ -116,21 +116,45 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
 
   // Geocoding effect (Mapbox)
   useEffect(() => {
-    const geocode = async (address: string) => {
+    const geocode = async (address: string, deliveryId?: string) => {
+      let finalAddress = address;
+      
+      // Dynamic resolution for labels or incomplete addresses
+      if ((address.includes('O.S. #') || address === companyAddress) && (deliveryId || address === companyAddress)) {
+        if (address === companyAddress) {
+           // Ensure headquarters address is as complete as possible for better geocoding
+           finalAddress = `${companyAddress}, Brasil`;
+        } else if (deliveryId) {
+          const delivery = deliveries.find(d => d.id === deliveryId);
+          if (delivery) {
+            const order = orders.find(o => o.id === delivery.orderId);
+            if (order && order.clientId) {
+              const client = clients.find(c => c.id === order.clientId);
+              if (client) {
+                const addr = client.deliveryAddress || client.address;
+                if (addr && addr.street) {
+                  finalAddress = `${addr.street}${addr.number ? `, ${addr.number}` : ''}${addr.complement ? ` - ${addr.complement}` : ''}${addr.neighborhood ? ` - ${addr.neighborhood}` : ''}${addr.city ? ` - ${addr.city}` : ''}${addr.state ? ` - ${addr.state}` : ''}, Brasil`;
+                }
+              }
+            }
+          }
+        }
+      }
+
       if (coords[address]) return;
       try {
-        const res = await geocodeAddress(address, '', '', '', '');
+        const res = await geocodeAddress(finalAddress, '', '', '', '');
         if (res) {
           setCoords(prev => ({ ...prev, [address]: [res.lat, res.lng] }));
         }
       } catch (e) {
-        console.error("Geocoding failed for", address, e);
+        console.error("Geocoding failed for", finalAddress, e);
       }
     };
 
     geocode(companyAddress);
-    deliveries.forEach(d => geocode(d.address));
-  }, [companyAddress, deliveries]);
+    deliveries.forEach(d => geocode(d.address, d.id));
+  }, [companyAddress, deliveries, orders, clients]);
 
   // Routing effect (Valhalla - Road paths for Mapbox GeoJSON)
   useEffect(() => {
@@ -188,6 +212,23 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
   }, [coords, companyAddress, deliveries]);
 
 
+  const getDisplayAddress = (delivery: Delivery) => {
+    if (!delivery.address.includes('O.S. #')) return delivery.address;
+    
+    // Attempt to resolve full address for labels
+    const order = orders.find(o => o.id === delivery.orderId);
+    if (order && order.clientId) {
+      const client = clients.find(c => c.id === order.clientId);
+      if (client) {
+        const addr = client.deliveryAddress || client.address;
+        if (addr && addr.street) {
+          return `${addr.street}${addr.number ? `, ${addr.number}` : ''}${addr.complement ? ` - ${addr.complement}` : ''}${addr.neighborhood ? ` - ${addr.neighborhood}` : ''}${addr.city ? ` - ${addr.city}` : ''}${addr.state ? ` - ${addr.state}` : ''}`;
+        }
+      }
+    }
+    return delivery.address;
+  };
+
   const filteredDeliveries = deliveries.filter(d => 
     d.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     d.osNumber.toLowerCase().includes(searchTerm.toLowerCase())
@@ -227,9 +268,25 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
 
   const handleEditClick = (delivery: Delivery) => {
     setEditingDeliveryId(delivery.id);
+    
+    let initialAddress = delivery.address;
+    // Resolve address if it's a label when editing
+    if (delivery.address.includes('O.S. #')) {
+      const order = orders.find(o => o.id === delivery.orderId);
+      if (order && order.clientId) {
+        const client = clients.find(c => c.id === order.clientId);
+        if (client) {
+          const addr = client.deliveryAddress || client.address;
+          if (addr && addr.street) {
+            initialAddress = `${addr.street}${addr.number ? `, ${addr.number}` : ''}${addr.complement ? ` - ${addr.complement}` : ''}${addr.neighborhood ? ` - ${addr.neighborhood}` : ''}${addr.city ? ` - ${addr.city}` : ''}${addr.state ? ` - ${addr.state}` : ''}`;
+          }
+        }
+      }
+    }
+
     setNewDelivery({
       orderId: delivery.orderId,
-      address: delivery.address,
+      address: initialAddress,
       date: delivery.date,
       time: delivery.time,
       routeGroup: delivery.routeGroup || ''
@@ -256,7 +313,7 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
       i + 1,
       d.clientName,
       d.osNumber,
-      d.address,
+      getDisplayAddress(d),
       d.time
     ]);
 
@@ -269,10 +326,10 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
       styles: { fontSize: 9, cellPadding: 3 },
       columnStyles: {
         0: { cellWidth: 10 },
-        1: { cellWidth: 40 },
-        2: { cellWidth: 20 },
+        1: { cellWidth: 35 },
+        2: { cellWidth: 15 },
         3: { cellWidth: 'auto' },
-        4: { cellWidth: 25 }
+        4: { cellWidth: 20 }
       }
     });
 
@@ -453,7 +510,7 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
                   <div className="space-y-2 text-sm text-gray-600 font-medium">
                     <div className="flex items-center gap-2">
                       <MapPin size={14} className="text-gray-400" />
-                      <span className="truncate">{delivery.address}</span>
+                      <span className="truncate">{getDisplayAddress(delivery)}</span>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-1.5">
@@ -562,7 +619,7 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
                       <p className="font-black text-[10px] uppercase text-gray-400 mb-1">Entrega {i + 1}</p>
                       <p className="font-bold text-sm text-gray-900">{d.clientName}</p>
                       <p className="text-[11px] font-bold text-orange-600 mb-1">O.S. {d.osNumber}</p>
-                      <p className="text-xs text-gray-500 line-clamp-2">{d.address}</p>
+                      <p className="text-xs text-gray-500 line-clamp-2">{getDisplayAddress(d)}</p>
                       <div className="mt-2 text-[10px] font-black uppercase text-gray-400 flex items-center gap-1">
                         <Clock size={10} /> {d.time}
                       </div>
@@ -657,7 +714,7 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
                           <div>
                             <p className="text-[10px] font-black text-gray-400 uppercase leading-none mb-1">Entrega {i + 1}</p>
                             <p className="text-xs font-bold text-gray-800 line-clamp-1">{d.clientName}</p>
-                            <p className="text-[10px] text-gray-500 font-medium line-clamp-1">{d.address}</p>
+                            <p className="text-[10px] text-gray-500 font-medium line-clamp-1">{getDisplayAddress(d)}</p>
                           </div>
                         </div>
                       ))}
@@ -696,7 +753,7 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
                       if (client) {
                         const addr = client.deliveryAddress || client.address;
                         if (addr && addr.street) {
-                          resolvedAddress = `${addr.street}${addr.number ? `, ${addr.number}` : ''}${addr.neighborhood ? ` - ${addr.neighborhood}` : ''}${addr.city ? ` - ${addr.city}` : ''}${addr.state ? ` - ${addr.state}` : ''}`;
+                          resolvedAddress = `${addr.street}${addr.number ? `, ${addr.number}` : ''}${addr.complement ? ` - ${addr.complement}` : ''}${addr.neighborhood ? ` - ${addr.neighborhood}` : ''}${addr.city ? ` - ${addr.city}` : ''}${addr.state ? ` - ${addr.state}` : ''}`;
                         } else {
                           // Fallback se não tiver endereço estruturado
                           resolvedAddress = order.clientName ? `${order.clientName} - O.S. #${order.osNumber}` : '';

@@ -26,7 +26,8 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
           address: d.address,
           date: d.date,
           time: d.time,
-          status: d.status as any
+          status: d.status as any,
+          routeGroup: d.route_group
         }));
         setDeliveries(mapped as Delivery[]);
       }
@@ -52,7 +53,8 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
         address: up(delivery.address),
         date: delivery.date,
         time: delivery.time,
-        status: delivery.status
+        status: delivery.status,
+        route_group: delivery.routeGroup
       };
 
       const { data, error } = await supabase
@@ -68,7 +70,8 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
         orderId: data.order_id,
         osNumber: data.os_number,
         clientName: data.client_name,
-        status: data.status as any
+        status: data.status as any,
+        routeGroup: data.route_group
       } as Delivery;
 
       setDeliveries(prev => {
@@ -161,10 +164,12 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
       if (updates.orderId) payload.order_id = updates.orderId;
       if (updates.osNumber) payload.os_number = updates.osNumber;
       if (updates.clientName) payload.client_name = updates.clientName;
+      if (updates.routeGroup) payload.route_group = updates.routeGroup;
 
       delete payload.orderId;
       delete payload.osNumber;
       delete payload.clientName;
+      delete payload.routeGroup;
 
       const { error } = await supabase
         .from('deliveries')
