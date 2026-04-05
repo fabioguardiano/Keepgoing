@@ -37,7 +37,7 @@ export const PayablePaymentMethodsView: React.FC<Props> = ({
         await onSave({ code: nextCode(i), name: pm.name, active: pm.active });
       }
     } catch (err: any) {
-      alert(`Erro ao importar: ${err?.message || 'Verifique sua conexão e tente novamente.'}`);
+      alert('Erro ao importar. Verifique sua conexão e tente novamente.');
     } finally {
       setImporting(false);
     }
@@ -50,7 +50,7 @@ export const PayablePaymentMethodsView: React.FC<Props> = ({
       await onSave({ code: nextCode(), name: newName.trim(), active: true });
       setNewName('');
     } catch (err: any) {
-      alert(`Erro ao salvar: ${err?.message || 'Verifique sua conexão e tente novamente.'}`);
+      alert('Erro ao salvar. Verifique sua conexão e tente novamente.');
     } finally {
       setSaving(false);
     }
@@ -63,7 +63,7 @@ export const PayablePaymentMethodsView: React.FC<Props> = ({
       await onSave({ id: pm.id, code: editingCode.trim() || pm.code, name: editingName.trim(), active: pm.active });
       setEditingId(null);
     } catch (err: any) {
-      alert(`Erro ao salvar: ${err?.message || 'Verifique sua conexão e tente novamente.'}`);
+      alert('Erro ao salvar. Verifique sua conexão e tente novamente.');
     } finally {
       setEditSaving(false);
     }

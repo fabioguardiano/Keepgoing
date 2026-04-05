@@ -1343,8 +1343,8 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
                             setEditingMeasurementId(null);
                             setConfirmingDelete(false);
                           } catch (err: any) {
-                            const msg = err?.message || err?.details || JSON.stringify(err) || 'Erro desconhecido';
-                            alert(`Erro ao excluir: ${msg}`);
+                            console.error('[MeasurementSchedule] Erro ao excluir medição:', err);
+                            alert('Erro ao excluir medição. Tente novamente.');
                             setConfirmingDelete(false);
                           }
                         }}

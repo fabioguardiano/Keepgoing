@@ -129,7 +129,7 @@ export const useProducts = (companyId?: string, logActivity?: any) => {
       return saved;
     } catch (err: any) {
       console.error('Erro ao salvar produto:', err);
-      alert(`Erro ao salvar no banco de dados: ${err.message || 'Verifique sua conexão e permissões RLS.'}`);
+      alert('Erro ao salvar produto. Verifique sua conexão e tente novamente.');
       throw err;
     }
   };

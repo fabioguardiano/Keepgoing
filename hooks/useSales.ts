@@ -193,7 +193,7 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
       return savedSale;
     } catch (err: any) {
       console.error('Erro ao salvar venda:', err);
-      alert(`Erro ao salvar no banco de dados: ${err.message || 'Verifique sua conexão e permissões RLS.'}`);
+      alert('Erro ao salvar venda. Verifique sua conexão e tente novamente.');
       throw err;
     }
   };

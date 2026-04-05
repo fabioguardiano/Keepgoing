@@ -91,7 +91,7 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
       return newDelivery;
     } catch (err: any) {
       console.error('Erro ao adicionar entrega:', err);
-      alert(`Erro ao adicionar entrega: ${err.message}`);
+      alert('Erro ao adicionar entrega. Verifique sua conexão e tente novamente.');
       throw err;
     }
   };
@@ -119,7 +119,7 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
       }
     } catch (err: any) {
       console.error('Erro ao atualizar status da entrega:', err);
-      alert(`Erro ao atualizar status: ${err.message}`);
+      alert('Erro ao atualizar status da entrega. Tente novamente.');
       throw err;
     }
   };
@@ -152,7 +152,7 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
       }
     } catch (err: any) {
       console.error('Erro ao deletar entrega:', err);
-      alert(`Erro ao deletar entrega: ${err.message}`);
+      alert('Erro ao remover entrega. Tente novamente.');
       throw err;
     }
   };
@@ -191,7 +191,7 @@ export const useDeliveries = (companyId?: string, logActivity?: (action: any, de
       }
     } catch (err: any) {
       console.error('Erro ao atualizar entrega:', err);
-      alert(`Erro ao atualizar entrega: ${err.message}`);
+      alert('Erro ao atualizar entrega. Tente novamente.');
       throw err;
     }
   };

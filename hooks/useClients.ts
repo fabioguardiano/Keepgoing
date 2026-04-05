@@ -183,7 +183,7 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
       return saved;
     } catch (err: any) {
       console.error('Erro ao salvar cliente:', err);
-      alert(`Erro ao salvar cliente: ${err.message || 'Verifique sua conexão ou permissões RLS.'}`);
+      alert('Erro ao salvar cliente. Verifique sua conexão e tente novamente.');
       throw err;
     }
   };
@@ -279,7 +279,7 @@ export const useClients = (companyId?: string, logActivity?: (action: any, detai
       fetchClients();
     } catch (err: any) {
       console.error('Erro ao inativar cliente:', err);
-      alert('Erro ao inativar: ' + err.message);
+      alert('Erro ao inativar cliente. Tente novamente.');
     }
   };
 

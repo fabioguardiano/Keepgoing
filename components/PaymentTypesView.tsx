@@ -56,7 +56,7 @@ export const PaymentTypesView: React.FC<PaymentTypesViewProps> = ({ paymentTypes
       await onSaveType(type);
       setIsModalOpen(false);
     } catch (err: any) {
-      alert(`Erro ao salvar: ${err?.message || 'Verifique sua conexão e tente novamente.'}`);
+      alert('Erro ao salvar. Verifique sua conexão e tente novamente.');
     } finally {
       setSubmitting(false);
     }

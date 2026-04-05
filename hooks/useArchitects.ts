@@ -119,7 +119,7 @@ export const useArchitects = (companyId?: string, logActivity?: any) => {
       return saved;
     } catch (err: any) {
       console.error('Erro ao salvar arquiteto:', err);
-      alert(`Erro ao salvar no banco de dados: ${err.message || 'Verifique sua conexão e permissões RLS.'}`);
+      alert('Erro ao salvar arquiteto. Verifique sua conexão e tente novamente.');
       throw err;
     }
   };
@@ -135,7 +135,7 @@ export const useArchitects = (companyId?: string, logActivity?: any) => {
       fetchArchitects();
     } catch (err: any) {
       console.error('Erro ao inativar arquiteto:', err);
-      alert('Erro ao inativar arquiteto: ' + err.message);
+      alert('Erro ao inativar arquiteto. Tente novamente.');
     }
   };
 

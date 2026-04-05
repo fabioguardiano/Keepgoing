@@ -171,7 +171,7 @@ export const useMaterials = (companyId?: string, logActivity?: (action: any, det
       return savedMaterial;
     } catch (err: any) {
       console.error('Erro ao salvar material:', err);
-      alert(`Erro ao salvar no banco de dados: ${err.message || 'Verifique sua conexão e permissões RLS.'}`);
+      alert('Erro ao salvar material. Verifique sua conexão e tente novamente.');
       throw err;
     }
   };

@@ -120,7 +120,7 @@ export const useSuppliers = (companyId?: string, logActivity?: any) => {
       return saved;
     } catch (err: any) {
       console.error('Erro ao salvar fornecedor:', err);
-      alert(`Erro ao salvar no banco de dados: ${err.message || 'Verifique sua conexão e permissões RLS.'}`);
+      alert('Erro ao salvar fornecedor. Verifique sua conexão e tente novamente.');
       throw err;
     }
   };
@@ -136,7 +136,7 @@ export const useSuppliers = (companyId?: string, logActivity?: any) => {
       fetchSuppliers();
     } catch (err: any) {
       console.error('Erro ao inativar fornecedor:', err);
-      alert('Erro ao inativar fornecedor: ' + err.message);
+      alert('Erro ao inativar fornecedor. Tente novamente.');
     }
   };
 

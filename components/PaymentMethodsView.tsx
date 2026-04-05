@@ -104,7 +104,7 @@ export const PaymentMethodsView: React.FC<Props> = ({ paymentMethods, paymentTyp
       await onSave(form);
       setShowModal(false);
     } catch (err: any) {
-      alert(`Erro ao salvar: ${err?.message || 'Verifique sua conexão e tente novamente.'}`);
+      alert('Erro ao salvar. Verifique sua conexão e tente novamente.');
     } finally {
       setSaving(false);
     }

@@ -91,7 +91,7 @@ export const useFinance = (companyId?: string, logActivity?: (action: any, detai
       return saved;
     } catch (err: any) {
       console.error('Erro ao salvar transação:', err);
-      alert(`Erro ao salvar transação: ${err.message || 'Verifique sua conexão e permissões.'}`);
+      alert('Erro ao salvar transação. Verifique sua conexão e tente novamente.');
       throw err;
     }
   };
@@ -104,7 +104,7 @@ export const useFinance = (companyId?: string, logActivity?: (action: any, detai
       setTransactions(prev => prev.filter(t => t.id !== id));
     } catch (err: any) {
       console.error('Erro ao deletar transação:', err);
-      alert('Erro ao deletar transação: ' + err.message);
+      alert('Erro ao deletar transação. Tente novamente.');
     }
   };
 
