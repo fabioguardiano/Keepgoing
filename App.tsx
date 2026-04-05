@@ -499,7 +499,7 @@ const App: React.FC = () => {
           />
         );
       case 'Relatórios':
-        return <ReportsView orders={orders} deliveries={deliveries} />;
+        return <ReportsView orders={orders} deliveries={deliveries} receivables={receivables} />;
       case 'Configurações':
         return (
           <SettingsView
