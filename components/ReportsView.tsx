@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { BarChart3, TrendingUp, TrendingDown, Clock, CheckCircle, Calendar, DollarSign, Target, Layers, Bot, Send, Loader2, User, Sparkles, ChevronRight } from 'lucide-react';
 import { OrderService, Delivery, AccountReceivable } from '../types';
+import { supabase } from '../lib/supabase';
 
 interface ReportsViewProps {
   orders: OrderService[];
@@ -15,8 +16,6 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
 }
-
-const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -218,14 +217,6 @@ Responda perguntas sobre esses dados de forma clara e acionável.`;
   const sendMessage = async () => {
     const text = chatInput.trim();
     if (!text || chatLoading) return;
-    if (!ANTHROPIC_KEY) {
-      setChatMessages(prev => [...prev,
-        { role: 'user', content: text },
-        { role: 'assistant', content: '⚠️ A variável `VITE_ANTHROPIC_API_KEY` não está configurada. Adicione-a no painel do Vercel e faça um novo deploy.' }
-      ]);
-      setChatInput('');
-      return;
-    }
 
     const newMessages: ChatMessage[] = [...chatMessages, { role: 'user', content: text }];
     setChatMessages(newMessages);
@@ -233,32 +224,32 @@ Responda perguntas sobre esses dados de forma clara e acionável.`;
     setChatLoading(true);
 
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error('Sessão expirada. Faça login novamente.');
+
+      const res = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': ANTHROPIC_KEY,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1024,
           system: buildContext(),
           messages: newMessages.map(m => ({ role: m.role, content: m.content })),
+          max_tokens: 1024,
         }),
       });
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error?.message || `Erro ${res.status}`);
+        throw new Error(err?.error || `Erro ${res.status}`);
       }
 
       const data = await res.json();
-      const reply = data.content?.[0]?.text || 'Sem resposta.';
-      setChatMessages(prev => [...prev, { role: 'assistant', content: reply }]);
+      setChatMessages(prev => [...prev, { role: 'assistant', content: data.reply || 'Sem resposta.' }]);
     } catch (e: any) {
-      setChatMessages(prev => [...prev, { role: 'assistant', content: `❌ Erro ao conectar com a IA: ${e.message}` }]);
+      setChatMessages(prev => [...prev, { role: 'assistant', content: `❌ ${e.message}` }]);
     } finally {
       setChatLoading(false);
     }

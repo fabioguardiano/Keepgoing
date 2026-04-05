@@ -245,7 +245,7 @@ export const useSettings = (
         table: 'companies',
         filter: `id=eq.${companyId}`
       }, (payload) => {
-        console.log('[useSettings] Configurações atualizadas via Realtime:', payload.new);
+        if (import.meta.env.DEV) console.log('[useSettings] Realtime update received');
         updateStatesFromCompanyData(payload.new);
       })
       .subscribe();
@@ -303,10 +303,7 @@ export const useSettings = (
            return;
         }
 
-        console.log('[useSettings] Persistindo dados da empresa no Supabase...', { 
-          buttonColor: info.buttonColor,
-          sidebarColor: info.sidebarColor 
-        });
+        if (import.meta.env.DEV) console.log('[useSettings] Saving company data...');
 
         const { error } = await supabase.from('companies').update({
           name: up(info.name) ?? info.name,
@@ -327,7 +324,7 @@ export const useSettings = (
         }).eq('id', companyId);
 
         if (error) throw error;
-        console.log('[useSettings] Dados da empresa salvos com sucesso.');
+        if (import.meta.env.DEV) console.log('[useSettings] Company data saved.');
       } catch (err) {
         console.error('[useSettings] Erro ao salvar dados da empresa no Supabase:', err);
       } finally {
@@ -710,7 +707,7 @@ export const useSettings = (
         .eq('id', companyId);
 
       if (error) throw error;
-      console.log(`[useSettings] Sincronização cloud de ${type} concluída com sucesso.`);
+      if (import.meta.env.DEV) console.log(`[useSettings] Cloud sync done: ${type}`);
     } catch (err) {
       console.error(`[useSettings] Erro ao sincronizar ${type} com a nuvem:`, err);
       throw err;

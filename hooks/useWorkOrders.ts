@@ -289,13 +289,24 @@ export const useWorkOrders = (companyId?: string) => {
     setWorkOrders(prev => prev.map(wo => wo.id === id ? { ...wo, ...updates } : wo));
   };
 
+  const ALLOWED_DRAWING_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
+  const MAX_DRAWING_SIZE_MB = 10;
+
   const uploadDrawing = async (workOrderId: string, file: File): Promise<string | null> => {
-    const ext = file.name.split('.').pop();
+    if (!ALLOWED_DRAWING_TYPES.includes(file.type)) {
+      alert(`Tipo de arquivo não permitido: ${file.type || 'desconhecido'}.\nAceitos: JPG, PNG, WEBP, GIF, PDF.`);
+      return null;
+    }
+    if (file.size > MAX_DRAWING_SIZE_MB * 1024 * 1024) {
+      alert(`Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(1)} MB). Máximo: ${MAX_DRAWING_SIZE_MB} MB.`);
+      return null;
+    }
+    const ext = file.name.split('.').pop()?.replace(/[^a-zA-Z0-9]/g, '') || 'bin';
     const path = `${companyId}/${workOrderId}/${Date.now()}.${ext}`;
     const { error } = await supabase.storage
       .from('work-order-drawings')
       .upload(path, file, { upsert: false });
-    if (error) { console.error('Upload error:', error); return null; }
+    if (error) { console.error('[upload] Drawing upload failed'); return null; }
     const { data } = supabase.storage.from('work-order-drawings').getPublicUrl(path);
     return data.publicUrl;
   };

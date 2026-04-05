@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { DiscountAuthorization } from '../types';
+import { Authorization } from '../types';
 
-const map = (r: any): DiscountAuthorization => ({
+const map = (r: any): Authorization => ({
   id: r.id,
   companyId: r.company_id,
   saleId: r.sale_id,
@@ -10,8 +10,9 @@ const map = (r: any): DiscountAuthorization => ({
   clientName: r.client_name,
   sellerId: r.seller_id,
   sellerName: r.seller_name,
-  requestedDiscountPct: Number(r.requested_discount_pct),
-  maxDiscountPct: Number(r.max_discount_pct),
+  requestedValuePct: Number(r.requested_discount_pct),
+  maxValuePct: Number(r.max_discount_pct),
+  type: (r.type || 'discount') as 'discount' | 'commission',
   adminId: r.admin_id,
   adminName: r.admin_name,
   status: r.status,
@@ -20,8 +21,8 @@ const map = (r: any): DiscountAuthorization => ({
   resolvedAt: r.resolved_at,
 });
 
-export const useDiscountAuthorizations = (companyId?: string) => {
-  const [authorizations, setAuthorizations] = useState<DiscountAuthorization[]>([]);
+export const useAuthorizations = (companyId?: string) => {
+  const [authorizations, setAuthorizations] = useState<Authorization[]>([]);
 
   const fetch = async () => {
     if (!companyId) return;
@@ -64,11 +65,11 @@ export const useDiscountAuthorizations = (companyId?: string) => {
     clientName?: string;
     sellerId: string;
     sellerName: string;
-    requestedDiscountPct: number;
-    maxDiscountPct: number;
+    requestedValuePct: number;
+    maxValuePct: number;
     adminId: string;
     adminName: string;
-  }): Promise<DiscountAuthorization | null> => {
+  }): Promise<Authorization | null> => {
     if (!companyId) return null;
     const { data, error } = await supabase
       .from('discount_authorizations')
@@ -79,8 +80,8 @@ export const useDiscountAuthorizations = (companyId?: string) => {
         client_name: params.clientName || null,
         seller_id: params.sellerId,
         seller_name: params.sellerName,
-        requested_discount_pct: params.requestedDiscountPct,
-        max_discount_pct: params.maxDiscountPct,
+        requested_discount_pct: params.requestedValuePct,
+        max_discount_pct: params.maxValuePct,
         admin_id: params.adminId,
         admin_name: params.adminName,
         status: 'pending',

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, ShieldAlert, RotateCcw, Send, CheckCircle, XCircle } from 'lucide-react';
-import { AppUser, DiscountAuthorization } from '../types';
+import { AppUser, Authorization } from '../types';
 
 // ─── Solicitar autorização (vendedor) ────────────────────────────────────────
 
@@ -115,7 +115,7 @@ export const DiscountRequestModal: React.FC<RequestProps> = ({
 // ─── Aprovar / Rejeitar (admin) ───────────────────────────────────────────────
 
 interface ApprovalProps {
-  authorization: DiscountAuthorization;
+  authorization: Authorization;
   onApprove: (id: string, message?: string) => void;
   onReject: (id: string, message?: string) => void;
   onClose: () => void;
@@ -152,8 +152,8 @@ export const DiscountApprovalModal: React.FC<ApprovalProps> = ({
             </div>
             <div className="p-3 bg-amber-50 rounded-xl">
               <p className="text-[10px] font-black uppercase tracking-widest text-amber-400 mb-1">Desconto solicitado</p>
-              <p className="text-sm font-black text-amber-700">{authorization.requestedDiscountPct.toFixed(1)}%</p>
-              <p className="text-[10px] text-amber-500">Limite: {authorization.maxDiscountPct.toFixed(1)}%</p>
+              <p className="text-sm font-black text-amber-700">{authorization.requestedValuePct.toFixed(1)}%</p>
+              <p className="text-[10px] text-amber-500">Limite: {authorization.maxValuePct.toFixed(1)}%</p>
             </div>
           </div>
 
