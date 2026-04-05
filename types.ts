@@ -809,6 +809,7 @@ export type View =
   | 'Contas a Pagar'
   | 'Formas de Pagamento'
   | 'Tipos de Pagamento'
-  | 'Contas Bancárias';
+  | 'Contas Bancárias'
+  | 'Formas de PGTO CP';
 
 export type User = AppUser;

@@ -64,6 +64,7 @@ const ProductGroupsView = lazy(() => lazyRetry(() => import('./components/Produc
 const ServiceGroupsView = lazy(() => lazyRetry(() => import('./components/ServiceGroupsView').then(m => ({ default: m.ServiceGroupsView }))));
 const PayablesView      = lazy(() => lazyRetry(() => import('./components/PayablesView').then(m => ({ default: m.PayablesView }))));
 const BankAccountsView  = lazy(() => lazyRetry(() => import('./components/BankAccountsView').then(m => ({ default: m.BankAccountsView }))));
+const PayablePaymentMethodsView = lazy(() => lazyRetry(() => import('./components/PayablePaymentMethodsView').then(m => ({ default: m.PayablePaymentMethodsView }))));
 const WorkOrdersView    = lazy(() => lazyRetry(() => import('./components/WorkOrdersView').then(m => ({ default: m.WorkOrdersView }))));
 const WorkOrderKanban   = lazy(() => lazyRetry(() => import('./components/WorkOrderKanban').then(m => ({ default: m.WorkOrderKanban }))));
 const MeasurementSchedule = lazy(() => lazyRetry(() => import('./components/MeasurementSchedule').then(m => ({ default: m.MeasurementSchedule }))));
@@ -536,10 +537,6 @@ const App: React.FC = () => {
             onSetDeadlineUrgentDays={v => setDeadlineUrgentDays(v)}
             idleTimeoutMinutes={idleTimeoutMinutes}
             onSetIdleTimeoutMinutes={v => setIdleTimeoutMinutes(v)}
-            payablePMs={payablePMs}
-            onSavePayablePM={handleSavePayablePM}
-            onDeletePayablePM={deletePayablePM}
-            onTogglePayablePM={togglePayablePM}
             currentUser={user ?? undefined}
             activities={activities}
             loadingActivities={loadingActivities}
@@ -687,6 +684,16 @@ const App: React.FC = () => {
             paymentTypes={paymentTypes}
             onSaveType={handleSavePaymentType}
             onDeleteType={handleDeletePaymentType}
+          />
+        );
+      case 'Formas de PGTO CP':
+        return (
+          <PayablePaymentMethodsView
+            payablePMs={payablePMs}
+            paymentMethods={paymentMethods}
+            onSave={handleSavePayablePM}
+            onDelete={deletePayablePM}
+            onToggle={togglePayablePM}
           />
         );
 

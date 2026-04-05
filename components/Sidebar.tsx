@@ -76,6 +76,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
         { icon: Wallet,     label: 'Contas a Pagar',      view: 'Contas a Pagar' as View,      module: 'financeiro', subModule: 'contas_pagar' as SubModuleKey },
         { icon: Landmark,   label: 'Contas Bancárias',    view: 'Contas Bancárias' as View,    module: 'financeiro' },
         { icon: ShoppingBag,label: 'Formas de Pagamento', view: 'Formas de Pagamento' as View, module: 'financeiro', subModule: 'formas_pagamento' as SubModuleKey },
+        { icon: ShoppingBag,label: 'Formas de PGTO CP',  view: 'Formas de PGTO CP' as View,  module: 'financeiro', subModule: 'formas_pagamento' as SubModuleKey },
         { icon: Wallet,     label: 'Tipos de Pagamento',  view: 'Tipos de Pagamento' as View,  module: 'financeiro' },
       ]
     },
