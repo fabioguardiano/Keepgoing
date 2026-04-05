@@ -286,13 +286,6 @@ export const SalesView: React.FC<SalesViewProps> = ({
           <p className="text-slate-500 font-medium">Gestão comercial e conversão de pedidos</p>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => window.location.reload()}
-            className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-400 hover:text-[var(--primary-color)] transition-all shadow-sm"
-            title="Atualizar dados"
-          >
-            <RotateCw size={20} />
-          </button>
           <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl flex">
             <button 
               onClick={() => setViewMode('kanban')}
