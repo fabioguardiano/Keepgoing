@@ -24,6 +24,7 @@ interface SettingsViewProps {
     onReorderSalesPhases: (startIndex: number, endIndex: number) => void;
     companyInfo: CompanyInfo;
     onUpdateCompany: (info: CompanyInfo) => void;
+    isSavingCompany?: boolean;
     onImportClients: (clients: any[]) => Promise<{ success: number; errors: number }>;
     paymentTypes: PaymentType[];
     onSavePaymentType: (type: any) => Promise<any>;
@@ -65,6 +66,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     onReorderSalesPhases,
     companyInfo,
     onUpdateCompany,
+    isSavingCompany = false,
     onImportClients,
     paymentMethods,
     onSavePaymentMethod,
@@ -160,6 +162,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             <p className="text-sm text-slate-500 font-medium opacity-60">Personalize o fluxo de trabalho e informações da empresa</p>
                         </div>
                     </div>
+                    {isSavingCompany && (
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-xs font-bold">
+                            <Loader2 size={13} className="animate-spin" />
+                            Salvando...
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex items-center p-1.5 bg-slate-100/50 rounded-[24px] border border-slate-200/60 shadow-inner overflow-x-auto no-scrollbar scroll-smooth w-full lg:w-fit">

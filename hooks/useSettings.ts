@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { up } from '../lib/uppercase';
 import {
@@ -17,7 +17,9 @@ export const useSettings = (
   // App Users — Supabase como fonte principal
   const [appUsers, setAppUsers] = useState<AppUser[]>([]);
   const [loadingSettings, setLoadingSettings] = useState(true);
+  const [isSavingCompany, setIsSavingCompany] = useState(false);
   const saveTimeoutRef = useRef<any>(null);
+  const pendingSaveRef = useRef(false);
 
   // Carrega app_users do Supabase quando companyId estiver disponível
   useEffect(() => {
@@ -283,28 +285,34 @@ export const useSettings = (
     }
   }, [companyInfo]);
 
+  // beforeunload: avisa se houver salvamento pendente
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (pendingSaveRef.current) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
   // Salva no Supabase + atualiza estado local (com debounce para evitar flood)
   const setCompanyInfo = async (info: CompanyInfo) => {
     // 1. Atualiza estado local instantaneamente para feedback na UI
     setCompanyInfoState(info);
-    
+
     if (!companyId) return;
 
-    // 2. Cancela qualquer salvamento pendente (debounce)
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
+    // 2. Marca como pendente e cancela debounce anterior
+    pendingSaveRef.current = true;
+    setIsSavingCompany(true);
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
 
-    // 3. Agenda o salvamento no banco de dados para 500ms após a última mudança
+    // 3. Agenda salvamento no banco após 500ms de inatividade
     saveTimeoutRef.current = setTimeout(async () => {
       try {
-        if (!companyId) {
-           console.warn('[useSettings] Tentativa de salvamento abortada: companyId ausente.');
-           return;
-        }
-
         if (import.meta.env.DEV) console.log('[useSettings] Saving company data...');
-
         const { error } = await supabase.from('companies').update({
           name: up(info.name) ?? info.name,
           document: info.document || null,
@@ -322,15 +330,16 @@ export const useSettings = (
           max_discount_pct: info.maxDiscountPct ?? null,
           max_architect_commission_pct: info.maxArchitectCommissionPct ?? null,
         }).eq('id', companyId);
-
         if (error) throw error;
         if (import.meta.env.DEV) console.log('[useSettings] Company data saved.');
       } catch (err) {
         console.error('[useSettings] Erro ao salvar dados da empresa no Supabase:', err);
       } finally {
+        pendingSaveRef.current = false;
+        setIsSavingCompany(false);
         saveTimeoutRef.current = null;
       }
-    }, 500); // 500ms de debounce
+    }, 500);
   };
 
   /**
@@ -353,7 +362,14 @@ export const useSettings = (
    * - Edição: atualiza nome, role e perfil na tabela app_users.
    */
   const handleSaveUser = async (u: AppUser, password?: string): Promise<string | undefined> => {
-    const userCompanyId = companyId || '00000000-0000-0000-0000-000000000000';
+    if (!companyId) return 'Erro: empresa não identificada. Recarregue a página.';
+    const userCompanyId = companyId;
+
+    // Validação de email
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!u.email || !EMAIL_RE.test(u.email.trim())) {
+      return 'E-mail inválido. Verifique o endereço informado.';
+    }
 
     const getAuthHeaders = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -383,10 +399,11 @@ export const useSettings = (
 
       const signUpResult = await resp.json();
       if (!resp.ok) {
-        if (signUpResult.error?.toLowerCase().includes('already registered')) {
+        if (signUpResult.error?.toLowerCase().includes('already registered') ||
+            signUpResult.error?.toLowerCase().includes('já possui uma conta')) {
           return 'Este email já possui uma conta cadastrada no sistema.';
         }
-        return `Erro ao criar acesso: ${signUpResult.error || 'Erro desconhecido'}`;
+        return 'Erro ao criar acesso. Verifique os dados e tente novamente.';
       }
 
       // Usa o ID do Auth do resultado do Admin API como ID do app_user para consistência
@@ -431,7 +448,8 @@ export const useSettings = (
         });
         const result = await response.json();
         if (!response.ok) {
-          return `Erro ao atualizar email no Auth: ${result.error || 'Erro desconhecido'}`;
+          if (import.meta.env.DEV) console.error('[handleSaveUser] update_email error:', result.error);
+          return 'Erro ao atualizar e-mail. Verifique se o endereço é válido e tente novamente.';
         }
       }
 
@@ -440,11 +458,12 @@ export const useSettings = (
         const response = await fetch('/api/reset-password', {
           method: 'POST',
           headers: await getAuthHeaders(),
-          body: JSON.stringify({ userId: u.id, newPassword: password })
+          body: JSON.stringify({ userId: u.id, newPassword: password, action: 'reset' })
         });
         const result = await response.json();
         if (!response.ok) {
-           return `Aviso: não foi possível alterar a senha: ${result.error || 'Erro desconhecido'}`;
+          if (import.meta.env.DEV) console.error('[handleSaveUser] reset error:', result.error);
+          return 'Não foi possível alterar a senha. Tente novamente.';
         }
       }
 
@@ -462,11 +481,11 @@ export const useSettings = (
       });
       if (error) {
         console.error('[handleSaveUser] Erro ao atualizar app_user:', error);
-        return `Erro ao salvar alterações: ${error.message}`;
+        return 'Erro ao salvar alterações. Tente novamente.';
       }
     } catch (err: any) {
       console.error('[handleSaveUser] Erro inesperado:', err);
-      return `Erro ao salvar alterações: ${err.message}`;
+      return 'Erro inesperado ao salvar. Tente novamente.';
     }
 
     setAppUsers(prev => prev.find(x => x.id === u.id) ? prev.map(x => x.id === u.id ? u : x) : [...prev, u]);
@@ -739,7 +758,7 @@ export const useSettings = (
     productGroups, handleSaveProductGroup, handleDeleteProductGroup,
     serviceGroups, handleSaveServiceGroup, handleDeleteServiceGroup,
     salesChannels, handleSaveSalesChannel, handleDeleteSalesChannel,
-    companyInfo, setCompanyInfo,
+    companyInfo, setCompanyInfo, isSavingCompany,
     permissionProfiles, handleSaveProfile, handleDeleteProfile,
     deadlineWarningDays, setDeadlineWarningDays: saveDeadlineWarningDays,
     deadlineUrgentDays, setDeadlineUrgentDays: saveDeadlineUrgentDays,

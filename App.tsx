@@ -121,7 +121,7 @@ const App: React.FC = () => {
     productGroups, handleSaveProductGroup, handleDeleteProductGroup,
     serviceGroups, handleSaveServiceGroup, handleDeleteServiceGroup,
     salesChannels, handleSaveSalesChannel, handleDeleteSalesChannel,
-    companyInfo, setCompanyInfo,
+    companyInfo, setCompanyInfo, isSavingCompany,
     permissionProfiles, handleSaveProfile, handleDeleteProfile,
     deadlineWarningDays, setDeadlineWarningDays,
     deadlineUrgentDays, setDeadlineUrgentDays,
@@ -518,6 +518,7 @@ const App: React.FC = () => {
             onReorderSalesPhases={reorderSalesPhases}
             companyInfo={companyInfo}
             onUpdateCompany={setCompanyInfo}
+            isSavingCompany={isSavingCompany}
             onImportClients={handleImportClients}
             paymentTypes={paymentTypes}
             onSavePaymentType={handleSavePaymentType}
