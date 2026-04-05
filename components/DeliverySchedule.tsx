@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { MapPin, Clock, Calendar, Plus, Search, Truck, ChevronRight, X, Navigation, Phone, Map as MapIcon, Building2, Info, History, Edit2, Trash2 } from 'lucide-react';
 import { MapComponent, MapMarker, MapRoute } from './MapComponent';
 import { geocodeAddress, decodePolyline6 } from '../lib/mapsService';
-import { Delivery, WorkOrder, DriverStatus, AppUser } from '../types';
+import { Delivery, WorkOrder, DriverStatus, AppUser, Client } from '../types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { FileDown } from 'lucide-react';
@@ -21,6 +21,7 @@ interface DeliveryScheduleProps {
   companyIconUrl?: string;
   driverTrackingLocations?: Record<string, DriverStatus>;
   phases?: { name: string }[];
+  clients: Client[];
 }
 
 export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({ 
@@ -36,7 +37,8 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
   companyLogoUrl,
   companyIconUrl,
   driverTrackingLocations = {},
-  phases = []
+  phases = [],
+  clients = []
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -685,12 +687,31 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl font-medium focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all outline-none"
                   value={newDelivery.orderId}
                   onChange={e => {
-                    const order = orders.find(o => o.id === e.target.value);
+                    const orderId = e.target.value;
+                    const order = orders.find(o => o.id === orderId);
+                    
+                    let resolvedAddress = '';
+                    if (order && order.clientId) {
+                      const client = clients.find(c => c.id === order.clientId);
+                      if (client) {
+                        const addr = client.deliveryAddress || client.address;
+                        if (addr && addr.street) {
+                          resolvedAddress = `${addr.street}${addr.number ? `, ${addr.number}` : ''}${addr.neighborhood ? ` - ${addr.neighborhood}` : ''}${addr.city ? ` - ${addr.city}` : ''}${addr.state ? ` - ${addr.state}` : ''}`;
+                        } else {
+                          // Fallback se não tiver endereço estruturado
+                          resolvedAddress = order.clientName ? `${order.clientName} - O.S. #${order.osNumber}` : '';
+                        }
+                      } else {
+                        resolvedAddress = order.clientName ? `${order.clientName} - O.S. #${order.osNumber}` : '';
+                      }
+                    } else if (order) {
+                      resolvedAddress = order.clientName ? `${order.clientName} - O.S. #${order.osNumber}` : '';
+                    }
+
                     setNewDelivery({
                       ...newDelivery, 
-                      orderId: e.target.value,
-                      // Pre-fill address if order found (optional, user preference)
-                      address: order ? (order.clientName ? `${order.clientName} - O.S. #${order.osNumber}` : '') : ''
+                      orderId: orderId,
+                      address: resolvedAddress
                     });
                   }}
                   required

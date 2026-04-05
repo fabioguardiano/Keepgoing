@@ -705,6 +705,7 @@ const App: React.FC = () => {
             companyName={companyInfo.name}
             companyLogoUrl={companyInfo.logoUrl}
             phases={phases}
+            clients={clients}
           />
         );
       case 'Fornecedores':
