@@ -921,8 +921,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
               {/* Comissão do arquiteto */}
               <div>
                 <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Comissão Arquiteto (%)</label>
-                <div className={`p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent rounded-xl flex items-center gap-4 ${!architect ? 'opacity-30' : ''}`}>
-                  <div className="flex-1 border-r border-slate-200 dark:border-slate-700 pr-4">
+                <div className={`p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent rounded-xl flex items-center ${!architect ? 'opacity-30' : ''}`}>
+                  <div className="basis-1/2 border-r border-slate-200 dark:border-slate-700 pr-4 flex flex-col items-center">
                     <input
                       type="number"
                       min="0"
@@ -936,10 +936,10 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                         setArchitectCommissionPct(v);
                       }}
                       placeholder="0"
-                      className="w-full bg-transparent outline-none font-black text-sm text-black dark:text-white"
+                      className="w-full bg-transparent outline-none font-black text-sm text-black dark:text-white text-center"
                     />
                   </div>
-                  <div className="text-right whitespace-nowrap">
+                  <div className="basis-1/2 pl-4 text-right whitespace-nowrap">
                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Valor</p>
                     <p className={`text-sm font-black transition-colors ${architectCommissionValue > 0 ? 'text-black dark:text-white' : 'text-slate-300'}`}>
                       R$ {architectCommissionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
