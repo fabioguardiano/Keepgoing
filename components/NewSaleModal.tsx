@@ -921,8 +921,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
               {/* Comissão do arquiteto */}
               <div>
                 <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Comissão Arquiteto (%)</label>
-                <div className={`py-1 px-2.5 bg-slate-100 dark:bg-slate-800 border-2 border-transparent rounded-xl flex items-center ${!architect ? 'opacity-30' : ''}`}>
-                  <div className="basis-1/2 border-r border-slate-200 dark:border-slate-700 pr-4 flex flex-col items-center">
+                <div className={`w-full p-2.5 bg-slate-100 dark:bg-slate-800 border-2 border-transparent focus-within:border-[var(--primary-color)] rounded-xl flex items-center justify-between transition-all ${!architect ? 'opacity-30' : ''}`}>
+                  <div className="flex items-center gap-1.5">
                     <input
                       type="number"
                       min="0"
@@ -936,14 +936,12 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                         setArchitectCommissionPct(v);
                       }}
                       placeholder="0"
-                      className="w-full bg-transparent outline-none font-black text-sm text-black dark:text-white text-center"
+                      className="w-10 bg-transparent outline-none font-bold text-sm text-black dark:text-white"
                     />
+                    <span className="font-bold text-sm text-slate-400">%</span>
                   </div>
-                  <div className="basis-1/2 pl-4 text-right whitespace-nowrap flex flex-col justify-center">
-                    <p className="text-[7px] font-black text-slate-400 uppercase tracking-tighter leading-none mb-0.5">Valor</p>
-                    <p className={`text-[13px] font-black transition-colors leading-none ${architectCommissionValue > 0 ? 'text-black dark:text-white' : 'text-slate-300'}`}>
-                      R$ {architectCommissionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
+                  <div className="font-bold text-sm text-black dark:text-white border-l border-slate-200 dark:border-slate-700 pl-3">
+                    R$ {architectCommissionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 </div>
                 {architect && maxCommPct !== undefined && (
