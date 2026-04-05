@@ -348,20 +348,22 @@ export const PermissionsTab: React.FC<Props> = ({
                   </p>
                 </div>
 
-                {/* Resumo de acessos */}
-                <div className="hidden sm:flex gap-1 flex-wrap max-w-[220px]">
-                  {ALL_MODULES.filter(m => profile.permissions[m] !== 'none').slice(0, 4).map(m => (
-                    <span key={m} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
-                      profile.permissions[m] === 'full' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                {/* Resumo de acessos em grid de colunas */}
+                <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-2">
+                  {ALL_MODULES.filter(m => profile.permissions[m] !== 'none').map(m => (
+                    <div key={m} className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border ${
+                      profile.permissions[m] === 'full' 
+                        ? 'bg-green-50/50 border-green-100 text-green-700' 
+                        : 'bg-blue-50/50 border-blue-100 text-blue-700'
                     }`}>
-                      {MODULE_LABELS[m].split(' ')[0]}
-                    </span>
+                      <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                        profile.permissions[m] === 'full' ? 'bg-green-500' : 'bg-blue-500'
+                      }`} />
+                      <span className="text-[10px] font-black uppercase tracking-tight truncate">
+                        {MODULE_LABELS[m]}
+                      </span>
+                    </div>
                   ))}
-                  {ALL_MODULES.filter(m => profile.permissions[m] !== 'none').length > 4 && (
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-500">
-                      +{ALL_MODULES.filter(m => profile.permissions[m] !== 'none').length - 4}
-                    </span>
-                  )}
                 </div>
 
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
