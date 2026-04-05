@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, Image as ImageIcon, Plus, Briefcase, Calendar, Layers, User, ChevronDown, Trash2, Clock, ZoomIn, Lock, Pencil, XCircle, AlertTriangle, Printer } from 'lucide-react';
+import { X, Upload, Image as ImageIcon, Plus, Briefcase, Calendar, Layers, User, ChevronDown, Trash2, Clock, ZoomIn, Lock, Pencil, XCircle, AlertTriangle, Printer, ShieldAlert, Eye, EyeOff } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { WorkOrder, WorkOrderLog, PhaseConfig, AppUser } from '../types';
 import { formatOsLabel } from '../hooks/useWorkOrders';
 import { getInitials } from '../utils/userUtils';
+import { supabase } from '../lib/supabase';
 
 interface WorkOrderModalProps {
   workOrder: WorkOrder;
@@ -117,6 +118,14 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   const [cancelling, setCancelling] = useState(false);
   const [printingDrawing, setPrintingDrawing] = useState<string | null>(null);
 
+  // Confirmação de alteração de desenho técnico
+  type DrawingPendingAction = { type: 'add'; file: File } | { type: 'delete'; url: string };
+  const [drawingConfirm, setDrawingConfirm] = useState<DrawingPendingAction | null>(null);
+  const [drawingPassword, setDrawingPassword] = useState('');
+  const [drawingPasswordVisible, setDrawingPasswordVisible] = useState(false);
+  const [drawingConfirmError, setDrawingConfirmError] = useState('');
+  const [drawingConfirmLoading, setDrawingConfirmLoading] = useState(false);
+
   const currentPhase = workOrder.productionPhase || phases[0]?.name || '';
   const sortedLogs = [...(workOrder.logs || [])].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -137,10 +146,66 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    // Se já existe desenho, exige confirmação com senha
+    if (drawings.length > 0) {
+      setDrawingConfirm({ type: 'add', file });
+      setDrawingPassword('');
+      setDrawingConfirmError('');
+      return;
+    }
     setUploading(true);
     await onAddDrawing(workOrder.id, file);
     setUploading(false);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleDeleteDrawingRequest = (url: string) => {
+    setDrawingConfirm({ type: 'delete', url });
+    setDrawingPassword('');
+    setDrawingConfirmError('');
+  };
+
+  const handleConfirmDrawingChange = async () => {
+    if (!drawingConfirm) return;
+    if (!drawingPassword.trim()) {
+      setDrawingConfirmError('Informe sua senha para confirmar.');
+      return;
+    }
+    setDrawingConfirmLoading(true);
+    setDrawingConfirmError('');
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) throw new Error('Usuário não identificado.');
+      const { error } = await supabase.auth.signInWithPassword({ email: user.email, password: drawingPassword });
+      if (error) throw new Error('Senha incorreta. Verifique e tente novamente.');
+
+      // Executa a ação confirmada
+      if (drawingConfirm.type === 'add') {
+        setUploading(true);
+        await onAddDrawing(workOrder.id, drawingConfirm.file);
+        setUploading(false);
+      } else {
+        await onDeleteDrawing(workOrder.id, drawingConfirm.url);
+      }
+
+      // Grava log da alteração
+      await supabase.from('work_order_logs').insert({
+        company_id: workOrder.companyId,
+        work_order_id: workOrder.id,
+        sale_id: workOrder.saleId,
+        environment: (workOrder.environments || []).join(', '),
+        action: drawingConfirm.type === 'add' ? 'drawing_added' : 'drawing_deleted',
+        reason: `Alteração autorizada com senha pelo usuário ${currentUserName}`,
+        user_name: currentUserName,
+      });
+
+      setDrawingConfirm(null);
+      setDrawingPassword('');
+    } catch (err: any) {
+      setDrawingConfirmError(err.message || 'Erro ao validar.');
+    } finally {
+      setDrawingConfirmLoading(false);
+    }
   };
 
   const handleAddUser = (user: AppUser) => {
@@ -439,7 +504,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                               <Printer size={14} />
                             </button>
                             <button
-                              onClick={() => onDeleteDrawing(workOrder.id, url)}
+                              onClick={() => handleDeleteDrawingRequest(url)}
                               className="p-1.5 bg-white/90 rounded-lg text-red-500 hover:bg-white transition-colors"
                               title="Remover desenho"
                             >
@@ -661,6 +726,83 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
             <div className="absolute bottom-4 left-8 right-8 flex justify-between text-[10px] text-gray-400 font-bold border-t border-gray-100 pt-2">
                <span>KeepGoing CRM — Módulo de Produção</span>
                <span className="uppercase tracking-widest">{workOrder.productionPhase || 'Produção'}</span>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Diálogo de confirmação para alteração de desenho técnico */}
+      {drawingConfirm && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-5">
+            {/* Header */}
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 bg-amber-100 rounded-xl shrink-0">
+                <ShieldAlert size={22} className="text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-black text-gray-900 text-base leading-tight">Atenção — Alteração de Desenho Técnico</h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {drawingConfirm.type === 'add' ? 'Adição de novo desenho' : 'Remoção de desenho existente'}
+                </p>
+              </div>
+            </div>
+
+            {/* Warning */}
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800 leading-relaxed">
+              A troca de desenhos técnicos que já foram enviados 1 vez para a produção pode causar erros internos como corte duplicado, medidas e especificação de material. Faça isso com responsabilidade.
+              <br /><br />
+              <strong>Você tem certeza que deseja alterar?</strong>
+            </div>
+
+            {/* Senha */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">Confirme sua senha</label>
+              <div className="relative">
+                <input
+                  type={drawingPasswordVisible ? 'text' : 'password'}
+                  value={drawingPassword}
+                  onChange={e => { setDrawingPassword(e.target.value); setDrawingConfirmError(''); }}
+                  onKeyDown={e => e.key === 'Enter' && handleConfirmDrawingChange()}
+                  placeholder="Digite sua senha de acesso"
+                  className="w-full px-4 py-2.5 pr-10 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 transition-all"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={() => setDrawingPasswordVisible(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {drawingPasswordVisible ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+              {drawingConfirmError && (
+                <p className="text-xs text-red-500 font-medium">{drawingConfirmError}</p>
+              )}
+            </div>
+
+            {/* Ações */}
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => { setDrawingConfirm(null); setDrawingPassword(''); setDrawingConfirmError(''); }}
+                disabled={drawingConfirmLoading}
+                className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmDrawingChange}
+                disabled={drawingConfirmLoading || !drawingPassword.trim()}
+                className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {drawingConfirmLoading ? (
+                  <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Lock size={14} />
+                )}
+                {drawingConfirmLoading ? 'Verificando...' : 'Confirmar alteração'}
+              </button>
             </div>
           </div>
         </div>,

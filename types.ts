@@ -742,7 +742,7 @@ export interface WorkOrderLog {
   workOrderId: string;
   saleId?: string;
   environment: string;
-  action: 'created' | 'reissued' | 'phase_changed' | 'deadline_changed' | 'cancelled';
+  action: 'created' | 'reissued' | 'phase_changed' | 'deadline_changed' | 'cancelled' | 'drawing_added' | 'drawing_deleted';
   reason?: string;
   userName?: string;
   createdAt: string;
