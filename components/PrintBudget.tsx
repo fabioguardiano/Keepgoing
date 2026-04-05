@@ -455,6 +455,45 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
         {companyInfo.phone ? ` — Tel: ${companyInfo.phone}` : ''}
         {companyInfo.email ? ` — ${companyInfo.email}` : ''}
       </div>
+
+      {/* Marca d'água de 5 camadas */}
+      <div 
+        style={{ 
+          position: 'fixed', 
+          inset: 0, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          justifyContent: 'space-around', 
+          alignItems: 'center', 
+          pointerEvents: 'none', 
+          zIndex: 9999,
+          padding: '40px 0',
+          opacity: 0.08
+        }}
+      >
+        {[...Array(5)].map((_, i) => (
+          <div 
+            key={i} 
+            style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center', 
+              border: '3px solid #000', 
+              padding: '20px 40px', 
+              borderRadius: '30px', 
+              transform: 'rotate(-25deg)',
+              margin: '20px'
+            }}
+          >
+            <span style={{ fontSize: '60px', fontWeight: 900, textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.2em', whiteSpace: 'nowrap' }}>
+              CÓPIA NÃO OFICIAL
+            </span>
+            <span style={{ fontSize: '16px', fontWeight: 900, textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '8px' }}>
+              USE O DESENHO ORIGINAL
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 

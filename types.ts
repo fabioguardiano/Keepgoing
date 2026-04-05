@@ -103,7 +103,7 @@ export interface AppUser {
   code?: number;
   name: string;
   email: string;
-  role: 'admin' | 'manager' | 'seller' | 'viewer' | 'driver';
+  role: 'admin' | 'manager' | 'seller' | 'viewer' | 'driver' | 'production';
   status: 'ativo' | 'inativo';
   profileId?: string; // ID do PermissionProfile atribuído
   company_id?: string;

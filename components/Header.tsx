@@ -183,14 +183,29 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onSearch, onTogg
         {/* User Profile Info */}
         <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-bold leading-none dark:text-white">{user.name}</p>
-            <p className="text-xs text-slate-500 capitalize">{user.role === 'admin' ? 'Gerente Produção' : user.role}</p>
+            <p className="text-sm font-bold leading-none dark:text-white mb-1">{user.name}</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+              {user.role === 'admin' ? 'Gerente Produção' : 
+               user.role === 'seller' ? 'Consultor de Vendas' : 
+               user.role === 'production' ? 'Produção' : 
+               user.role === 'manager' ? 'Gerente' :
+               user.role === 'driver' ? 'Logística / Motorista' :
+               user.role}
+            </p>
           </div>
 
           <div className="relative group cursor-pointer">
-            <div className="w-10 h-10 rounded-full bg-[var(--primary-color)] border-2 border-[var(--primary-color)]/20 overflow-hidden flex items-center justify-center relative shadow-sm">
+            <div className="w-10 h-10 rounded-full bg-[var(--primary-color)] border-2 border-[var(--primary-color)]/20 overflow-hidden flex items-center justify-center relative shadow-sm transition-transform hover:scale-105 active:scale-95">
               {user.avatarUrl ? (
-                <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                <img 
+                  src={user.avatarUrl} 
+                  alt={user.name} 
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Fallback se a imagem falhar
+                    (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=345c70&color=fff`;
+                  }}
+                />
               ) : (
                 <span className="text-white font-black text-sm">{getInitials(user.name)}</span>
               )}
