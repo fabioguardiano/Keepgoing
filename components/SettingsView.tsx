@@ -629,6 +629,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                             />
                                         </div>
                                         <p className="text-xs text-slate-400 mt-5">Se vazio, não há limite de desconto.</p>
+
+                                        <div className="flex-1 max-w-xs">
+                                            <label className="block text-sm font-bold text-slate-700 mb-1">Comissão máxima de Arquiteto (%)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                step="0.5"
+                                                value={companyInfo.maxArchitectCommissionPct ?? ''}
+                                                onChange={e => {
+                                                    const v = parseFloat(e.target.value);
+                                                    onUpdateCompany({ ...companyInfo, maxArchitectCommissionPct: isNaN(v) ? undefined : v });
+                                                }}
+                                                placeholder="Ex: 10"
+                                                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-bold"
+                                            />
+                                        </div>
+                                        <p className="text-xs text-slate-400 mt-5">Se vazio, não há limite de comissão.</p>
                                     </div>
                                 </div>
 

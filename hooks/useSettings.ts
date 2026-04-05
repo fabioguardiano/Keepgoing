@@ -147,6 +147,7 @@ export const useSettings = (
         lostReasonOptions: data.lost_reason_options || [],
         legalNote: data.legal_note || undefined,
         maxDiscountPct: data.max_discount_pct ?? undefined,
+        maxArchitectCommissionPct: data.max_architect_commission_pct ?? undefined,
       };
       setCompanyInfoState(info);
 
@@ -322,6 +323,7 @@ export const useSettings = (
           lost_reason_options: info.lostReasonOptions || [],
           legal_note: info.legalNote || null,
           max_discount_pct: info.maxDiscountPct ?? null,
+          max_architect_commission_pct: info.maxArchitectCommissionPct ?? null,
         }).eq('id', companyId);
 
         if (error) throw error;

@@ -34,6 +34,7 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
           salesChannel: s.sales_channel,
           architectId: s.architect_id,
           architectName: s.architect_name,
+          architectCommissionPct: Number(s.architect_commission_pct || 0) || undefined,
           paymentConditions: s.payment_conditions,
           paymentMethodId: s.payment_method_id || undefined,
           paymentMethodName: s.payment_method_name || undefined,
@@ -48,6 +49,8 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
           totals: {
             vendas: Number(s.subtotal),
             desconto: Number(s.discount_value || s.discount || 0),
+            frete: Number(s.delivery_fee || 0),
+            comissaoArquiteto: Number(s.architect_commission_value || 0) || undefined,
             geral: Number(s.total)
           },
           crmNotes: s.crm_notes || [],
@@ -108,6 +111,8 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
         sales_channel: s.salesChannel || null,
         architect_id: s.architectId || null,
         architect_name: up(s.architectName) || null,
+        architect_commission_pct: s.architectCommissionPct || null,
+        architect_commission_value: s.totals?.comissaoArquiteto || null,
         payment_conditions: up(s.paymentConditions) || null,
         payment_method_id: s.paymentMethodId || null,
         payment_method_name: s.paymentMethodName || null,
@@ -146,6 +151,7 @@ export const useSales = (companyId?: string, logActivity?: (action: any, details
         salesChannel: savedRow.sales_channel,
         architectId: savedRow.architect_id,
         architectName: savedRow.architect_name,
+        architectCommissionPct: Number(savedRow.architect_commission_pct || 0) || undefined,
         paymentConditions: savedRow.payment_conditions,
         paymentMethodId: savedRow.payment_method_id,
         paymentMethodName: savedRow.payment_method_name,

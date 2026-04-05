@@ -46,6 +46,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
   const subtotal = sale.totals?.vendas || (sale.items || []).reduce((a, i) => a + (i.totalPrice || 0), 0);
   const frete = sale.totals?.frete || sale.deliveryFee || 0;
   const discount = sale.totals?.desconto ?? ((subtotal + frete > (sale.totals?.geral || 0)) ? subtotal + frete - (sale.totals?.geral || 0) : 0);
+  const architectCommission = sale.totals?.comissaoArquiteto || 0;
   const total = sale.totals?.geral || (subtotal + frete);
 
   const addr = client?.address;
@@ -354,6 +355,12 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
                   <div style={{ padding: '5px 10px', display: 'flex', justifyContent: 'space-between', color: '#b91c1c', borderBottom: '1px solid #e2e8f0' }}>
                     <span style={{ fontWeight: 700 }}>Desconto</span>
                     <span style={{ fontWeight: 700 }}>- R$ {fmt(discount)}</span>
+                  </div>
+                )}
+                {architectCommission > 0 && (
+                  <div style={{ padding: '5px 10px', display: 'flex', justifyContent: 'space-between', color: '#92400e', borderBottom: '1px solid #e2e8f0' }}>
+                    <span style={{ fontWeight: 700 }}>Comissão Arquiteto ({(sale.architectCommissionPct || 0).toFixed(1)}%)</span>
+                    <span style={{ fontWeight: 700 }}>+ R$ {fmt(architectCommission)}</span>
                   </div>
                 )}
                 <div style={{ backgroundColor: '#000', color: '#fff', padding: '8px 10px', display: 'flex', justifyContent: 'space-between' }}>

@@ -86,6 +86,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
       salesChannel,
       architectId,
       architectName: architect,
+      architectCommissionPct: architect ? safeArchCommPct : 0,
       items,
       paymentConditions,
       deliveryDeadline,
@@ -96,6 +97,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
         vendas: subtotal,
         desconto: calculatedDiscount,
         frete: safeDeliveryFee,
+        comissaoArquiteto: architectCommissionValue > 0 ? architectCommissionValue : undefined,
         geral: totalGeral
       },
       imageUrls: []
@@ -142,6 +144,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const [discountValue, setDiscountValue] = useState(initialData?.discountValue || 0);
   const [discountPercentage, setDiscountPercentage] = useState(initialData?.discountPercentage || 0);
   const [deliveryFee, setDeliveryFee] = useState(initialData?.deliveryFee || 0);
+  const [architectCommissionPct, setArchitectCommissionPct] = useState(initialData?.architectCommissionPct || 0);
   const isNewSale = !initialData?.id;
   const [salesPhase, setSalesPhase] = useState<string>(
     initialData?.salesPhase || (salesPhases.find(p => p.name === 'Oportunidade')?.name ?? salesPhases[0]?.name ?? '')
@@ -539,7 +542,15 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   // Só usamos a porcentagem se ela for > 0 e o valor for 0 (caso clássico de carregar do banco só % se existisse)
   const calculatedDiscount = Math.max(safeDiscVal, subtotal * (safeDiscPct / 100));
   const safeDeliveryFee = isFinite(deliveryFee) && deliveryFee > 0 ? deliveryFee : 0;
-  const totalGeral = Math.max(0, subtotal - calculatedDiscount + safeDeliveryFee);
+  const maxCommPct = companyInfo.maxArchitectCommissionPct;
+  const safeArchCommPct = architect
+    ? Math.min(
+        isFinite(architectCommissionPct) ? architectCommissionPct : 0,
+        maxCommPct !== undefined ? maxCommPct : Infinity
+      )
+    : 0;
+  const architectCommissionValue = subtotal * (safeArchCommPct / 100);
+  const totalGeral = Math.max(0, subtotal - calculatedDiscount + safeDeliveryFee + architectCommissionValue);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async (keepOpen: boolean = false) => {
@@ -622,6 +633,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
       salesChannel: salesChannel,
       architectId: architectId,
       architectName: architect,
+      architectCommissionPct: architect ? safeArchCommPct : 0,
       items,
       paymentConditions,
       paymentMethodId: paymentMethodId || undefined,
@@ -640,6 +652,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
         vendas: subtotal,
         desconto: calculatedDiscount,
         frete: safeDeliveryFee,
+        comissaoArquiteto: architectCommissionValue > 0 ? architectCommissionValue : undefined,
         geral: totalGeral
       },
       salesPhase,
@@ -892,6 +905,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     setArchitect(selectedName);
                     const arch = architects.find(a => (a.tradingName || a.legalName) === selectedName);
                     setArchitectId(arch?.id || '');
+                    if (!selectedName) setArchitectCommissionPct(0);
                   }}
                   className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-black dark:text-white transition-all appearance-none"
                 >
@@ -902,6 +916,42 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                       </option>
                     ))}
                 </select>
+
+                {/* Comissão do arquiteto */}
+                {architect && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <div className="flex-1">
+                      <label className="text-[9px] font-black text-black uppercase tracking-widest mb-1 block">Comissão Arquiteto (%)</label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="0"
+                          max={maxCommPct ?? 100}
+                          step="0.5"
+                          value={architectCommissionPct || ''}
+                          onChange={e => {
+                            let v = parseFloat(e.target.value) || 0;
+                            if (maxCommPct !== undefined && v > maxCommPct) v = maxCommPct;
+                            setArchitectCommissionPct(v);
+                          }}
+                          placeholder="0"
+                          className="w-full p-2 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-black dark:text-white transition-all"
+                        />
+                      </div>
+                    </div>
+                    <div className="text-right pt-4">
+                      <p className="text-[9px] font-bold text-slate-500 uppercase">Valor</p>
+                      <p className="text-sm font-black text-black">
+                        R$ {architectCommissionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {architect && maxCommPct !== undefined && (
+                  <p className="text-[8px] font-bold text-amber-600 mt-1">
+                    Limite máximo de comissão: {maxCommPct}%
+                  </p>
+                )}
               </div>
 
               <div>
@@ -1552,6 +1602,12 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     )}
                   </div>
                 </div>
+                {architectCommissionValue > 0 && (
+                  <div className="flex items-center justify-between gap-3 text-amber-700 dark:text-amber-400">
+                    <span className="text-[9px] font-black uppercase">Comissão Arquiteto ({safeArchCommPct.toFixed(1)}%)</span>
+                    <span className="text-[10px] font-black">+ R$ {architectCommissionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                )}
                 <div className="pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between items-end">
                   <div>
                     <span className="text-[9px] font-black text-black uppercase tracking-widest block mb-0.5">Total Geral</span>

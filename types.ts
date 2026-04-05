@@ -320,6 +320,7 @@ export interface OrderService {
   clientId?: string;
   architectId?: string;
   architectName?: string;
+  architectCommissionPct?: number;
   totalValue?: number;
   remainingValue?: number;
   observations?: string;
@@ -351,6 +352,7 @@ export interface OrderService {
     vendas: number;
     desconto: number;
     frete: number;
+    comissaoArquiteto?: number;
     geral: number;
   };
   crmNotes?: CRMNote[];
@@ -446,6 +448,7 @@ export interface CompanyInfo {
   lostReasonOptions?: string[];
   legalNote?: string;
   maxDiscountPct?: number;
+  maxArchitectCommissionPct?: number;
   permissionProfiles?: PermissionProfile[];
 }
 
