@@ -841,7 +841,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-1 block">
                   {saleType === 'Orçamento' ? 'Nº Orçamento' : 'Nº Pedido'}
                 </label>
-                <div className="w-full p-2.5 bg-slate-100 dark:bg-slate-800/50 border-2 border-transparent rounded-xl font-black text-black dark:text-white transition-all text-base flex items-center">
+                <div className="w-full p-2.5 bg-slate-200/50 dark:bg-slate-800/80 border-2 border-transparent rounded-xl font-black text-black dark:text-white transition-all text-base flex items-center">
                   {orderNumber}
                 </div>
               </div>
@@ -857,7 +857,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                       setIsClientModalOpen(true);
                     }
                   }}
-                  className="flex items-center justify-between w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent hover:border-[var(--primary-color)] focus:border-[var(--primary-color)] rounded-xl cursor-pointer transition-all group outline-none"
+                  className="flex items-center justify-between w-full p-2.5 bg-slate-100 dark:bg-slate-800 border-2 border-transparent hover:border-[var(--primary-color)] focus:border-[var(--primary-color)] rounded-xl cursor-pointer transition-all group outline-none"
                 >
                   <div className="flex items-center gap-2">
                     <User size={16} className="text-black group-hover:text-[var(--primary-color)]" />
@@ -874,7 +874,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 <select
                   value={salesChannel}
                   onChange={(e) => setSalesChannel(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-black dark:text-white transition-all appearance-none"
+                  className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-black dark:text-white transition-all appearance-none"
                 >
                   <option value="">Selecione...</option>
                   {salesChannels.map(channel => (
@@ -890,7 +890,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 <select
                   value={seller}
                   onChange={(e) => setSeller(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-black dark:text-white transition-all appearance-none"
+                  className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-black dark:text-white transition-all appearance-none"
                 >
                   {appUsers.map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
                 </select>
@@ -907,7 +907,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     setArchitectId(arch?.id || '');
                     if (!selectedName) setArchitectCommissionPct(0);
                   }}
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-black dark:text-white transition-all appearance-none"
+                  className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-black dark:text-white transition-all appearance-none"
                 >
                   <option value="">Nenhum parceiro</option>
                   {architects?.filter(a => a.status === 'ativo').map(a => (
@@ -921,7 +921,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
               {/* Comissão do arquiteto */}
               <div>
                 <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Comissão Arquiteto (%)</label>
-                <div className={`py-1 px-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent rounded-xl flex items-center ${!architect ? 'opacity-30' : ''}`}>
+                <div className={`py-1 px-2.5 bg-slate-100 dark:bg-slate-800 border-2 border-transparent rounded-xl flex items-center ${!architect ? 'opacity-30' : ''}`}>
                   <div className="basis-1/2 border-r border-slate-200 dark:border-slate-700 pr-4 flex flex-col items-center">
                     <input
                       type="number"
@@ -956,15 +956,15 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
               <div>
                 <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Fase do Orçamento</label>
                 {isLocked ? (
-                  <div className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl font-bold text-sm text-black dark:text-green-400">
+                  <div className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold text-sm text-black dark:text-green-400">
                     Ganho ✓
                   </div>
                 ) : initialData?.status === 'Cancelado' ? (
-                  <div className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl font-bold text-sm text-red-600 dark:text-red-400">
+                  <div className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold text-sm text-red-600 dark:text-red-400">
                     Perdido
                   </div>
                 ) : isNewSale ? (
-                  <div className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl font-bold text-sm text-slate-400 flex items-center justify-between">
+                  <div className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold text-sm text-slate-400 flex items-center justify-between">
                     <span className="text-black dark:text-white">{salesPhase}</span>
                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Salve para alterar</span>
                   </div>
@@ -972,7 +972,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   <select
                     value={salesPhase}
                     onChange={(e) => setSalesPhase(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-black dark:text-white transition-all appearance-none"
+                    className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-black dark:text-white transition-all appearance-none"
                   >
                     {salesPhases.map(phase => (
                       <option key={phase.name} value={phase.name}>{phase.name}</option>
