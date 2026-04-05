@@ -357,12 +357,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
                     <span style={{ fontWeight: 700 }}>- R$ {fmt(discount)}</span>
                   </div>
                 )}
-                {architectCommission > 0 && (
-                  <div style={{ padding: '5px 10px', display: 'flex', justifyContent: 'space-between', color: '#92400e', borderBottom: '1px solid #e2e8f0' }}>
-                    <span style={{ fontWeight: 700 }}>Comissão Arquiteto ({(sale.architectCommissionPct || 0).toFixed(1)}%)</span>
-                    <span style={{ fontWeight: 700 }}>+ R$ {fmt(architectCommission)}</span>
-                  </div>
-                )}
+                {/* Comissão do arquiteto removida da impressão para o cliente conforme solicitado */}
                 <div style={{ backgroundColor: '#000', color: '#fff', padding: '8px 10px', display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontWeight: 900, fontSize: '12px' }}>VALOR TOTAL</span>
                   <span style={{ fontWeight: 900, fontSize: '13px' }}>R$ {fmt(total)}</span>
