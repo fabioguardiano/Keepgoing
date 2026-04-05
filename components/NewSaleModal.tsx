@@ -850,10 +850,10 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
           </div>
         </div>
 
-        <div className={`flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar ${isLocked ? 'pointer-events-none select-none opacity-80' : ''}`}>
+        <div className={`flex-1 overflow-y-auto custom-scrollbar ${isLocked ? 'pointer-events-none select-none opacity-80' : ''}`}>
 
           {/* Section 1: Header Info (Sticky) */}
-          <div className="sticky top-0 z-[20] bg-white dark:bg-slate-900 -mx-4 px-4 pb-4 border-b border-slate-100 dark:border-slate-800 space-y-3">
+          <div className="sticky top-0 z-[20] bg-white dark:bg-slate-900 px-4 pt-4 pb-4 border-b border-slate-100 dark:border-slate-800 space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
               <div className="md:col-span-2">
                 <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-1 block">
@@ -1023,10 +1023,11 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 )}
               </div>
             </div>
-          </div>
+          </div> {/* Fim do Sticky Header (line 856) */}
 
-          {/* Section 2: Items Grouped by Environment */}
-          <DragDropContext onDragEnd={onDragEnd}>
+          <div className="p-4 space-y-6">
+            {/* Section 2: Items Grouped by Environment */}
+            <DragDropContext onDragEnd={onDragEnd}>
             <div className="space-y-4">
               {environments.map((env) => {
                 const envItems = items.filter(i => (i.environment || 'Sem Ambiente') === env);
@@ -1689,7 +1690,9 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
             </div>
           </div>
           
-          <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-6">
+          </div> {/* Fim do container p-4 space-y-6 */}
+
+          <div className="mx-4 mt-6 border-t border-slate-100 dark:border-slate-800 pt-6 pb-6">
             {initialData?.id && (
               <CRMSection 
                 sale={initialData} 
