@@ -41,6 +41,14 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   companyId, createWorkOrders, getEnvironmentOSMap, onRequestDiscount, onRequestCommission, canEditPrice = true, currentUser, paidAmount = 0
 }) => {
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+
+  const handleCloseAttempt = () => {
+    if (isEditMode) {
+      setShowExitConfirmation(true);
+    } else {
+      onClose();
+    }
+  };
   const [printingSale, setPrintingSale] = useState<SalesOrder | null>(null);
   const [blurMeasurements, setBlurMeasurements] = useState(false);
   const [hideM2Unit, setHideM2Unit] = useState(true);
@@ -56,6 +64,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const [revertError, setRevertError] = useState('');
   const [revertLoading, setRevertLoading] = useState(false);
   const [isEditMode, setIsEditMode] = useState(!initialData); // Nova venda (Edit) vs Existente (View)
+  const [showExitConfirmation, setShowExitConfirmation] = useState(false);
 
   useEffect(() => {
     // If the sale is a Pedido but has payments, we unlock it but show a warning
@@ -855,7 +864,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 )}
               </div>
             )}
-            <button onClick={onClose} className="p-3 text-black hover:text-black dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-800 rounded-2xl transition-all shadow-sm">
+            <button onClick={handleCloseAttempt} className="p-3 text-black hover:text-black dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-800 rounded-2xl transition-all shadow-sm">
               <X size={28} />
             </button>
           </div>
@@ -2119,6 +2128,36 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   );
                 })()}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmação de Saída */}
+      {showExitConfirmation && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[2rem] shadow-2xl border border-slate-100 dark:border-slate-800 p-8 text-center animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertTriangle size={32} />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Sair sem salvar?</h3>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
+              Você está no modo de edição. Se sair agora, todas as alterações não gravadas serão perdidas permanentemente.
+            </p>
+            
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={onClose}
+                className="w-full py-4 bg-red-600 dark:bg-red-500 text-white rounded-2xl font-black text-sm shadow-lg shadow-red-600/20 hover:bg-red-700 transition-all uppercase tracking-widest"
+              >
+                Sim, sair sem salvar
+              </button>
+              <button
+                onClick={() => setShowExitConfirmation(false)}
+                className="w-full py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-2xl font-black text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all uppercase tracking-widest"
+              >
+                Não, continuar editando
+              </button>
             </div>
           </div>
         </div>
