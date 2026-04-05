@@ -357,11 +357,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                 <div className="flex items-center p-1.5 bg-slate-100/50 rounded-[24px] border border-slate-200/60 shadow-inner overflow-x-auto no-scrollbar scroll-smooth w-full lg:w-fit">
                     <button 
-                        onClick={() => setActiveTab('fluxo')}
-                        className={`flex items-center gap-2.5 px-5 py-2.5 rounded-[18px] text-xs font-black transition-all whitespace-nowrap ${activeTab === 'fluxo' ? 'bg-white text-primary shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
+                        onClick={() => setActiveTab('empresa')}
+                        className={`flex items-center gap-2.5 px-5 py-2.5 rounded-[18px] text-xs font-black transition-all whitespace-nowrap ${activeTab === 'empresa' ? 'bg-white text-primary shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
                     >
-                        <Layout size={16} />
-                        Fluxo de Produção
+                        <Building2 size={16} />
+                        Cadastro da Empresa
                     </button>
                     <button 
                         onClick={() => setActiveTab('vendas')}
@@ -371,25 +371,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         Fluxo de Vendas
                     </button>
                     <button 
-                        onClick={() => setActiveTab('empresa')}
-                        className={`flex items-center gap-2.5 px-5 py-2.5 rounded-[18px] text-xs font-black transition-all whitespace-nowrap ${activeTab === 'empresa' ? 'bg-white text-primary shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
+                        onClick={() => setActiveTab('fluxo')}
+                        className={`flex items-center gap-2.5 px-5 py-2.5 rounded-[18px] text-xs font-black transition-all whitespace-nowrap ${activeTab === 'fluxo' ? 'bg-white text-primary shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
                     >
-                        <Building2 size={16} />
-                        Cadastro da Empresa
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab('dados')}
-                        className={`flex items-center gap-2.5 px-5 py-2.5 rounded-[18px] text-xs font-black transition-all whitespace-nowrap ${activeTab === 'dados' ? 'bg-white text-primary shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
-                    >
-                        <FileSpreadsheet size={16} />
-                        Importação de Dados
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('financeiro')}
-                        className={`flex items-center gap-2.5 px-5 py-2.5 rounded-[18px] text-xs font-black transition-all whitespace-nowrap ${activeTab === 'financeiro' ? 'bg-white text-primary shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
-                    >
-                        <Wallet size={16} />
-                        Financeiro
+                        <Layout size={16} />
+                        Fluxo de Produção
                     </button>
                     <button
                         onClick={() => setActiveTab('geral')}
@@ -414,6 +400,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             Auditoria
                         </button>
                     )}
+                    <button 
+                        onClick={() => setActiveTab('dados')}
+                        className={`flex items-center gap-2.5 px-5 py-2.5 rounded-[18px] text-xs font-black transition-all whitespace-nowrap ${activeTab === 'dados' ? 'bg-white text-primary shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                        <FileSpreadsheet size={16} />
+                        Importação de Dados
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('financeiro')}
+                        className={`flex items-center gap-2.5 px-5 py-2.5 rounded-[18px] text-xs font-black transition-all whitespace-nowrap ${activeTab === 'financeiro' ? 'bg-white text-primary shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                        <Wallet size={16} />
+                        Financeiro
+                    </button>
                 </div>
             </div>
 
