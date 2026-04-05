@@ -807,7 +807,7 @@ export type View =
   | 'Grupos de Serviços'
   | 'Contas a Receber'
   | 'Contas a Pagar'
-  | 'Formas de Pagamento'
+  | 'Formas de PGTO AR'
   | 'Tipos de Pagamento'
   | 'Contas Bancárias'
   | 'Formas de PGTO CP';

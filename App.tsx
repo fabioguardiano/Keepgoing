@@ -668,7 +668,7 @@ const App: React.FC = () => {
             canEdit={getAccess('financeiro') === 'full'}
           />
         );
-      case 'Formas de Pagamento':
+      case 'Formas de PGTO AR':
         return (
           <PaymentMethodsView
             paymentMethods={paymentMethods}
