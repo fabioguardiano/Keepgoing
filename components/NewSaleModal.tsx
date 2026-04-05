@@ -183,6 +183,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const [hasStartedEditing, setHasStartedEditing] = useState(false);
   const [discountValueInput, setDiscountValueInput] = useState(initialData?.discountValue?.toString() || '');
   const [discountPercentageInput, setDiscountPercentageInput] = useState(initialData?.discountPercentage?.toString() || '');
+  const [archCommPctInput, setArchCommPctInput] = useState(initialData?.architectCommissionPct?.toString() || '');
+  const [archCommValueInput, setArchCommValueInput] = useState(initialData?.totals?.comissaoArquiteto?.toString() || '');
 
   // Prevent accidental close/refresh
   useEffect(() => {
@@ -209,6 +211,22 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   };
 
   const environments = Array.from(new Set([...items.map(i => i.environment || 'Sem Ambiente'), activeEnvironment, newEnvironmentName].filter(Boolean)));
+
+  // Sync commission inputs when needed
+  useEffect(() => {
+    if (initialData) {
+      setArchCommPctInput(initialData.architectCommissionPct?.toString() || '');
+      const commVal = initialData.totals?.comissaoArquiteto || (subtotal * ((initialData.architectCommissionPct || 0) / 100));
+      setArchCommValueInput(commVal > 0 ? commVal.toFixed(2) : '');
+    }
+  }, [initialData?.id]);
+
+  useEffect(() => {
+    if (!architect) {
+      setArchCommPctInput('');
+      setArchCommValueInput('');
+    }
+  }, [architect]);
 
   // True when the selected material is an Acabamento or Produto de Revenda (no dimensions needed)
   const isProductMaterial = products.some(
@@ -834,8 +852,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
         <div className={`flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar ${isLocked ? 'pointer-events-none select-none opacity-80' : ''}`}>
 
-          {/* Section 1: Header Info */}
-          <div className="space-y-3">
+          {/* Section 1: Header Info (Sticky) */}
+          <div className="sticky top-0 z-[20] bg-white dark:bg-slate-900 -mx-4 px-4 pb-4 border-b border-slate-100 dark:border-slate-800 space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
               <div className="md:col-span-2">
                 <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-1 block">
@@ -920,28 +938,54 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
               {/* Comissão do arquiteto */}
               <div>
-                <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Comissão Arquiteto (%)</label>
+                <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Comissão Arquiteto</label>
                 <div className={`w-full p-2.5 bg-slate-100 dark:bg-slate-800 border-2 border-transparent focus-within:border-[var(--primary-color)] rounded-xl flex items-center justify-between transition-all ${!architect ? 'opacity-30' : ''}`}>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-1 pr-3">
                     <input
                       type="number"
                       min="0"
                       max={maxCommPct ?? 100}
-                      step="0.5"
+                      step="0.1"
                       disabled={!architect}
-                      value={architectCommissionPct || ''}
+                      value={archCommPctInput}
                       onChange={e => {
-                        let v = parseFloat(e.target.value) || 0;
-                        if (maxCommPct !== undefined && v > maxCommPct) v = maxCommPct;
-                        setArchitectCommissionPct(v);
+                        const valStr = e.target.value;
+                        setArchCommPctInput(valStr);
+                        let perc = parseFloat(valStr) || 0;
+                        if (maxCommPct !== undefined && perc > maxCommPct) perc = maxCommPct;
+                        setArchitectCommissionPct(perc);
+                        const valNum = subtotal * (perc / 100);
+                        setArchCommValueInput(valNum > 0 ? valNum.toFixed(2) : '');
                       }}
                       placeholder="0"
-                      className="w-10 bg-transparent outline-none font-bold text-sm text-black dark:text-white"
+                      className="w-full bg-transparent outline-none font-bold text-sm text-black dark:text-white"
                     />
-                    <span className="font-bold text-sm text-slate-400">%</span>
+                    <span className="font-bold text-sm text-slate-400 -ml-1">%</span>
                   </div>
-                  <div className="font-bold text-sm text-black dark:text-white border-l border-slate-200 dark:border-slate-700 pl-3">
-                    R$ {architectCommissionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  <div className="flex items-center gap-1 flex-1 border-l border-slate-200 dark:border-slate-700 pl-3">
+                    <span className="text-slate-400 font-bold text-[10px]">R$</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      disabled={!architect}
+                      value={archCommValueInput}
+                      onChange={e => {
+                        const valStr = e.target.value;
+                        setArchCommValueInput(valStr);
+                        const valNum = parseFloat(valStr) || 0;
+                        let perc = subtotal > 0 ? (valNum / subtotal) * 100 : 0;
+                        if (maxCommPct !== undefined && perc > maxCommPct) {
+                          perc = maxCommPct;
+                          setArchCommPctInput(perc.toString());
+                        } else {
+                          setArchCommPctInput(perc > 0 ? perc.toFixed(2) : '');
+                        }
+                        setArchitectCommissionPct(perc);
+                      }}
+                      placeholder="0,00"
+                      className="w-full bg-transparent outline-none font-bold text-sm text-black dark:text-white"
+                    />
                   </div>
                 </div>
                 {architect && maxCommPct !== undefined && (
@@ -1451,47 +1495,49 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   </div>
                 )}
 
-                <div>
-                  <label className="text-[9px] font-bold text-black uppercase tracking-widest block mb-1">Forma de Pagamento{downPaymentEnabled && downPaymentValue > 0 ? ' do Restante' : ''}</label>
-                  <select
-                    value={paymentMethodId}
-                    onChange={e => {
-                      const pm = paymentMethods.find(p => p.id === e.target.value);
-                      setPaymentMethodId(e.target.value);
-                      setPaymentInstallments(pm?.type === 'aprazo' ? (pm.installments ?? 1) : 1);
-                    }}
-                    className={`w-full p-1.5 bg-white dark:bg-slate-700 rounded-lg border-2 outline-none font-bold text-xs text-black dark:text-white appearance-none transition-all ${saleType === 'Pedido' && !paymentMethodId ? 'border-red-300' : 'border-transparent focus:border-[var(--primary-color)]'}`}
-                  >
-                    <option value="">-- Selecione --</option>
-                    {paymentMethods.filter(p => p.active).map(p => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
-                </div>
-                {paymentMethods.find(p => p.id === paymentMethodId)?.type === 'aprazo' && (
-                  <div>
-                    <label className="text-[9px] font-bold text-black uppercase tracking-widest block mb-1">Parcelas</label>
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                  <div className={`${paymentMethods.find(p => p.id === paymentMethodId)?.type === 'aprazo' ? 'md:col-span-6' : 'md:col-span-8'}`}>
+                    <label className="text-[9px] font-bold text-black uppercase tracking-widest block mb-1">Forma de Pagamento{downPaymentEnabled && downPaymentValue > 0 ? ' do Restante' : ''}</label>
                     <select
-                      value={paymentInstallments}
-                      onChange={e => setPaymentInstallments(parseInt(e.target.value))}
-                      className="w-full p-1.5 bg-white dark:bg-slate-700 rounded-lg border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-xs text-black dark:text-white appearance-none"
+                      value={paymentMethodId}
+                      onChange={e => {
+                        const pm = paymentMethods.find(p => p.id === e.target.value);
+                        setPaymentMethodId(e.target.value);
+                        setPaymentInstallments(pm?.type === 'aprazo' ? (pm.installments ?? 1) : 1);
+                      }}
+                      className={`w-full p-1.5 bg-white dark:bg-slate-700 rounded-lg border-2 outline-none font-bold text-xs text-black dark:text-white appearance-none transition-all ${saleType === 'Pedido' && !paymentMethodId ? 'border-red-300' : 'border-transparent focus:border-[var(--primary-color)]'}`}
                     >
-                      {Array.from({ length: paymentMethods.find(p => p.id === paymentMethodId)?.installments ?? 1 }, (_, i) => i + 1).map(n => (
-                        <option key={n} value={n}>{n === 1 ? '1x (à vista)' : `${n}x`}</option>
+                      <option value="">-- Selecione --</option>
+                      {paymentMethods.filter(p => p.active).map(p => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
                       ))}
                     </select>
                   </div>
-                )}
-                <div>
-                  <label className="text-[9px] font-bold uppercase tracking-widest block mb-1 text-black">
-                    Data do 1º Vencimento
-                  </label>
-                  <input
-                    type="date"
-                    value={firstDueDate}
-                    onChange={e => setFirstDueDate(e.target.value)}
-                    className={`w-full p-1.5 bg-white dark:bg-slate-700 rounded-lg border-2 outline-none font-bold text-xs text-black dark:text-white transition-all ${saleType === 'Pedido' && !firstDueDate ? 'border-red-300' : 'border-transparent focus:border-[var(--primary-color)]'}`}
-                  />
+                  {paymentMethods.find(p => p.id === paymentMethodId)?.type === 'aprazo' && (
+                    <div className="md:col-span-2">
+                      <label className="text-[9px] font-bold text-black uppercase tracking-widest block mb-1">Parc.</label>
+                      <select
+                        value={paymentInstallments}
+                        onChange={e => setPaymentInstallments(parseInt(e.target.value))}
+                        className="w-full p-1.5 bg-white dark:bg-slate-700 rounded-lg border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-xs text-black dark:text-white appearance-none"
+                      >
+                        {Array.from({ length: paymentMethods.find(p => p.id === paymentMethodId)?.installments ?? 1 }, (_, i) => i + 1).map(n => (
+                          <option key={n} value={n}>{n}x</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  <div className="md:col-span-4">
+                    <label className="text-[9px] font-bold uppercase tracking-widest block mb-1 text-black whitespace-nowrap">
+                      1º Vencimento
+                    </label>
+                    <input
+                      type="date"
+                      value={firstDueDate}
+                      onChange={e => setFirstDueDate(e.target.value)}
+                      className={`w-full p-1.5 bg-white dark:bg-slate-700 rounded-lg border-2 outline-none font-bold text-xs text-black dark:text-white transition-all ${saleType === 'Pedido' && !firstDueDate ? 'border-red-300' : 'border-transparent focus:border-[var(--primary-color)]'}`}
+                    />
+                  </div>
                 </div>
                 {/* ── Preview de parcelas ao vivo ── */}
                 {paymentMethodId && totalGeral > 0 && (() => {
