@@ -861,18 +861,13 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
           </div>
         </div>
 
-        <div className={`flex-1 overflow-y-auto custom-scrollbar ${(!isEditMode && !isLocked) ? 'opacity-95 select-none grayscale-[0.2]' : isLocked ? 'pointer-events-none select-none opacity-80' : ''}`}>
+        <div className={`flex-1 overflow-y-auto custom-scrollbar ${(!isEditMode && !isLocked) ? 'opacity-95 select-none' : isLocked ? 'pointer-events-none select-none opacity-80' : ''}`}>
            {(!isEditMode && !isLocked) && (
              <div 
-               className="absolute inset-0 z-50 cursor-pointer group" 
+               className="absolute inset-0 z-50 cursor-pointer" 
                onClick={() => setIsEditMode(true)}
-               title="Clique em 'Alterar' no rodapé ou aqui para editar"
-             >
-               <div className="sticky top-20 left-1/2 -translate-x-1/2 bg-amber-100/90 dark:bg-amber-900/90 border border-amber-200 dark:border-amber-800 px-4 py-2 rounded-full shadow-lg backdrop-blur-md flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <Pencil size={14} className="text-amber-600 dark:text-amber-400" />
-                  <span className="text-xs font-black text-amber-700 dark:text-amber-300 uppercase tracking-tighter">Clique para Editar</span>
-               </div>
-             </div>
+               title="Clique em 'Alterar' no rodapé para editar"
+             />
            )}
 
           {/* Section 1: Header Info (Sticky) */}
