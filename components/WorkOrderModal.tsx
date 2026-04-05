@@ -642,14 +642,20 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
               className="max-w-full max-h-[85vh] object-contain shadow-sm"
             />
             
-             <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden text-black/5">
-                <div className="border-[1px] border-current p-3 rounded-[20px] transform -rotate-[35deg]">
-                  <span className="text-xl font-black text-center leading-none uppercase tracking-[0.25em] whitespace-nowrap block">
-                    CÓPIA NÃO OFICIAL
-                  </span>
-                  <span className="text-[8px] font-black text-center block mt-1 uppercase tracking-widest">
-                    USE O DESENHO ORIGINAL
-                  </span>
+             <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <div className="grid grid-cols-2 grid-rows-2 h-full w-full">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="flex items-center justify-center">
+                      <div className="flex flex-col items-center border-[4px] border-red-600/60 p-6 rounded-[30px] transform -rotate-[25deg]">
+                        <span className="text-[5.5rem] font-black text-center leading-none uppercase tracking-[0.2em] whitespace-nowrap block text-red-600/60">
+                          CÓPIA NÃO OFICIAL
+                        </span>
+                        <span className="text-xl font-black text-center block mt-2 uppercase tracking-widest text-red-600/60">
+                          USE O DESENHO ORIGINAL
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
              </div>
 
