@@ -27,7 +27,7 @@ import { usePaymentMethods } from './hooks/usePaymentMethods';
 import { usePaymentTypes } from './hooks/usePaymentTypes';
 import { usePayablePaymentMethods } from './hooks/usePayablePaymentMethods';
 import { useWorkOrders } from './hooks/useWorkOrders';
-import { useDiscountAuthorizations } from './hooks/useDiscountAuthorizations';
+import { useAuthorizations } from './hooks/useAuthorizations';
 import { useDriverTracking } from './hooks/useDriverTracking';
 import { useOrderService } from './hooks/useOrderService';
 import { useExchangeRates } from './hooks/useExchangeRates';
@@ -106,7 +106,7 @@ const App: React.FC = () => {
   const { paymentTypes, handleSavePaymentType, deletePaymentType: handleDeletePaymentType } = usePaymentTypes(activeCompanyId);
   const { payablePMs, handleSave: handleSavePayablePM, handleDelete: deletePayablePM, toggleActive: togglePayablePM } = usePayablePaymentMethods(activeCompanyId);
   const { workOrders, loadingWO, createWorkOrders, updateWorkOrderStatus, updateWorkOrderPhase, updateWorkOrder, updateDeliveryDate, cancelWorkOrder, addDrawing, deleteDrawing, getEnvironmentOSMap, refreshWorkOrders } = useWorkOrders(activeCompanyId);
-  const { authorizations, requestAuthorization, resolveAuthorization } = useDiscountAuthorizations(activeCompanyId);
+  const { authorizations, requestAuthorization, resolveAuthorization } = useAuthorizations(activeCompanyId);
   const { measurements, createMeasurement, updateMeasurement, deleteMeasurement, restoreMeasurement } = useMeasurements(activeCompanyId);
   const { driverLocations, reportLocation, setOffline } = useDriverTracking(activeCompanyId, user);
   const { orders, setOrders, handleSaveOrder } = useOrderService(activeCompanyId, logActivity);
@@ -575,10 +575,22 @@ const App: React.FC = () => {
               await requestAuthorization({
                 sellerId: user.id,
                 sellerName: user.name || user.email || '',
-                requestedDiscountPct: requestedPct,
-                maxDiscountPct: maxPct,
+                requestedValuePct: requestedPct,
+                maxValuePct: maxPct,
                 adminId: admin.id,
                 adminName: admin.name,
+                type: 'discount'
+              });
+            }}
+            onRequestCommission={async (admin, requestedPct, maxPct) => {
+              await requestAuthorization({
+                sellerId: user.id,
+                sellerName: user.name || user.email || '',
+                requestedValuePct: requestedPct,
+                maxValuePct: maxPct,
+                adminId: admin.id,
+                adminName: admin.name,
+                type: 'commission'
               });
             }}
             canEdit={getAccess('vendas') === 'full'}

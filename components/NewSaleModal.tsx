@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, User, ShoppingBag, Plus, Trash2, Calculator, Save, FileText, Search, Tag, Users, Printer, Edit2, RotateCcw, Check, GripVertical, PlusCircle, Copy, Pencil, Lock, AlertTriangle, Eye, ClipboardList } from 'lucide-react';
-import { SalesOrder, OrderItem, Client, Architect, AppUser, SalesChannel, Material, ProductService, CompanyInfo, SalesPhaseConfig, ServiceGroup, PaymentMethod, WorkOrder, DiscountAuthorization } from '../types';
+import { SalesOrder, OrderItem, Client, Architect, AppUser, SalesChannel, Material, ProductService, CompanyInfo, SalesPhaseConfig, ServiceGroup, PaymentMethod, WorkOrder, Authorization } from '../types';
 import { ClientSelectModal } from './ClientSelectModal';
 import { PrintBudget } from './PrintBudget';
 import { GenerateOSModal } from './GenerateOSModal';
-import { DiscountRequestModal } from './DiscountAuthModal';
+import { DiscountRequestModal, CommissionRequestModal } from './AuthModal';
 import { CRMSection } from './CRMSection';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { createPortal } from 'react-dom';
@@ -30,13 +30,15 @@ interface NewSaleModalProps {
   createWorkOrders?: (orders: any[]) => Promise<boolean>;
   getEnvironmentOSMap?: (saleId: string) => Record<string, WorkOrder[]>;
   onRequestDiscount?: (admin: AppUser, requestedPct: number, maxPct: number) => void;
+  onRequestCommission?: (admin: AppUser, requestedPct: number, maxPct: number) => void;
   canEditPrice?: boolean;
+  currentUser: any;
   paidAmount?: number;
 }
 
 export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   onClose, onSave, clients, architects, appUsers, materials, products, services, salesChannels, paymentMethods, initialData, companyInfo, nextOrderNumber, salesPhases, readOnly = false,
-  companyId, createWorkOrders, getEnvironmentOSMap, onRequestDiscount, canEditPrice = true, paidAmount = 0
+  companyId, createWorkOrders, getEnvironmentOSMap, onRequestDiscount, onRequestCommission, canEditPrice = true, currentUser, paidAmount = 0
 }) => {
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [printingSale, setPrintingSale] = useState<SalesOrder | null>(null);
@@ -44,6 +46,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const [hideM2Unit, setHideM2Unit] = useState(true);
   const [showGenerateOS, setShowGenerateOS] = useState(false);
   const [showDiscountRequest, setShowDiscountRequest] = useState(false);
+  const [showCommissionRequest, setShowCommissionRequest] = useState(false);
+  const isAdminUser = currentUser?.role === 'admin' || currentUser?.role === 'manager';
   // Revert-to-Orçamento flow (only when readOnly=true)
   const [isLocked, setIsLocked] = useState(readOnly && !(paidAmount > 0));
   const [showRevert, setShowRevert] = useState(false);
@@ -51,6 +55,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const [revertJustification, setRevertJustification] = useState('');
   const [revertError, setRevertError] = useState('');
   const [revertLoading, setRevertLoading] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(!initialData); // Nova venda (Edit) vs Existente (View)
 
   useEffect(() => {
     // If the sale is a Pedido but has payments, we unlock it but show a warning
@@ -625,8 +630,14 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
     // Validação de desconto máximo
     const maxPct = companyInfo.maxDiscountPct;
-    if (maxPct !== undefined && safeDiscPct > (maxPct + 0.01) && onRequestDiscount) {
+    if (maxPct !== undefined && safeDiscPct > (maxPct + 0.01) && onRequestDiscount && !isAdminUser) {
       setShowDiscountRequest(true);
+      return;
+    }
+
+    // Validação de comissão máxima (novo fluxo)
+    if (maxCommPct !== undefined && safeArchCommPct > (maxCommPct + 0.01) && onRequestCommission && !isAdminUser) {
+      setShowCommissionRequest(true);
       return;
     }
 
@@ -850,7 +861,19 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
           </div>
         </div>
 
-        <div className={`flex-1 overflow-y-auto custom-scrollbar ${isLocked ? 'pointer-events-none select-none opacity-80' : ''}`}>
+        <div className={`flex-1 overflow-y-auto custom-scrollbar ${(!isEditMode && !isLocked) ? 'opacity-95 select-none grayscale-[0.2]' : isLocked ? 'pointer-events-none select-none opacity-80' : ''}`}>
+           {(!isEditMode && !isLocked) && (
+             <div 
+               className="absolute inset-0 z-50 cursor-pointer group" 
+               onClick={() => setIsEditMode(true)}
+               title="Clique em 'Alterar' no rodapé ou aqui para editar"
+             >
+               <div className="sticky top-20 left-1/2 -translate-x-1/2 bg-amber-100/90 dark:bg-amber-900/90 border border-amber-200 dark:border-amber-800 px-4 py-2 rounded-full shadow-lg backdrop-blur-md flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <Pencil size={14} className="text-amber-600 dark:text-amber-400" />
+                  <span className="text-xs font-black text-amber-700 dark:text-amber-300 uppercase tracking-tighter">Clique para Editar</span>
+               </div>
+             </div>
+           )}
 
           {/* Section 1: Header Info (Sticky) */}
           <div className="sticky top-0 z-[20] bg-white dark:bg-slate-900 px-4 pt-4 pb-4 border-b border-slate-100 dark:border-slate-800 space-y-3">
@@ -952,7 +975,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                         const valStr = e.target.value;
                         setArchCommPctInput(valStr);
                         let perc = parseFloat(valStr) || 0;
-                        if (maxCommPct !== undefined && perc > maxCommPct) perc = maxCommPct;
+                        // Trava apenas se NÃO for administrador
+                        if (!isAdminUser && maxCommPct !== undefined && perc > maxCommPct) perc = maxCommPct;
                         setArchitectCommissionPct(perc);
                         const valNum = subtotal * (perc / 100);
                         setArchCommValueInput(valNum > 0 ? valNum.toFixed(2) : '');
@@ -975,9 +999,14 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                         setArchCommValueInput(valStr);
                         const valNum = parseFloat(valStr) || 0;
                         let perc = subtotal > 0 ? (valNum / subtotal) * 100 : 0;
-                        if (maxCommPct !== undefined && perc > maxCommPct) {
+                        
+                        // Trava apenas se NÃO for administrador
+                        if (!isAdminUser && maxCommPct !== undefined && perc > maxCommPct) {
                           perc = maxCommPct;
                           setArchCommPctInput(perc.toString());
+                          // Recalcula valor para travar a interface
+                          const cappedVal = subtotal * (perc / 100);
+                          setArchCommValueInput(cappedVal.toFixed(2));
                         } else {
                           setArchCommPctInput(perc > 0 ? perc.toFixed(2) : '');
                         }
@@ -1661,8 +1690,32 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     <div className="flex items-center gap-2 px-4 py-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl text-black dark:text-green-400 text-xs font-black">
                       <Eye size={14} /> Somente leitura — Reverter para Orçamento para editar
                     </div>
+                  ) : !isEditMode ? (
+                    <div className="flex items-center gap-2">
+                       <button
+                        onClick={() => setIsEditMode(true)}
+                        className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-black shadow-lg shadow-amber-500/30 transition-all flex items-center gap-2 text-xs"
+                      >
+                        <Pencil size={14} /> Alterar
+                      </button>
+                      <button
+                        onClick={onClose}
+                        className="px-4 py-2.5 border-2 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 rounded-xl font-black hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-xs"
+                      >
+                        Sair
+                      </button>
+                    </div>
                   ) : (
                     <div className="flex items-center gap-2">
+                      {initialData && (
+                        <button
+                          onClick={() => setIsEditMode(false)}
+                          className="p-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl transition-all"
+                          title="Voltar para visualização"
+                        >
+                          <Lock size={18} />
+                        </button>
+                      )}
                       {paidAmount > 0 && (
                          <div className="hidden sm:block text-right mr-2">
                            <p className="text-[8px] font-black uppercase text-black tracking-tighter leading-none">Modo de Ajuste</p>
@@ -1741,9 +1794,27 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
           onRequest={(admin) => {
             onRequestDiscount(admin, safeDiscPct, companyInfo.maxDiscountPct!);
             setShowDiscountRequest(false);
+            onClose(); // Fecha o modal principal após solicitar, para aguardar decisão do admin (padrão do sistema)
           }}
           onRedo={() => setShowDiscountRequest(false)}
           onClose={() => setShowDiscountRequest(false)}
+        />
+      )}
+
+      {/* Commission Authorization Request Modal */}
+      {showCommissionRequest && companyInfo.maxArchitectCommissionPct !== undefined && onRequestCommission && (
+        <CommissionRequestModal
+          requestedPct={safeArchCommPct}
+          maxPct={companyInfo.maxArchitectCommissionPct}
+          subtotal={subtotal}
+          admins={appUsers.filter(u => u.role === 'admin' && u.status === 'ativo')}
+          onRequest={(admin) => {
+            onRequestCommission(admin, safeArchCommPct, companyInfo.maxArchitectCommissionPct!);
+            setShowCommissionRequest(false);
+            onClose(); // Fecha o modal principal após solicitar
+          }}
+          onRedo={() => setShowCommissionRequest(false)}
+          onClose={() => setShowCommissionRequest(false)}
         />
       )}
 

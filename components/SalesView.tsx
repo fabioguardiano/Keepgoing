@@ -31,6 +31,7 @@ interface SalesViewProps {
   createWorkOrders?: (orders: any[]) => Promise<boolean>;
   getEnvironmentOSMap?: (saleId: string) => Record<string, WorkOrder[]>;
   onRequestDiscount?: (admin: any, requestedPct: number, maxPct: number) => void;
+  onRequestCommission?: (admin: any, requestedPct: number, maxPct: number) => void;
   canEdit?: boolean;
   vendasScope?: VendasScope;
   currentUser?: AppUser | null;
@@ -40,7 +41,7 @@ interface SalesViewProps {
 export const SalesView: React.FC<SalesViewProps> = ({
   sales, clients, materials, onSaveSale, appUsers, architects, products, salesChannels, paymentMethods, companyInfo, nextOrderNumber,
   salesPhases, services, onRenameSalesPhase, onDeleteSalesPhase, onReorderSalesPhases,
-  companyId, createWorkOrders, getEnvironmentOSMap, onRequestDiscount, canEdit = true, vendasScope = 'all', currentUser,
+  companyId, createWorkOrders, getEnvironmentOSMap, onRequestDiscount, onRequestCommission, canEdit = true, vendasScope = 'all', currentUser,
   receivables
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -786,6 +787,8 @@ export const SalesView: React.FC<SalesViewProps> = ({
           createWorkOrders={createWorkOrders}
           getEnvironmentOSMap={getEnvironmentOSMap}
           onRequestDiscount={onRequestDiscount}
+          onRequestCommission={onRequestCommission}
+          currentUser={currentUser}
           canEditPrice={currentUser?.role === 'admin' || currentUser?.role === 'manager'}
           onSave={async (sale, keepOpen) => {
             const wasOrcamento = editingSale?.status === 'Orçamento' || !editingSale;

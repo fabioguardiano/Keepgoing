@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, Bell, LogOut, User as UserIcon, History, ShieldAlert, CheckCircle, XCircle, Clock } from 'lucide-react';
-import { User, DiscountAuthorization } from '../types';
+import { User, Authorization } from '../types';
 import { getInitials } from '../utils/userUtils';
 
 interface HeaderProps {
@@ -8,7 +8,7 @@ interface HeaderProps {
   onLogout: () => void;
   onSearch: (query: string) => void;
   onToggleActivity: () => void;
-  authorizations?: DiscountAuthorization[];
+  authorizations?: Authorization[];
   onApproveDiscount?: (id: string, message?: string) => void;
   onRejectDiscount?: (id: string, message?: string) => void;
 }
@@ -84,7 +84,7 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onSearch, onTogg
             <div className="absolute right-0 top-12 w-80 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-2xl z-50 overflow-hidden">
               <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700 font-black text-sm dark:text-slate-200 flex items-center gap-2">
                 <ShieldAlert size={16} className="text-amber-500" />
-                {isAdmin ? 'Solicitações de Desconto' : 'Autorizações de Desconto'}
+                {isAdmin ? 'Solicitações Pendentes' : 'Suas Autorizações'}
                 {badgeCount > 0 && <span className="ml-auto bg-red-100 text-red-600 text-xs font-black px-2 py-0.5 rounded-full">{badgeCount}</span>}
               </div>
 
@@ -99,17 +99,20 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onSearch, onTogg
                         <div>
                           {isAdmin ? (
                             <>
-                              <p className="text-sm font-bold text-slate-800">{auth.sellerName}</p>
+                              <p className="text-sm font-bold text-slate-800">
+                                {auth.type === 'commission' ? 'Comissão: ' : 'Desconto: '}
+                                {auth.sellerName}
+                              </p>
                               <p className="text-xs text-slate-500">Pedido #{auth.saleOrderNumber} · {auth.clientName || '—'}</p>
                             </>
                           ) : (
                             <>
                               <p className="text-sm font-bold text-slate-800">
                                 {auth.status === 'approved'
-                                  ? '✅ Desconto aprovado'
-                                  : '❌ Desconto rejeitado'}
+                                  ? `✅ ${auth.type === 'commission' ? 'Comissão' : 'Desconto'} aprovado`
+                                  : `❌ ${auth.type === 'commission' ? 'Comissão' : 'Desconto'} rejeitado`}
                               </p>
-                              <p className="text-xs text-slate-500">Pedido #{auth.saleOrderNumber} · {auth.requestedDiscountPct.toFixed(1)}%</p>
+                              <p className="text-xs text-slate-500">Pedido #{auth.saleOrderNumber} · {(auth.requestedValuePct || 0).toFixed(1)}%</p>
                             </>
                           )}
                         </div>
@@ -124,11 +127,11 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onSearch, onTogg
 
                       {/* Detalhes */}
                       <div className="flex gap-2 text-xs text-slate-500">
-                        <span className="bg-amber-50 text-amber-700 font-bold px-2 py-0.5 rounded-lg">
-                          Solicitado: {auth.requestedDiscountPct.toFixed(1)}%
+                        <span className={`${auth.type === 'commission' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'} font-bold px-2 py-0.5 rounded-lg`}>
+                          Solicitado: {(auth.requestedValuePct || 0).toFixed(1)}%
                         </span>
                         <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-lg">
-                          Limite: {auth.maxDiscountPct.toFixed(1)}%
+                          Limite: {(auth.maxValuePct || 0).toFixed(1)}%
                         </span>
                       </div>
 

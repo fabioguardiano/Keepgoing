@@ -452,18 +452,19 @@ export interface CompanyInfo {
   permissionProfiles?: PermissionProfile[];
 }
 
-export interface DiscountAuthorization {
+export interface Authorization {
   id: string;
   companyId: string;
   saleId?: string;
-  saleOrderNumber?: number;
+  saleOrderNumber?: string | number;
   clientName?: string;
   sellerId: string;
   sellerName: string;
-  requestedDiscountPct: number;
-  maxDiscountPct: number;
+  requestedValuePct: number; // Porcentagem solicitada (pode ser desconto ou comissão)
+  maxValuePct: number;       // Limite permitido original
   adminId: string;
   adminName: string;
+  type: 'discount' | 'commission';
   status: 'pending' | 'approved' | 'rejected';
   adminMessage?: string;
   createdAt: string;
