@@ -19,7 +19,8 @@ export async function geocodeAddress(
 ): Promise<GeocodeResult | null> {
   if (!street && !zipCode) return null;
 
-  const query = `${street}${number ? `, ${number}` : ''}, ${city}, ${state}, ${zipCode}, Brasil`;
+  const components = [street, number, city, state, zipCode, 'Brasil'].filter(c => c && c.toString().trim() !== '');
+  const query = components.join(', ');
   const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&limit=1&language=pt&country=BR`;
 
   try {

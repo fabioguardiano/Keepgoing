@@ -146,9 +146,8 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
     const timer = setTimeout(() => {
       // Geocodificar endereço da empresa
       if (companyAddress && companyAddress.length >= 5 && !coords[companyAddress]) {
-        // Fallback para geocodificação textual simples se não for estruturado
-        const parts = companyAddress.split(',');
-        geocodeAddress(parts[0], '', '', '', '').then(res => {
+        // Enviar o endereço completo para uma geocodificação mais precisa em vez de partes
+        geocodeAddress(companyAddress, '', '', '', '').then(res => {
           if (res) setCoords(prev => ({ ...prev, [companyAddress]: [res.lat, res.lng] }));
         });
       }

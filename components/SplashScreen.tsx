@@ -32,7 +32,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
         {/* Logo Container */}
         <div className="relative z-10 w-48 h-48 mb-6 flex items-center justify-center">
           <img
-            src="/Logotipo Keepgoing Alta.png"
+            src="/Logotipo Keepgoing Alta.png?v=2"
             alt="Logo"
             className="w-full h-full object-contain drop-shadow-2xl animate-[float_4s_ease-in-out_infinite]"
           />

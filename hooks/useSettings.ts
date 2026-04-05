@@ -118,7 +118,7 @@ export const useSettings = (
     address: 'Rua Américo Brasiliense, 1853 - Vila Seixas - Ribeirão Preto - SP',
     phone: '(16) 3636-0114',
     email: 'vendas@tokdeart.com.br',
-    logoUrl: '/Logotipo Keepgoing Alta.png',
+    logoUrl: '/Logotipo Keepgoing Alta.png?v=2',
     lostReasonOptions: ['Tinha preço menor', 'Prazo de entrega melhor', 'Desistiu de fazer', 'Não aprovaram o material', 'Distância da obra'],
     buttonColor: '#004D4D',
     sidebarColor: '#0f172a',
