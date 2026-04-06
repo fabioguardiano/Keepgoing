@@ -494,8 +494,8 @@ export interface PriceHistoryEntry {
   loss: number;
   commission: number;
   discount: number;
-  merchandiseCost: number;
-  bcfp: number;
+  contributionMargin: number;
+  cmv: number;
   dolarRate: number;
   euroRate: number;
 }
@@ -525,7 +525,9 @@ export interface Material {
   discountPercentage: number;
   dolarRate: number;
   euroRate: number;
-  bcfp: number;
+  difal?: number;
+  cmv?: number;
+  contributionMargin?: number;
   suggestedPrice: number;
   specialTableMargin?: number;
   specialTableValue?: number;
@@ -534,8 +536,6 @@ export interface Material {
   currency: 'BRL' | 'USD' | 'EUR';
   status: 'ativo' | 'inativo';
   imageUrl?: string;
-  difal?: number;
-  merchandiseCost?: number;
   priceHistory?: PriceHistoryEntry[];
   nfeData?: {
     ncm?: string;
