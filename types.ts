@@ -494,6 +494,7 @@ export interface PriceHistoryEntry {
   loss: number;
   commission: number;
   discount: number;
+  merchandiseCost: number;
   bcfp: number;
   dolarRate: number;
   euroRate: number;
@@ -534,6 +535,7 @@ export interface Material {
   status: 'ativo' | 'inativo';
   imageUrl?: string;
   difal?: number;
+  merchandiseCost?: number;
   priceHistory?: PriceHistoryEntry[];
   nfeData?: {
     ncm?: string;

@@ -53,6 +53,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
     specialTableCommission: 0,
     thickness: 0,
     difal: 0,
+    merchandiseCost: 0,
     nfeData: {
       ncm: '',
       cfop: '',
@@ -115,6 +116,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
         specialTableCommission: 0,
         thickness: 0,
         difal: 0,
+        merchandiseCost: 0,
         nfeData: { ncm: '', cfop: '', icms: 0, ipi: 0 }
       });
       setBrlDisplay({ unitCost: '0,00', freightCost: '0,00', sellingPrice: '0,00' });
@@ -132,14 +134,15 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
     const commission = Number(formData.commissionPercentage) / 100;
     const discount = Number(formData.discountPercentage) / 100;
 
-    // Custo Real = Custo * (1 + DIFAL) + Frete
     const costWithDifal = cost * (1 + difal);
+    const merch = costWithDifal + freight;
     const divisor = (1 - taxes - margin - commission - discount);
-    const suggested = divisor > 0 ? (costWithDifal + freight) * (1 + loss) / divisor : 0;
+    const suggested = divisor > 0 ? merch * (1 + loss) / divisor : 0;
 
     setFormData(prev => ({
       ...prev,
-      suggestedPrice: Number(suggested.toFixed(2))
+      suggestedPrice: Number(suggested.toFixed(2)),
+      merchandiseCost: Number(merch.toFixed(2))
     }));
   }, [formData.unitCost, formData.difal, formData.freightCost, formData.lossPercentage, formData.taxPercentage, formData.profitMargin, formData.commissionPercentage, formData.discountPercentage]);
 
@@ -178,6 +181,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
         loss: finalMaterial.lossPercentage,
         commission: finalMaterial.commissionPercentage,
         discount: finalMaterial.discountPercentage,
+        merchandiseCost: finalMaterial.merchandiseCost || 0,
         bcfp: finalMaterial.bcfp,
         dolarRate: finalMaterial.dolarRate,
         euroRate: finalMaterial.euroRate
@@ -378,6 +382,16 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                      <label className={labelClass}>Desconto (%)</label>
                      <input type="number" step="0.1" className={`${inputClass} !w-20 text-right`} value={formData.discountPercentage} onChange={e => setFormData({...formData, discountPercentage: Number(e.target.value)})} />
                   </div>
+                  
+                  <div className="pt-3 border-t border-slate-200">
+                    <div className="flex items-center justify-between bg-blue-50 px-3 py-2 rounded-xl border border-blue-100">
+                      <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Custo Real da Mercadoria</label>
+                      <div className="text-sm font-black text-blue-700">
+                        R$ {(formData.merchandiseCost || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200">
                     <div className="flex-1 relative group">
                       <label className={labelClass}>
