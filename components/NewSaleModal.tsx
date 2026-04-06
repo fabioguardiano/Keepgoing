@@ -907,7 +907,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 </div>
               </div>
 
-              <div className="md:col-span-7">
+              <div className="md:col-span-8">
                 <label className="text-[9px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Cliente</label>
                 <div 
                   onClick={() => !readOnly && setIsClientModalOpen(true)}
@@ -923,41 +923,47 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 </div>
               </div>
 
-              <div className="md:col-span-1">
+              <div className="md:col-span-2">
                 <label className="text-[9px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Canal de Venda</label>
-                <select
-                  value={salesChannel}
-                  onChange={(e) => setSalesChannel(e.target.value)}
-                  className="w-full p-2 bg-slate-100 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-black text-xs text-black dark:text-white transition-all appearance-none h-[38px] uppercase cursor-pointer"
-                >
-                  <option value="">Canais...</option>
-                  {salesChannels.map(channel => (
-                    <option key={channel.id} value={channel.name}>{channel.name}</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={salesChannel}
+                    onChange={(e) => setSalesChannel(e.target.value)}
+                    className="w-full p-2 pr-8 bg-slate-100 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-black text-xs text-black dark:text-white transition-all appearance-none h-[38px] uppercase cursor-pointer"
+                  >
+                    <option value="">Canais...</option>
+                    {salesChannels.map(channel => (
+                      <option key={channel.id} value={channel.name}>{channel.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                </div>
               </div>
             </div>
 
             {/* Grid 2: Vendedor, Arquiteto e Fase */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <div>
+              <div className="md:col-span-1">
                 <label className="text-[9px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Vendedor</label>
-                <select
-                  value={seller}
-                  onChange={(e) => setSeller(e.target.value)}
-                  className="w-full p-2 bg-slate-100 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-black text-xs text-black dark:text-white transition-all appearance-none h-[38px] uppercase cursor-pointer"
-                >
-                  <option value="">Vendedores...</option>
-                  {appUsers.filter(u => u.role === 'seller' || u.role === 'admin' || u.role === 'manager').map(u => (
-                    <option key={u.id} value={u.name}>{u.name}</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={seller}
+                    onChange={(e) => setSeller(e.target.value)}
+                    className="w-full p-2 pr-8 bg-slate-100 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-black text-xs text-black dark:text-white transition-all appearance-none h-[38px] uppercase cursor-pointer"
+                  >
+                    <option value="">Vendedores...</option>
+                    {appUsers.filter(u => u.role === 'seller' || u.role === 'admin' || u.role === 'manager').map(u => (
+                      <option key={u.id} value={u.name}>{u.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                </div>
               </div>
 
-              <div className="md:col-span-1">
+              <div className="md:col-span-2">
                 <label className="text-[9px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Arquiteto / Parceiro</label>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1">
+                  <div className="flex-1 relative">
                     <select
                       value={architect}
                       onChange={(e) => {
@@ -967,7 +973,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                         setArchitectId(arch?.id || '');
                         if (!selectedName) setArchitectCommissionPct(0);
                       }}
-                      className="w-full p-2 bg-slate-100 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-black text-xs text-black dark:text-white transition-all appearance-none h-[38px] uppercase cursor-pointer"
+                      className="w-full p-2 pr-8 bg-slate-100 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-black text-xs text-black dark:text-white transition-all appearance-none h-[38px] uppercase cursor-pointer"
                     >
                       <option value="">Nenhum parceiro</option>
                       {architects?.filter(a => a.status === 'ativo').map(a => (
@@ -976,13 +982,14 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                           </option>
                         ))}
                     </select>
+                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   </div>
                   <div className="relative" ref={archCommRef}>
                     <button
                       type="button"
                       onClick={() => architect && setShowArchCommPopover(!showArchCommPopover)}
                       disabled={!architect}
-                      className={`h-[38px] w-[38px] rounded-xl transition-all shadow-sm flex items-center justify-center ${!architect ? 'opacity-30 bg-slate-100' : showArchCommPopover ? 'bg-amber-100 text-amber-700 scale-105 shadow-md border-amber-300' : 'bg-blue-100 text-blue-600 hover:bg-blue-200 border-blue-200'}`}
+                      className={`h-[38px] w-[38px] rounded-xl transition-all shadow-sm flex items-center justify-center border-2 ${!architect ? 'opacity-30 bg-slate-100 border-transparent' : showArchCommPopover ? 'bg-amber-100 text-amber-700 scale-105 shadow-md border-amber-300' : 'bg-blue-100 text-blue-600 hover:bg-blue-200 border-blue-200'}`}
                       title="Editar Comissão (RT)"
                     >
                       <DollarSign size={14} />
@@ -1062,7 +1069,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 </div>
               </div>
 
-              <div>
+              <div className="md:col-span-1">
                 <label className="text-[9px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Fase do Orçamento</label>
                 {initialData?.status === 'Cancelado' ? (
                   <div className="w-full p-2 bg-slate-100 dark:bg-slate-800 rounded-xl font-black text-xs text-red-600 dark:text-red-400 h-[38px] flex items-center px-3 border-2 border-transparent">
@@ -1078,19 +1085,22 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     <span className="text-[7px] font-black uppercase tracking-tighter text-slate-400 shrink-0 ml-2">Salve p/ liberar</span>
                   </div>
                 ) : (
-                  <select
-                    value={salesPhase}
-                    onChange={(e) => setSalesPhase(e.target.value as any)}
-                    className="w-full p-2 bg-slate-100 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-black text-xs text-black dark:text-white transition-all appearance-none h-[38px] uppercase cursor-pointer px-3"
-                  >
-                    {salesPhases.map(phase => (
-                      <option key={phase.name} value={phase.name}>{phase.name}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={salesPhase}
+                      onChange={(e) => setSalesPhase(e.target.value as any)}
+                      className="w-full p-2 pr-8 bg-slate-100 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-black text-xs text-black dark:text-white transition-all appearance-none h-[38px] uppercase cursor-pointer px-3"
+                    >
+                      {salesPhases.map(phase => (
+                        <option key={phase.name} value={phase.name}>{phase.name}</option>
+                      ))}
+                    </select>
+                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  </div>
                 )}
               </div>
             </div>
-          </div> {/* Fim do Sticky Header (line 856) */}
+          </div> {/* Fim do Sticky Header */}
 
           <div className="p-4 space-y-6">
             {/* Section 2: Items Grouped by Environment */}
