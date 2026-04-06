@@ -40,8 +40,8 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
     profitMargin: 45,
     commissionPercentage: 2.5,
     discountPercentage: 5,
-    dolarRate: 5.46,
-    euroRate: 6.39,
+    dolarRate: exchangeRates.usd || 5.46,
+    euroRate: exchangeRates.eur || 6.39,
     suggestedPrice: 0,
     sellingPrice: 0,
     currency: 'BRL',
@@ -66,7 +66,10 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
   const [brlDisplay, setBrlDisplay] = useState({ unitCost: '0,00', freightCost: '0,00', sellingPrice: '0,00' });
 
   const fmtBRL = (n: number) => (n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const parseBRL = (s: string) => parseFloat(s.replace(/\./g, '').replace(',', '.')) || 0;
+  const parseBRL = (s: string) => {
+    const numeric = s.replace(/\./g, '').replace(',', '.');
+    return parseFloat(numeric) || 0;
+  };
 
   useEffect(() => {
     if (editingMaterial) {
@@ -164,35 +167,27 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
       id: editingMaterial?.id || crypto.randomUUID(),
     } as Material;
 
-    // Record price history if key indicators changed
-    const lastEntry = finalMaterial.priceHistory?.[finalMaterial.priceHistory.length - 1];
-    if (!lastEntry || 
-        lastEntry.cost !== finalMaterial.unitCost || 
-        lastEntry.sellingPrice !== finalMaterial.sellingPrice ||
-        lastEntry.loss !== finalMaterial.lossPercentage ||
-        lastEntry.margin !== finalMaterial.profitMargin) {
-      
-      const newEntry = {
-        date: new Date().toISOString(),
-        cost: finalMaterial.unitCost,
-        sellingPrice: finalMaterial.sellingPrice,
-        suggestedPrice: finalMaterial.suggestedPrice,
-        currency: finalMaterial.currency || 'BRL',
-        supplier: finalMaterial.supplier,
-        difal: finalMaterial.difal || 0,
-        margin: finalMaterial.profitMargin,
-        freight: finalMaterial.freightCost,
-        tax: finalMaterial.taxPercentage,
-        loss: finalMaterial.lossPercentage,
-        commission: finalMaterial.commissionPercentage,
-        discount: finalMaterial.discountPercentage,
-        cmv: finalMaterial.cmv || 0,
-        contributionMargin: finalMaterial.contributionMargin || 0,
-        dolarRate: finalMaterial.dolarRate,
-        euroRate: finalMaterial.euroRate
-      };
-      finalMaterial.priceHistory = [...(finalMaterial.priceHistory || []), newEntry];
-    }
+    // Record price history
+    const newEntry = {
+      date: new Date().toISOString(),
+      cost: finalMaterial.unitCost,
+      sellingPrice: finalMaterial.sellingPrice,
+      suggestedPrice: finalMaterial.suggestedPrice,
+      currency: finalMaterial.currency || 'BRL',
+      supplier: finalMaterial.supplier,
+      difal: finalMaterial.difal || 0,
+      margin: finalMaterial.profitMargin,
+      freight: finalMaterial.freightCost,
+      tax: finalMaterial.taxPercentage,
+      loss: finalMaterial.lossPercentage,
+      commission: finalMaterial.commissionPercentage,
+      discount: finalMaterial.discountPercentage,
+      cmv: finalMaterial.cmv || 0,
+      contributionMargin: finalMaterial.contributionMargin || 0,
+      dolarRate: finalMaterial.dolarRate,
+      euroRate: finalMaterial.euroRate
+    };
+    finalMaterial.priceHistory = [...(finalMaterial.priceHistory || []), newEntry];
 
     onSave(finalMaterial);
     onClose();
@@ -347,6 +342,23 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                       <input type="number" step="0.1" className={`${inputClass} !w-20 text-right`} value={formData.commissionPercentage} onChange={e => setFormData({...formData, commissionPercentage: Number(e.target.value)})} />
                     </div>
                   </div>
+
+                  <div className="pt-4 grid grid-cols-2 gap-3 border-t border-slate-200">
+                    <div className="relative group">
+                       <label className={labelClass}>Cotação Dólar</label>
+                       <div className="relative">
+                         <span className="absolute left-2 top-2 text-[8px] font-bold text-slate-400">US$</span>
+                         <input type="number" step="0.01" className={`${inputClass} !pl-7 text-right`} value={formData.dolarRate} onChange={e => setFormData({...formData, dolarRate: Number(e.target.value)})} />
+                       </div>
+                    </div>
+                    <div className="relative group">
+                       <label className={labelClass}>Cotação Euro</label>
+                       <div className="relative">
+                         <span className="absolute left-2 top-2 text-[8px] font-bold text-slate-400">€</span>
+                         <input type="number" step="0.01" className={`${inputClass} !pl-7 text-right`} value={formData.euroRate} onChange={e => setFormData({...formData, euroRate: Number(e.target.value)})} />
+                       </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Analysis and Suggestion Panel */}
@@ -398,7 +410,14 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                   
                   {/* Applied Price */}
                   <div className="bg-slate-900 text-white p-6 rounded-[32px] shadow-xl ring-8 ring-slate-100">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-3">Preço Final de Venda</label>
+                    <div className="flex items-center justify-between mb-3">
+                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">Preço de Venda Final</label>
+                       <div className="flex gap-2 p-1 bg-slate-800 rounded-lg">
+                          {(['BRL', 'USD', 'EUR'] as const).map(curr => (
+                            <button key={curr} type="button" onClick={() => setFormData({...formData, currency: curr})} className={`px-2 py-0.5 rounded text-[8px] font-black tracking-tighter transition-all ${formData.currency === curr ? 'bg-emerald-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}>{curr}</button>
+                          ))}
+                       </div>
+                    </div>
                     <div className="flex items-center gap-2 mb-6">
                        <span className="text-xl font-black text-slate-600">R$</span>
                        <input
@@ -422,7 +441,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                     </button>
                   </div>
 
-                  {/* Material Sample */}
+                  {/* Material Sample Upload */}
                   <div className="relative group rounded-3xl overflow-hidden bg-slate-50 border-2 border-dashed border-slate-200 h-44 flex items-center justify-center">
                     {formData.imageUrl ? (
                       <>
@@ -432,9 +451,10 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                         </button>
                       </>
                     ) : (
-                      <div className="flex flex-col items-center gap-2 text-slate-300">
+                      <div className="flex flex-col items-center gap-2 text-slate-300 p-4 text-center">
                         <Box size={32} />
-                        <span className="text-[10px] font-black uppercase">Adicionar Amostra</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Adicionar Amostra</span>
+                        <p className="text-[8px] font-medium leading-tight text-slate-400 mt-1 uppercase">Sugerido: Quadrada 1:1<br/>JPEG ou PNG até 2MB</p>
                       </div>
                     )}
                     <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
