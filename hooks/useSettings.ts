@@ -151,7 +151,7 @@ export const useSettings = (
         maxDiscountPct: data.max_discount_pct ?? undefined,
         maxArchitectCommissionPct: data.max_architect_commission_pct ?? undefined,
         sellerCommissionPct: data.seller_commission_pct ?? undefined,
-        adminExpensesPct: data.admin_expenses_pct ?? undefined,
+        adminExpensesPerM2: data.admin_expenses_per_m2 ?? undefined,
         technicalReservePct: data.technical_reserve_pct ?? undefined,
       };
       setCompanyInfoState(info);
@@ -333,7 +333,7 @@ export const useSettings = (
           max_discount_pct: info.maxDiscountPct ?? null,
           max_architect_commission_pct: info.maxArchitectCommissionPct ?? null,
           seller_commission_pct: info.sellerCommissionPct ?? null,
-          admin_expenses_pct: info.adminExpensesPct ?? null,
+          admin_expenses_per_m2: info.adminExpensesPerM2 ?? null,
           technical_reserve_pct: info.technicalReservePct ?? null,
         }).eq('id', companyId);
         if (error) throw error;

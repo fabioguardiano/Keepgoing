@@ -159,8 +159,7 @@ function calcSaleAnalysis(
   // Reserva Técnica = Comissão do Arquiteto (vem diretamente da venda)
   const reservaTecnica = comissaoArquiteto;
   const comissaoVendedorCusto = comissaoVendedor; // já calculado por item
-  const despesasAdminPct = companyInfo.adminExpensesPct ?? 0;
-  const despesasAdmin = valorVenda * (despesasAdminPct / 100);
+  const despesasAdmin = (companyInfo.adminExpensesPerM2 ?? 0) * totalM2;
 
   const impostosTotais = impostosMaterial + impostosProdRevenda + impostosServicos;
 
@@ -236,9 +235,7 @@ export const SaleAnalysisPanel: React.FC<SaleAnalysisPanelProps> = ({
   const a = calcSaleAnalysis(sale, materials, products, companyInfo);
   const isProfit = a.resultado >= 0;
 
-  const hasParams =
-    (companyInfo.adminExpensesPct !== undefined) ||
-    (companyInfo.technicalReservePct !== undefined);
+  const hasParams = companyInfo.adminExpensesPerM2 !== undefined;
 
   return (
     <div className="mt-6 border-t-2 border-dashed border-slate-200 pt-6">
@@ -303,7 +300,7 @@ export const SaleAnalysisPanel: React.FC<SaleAnalysisPanelProps> = ({
           <Row label="Vlr. Venda" value={a.valorVenda} />
           <Row label="- Custo Apurado" value={a.custosTotal} sub />
           <Row label="- Impostos" value={a.impostosTotais} sub />
-          <Row label={`- Desp. Admin. (${fmtPct(companyInfo.adminExpensesPct ?? 0)}%)`} value={a.despesasAdmin} sub />
+          <Row label={`- Desp. Admin. (R$${fmt(companyInfo.adminExpensesPerM2 ?? 0)}/m²)`} value={a.despesasAdmin} sub />
 
           <div className={`flex justify-between items-center mt-3 pt-3 border-t ${isProfit ? 'border-emerald-200' : 'border-red-200'}`}>
             <span className="text-sm font-black text-slate-800">Resultado:</span>

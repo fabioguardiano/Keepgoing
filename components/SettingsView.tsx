@@ -693,21 +693,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                     <p className="text-[11px] text-slate-400 font-medium mb-4">Comissão do vendedor é calculada por item a partir do cadastro de matéria prima/produto. Reserva técnica vem da comissão do arquiteto da venda.</p>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-1">Despesas Administrativas (%)</label>
+                                            <label className="block text-sm font-bold text-slate-700 mb-1">Despesas Administrativas (R$/m²)</label>
                                             <input
                                                 type="number"
                                                 min="0"
-                                                max="100"
                                                 step="0.01"
-                                                value={companyInfo.adminExpensesPct ?? ''}
+                                                value={companyInfo.adminExpensesPerM2 ?? ''}
                                                 onChange={e => {
                                                     const v = parseFloat(e.target.value);
-                                                    onUpdateCompany({ ...companyInfo, adminExpensesPct: isNaN(v) ? undefined : v });
+                                                    onUpdateCompany({ ...companyInfo, adminExpensesPerM2: isNaN(v) ? undefined : v });
                                                 }}
-                                                placeholder="Ex: 10.64"
+                                                placeholder="Ex: 80.00"
                                                 className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-bold"
                                             />
-                                            <p className="text-[10px] text-slate-400 mt-1">% sobre o valor total da venda</p>
+                                            <p className="text-[10px] text-slate-400 mt-1">R$ por m² total de matéria prima da venda</p>
                                         </div>
                                     </div>
                                 </div>

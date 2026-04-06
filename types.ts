@@ -450,7 +450,7 @@ export interface CompanyInfo {
   maxDiscountPct?: number;
   maxArchitectCommissionPct?: number;
   sellerCommissionPct?: number;
-  adminExpensesPct?: number;
+  adminExpensesPerM2?: number;
   technicalReservePct?: number;
   permissionProfiles?: PermissionProfile[];
 }
