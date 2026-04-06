@@ -219,7 +219,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
         {/* Header */}
         <div className="bg-slate-100 px-8 py-3 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-xs font-black uppercase tracking-wider text-[var(--primary-color)]">Ficha de Precificação Profissional</span>
+            <span className="text-xs font-black uppercase tracking-wider text-[var(--primary-color)]">Cadastro de Matéria Prima</span>
           </div>
           <div className="flex items-center gap-4">
              <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200">
@@ -409,7 +409,15 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                          onBlur={() => setBrlDisplay(p=>({...p,sellingPrice:fmtBRL(formData.sellingPrice)}))}
                        />
                     </div>
-                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, sellingPrice: prev.suggestedPrice }))} className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2">
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        const newPrice = formData.suggestedPrice;
+                        setFormData(prev => ({ ...prev, sellingPrice: newPrice }));
+                        setBrlDisplay(prev => ({ ...prev, sellingPrice: fmtBRL(newPrice) }));
+                      }} 
+                      className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2"
+                    >
                        <ShieldCheck size={14} /> Aplicar Sugestão
                     </button>
                   </div>
@@ -509,7 +517,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
            </div>
            <div className="flex gap-4">
              <button type="button" onClick={onClose} className="px-8 py-3 rounded-2xl font-black text-[10px] text-slate-400 uppercase tracking-widest hover:bg-slate-100 transition-all">Descartar</button>
-             <button type="button" onClick={() => handleSubmit()} className="px-12 py-3 bg-[var(--primary-color)] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-[var(--primary-color)]/20 hover:scale-105 active:scale-95 transition-all">Salvar Ficha Técnica</button>
+             <button type="button" onClick={() => handleSubmit()} className="px-12 py-3 bg-[var(--primary-color)] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-[var(--primary-color)]/20 hover:scale-105 active:scale-95 transition-all">Salvar</button>
            </div>
         </div>
 
