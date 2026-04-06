@@ -156,9 +156,8 @@ function calcSaleAnalysis(
     impostosServicos += (i.totalPrice || 0) * 0.05;
   });
 
-  // Parâmetros da empresa
-  const reservaTecnicaPct = companyInfo.technicalReservePct ?? 0;
-  const reservaTecnica = valorVenda * (reservaTecnicaPct / 100);
+  // Reserva Técnica = Comissão do Arquiteto (vem diretamente da venda)
+  const reservaTecnica = comissaoArquiteto;
   const comissaoVendedorCusto = comissaoVendedor; // já calculado por item
   const despesasAdminPct = companyInfo.adminExpensesPct ?? 0;
   const despesasAdmin = valorVenda * (despesasAdminPct / 100);
@@ -275,7 +274,7 @@ export const SaleAnalysisPanel: React.FC<SaleAnalysisPanelProps> = ({
             <Row label={`Total c/ Financeiro`} value={a.valorVenda} />
             <Row label={`C. Vendedor (${fmtPct(a.sellerPct)}%)`} value={a.comissaoVendedor} />
             {a.comissaoArquiteto > 0 && (
-              <Row label={`C. Arquiteto`} value={a.comissaoArquiteto} />
+              <Row label={`Res. Tec. / Arq.`} value={a.comissaoArquiteto} />
             )}
           </div>
         </div>
@@ -285,9 +284,8 @@ export const SaleAnalysisPanel: React.FC<SaleAnalysisPanelProps> = ({
           <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-3">Apuração de Custo</h4>
           <Row label="Matéria Prima com Perdas" value={a.materiaPrimaComPerdas} />
           <Row label="Frete" value={a.frete} />
-          <Row label="Reserva Técnica" value={a.reservaTecnica} />
+          <Row label="Reserva Técnica (Arq.)" value={a.reservaTecnica} />
           <Row label="Comissão do Vendedor" value={a.comissaoVendedorCusto} />
-          {a.comissaoArquiteto > 0 && <Row label="Comissão Arquiteto" value={a.comissaoArquiteto} />}
           <Row label="Valor Mão de Obra" value={0} />
           <Row label="Custo Prod. Revenda" value={a.custoProdRevenda} />
           <Row label="Serviços" value={a.servicosCusto} />

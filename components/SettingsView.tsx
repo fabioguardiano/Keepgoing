@@ -690,25 +690,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                                 <div className="mt-8 pt-8 border-t border-slate-100">
                                     <h3 className="text-xs font-black text-slate-700 uppercase tracking-[0.2em] mb-3">Parâmetros Financeiros — Apuração de Resultado</h3>
-                                    <p className="text-[11px] text-slate-400 font-medium mb-4">Estes percentuais são usados no Resumo da Venda (visível apenas para Admin) para calcular o resultado líquido de cada venda</p>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-1">Comissão do Vendedor (%)</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                max="100"
-                                                step="0.01"
-                                                value={companyInfo.sellerCommissionPct ?? ''}
-                                                onChange={e => {
-                                                    const v = parseFloat(e.target.value);
-                                                    onUpdateCompany({ ...companyInfo, sellerCommissionPct: isNaN(v) ? undefined : v });
-                                                }}
-                                                placeholder="Ex: 2.46"
-                                                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-bold"
-                                            />
-                                            <p className="text-[10px] text-slate-400 mt-1">% sobre o valor total da venda</p>
-                                        </div>
+                                    <p className="text-[11px] text-slate-400 font-medium mb-4">Comissão do vendedor é calculada por item a partir do cadastro de matéria prima/produto. Reserva técnica vem da comissão do arquiteto da venda.</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-sm font-bold text-slate-700 mb-1">Despesas Administrativas (%)</label>
                                             <input
@@ -722,23 +705,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                     onUpdateCompany({ ...companyInfo, adminExpensesPct: isNaN(v) ? undefined : v });
                                                 }}
                                                 placeholder="Ex: 10.64"
-                                                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-bold"
-                                            />
-                                            <p className="text-[10px] text-slate-400 mt-1">% sobre o valor total da venda</p>
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-1">Reserva Técnica (%)</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                max="100"
-                                                step="0.01"
-                                                value={companyInfo.technicalReservePct ?? ''}
-                                                onChange={e => {
-                                                    const v = parseFloat(e.target.value);
-                                                    onUpdateCompany({ ...companyInfo, technicalReservePct: isNaN(v) ? undefined : v });
-                                                }}
-                                                placeholder="Ex: 0"
                                                 className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-bold"
                                             />
                                             <p className="text-[10px] text-slate-400 mt-1">% sobre o valor total da venda</p>
