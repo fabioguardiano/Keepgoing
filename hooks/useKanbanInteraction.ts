@@ -76,7 +76,8 @@ export const useKanbanInteraction = (initialZoom = 1.0, minZoom = 0.5, maxZoom =
     containerRef,
     resetZoom,
     zoomStyle: {
-      zoom: zoomLevel,
+      '--kanban-zoom': zoomLevel,
+      fontSize: `${zoomLevel * 100}%`,
     } as React.CSSProperties,
     scrollProps: {
       onMouseDown: handleMouseDown,

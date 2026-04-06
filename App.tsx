@@ -115,7 +115,7 @@ const App: React.FC = () => {
   const {
     appUsers, handleSaveUser, handleDeleteUser,
     staff, handleSaveStaff, handleDeleteStaff,
-    phases, addPhase, renamePhase, deletePhase, reorderPhases, togglePhaseRequirement,
+    phases, addPhase, renamePhase, deletePhase, reorderPhases, togglePhaseRequirement, updatePhase,
     salesPhases, addSalesPhase, renameSalesPhase, deleteSalesPhase, updateSalesPhase, reorderSalesPhases,
     brands, handleSaveBrand, handleDeleteBrand,
     productGroups, handleSaveProductGroup, handleDeleteProductGroup,
@@ -508,6 +508,7 @@ const App: React.FC = () => {
             onToggleRequirement={togglePhaseRequirement}
             onAddPhase={addPhase}
             onRenamePhase={renamePhase}
+            onUpdatePhase={updatePhase}
             onDeletePhase={deletePhase}
             onReorderPhases={reorderPhases}
             salesPhases={salesPhases}

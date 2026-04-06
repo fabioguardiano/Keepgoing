@@ -280,7 +280,10 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkO
   const totalLinear = workOrders.reduce((acc, wo) => acc + (wo.totalLinear || 0), 0);
 
   return (
-  <div className="w-72 flex-shrink-0 flex flex-col">
+  <div 
+    className="flex-shrink-0 flex flex-col"
+    style={{ width: `calc(18rem * var(--kanban-zoom, 1))` }}
+  >
     {/* Column header */}
     <div className="mb-3 px-1 space-y-1">
       <div className="flex items-center justify-between">
@@ -442,10 +445,17 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
         )}
         
         <div 
-          className="flex gap-4 min-w-max px-1 py-1 min-h-full pb-4 transition-all duration-300 pointer-events-none"
-          style={{ ...zoomStyle, width: 'max-content' }}
+          className="flex pb-4 transition-all duration-300 pointer-events-none"
+          style={{ 
+            ...zoomStyle, 
+            width: 'max-content',
+            gap: `calc(1rem * var(--kanban-zoom, 1))`
+          }}
         >
-          <div className="flex gap-4 pointer-events-auto min-h-full">
+          <div 
+            className="flex pointer-events-auto min-h-full"
+            style={{ gap: `calc(1rem * var(--kanban-zoom, 1))` }}
+          >
           {phases.map(phase => (
             <KanbanColumn
               key={phase.name}

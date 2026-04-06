@@ -39,7 +39,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
 
   const environments = Array.from(
     new Set((sale.items || []).map(i => i.environment || 'Sem Ambiente'))
-  );
+  ).sort((a, b) => a.localeCompare(b));
 
   const deliveryDays = sale.deliveryDeadline ? parseInt(sale.deliveryDeadline as string) : null;
 
@@ -213,9 +213,6 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
               <span style={{ fontWeight: 900, fontSize: '10px', letterSpacing: '1px', textTransform: 'uppercase' }}>
                 {env}
               </span>
-              <span style={{ fontSize: '9px', fontWeight: 700 }}>
-                Sub-Total: R$ {fmt(envTotal)}
-              </span>
             </div>
 
             {/* Tabela de itens */}
@@ -223,8 +220,8 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
               <thead>
                 <tr style={{ backgroundColor: '#f1f5f9', fontSize: '8.5px', fontWeight: 700, borderBottom: '1px solid #000' }}>
                   <th style={{ padding: '3px 4px', textAlign: 'left', width: '5%' }}>Qtde.</th>
-                  <th style={{ padding: '3px 4px', textAlign: 'left', width: hideM2Unit ? '36%' : '28%' }}>Descrição</th>
-                  <th style={{ padding: '3px 4px', textAlign: 'left', width: '25%' }}>Matéria Prima / Material</th>
+                  <th style={{ padding: '3px 4px', textAlign: 'left', width: hideM2Unit ? '20%' : '12%' }}>Descrição</th>
+                  <th style={{ padding: '3px 4px', textAlign: 'left', width: '41%' }}>Matéria Prima / Material</th>
                   <th style={{ padding: '3px 4px', textAlign: 'center', width: '10%' }}>Comp. (m)</th>
                   <th style={{ padding: '3px 4px', textAlign: 'center', width: '10%' }}>Larg. (m)</th>
                   {!hideM2Unit && <th style={{ padding: '3px 4px', textAlign: 'center', width: '8%' }}>M² / Un</th>}

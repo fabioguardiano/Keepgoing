@@ -312,26 +312,42 @@ export const SalesView: React.FC<SalesViewProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center">
-          <Clock className="text-[var(--primary-color)] mb-2" size={24} />
-          <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Orçamentos</span>
-          <p className="text-2xl font-black text-slate-800 dark:text-white">{scopedSales.filter(s => s.status === 'Orçamento').length}</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-white dark:bg-slate-900 dark:border-slate-800 py-2.5 px-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
+          <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-xl">
+             <Clock className="text-[var(--primary-color)]" size={18} />
+          </div>
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block leading-tight">Orçamentos</span>
+            <p className="text-lg font-black text-slate-800 dark:text-white leading-tight">{scopedSales.filter(s => s.status === 'Orçamento').length}</p>
+          </div>
         </div>
-        <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center">
-          <CheckCircle2 className="text-[var(--primary-color)] mb-2" size={24} />
-          <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Confirmados</span>
-          <p className="text-2xl font-black text-slate-800 dark:text-white">{scopedSales.filter(s => s.status === 'Confirmado' || s.status === 'Pedido').length}</p>
+        <div className="bg-white dark:bg-slate-900 dark:border-slate-800 py-2.5 px-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
+          <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-xl">
+            <CheckCircle2 className="text-green-500" size={18} />
+          </div>
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block leading-tight">Confirmados</span>
+            <p className="text-lg font-black text-slate-800 dark:text-white leading-tight">{scopedSales.filter(s => s.status === 'Confirmado' || s.status === 'Pedido').length}</p>
+          </div>
         </div>
-        <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center">
-          <ShoppingBag className="text-[var(--primary-color)] mb-2" size={24} />
-          <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Em Produção</span>
-          <p className="text-2xl font-black text-slate-800 dark:text-white">{scopedSales.filter(s => s.status === 'Pedido' && s.phase !== 'Entregue').length}</p>
+        <div className="bg-white dark:bg-slate-900 dark:border-slate-800 py-2.5 px-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
+          <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+            <ShoppingBag className="text-blue-500" size={18} />
+          </div>
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block leading-tight">Em Produção</span>
+            <p className="text-lg font-black text-slate-800 dark:text-white leading-tight">{scopedSales.filter(s => s.status === 'Pedido' && s.phase !== 'Entregue').length}</p>
+          </div>
         </div>
-        <div className="bg-white dark:bg-slate-900 dark:border-slate-800 p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center">
-          <CheckCircle2 className="text-[var(--primary-color)] mb-2" size={24} />
-          <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Finalizados</span>
-          <p className="text-2xl font-black text-slate-800 dark:text-white">{scopedSales.filter(s => s.status === 'Finalizado' || s.phase === 'Entregue').length}</p>
+        <div className="bg-white dark:bg-slate-900 dark:border-slate-800 py-2.5 px-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
+          <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+            <CheckCircle2 className="text-purple-500" size={18} />
+          </div>
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block leading-tight">Finalizados</span>
+            <p className="text-lg font-black text-slate-800 dark:text-white leading-tight">{scopedSales.filter(s => s.status === 'Finalizado' || s.phase === 'Entregue').length}</p>
+          </div>
         </div>
       </div>
 
@@ -643,12 +659,17 @@ export const SalesView: React.FC<SalesViewProps> = ({
             <Droppable droppableId="board" type="column" direction="horizontal">
               {(provided) => (
                 <div 
-                  {...provided.droppableProps}
-                  ref={provided.innerRef}
-                  className="flex gap-6 pb-6 pt-4 px-4 min-h-[600px] items-start transition-all duration-300 pointer-events-none"
-                  style={{ ...zoomStyle, width: 'max-content' }}
+                  className="flex pb-6 pt-4 px-4 min-h-[600px] items-start transition-all duration-300 pointer-events-none"
+                  style={{ 
+                    ...zoomStyle, 
+                    width: 'max-content',
+                    gap: `calc(1.5rem * var(--kanban-zoom, 1))`
+                  }}
                 >
-                  <div className="flex gap-6 pointer-events-auto">
+                  <div 
+                    className="flex pointer-events-auto h-full"
+                    style={{ gap: `calc(1.5rem * var(--kanban-zoom, 1))` }}
+                  >
                 {salesPhases.map((phaseConfig, index) => {
                   const phase = phaseConfig.name;
                   const isEditing = editingPhase === phase;
@@ -669,7 +690,12 @@ export const SalesView: React.FC<SalesViewProps> = ({
                         <div 
                           ref={provided.innerRef}
                           {...provided.draggableProps}
-                          className="flex-shrink-0 w-[420px] flex flex-col gap-4"
+                          className="flex-shrink-0 flex flex-col items-stretch"
+                          style={{ 
+                            ...provided.draggableProps.style,
+                            width: `calc(420px * var(--kanban-zoom, 1))`,
+                            gap: `calc(1rem * var(--kanban-zoom, 1))`
+                          }}
                         >
                           {/* Column Header */}
                           <div 
