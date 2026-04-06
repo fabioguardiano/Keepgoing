@@ -691,22 +691,25 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                 <div className="mt-8 pt-8 border-t border-slate-100">
                                     <h3 className="text-xs font-black text-slate-700 uppercase tracking-[0.2em] mb-3">Parâmetros Financeiros — Apuração de Resultado</h3>
                                     <p className="text-[11px] text-slate-400 font-medium mb-4">Comissão do vendedor é calculada por item a partir do cadastro de matéria prima/produto. Reserva técnica vem da comissão do arquiteto da venda.</p>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-1">Despesas Administrativas (R$/m²)</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                step="0.01"
-                                                value={companyInfo.adminExpensesPerM2 ?? ''}
-                                                onChange={e => {
-                                                    const v = parseFloat(e.target.value);
-                                                    onUpdateCompany({ ...companyInfo, adminExpensesPerM2: isNaN(v) ? undefined : v });
-                                                }}
-                                                placeholder="Ex: 80.00"
-                                                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-bold"
-                                            />
-                                            <p className="text-[10px] text-slate-400 mt-1">R$ por m² total de matéria prima da venda</p>
+                                    <div className="flex items-end gap-3">
+                                        <div className="w-48">
+                                            <label className="block text-sm font-bold text-slate-700 mb-1">Desp. Administrativas / m²</label>
+                                            <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary">
+                                                <span className="pl-3 text-sm font-black text-slate-400 select-none">R$</span>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
+                                                    value={companyInfo.adminExpensesPerM2 ?? ''}
+                                                    onChange={e => {
+                                                        const v = parseFloat(e.target.value);
+                                                        onUpdateCompany({ ...companyInfo, adminExpensesPerM2: isNaN(v) ? undefined : v });
+                                                    }}
+                                                    placeholder="0,00"
+                                                    className="w-full py-2 pr-3 bg-transparent text-sm focus:outline-none font-bold"
+                                                />
+                                            </div>
+                                            <p className="text-[10px] text-slate-400 mt-1">por m² de matéria prima</p>
                                         </div>
                                     </div>
                                 </div>
