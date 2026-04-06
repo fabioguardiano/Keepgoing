@@ -38,6 +38,7 @@ interface SaleAnalysis {
   despesasAdmin: number;
   resultado: number;
   gainPct: number;
+  sellerPct: number; // % efetivo calculado item a item
 
   // Métricas de área
   totalM2: number;
@@ -87,17 +88,15 @@ function calcSaleAnalysis(
   const desconto = sale.totals?.desconto ?? 0;
   const valorVenda = sale.totals?.geral ?? (subTotal + frete - desconto);
 
-  // Comissões
-  const sellerPct = companyInfo.sellerCommissionPct ?? 0;
-  const comissaoVendedor = valorVenda * (sellerPct / 100);
   const comissaoArquiteto = sale.totals?.comissaoArquiteto ?? 0;
 
   // Métricas de área
   const totalM2 = materialItems.reduce((s, i) => s + (i.m2 || 0), 0);
 
-  // Custo real de cada material (com perdas e frete unitário)
+  // Custo real de cada material (com perdas e frete unitário) + comissão por item
   let materiaPrimaComPerdas = 0;
   let impostosMaterial = 0;
+  let comissaoVendedorMaterial = 0;
   materialItems.forEach(i => {
     const mat = materials.find(m => m.id === i.materialId);
     if (mat) {
@@ -105,11 +104,13 @@ function calcSaleAnalysis(
       const freteUnitario = mat.freightCost || 0;
       const perdaPct = mat.lossPercentage || 0;
       const taxPct = mat.taxPercentage || 0;
+      const commPct = mat.commissionPercentage || 0;
       const qty = i.m2 && i.m2 > 0 ? i.m2 : i.quantity;
       const custoSemPerda = (custoBase + freteUnitario) * qty;
       const custoComPerda = custoSemPerda * (1 + perdaPct / 100);
       materiaPrimaComPerdas += custoComPerda;
       impostosMaterial += custoSemPerda * (taxPct / 100);
+      comissaoVendedorMaterial += (i.totalPrice || 0) * (commPct / 100);
     } else {
       // Sem cadastro: usa 60% do preço de venda como estimativa de custo
       materiaPrimaComPerdas += (i.totalPrice || 0) * 0.6;
@@ -124,19 +125,25 @@ function calcSaleAnalysis(
     return s + area * (1 + perdaPct / 100);
   }, 0);
 
-  // Custo produtos de revenda
+  // Custo produtos de revenda + comissão por produto
   let custoProdRevenda = 0;
   let impostosProdRevenda = 0;
+  let comissaoVendedorProd = 0;
   productItems.forEach(i => {
     const prod = products.find(p => p.id === i.materialId);
     if (prod) {
       const custo = prod.unitCost * i.quantity;
       custoProdRevenda += custo;
       impostosProdRevenda += custo * ((prod.taxPercentage || 0) / 100);
+      comissaoVendedorProd += (i.totalPrice || 0) * ((prod.commissionPercentage || 0) / 100);
     } else {
       custoProdRevenda += (i.totalPrice || 0) * 0.6;
     }
   });
+
+  // Comissão total do vendedor (soma item a item do cadastro)
+  const comissaoVendedor = comissaoVendedorMaterial + comissaoVendedorProd;
+  const sellerPct = valorVenda > 0 ? (comissaoVendedor / valorVenda) * 100 : 0;
 
   // Custo serviços (custo = servicePercentage do valor do item mat. prima pai ou unitCost se for serviço puro)
   let servicosCusto = 0;
@@ -152,7 +159,7 @@ function calcSaleAnalysis(
   // Parâmetros da empresa
   const reservaTecnicaPct = companyInfo.technicalReservePct ?? 0;
   const reservaTecnica = valorVenda * (reservaTecnicaPct / 100);
-  const comissaoVendedorCusto = comissaoVendedor;
+  const comissaoVendedorCusto = comissaoVendedor; // já calculado por item
   const despesasAdminPct = companyInfo.adminExpensesPct ?? 0;
   const despesasAdmin = valorVenda * (despesasAdminPct / 100);
 
@@ -204,6 +211,7 @@ function calcSaleAnalysis(
     despesasAdmin,
     resultado,
     gainPct,
+    sellerPct,
     totalM2,
     totalM2ComPerda,
     parcelas,
@@ -230,7 +238,6 @@ export const SaleAnalysisPanel: React.FC<SaleAnalysisPanelProps> = ({
   const isProfit = a.resultado >= 0;
 
   const hasParams =
-    (companyInfo.sellerCommissionPct !== undefined) ||
     (companyInfo.adminExpensesPct !== undefined) ||
     (companyInfo.technicalReservePct !== undefined);
 
@@ -266,7 +273,7 @@ export const SaleAnalysisPanel: React.FC<SaleAnalysisPanelProps> = ({
           <div className="mt-3 pt-3 border-t border-slate-200 space-y-[3px]">
             <Row label={`C. Financeiro`} value={0} />
             <Row label={`Total c/ Financeiro`} value={a.valorVenda} />
-            <Row label={`C. Vendedor (${fmtPct(companyInfo.sellerCommissionPct ?? 0)}%)`} value={a.comissaoVendedor} />
+            <Row label={`C. Vendedor (${fmtPct(a.sellerPct)}%)`} value={a.comissaoVendedor} />
             {a.comissaoArquiteto > 0 && (
               <Row label={`C. Arquiteto`} value={a.comissaoArquiteto} />
             )}
