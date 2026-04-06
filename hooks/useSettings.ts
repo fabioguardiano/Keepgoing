@@ -150,6 +150,9 @@ export const useSettings = (
         legalNote: data.legal_note || undefined,
         maxDiscountPct: data.max_discount_pct ?? undefined,
         maxArchitectCommissionPct: data.max_architect_commission_pct ?? undefined,
+        sellerCommissionPct: data.seller_commission_pct ?? undefined,
+        adminExpensesPct: data.admin_expenses_pct ?? undefined,
+        technicalReservePct: data.technical_reserve_pct ?? undefined,
       };
       setCompanyInfoState(info);
 
@@ -329,6 +332,9 @@ export const useSettings = (
           legal_note: info.legalNote || null,
           max_discount_pct: info.maxDiscountPct ?? null,
           max_architect_commission_pct: info.maxArchitectCommissionPct ?? null,
+          seller_commission_pct: info.sellerCommissionPct ?? null,
+          admin_expenses_pct: info.adminExpensesPct ?? null,
+          technical_reserve_pct: info.technicalReservePct ?? null,
         }).eq('id', companyId);
         if (error) throw error;
         if (import.meta.env.DEV) console.log('[useSettings] Company data saved.');
@@ -535,6 +541,11 @@ export const useSettings = (
     }
   };
   const deletePhase = (name: string) => {
+    const mandatoryPhases = ['Serviço Lançado', 'Serviços Lançados', 'Corte', 'Acabamento', 'A Entregar', 'Entregue'];
+    if (mandatoryPhases.includes(name)) {
+      alert(`A fase "${name}" é obrigatória do sistema e não pode ser excluída.`);
+      return;
+    }
     setPhases(prev => {
       const next = prev.filter(p => p.name !== name);
       syncCompanyMetadata('phases', next);
@@ -549,6 +560,13 @@ export const useSettings = (
     syncCompanyMetadata('phases', result);
   };
   const togglePhaseRequirement = (phaseName: string) => setPhases(prev => prev.map(p => p.name === phaseName ? { ...p, requiresResponsible: !p.requiresResponsible } : p));
+  const updatePhase = (name: string, updates: Partial<PhaseConfig>) => {
+    setPhases(prev => {
+      const next = prev.map(p => p.name === name ? { ...p, ...updates } : p);
+      syncCompanyMetadata('phases', next);
+      return next;
+    });
+  };
 
   const addSalesPhase = (name: string) => {
     if (!salesPhases.find(p => p.name === name)) {
@@ -752,7 +770,7 @@ export const useSettings = (
   return {
     appUsers, handleSaveUser, handleDeleteUser,
     staff, handleSaveStaff, handleDeleteStaff,
-    phases, addPhase, renamePhase, deletePhase, reorderPhases, togglePhaseRequirement,
+    phases, addPhase, renamePhase, deletePhase, reorderPhases, togglePhaseRequirement, updatePhase,
     salesPhases, addSalesPhase, renameSalesPhase, deleteSalesPhase, updateSalesPhase, reorderSalesPhases,
     brands, handleSaveBrand, handleDeleteBrand,
     productGroups, handleSaveProductGroup, handleDeleteProductGroup,

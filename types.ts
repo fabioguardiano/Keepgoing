@@ -449,6 +449,9 @@ export interface CompanyInfo {
   legalNote?: string;
   maxDiscountPct?: number;
   maxArchitectCommissionPct?: number;
+  sellerCommissionPct?: number;
+  adminExpensesPct?: number;
+  technicalReservePct?: number;
   permissionProfiles?: PermissionProfile[];
 }
 

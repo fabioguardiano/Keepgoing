@@ -6,6 +6,7 @@ import { PrintBudget } from './PrintBudget';
 import { GenerateOSModal } from './GenerateOSModal';
 import { DiscountRequestModal, CommissionRequestModal } from './AuthModal';
 import { CRMSection } from './CRMSection';
+import { SaleAnalysisPanel } from './SaleAnalysisPanel';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
@@ -224,7 +225,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
     }
   };
 
-  const environments = Array.from(new Set([...items.map(i => i.environment || 'Sem Ambiente'), activeEnvironment, newEnvironmentName].filter(Boolean)));
+  const environments = Array.from(new Set([...items.map(i => i.environment || 'Sem Ambiente'), activeEnvironment, newEnvironmentName].filter(Boolean))).sort((a, b) => a.localeCompare(b));
 
   // Sync commission inputs when needed
   useEffect(() => {
@@ -672,7 +673,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
       architectId: architectId,
       architectName: architect,
       architectCommissionPct: architect ? safeArchCommPct : 0,
-      items,
+      items: [...items].sort((a, b) => (a.environment || '').localeCompare(b.environment || '')),
       paymentConditions,
       paymentMethodId: paymentMethodId || undefined,
       paymentMethodName: selectedPm?.name || '',
@@ -1448,9 +1449,127 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   value={paymentConditions}
                   onChange={e => setPaymentConditions(e.target.value)}
                   placeholder="Observações adicionais sobre o pagamento..."
-                  className="w-full p-2 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-xs text-black dark:text-white transition-all h-48 resize-none"
+                  className="w-full p-2 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-xs text-black dark:text-white transition-all h-24 resize-none"
                 ></textarea>
               </div>
+
+              {/* Totais, Descontos e Botões (Movido para cá) */}
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 space-y-3">
+                <div className="flex justify-between items-center text-slate-500">
+                  <span className="font-bold text-[10px]">Total dos Itens</span>
+                  <span className="font-black text-[10px]">R$ {(subtotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <label className="text-[9px] font-black text-black uppercase whitespace-nowrap">Frete / Entrega (R$)</label>
+                  <input
+                    type="text"
+                    value={deliveryFee > 0 ? deliveryFee.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : ''}
+                    onChange={e => {
+                      const raw = e.target.value.replace(/\D/g, '');
+                      setDeliveryFee(parseInt(raw || '0') / 100);
+                    }}
+                    className="w-[120px] p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-bold text-black dark:text-white text-right"
+                    placeholder="R$ 0,00"
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1">
+                    <label className="text-[9px] font-black text-black uppercase mb-1 block">Desconto (%)</label>
+                    <input 
+                      type="number" 
+                      step="0.01"
+                      value={discountPercentageInput}
+                      onChange={e => {
+                        const valStr = e.target.value;
+                        setDiscountPercentageInput(valStr);
+                        const perc = parseFloat(valStr) || 0;
+                        setDiscountPercentage(perc);
+                        const valNum = subtotal * (perc / 100);
+                        setDiscountValue(valNum);
+                        setDiscountValueInput(valNum > 0 ? valNum.toFixed(2) : '');
+                      }}
+                      className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-bold text-black dark:text-white font-premium"
+                      placeholder="0,00"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-[9px] font-black text-black uppercase mb-1 block font-premium">Valor Desconto (R$)</label>
+                    <input 
+                      type="text" 
+                      value={discountValue > 0 ? discountValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : ''}
+                      onChange={e => {
+                        const raw = e.target.value.replace(/\D/g, '');
+                        const val = parseInt(raw || '0') / 100;
+                        setDiscountValue(val);
+                        setDiscountValueInput(val > 0 ? val.toString() : '');
+                        const perc = subtotal > 0 ? (val / subtotal) * 100 : 0;
+                        setDiscountPercentage(perc);
+                        setDiscountPercentageInput(perc > 0 ? perc.toFixed(2) : '');
+                      }}
+                      className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-bold text-black dark:text-white font-premium"
+                      placeholder="R$ 0,00"
+                    />
+                    {companyInfo.maxDiscountPct !== undefined && (
+                      <div className="mt-1 flex justify-between items-center px-1">
+                        <span className="text-[8px] font-bold text-black uppercase">Limite ({companyInfo.maxDiscountPct}%)</span>
+                        <span className="text-[8px] font-black text-slate-500">
+                          R$ {(subtotal * (companyInfo.maxDiscountPct / 100)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {architectCommissionValue > 0 && (
+                  <div className="flex items-center justify-between gap-3 text-amber-700 dark:text-amber-400">
+                    <span className="text-[9px] font-black uppercase">Comissão Arquiteto ({safeArchCommPct.toFixed(1)}%)</span>
+                    <span className="text-[10px] font-black">+ R$ {architectCommissionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                )}
+                <div className="pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between items-end">
+                  <div>
+                    <span className="text-[9px] font-black text-black uppercase tracking-widest block mb-0.5">Total Geral</span>
+                    <p className="text-xl font-black text-black tracking-tight">R$ {(totalGeral || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  </div>
+                  {isLocked ? (
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl text-black dark:text-green-400 text-[10px] font-black">
+                      <Eye size={14} /> Somente leitura
+                    </div>
+                  ) : !isEditMode ? (
+                    <div className="flex items-center gap-2">
+                       <button
+                        onClick={() => setIsEditMode(true)}
+                        className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-black shadow-lg shadow-amber-500/30 transition-all flex items-center gap-2 text-[10px]"
+                      >
+                        <Pencil size={14} /> Alterar
+                      </button>
+                      <button
+                        onClick={onClose}
+                        className="px-4 py-2.5 border-2 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 rounded-xl font-black hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-[10px]"
+                      >
+                        Sair
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleSave(true)}
+                        disabled={isSaving}
+                        className={`px-4 py-2.5 border-2 rounded-xl font-black transition-all flex items-center gap-2 text-[10px] disabled:opacity-50 ${paidAmount > 0 ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-300 text-amber-700' : 'bg-white dark:bg-slate-800 border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-orange-50 dark:hover:bg-slate-700'}`}
+                      >
+                        {isSaving ? '...' : paidAmount > 0 ? 'Recon.' : 'Gravar'}
+                      </button>
+                      <button
+                        onClick={() => handleSave(false)}
+                        disabled={isSaving}
+                        className={`px-4 py-2.5 text-white rounded-xl font-black shadow-xl transition-all flex items-center gap-2 text-[10px] disabled:opacity-50 ${paidAmount > 0 ? 'bg-amber-600 shadow-amber-600/30 hover:bg-amber-700' : 'bg-[var(--primary-color)] shadow-[var(--primary-color)]/30 hover:opacity-90'}`}
+                      >
+                        {isSaving ? '...' : paidAmount > 0 ? 'Concluir' : 'Gravar e Sair'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div>
                 <label className="text-[9px] font-black uppercase tracking-[0.2em] mb-1 block text-black">
                   Prazo de Entrega
@@ -1614,146 +1733,38 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 })()}
               </div>
 
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 space-y-2">
-                <div className="flex justify-between items-center text-slate-500">
-                  <span className="font-bold text-[10px]">Total dos Itens</span>
-                  <span className="font-black text-[10px]">R$ {(subtotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <label className="text-[9px] font-black text-black uppercase whitespace-nowrap">Frete / Entrega (R$)</label>
-                  <input
-                    type="text"
-                    value={deliveryFee > 0 ? deliveryFee.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : ''}
-                    onChange={e => {
-                      const raw = e.target.value.replace(/\D/g, '');
-                      setDeliveryFee(parseInt(raw || '0') / 100);
-                    }}
-                    className="w-[120px] p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-bold text-black dark:text-white text-right"
-                    placeholder="R$ 0,00"
-                  />
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex-1">
-                    <label className="text-[9px] font-black text-black uppercase mb-1 block">Desconto (%)</label>
-                    <input 
-                      type="number" 
-                      step="0.01"
-                      value={discountPercentageInput}
-                      onChange={e => {
-                        const valStr = e.target.value;
-                        setDiscountPercentageInput(valStr);
-                        const perc = parseFloat(valStr) || 0;
-                        setDiscountPercentage(perc);
-                        const valNum = subtotal * (perc / 100);
-                        setDiscountValue(valNum);
-                        setDiscountValueInput(valNum > 0 ? valNum.toFixed(2) : '');
-                      }}
-                      className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-bold text-black dark:text-white"
-                      placeholder="0,00"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <label className="text-[9px] font-black text-black uppercase mb-1 block">Valor Desconto (R$)</label>
-                    <input 
-                      type="text" 
-                      value={discountValue > 0 ? discountValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : ''}
-                      onChange={e => {
-                        const raw = e.target.value.replace(/\D/g, '');
-                        const val = parseInt(raw || '0') / 100;
-                        setDiscountValue(val);
-                        setDiscountValueInput(val > 0 ? val.toString() : '');
-                        const perc = subtotal > 0 ? (val / subtotal) * 100 : 0;
-                        setDiscountPercentage(perc);
-                        setDiscountPercentageInput(perc > 0 ? perc.toFixed(2) : '');
-                      }}
-                      className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-bold text-black dark:text-white"
-                      placeholder="R$ 0,00"
-                    />
-                    {companyInfo.maxDiscountPct !== undefined && (
-                      <div className="mt-1 flex justify-between items-center px-1">
-                        <span className="text-[8px] font-bold text-black uppercase">Limite ({companyInfo.maxDiscountPct}%)</span>
-                        <span className="text-[8px] font-black text-slate-500">
-                          R$ {(subtotal * (companyInfo.maxDiscountPct / 100)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {architectCommissionValue > 0 && (
-                  <div className="flex items-center justify-between gap-3 text-amber-700 dark:text-amber-400">
-                    <span className="text-[9px] font-black uppercase">Comissão Arquiteto ({safeArchCommPct.toFixed(1)}%)</span>
-                    <span className="text-[10px] font-black">+ R$ {architectCommissionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                  </div>
-                )}
-                <div className="pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between items-end">
-                  <div>
-                    <span className="text-[9px] font-black text-black uppercase tracking-widest block mb-0.5">Total Geral</span>
-                    <p className="text-lg font-black text-black tracking-tight">R$ {(totalGeral || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                  </div>
-                  {isLocked ? (
-                    <div className="flex items-center gap-2 px-4 py-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl text-black dark:text-green-400 text-xs font-black">
-                      <Eye size={14} /> Somente leitura — Reverter para Orçamento para editar
-                    </div>
-                  ) : !isEditMode ? (
-                    <div className="flex items-center gap-2">
-                       <button
-                        onClick={() => setIsEditMode(true)}
-                        className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-black shadow-lg shadow-amber-500/30 transition-all flex items-center gap-2 text-xs"
-                      >
-                        <Pencil size={14} /> Alterar
-                      </button>
-                      <button
-                        onClick={onClose}
-                        className="px-4 py-2.5 border-2 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 rounded-xl font-black hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-xs"
-                      >
-                        Sair
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      {initialData && (
-                        <button
-                          onClick={() => setIsEditMode(false)}
-                          className="p-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl transition-all"
-                          title="Voltar para visualização"
-                        >
-                          <Lock size={18} />
-                        </button>
-                      )}
-                      {paidAmount > 0 && (
-                         <div className="hidden sm:block text-right mr-2">
-                           <p className="text-[8px] font-black uppercase text-black tracking-tighter leading-none">Modo de Ajuste</p>
-                           <p className="text-[7.5px] font-bold text-amber-400 leading-tight">Saldo será reconciliado</p>
-                         </div>
-                      )}
-                      <button
-                        onClick={() => handleSave(true)}
-                        disabled={isSaving}
-                        className={`px-4 py-2.5 border-2 rounded-xl font-black transition-all flex items-center gap-2 text-xs disabled:opacity-50 ${paidAmount > 0 ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-300 text-amber-700' : 'bg-white dark:bg-slate-800 border-[var(--primary-color)] text-[var(--primary-color)] hover:bg-orange-50 dark:hover:bg-slate-700'}`}
-                      >
-                        {isSaving ? 'Gravando...' : paidAmount > 0 ? 'Reconciliar e Salvar' : 'Gravar'}
-                      </button>
-                      <button
-                        onClick={() => handleSave(false)}
-                        disabled={isSaving}
-                        className={`px-4 py-2.5 text-white rounded-xl font-black shadow-xl transition-all flex items-center gap-2 text-xs disabled:opacity-50 ${paidAmount > 0 ? 'bg-amber-600 shadow-amber-600/30 hover:bg-amber-700' : 'bg-[var(--primary-color)] shadow-[var(--primary-color)]/30 hover:opacity-90'}`}
-                      >
-                        {isSaving ? 'Gravando...' : paidAmount > 0 ? 'Concluir Ajuste' : 'Gravar e Sair'}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
+
             </div>
           </div>
           
           </div> {/* Fim do container p-4 space-y-6 */}
 
+          {isAdminUser && (
+            <div className="mx-4">
+              <SaleAnalysisPanel
+                sale={{
+                  ...initialData,
+                  items,
+                  totals: {
+                    vendas: subtotal,
+                    desconto: calculatedDiscount,
+                    frete: safeDeliveryFee,
+                    comissaoArquiteto: architectCommissionValue > 0 ? architectCommissionValue : undefined,
+                    geral: totalGeral,
+                  },
+                } as any}
+                materials={materials}
+                products={products}
+                companyInfo={companyInfo}
+              />
+            </div>
+          )}
+
           <div className="mx-4 mt-6 border-t border-slate-100 dark:border-slate-800 pt-6 pb-6">
             {initialData?.id && (
-              <CRMSection 
-                sale={initialData} 
-                onSaveSale={(sale) => onSave(sale, true)} 
+              <CRMSection
+                sale={initialData}
+                onSaveSale={(sale) => onSave(sale, true)}
                 currentUser={appUsers.find(u => u.name === seller) || null}
               />
             )}

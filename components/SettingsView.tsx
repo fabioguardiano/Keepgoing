@@ -14,6 +14,7 @@ interface SettingsViewProps {
     onToggleRequirement: (phaseName: string) => void;
     onAddPhase: (name: string) => void;
     onRenamePhase: (oldName: string, newName: string) => void;
+    onUpdatePhase: (name: string, updates: Partial<PhaseConfig>) => void;
     onDeletePhase: (name: string) => void;
     onReorderPhases: (startIndex: number, endIndex: number) => void;
     salesPhases: SalesPhaseConfig[];
@@ -56,6 +57,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     onToggleRequirement,
     onAddPhase,
     onRenamePhase,
+    onUpdatePhase,
     onDeletePhase,
     onReorderPhases,
     salesPhases,
@@ -369,10 +371,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                                     )}
                                                                 </div>
 
-                                                                <div className="flex items-center gap-6">
+                                                                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 sm:flex-nowrap shrink-0">
+                                                                    {/* Seq Code */}
+                                                                    <div className="flex items-center gap-2">
+                                                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-tighter whitespace-nowrap">Seq.</label>
+                                                                        <div className="flex items-center bg-white border border-slate-200 rounded-lg px-2 py-1">
+                                                                            <input
+                                                                                type="text"
+                                                                                value={phase.code ?? ''}
+                                                                                onChange={e => onUpdatePhase(phase.name, { code: e.target.value })}
+                                                                                placeholder="--"
+                                                                                className="w-8 text-xs font-bold text-slate-700 bg-transparent focus:outline-none text-center"
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+
                                                                     {/* Requirement Toggle */}
                                                                     <div className="flex items-center gap-2">
-                                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Exigir Responsável</span>
+                                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter whitespace-nowrap">Exigir Responsável</span>
                                                                         <button
                                                                             onClick={() => onToggleRequirement(phase.name)}
                                                                             className={`relative w-11 h-6 rounded-full transition-colors ${phase.requiresResponsible ? 'bg-primary' : 'bg-slate-200'}`}
@@ -381,13 +397,27 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                                         </button>
                                                                     </div>
 
-                                                                    <div className="flex items-center gap-1">
+                                                                    <div className="flex items-center gap-1 ml-2 border-l border-slate-200 pl-2">
                                                                         <button
                                                                             onClick={() => { setEditingPhase(phase.name); setTempName(phase.name); }}
-                                                                            className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
+                                                                            title="Editar"
+                                                                            className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all"
                                                                         >
                                                                             <Edit2 size={16} />
                                                                         </button>
+                                                                        {!['Serviço Lançado', 'Serviços Lançados', 'Corte', 'Acabamento', 'A Entregar', 'Entregue'].includes(phase.name) && (
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    if (window.confirm(`Deseja realmente excluir a fase "${phase.name}"?`)) {
+                                                                                        onDeletePhase(phase.name);
+                                                                                    }
+                                                                                }}
+                                                                                title="Excluir"
+                                                                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                                                            >
+                                                                                <Trash2 size={16} />
+                                                                            </button>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -655,6 +685,64 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                             />
                                         </div>
                                         <p className="text-xs text-slate-400 mt-5">Se vazio, não há limite de comissão.</p>
+                                    </div>
+                                </div>
+
+                                <div className="mt-8 pt-8 border-t border-slate-100">
+                                    <h3 className="text-xs font-black text-slate-700 uppercase tracking-[0.2em] mb-3">Parâmetros Financeiros — Apuração de Resultado</h3>
+                                    <p className="text-[11px] text-slate-400 font-medium mb-4">Estes percentuais são usados no Resumo da Venda (visível apenas para Admin) para calcular o resultado líquido de cada venda</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-1">Comissão do Vendedor (%)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                step="0.01"
+                                                value={companyInfo.sellerCommissionPct ?? ''}
+                                                onChange={e => {
+                                                    const v = parseFloat(e.target.value);
+                                                    onUpdateCompany({ ...companyInfo, sellerCommissionPct: isNaN(v) ? undefined : v });
+                                                }}
+                                                placeholder="Ex: 2.46"
+                                                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-bold"
+                                            />
+                                            <p className="text-[10px] text-slate-400 mt-1">% sobre o valor total da venda</p>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-1">Despesas Administrativas (%)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                step="0.01"
+                                                value={companyInfo.adminExpensesPct ?? ''}
+                                                onChange={e => {
+                                                    const v = parseFloat(e.target.value);
+                                                    onUpdateCompany({ ...companyInfo, adminExpensesPct: isNaN(v) ? undefined : v });
+                                                }}
+                                                placeholder="Ex: 10.64"
+                                                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-bold"
+                                            />
+                                            <p className="text-[10px] text-slate-400 mt-1">% sobre o valor total da venda</p>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-1">Reserva Técnica (%)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                step="0.01"
+                                                value={companyInfo.technicalReservePct ?? ''}
+                                                onChange={e => {
+                                                    const v = parseFloat(e.target.value);
+                                                    onUpdateCompany({ ...companyInfo, technicalReservePct: isNaN(v) ? undefined : v });
+                                                }}
+                                                placeholder="Ex: 0"
+                                                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-bold"
+                                            />
+                                            <p className="text-[10px] text-slate-400 mt-1">% sobre o valor total da venda</p>
+                                        </div>
                                     </div>
                                 </div>
 
