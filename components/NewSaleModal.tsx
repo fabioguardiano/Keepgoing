@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, User, ShoppingBag, Plus, Trash2, Calculator, Save, FileText, Search, Tag, Users, Printer, Edit2, RotateCcw, Check, GripVertical, PlusCircle, Copy, Pencil, Lock, AlertTriangle, Eye, ClipboardList } from 'lucide-react';
+import { X, User, ShoppingBag, Plus, Trash2, Calculator, Save, FileText, Search, Tag, Users, Printer, Edit2, RotateCcw, Check, GripVertical, PlusCircle, Copy, Pencil, Lock, AlertTriangle, Eye, ClipboardList, DollarSign } from 'lucide-react';
 import { SalesOrder, OrderItem, Client, Architect, AppUser, SalesChannel, Material, ProductService, CompanyInfo, SalesPhaseConfig, ServiceGroup, PaymentMethod, WorkOrder, Authorization } from '../types';
 import { ClientSelectModal } from './ClientSelectModal';
 import { PrintBudget } from './PrintBudget';
@@ -66,6 +66,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const [revertLoading, setRevertLoading] = useState(false);
   const [isEditMode, setIsEditMode] = useState(!initialData); // Nova venda (Edit) vs Existente (View)
   const [showExitConfirmation, setShowExitConfirmation] = useState(false);
+  const [showArchCommPopover, setShowArchCommPopover] = useState(false);
+  const archCommRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // If the sale is a Pedido but has payments, we unlock it but show a warning
@@ -214,6 +216,19 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [items.length]);
+
+  // Handle clicks outside the architect commission popover
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (archCommRef.current && !archCommRef.current.contains(event.target as Node)) {
+        setShowArchCommPopover(false);
+      }
+    };
+    if (showArchCommPopover) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showArchCommPopover]);
 
   const handleClose = () => {
     if (items.length > 0) {
@@ -944,89 +959,110 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
               <div>
                 <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Arquiteto / Parceiro</label>
-                <select
-                  value={architect}
-                  onChange={(e) => {
-                    const selectedName = e.target.value;
-                    setArchitect(selectedName);
-                    const arch = architects.find(a => (a.tradingName || a.legalName) === selectedName);
-                    setArchitectId(arch?.id || '');
-                    if (!selectedName) setArchitectCommissionPct(0);
-                  }}
-                  className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-black dark:text-white transition-all appearance-none"
-                >
-                  <option value="">Nenhum parceiro</option>
-                  {architects?.filter(a => a.status === 'ativo').map(a => (
-                      <option key={a.id} value={a.tradingName || a.legalName}>
-                        {a.tradingName || a.legalName}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              {/* Comissão do arquiteto */}
-              <div>
-                <label className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Comissão Arquiteto</label>
-                <div className={`w-full p-2.5 bg-slate-100 dark:bg-slate-800 border-2 border-transparent focus-within:border-[var(--primary-color)] rounded-xl flex items-center justify-between transition-all ${!architect ? 'opacity-30' : ''}`}>
-                  <div className="flex items-center gap-1.5 flex-1 pr-3">
-                    <input
-                      type="number"
-                      min="0"
-                      max={maxCommPct ?? 100}
-                      step="0.1"
-                      disabled={!architect}
-                      value={archCommPctInput}
-                      onChange={e => {
-                        const valStr = e.target.value;
-                        setArchCommPctInput(valStr);
-                        let perc = parseFloat(valStr) || 0;
-                        // Trava apenas se NÃO for administrador
-                        if (!isAdminUser && maxCommPct !== undefined && perc > maxCommPct) perc = maxCommPct;
-                        setArchitectCommissionPct(perc);
-                        const valNum = subtotal * (perc / 100);
-                        setArchCommValueInput(valNum > 0 ? valNum.toFixed(2) : '');
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <select
+                      value={architect}
+                      onChange={(e) => {
+                        const selectedName = e.target.value;
+                        setArchitect(selectedName);
+                        const arch = architects.find(a => (a.tradingName || a.legalName) === selectedName);
+                        setArchitectId(arch?.id || '');
+                        if (!selectedName) setArchitectCommissionPct(0);
                       }}
-                      placeholder="0"
-                      className="w-full bg-transparent outline-none font-bold text-sm text-black dark:text-white"
-                    />
-                    <span className="font-bold text-sm text-slate-400 -ml-1">%</span>
+                      className="w-full p-2.5 bg-slate-100 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-sm text-black dark:text-white transition-all appearance-none"
+                    >
+                      <option value="">Nenhum parceiro</option>
+                      {architects?.filter(a => a.status === 'ativo').map(a => (
+                          <option key={a.id} value={a.tradingName || a.legalName}>
+                            {a.tradingName || a.legalName}
+                          </option>
+                        ))}
+                    </select>
                   </div>
-                  <div className="flex items-center gap-1 flex-1 border-l border-slate-200 dark:border-slate-700 pl-3">
-                    <span className="text-slate-400 font-bold text-[10px]">R$</span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
+                  <div className="relative" ref={archCommRef}>
+                    <button
+                      type="button"
+                      onClick={() => architect && setShowArchCommPopover(!showArchCommPopover)}
                       disabled={!architect}
-                      value={archCommValueInput}
-                      onChange={e => {
-                        const valStr = e.target.value;
-                        setArchCommValueInput(valStr);
-                        const valNum = parseFloat(valStr) || 0;
-                        let perc = subtotal > 0 ? (valNum / subtotal) * 100 : 0;
-                        
-                        // Trava apenas se NÃO for administrador
-                        if (!isAdminUser && maxCommPct !== undefined && perc > maxCommPct) {
-                          perc = maxCommPct;
-                          setArchCommPctInput(perc.toString());
-                          // Recalcula valor para travar a interface
-                          const cappedVal = subtotal * (perc / 100);
-                          setArchCommValueInput(cappedVal.toFixed(2));
-                        } else {
-                          setArchCommPctInput(perc > 0 ? perc.toFixed(2) : '');
-                        }
-                        setArchitectCommissionPct(perc);
-                      }}
-                      placeholder="0,00"
-                      className="w-full bg-transparent outline-none font-bold text-sm text-black dark:text-white"
-                    />
+                      className={`p-3 rounded-xl transition-all shadow-sm flex items-center justify-center ${!architect ? 'opacity-30 bg-slate-100' : showArchCommPopover ? 'bg-amber-100 text-amber-700 scale-110 shadow-lg' : 'bg-blue-100 text-blue-600 hover:bg-blue-200'}`}
+                      title="Editar Comissão (RT)"
+                    >
+                      <DollarSign size={18} />
+                    </button>
+
+                    {showArchCommPopover && (
+                      <div className="absolute right-0 top-full mt-2 w-64 bg-[#fff9f0] dark:bg-slate-800 border-2 border-amber-200 dark:border-slate-700 rounded-2xl shadow-2xl z-[100] p-4 animate-in fade-in zoom-in duration-200">
+                        <h4 className="text-[10px] font-black text-amber-800 dark:text-amber-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                          <Calculator size={12} /> Comissão - Arquiteto (RT)
+                        </h4>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[9px] font-black text-amber-900/60 dark:text-slate-400 uppercase mb-1 block">Porcentagem (%)</label>
+                            <div className="relative">
+                              <input
+                                type="number"
+                                min="0"
+                                max={maxCommPct ?? 100}
+                                step="0.1"
+                                value={archCommPctInput}
+                                onChange={e => {
+                                  const valStr = e.target.value;
+                                  setArchCommPctInput(valStr);
+                                  let perc = parseFloat(valStr) || 0;
+                                  if (!isAdminUser && maxCommPct !== undefined && perc > maxCommPct) perc = maxCommPct;
+                                  setArchitectCommissionPct(perc);
+                                  const valNum = subtotal * (perc / 100);
+                                  setArchCommValueInput(valNum > 0 ? valNum.toFixed(2) : '');
+                                }}
+                                className="w-full p-2 bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-700 rounded-lg outline-none font-bold text-sm text-black dark:text-white"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-black text-amber-900/60 dark:text-slate-400 uppercase mb-1 block">Valor ($)</label>
+                            <div className="relative">
+                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">$</span>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={archCommValueInput}
+                                onChange={e => {
+                                  const valStr = e.target.value;
+                                  setArchCommValueInput(valStr);
+                                  const valNum = parseFloat(valStr) || 0;
+                                  let perc = subtotal > 0 ? (valNum / subtotal) * 100 : 0;
+                                  if (!isAdminUser && maxCommPct !== undefined && perc > maxCommPct) {
+                                    perc = maxCommPct;
+                                    setArchCommPctInput(perc.toString());
+                                    const cappedVal = subtotal * (perc / 100);
+                                    setArchCommValueInput(cappedVal.toFixed(2));
+                                  } else {
+                                    setArchCommPctInput(perc > 0 ? perc.toFixed(2) : '');
+                                  }
+                                  setArchitectCommissionPct(perc);
+                                }}
+                                className="w-full p-2 pl-5 bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-700 rounded-lg outline-none font-bold text-sm text-black dark:text-white"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        {maxCommPct !== undefined && (
+                          <p className="text-[8px] font-bold text-amber-600 mt-2 text-right">
+                            RT Máxima: {maxCommPct}%
+                          </p>
+                        )}
+                        <button
+                          onClick={() => setShowArchCommPopover(false)}
+                          className="w-full mt-3 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-black text-[10px] uppercase transition-colors"
+                        >
+                          Confirmar
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
-                {architect && maxCommPct !== undefined && (
-                  <p className="text-[8px] font-bold text-amber-600 mt-1">
-                    Limite máximo: {maxCommPct}%
-                  </p>
-                )}
               </div>
 
               <div>
@@ -1522,7 +1558,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 {architectCommissionValue > 0 && (
                   <div className="flex items-center justify-between gap-3 text-amber-700 dark:text-amber-400">
                     <span className="text-[9px] font-black uppercase">Comissão Arquiteto ({safeArchCommPct.toFixed(1)}%)</span>
-                    <span className="text-[10px] font-black">+ R$ {architectCommissionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className="text-[10px] font-black">+ $ {architectCommissionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 )}
                 <div className="pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between items-end">
