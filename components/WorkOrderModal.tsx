@@ -1,10 +1,19 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, Image as ImageIcon, Plus, Briefcase, Calendar, Layers, Package, User, ChevronDown, Trash2, Clock, ZoomIn, Lock, Pencil, XCircle, AlertTriangle, Printer, ShieldAlert, Eye, EyeOff } from 'lucide-react';
+import { X, Upload, Image as ImageIcon, Plus, Briefcase, Calendar, Layers, Package, CheckSquare, Ruler, User, ChevronDown, Trash2, Clock, ZoomIn, Lock, Pencil, XCircle, AlertTriangle, Printer, ShieldAlert, Eye, EyeOff } from 'lucide-react';
 import { createPortal } from 'react-dom';
-import { WorkOrder, WorkOrderLog, PhaseConfig, AppUser } from '../types';
+import { WorkOrder, WorkOrderLog, PhaseConfig, AppUser, OrderItem } from '../types';
 import { formatOsLabel } from '../hooks/useWorkOrders';
 import { getInitials } from '../utils/userUtils';
 import { supabase } from '../lib/supabase';
+import { useMemo } from 'react';
+
+const fmtDim = (item: OrderItem) => {
+  const l = item.length ? item.length.toFixed(2).replace('.', ',') : null;
+  const w = item.width ? item.width.toFixed(2).replace('.', ',') : null;
+  if (l && w) return `${l} × ${w} m`;
+  if (l) return `${l} m`;
+  return null;
+};
 
 interface WorkOrderModalProps {
   workOrder: WorkOrder;
@@ -99,6 +108,16 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   onUpdatePhase, onUpdate, onUpdateDeliveryDate, onCancelWorkOrder, canCancelOS, canEditDeadline,
   onAddDrawing, onDeleteDrawing, onClose,
 }) => {
+  const itemsByEnv = useMemo(() => {
+    const map: Record<string, OrderItem[]> = {};
+    (workOrder.items || []).forEach(item => {
+      const env = item.environment || 'Sem Ambiente';
+      if (!map[env]) map[env] = [];
+      map[env].push(item);
+    });
+    return map;
+  }, [workOrder.items]);
+
   const [localNotes, setLocalNotes] = useState(workOrder.notes || '');
   const [uploading, setUploading] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
@@ -421,6 +440,50 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                     )}
                   </div>
                 </section>
+
+                <div className="h-px bg-gray-100 my-6" />
+
+                {/* Itens da O.S. (Dupla Checagem) */}
+                {workOrder.items && workOrder.items.length > 0 && (
+                  <section className="mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="p-1.5 bg-orange-50 rounded-lg">
+                        <CheckSquare className="w-4 h-4 text-orange-600" />
+                      </div>
+                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Itens da O.S. (Dupla Checagem)</h3>
+                    </div>
+                    <div className="space-y-3">
+                      {Object.entries(itemsByEnv).map(([env, envItems]) => (
+                        <div key={env} className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
+                          <div className="bg-gray-50 px-3 py-1.5 border-b border-gray-100 text-[10px] font-bold text-gray-500 uppercase tracking-tight">
+                            {env}
+                          </div>
+                          <div className="p-2 space-y-2">
+                            {envItems.map((item, idx) => (
+                              <div key={idx} className="flex justify-between items-start text-xs border-b border-gray-50 last:border-0 pb-1.5 last:pb-0">
+                                <div className="flex-1 pr-2">
+                                  <div className="font-medium text-gray-800">{item.description}</div>
+                                  <div className="text-gray-500 text-[10px] flex gap-1.5 mt-0.5">
+                                    {fmtDim(item) && (
+                                      <span className="bg-gray-100 px-1 rounded flex items-center gap-1">
+                                        <Ruler className="w-2.5 h-2.5" />
+                                        {fmtDim(item)}
+                                      </span>
+                                    )}
+                                    {item.materialName && <span>• {item.materialName}</span>}
+                                  </div>
+                                </div>
+                                <div className="text-right flex-shrink-0">
+                                  <div className="font-bold text-gray-900">{item.quantity} {item.unit}</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
 
                 {/* Metragens */}
                 {(workOrder.materialsM2.length > 0 || workOrder.finishingsLinear.length > 0) && (

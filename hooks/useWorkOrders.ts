@@ -28,6 +28,7 @@ const map = (r: any): WorkOrder => ({
   clientId: r.client_id,
   environments: r.environments || [],
   saleItemIds: r.sale_item_ids || [],
+  items: r.items || [],
   deliveryDate: r.delivery_date || undefined,
   status: r.status,
   notes: r.notes,
@@ -133,6 +134,7 @@ export const useWorkOrders = (companyId?: string) => {
       totalM2: number;
       totalLinear: number;
       resaleProducts?: any[];
+      items: any[];
       logs: Array<{ environment: string; action: 'created' | 'reissued'; reason?: string; userName?: string }>;
     }>
   ): Promise<boolean> => {
@@ -167,6 +169,7 @@ export const useWorkOrders = (companyId?: string) => {
             total_m2: order.totalM2,
             total_linear: order.totalLinear,
             resale_products: order.resaleProducts || [],
+            items: order.items || [],
           })
           .select()
           .single();

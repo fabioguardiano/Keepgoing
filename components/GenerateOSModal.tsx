@@ -58,6 +58,7 @@ export interface OSGroup {
   totalM2: number;
   totalLinear: number;
   resaleProducts?: Array<{ description: string; quantity: number; unit: string }>;
+  items: OrderItem[];
   logs: Array<{ environment: string; action: 'created' | 'reissued'; reason?: string; userName?: string }>;
 }
 
@@ -180,6 +181,7 @@ export const GenerateOSModal: React.FC<Props> = ({ sale, existingOSMap, onConfir
       saleItemIds: itemIds,
       notes: '',
       ...metrics,
+      items,
       logs: [...normalLogs, ...reissueLogs],
     };
     setGroups(prev => [...prev, newGroup]);

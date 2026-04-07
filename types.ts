@@ -789,6 +789,7 @@ export interface WorkOrder {
   totalM2: number;
   totalLinear: number;
   resaleProducts?: Array<{ description: string; quantity: number; unit: string }>;
+  items?: OrderItem[];
   createdAt: string;
   updatedAt?: string;
   logs?: WorkOrderLog[];
