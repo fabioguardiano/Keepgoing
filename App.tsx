@@ -36,6 +36,8 @@ import { getModuleAccess, VIEW_MODULE_MAP, VIEW_SUBMODULE_MAP } from './lib/perm
 import { useMeasurements } from './hooks/useMeasurements';
 import { useLegacyMigration } from './hooks/useLegacyMigration';
 import { useBankAccounts } from './hooks/useBankAccounts';
+import { useCRMActivities } from './hooks/useCRMActivities';
+import { ActivityAlertProvider } from './contexts/ActivityAlertContext';
 
 // Retry automático quando chunk falha por deploy (hash antigo não existe mais)
 const lazyRetry = <T,>(fn: () => Promise<T>): Promise<T> =>
@@ -91,6 +93,7 @@ const App: React.FC = () => {
 
   // Migração única: move dados do localStorage (legado) para o Supabase se o banco estiver vazio
   useLegacyMigration(activeCompanyId);
+  const { crmActivities, createCRMActivity, completeCRMActivity, deleteCRMActivity } = useCRMActivities(activeCompanyId);
   const { sales, handleSaveSale: saveSaleBase, setSales, refreshSales } = useSales(activeCompanyId, logActivity);
   const { clients, loadingClients, handleSaveClient, handleImportClients, deleteClient, setClients } = useClients(activeCompanyId, logActivity);
   const { materials, handleSaveMaterial, deleteMaterial, setMaterials } = useMaterials(activeCompanyId, logActivity);
@@ -873,6 +876,12 @@ const App: React.FC = () => {
   };
 
   return (
+    <ActivityAlertProvider
+      crmActivities={crmActivities}
+      createCRMActivity={createCRMActivity}
+      completeCRMActivity={completeCRMActivity}
+      deleteCRMActivity={deleteCRMActivity}
+    >
     <div className="flex h-screen bg-gray-100 overflow-hidden">
       {idleWarning && (
         <IdleWarningModal
@@ -918,6 +927,7 @@ const App: React.FC = () => {
         </main>
       </div>
     </div>
+    </ActivityAlertProvider>
   );
 };
 

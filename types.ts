@@ -836,3 +836,32 @@ export type View =
   | 'Formas de PGTO CP';
 
 export type User = AppUser;
+
+// ─── CRM Activities ───────────────────────────────────────────────────────────
+
+export interface CRMActivity {
+  id: string;
+  companyId: string;
+  referenceId: string;                          // sale.id ou work_order.id
+  referenceType: 'sale' | 'work_order';
+  title: string;
+  dueDate: string;                              // YYYY-MM-DD
+  notes?: string;
+  status: 'pendente' | 'concluida';
+  createdBy?: string;
+  createdAt: string;
+}
+
+/** Status de alerta baseado na atividade pendente mais próxima */
+export type ActivityAlertStatus = 'no_activity' | 'overdue' | 'today' | 'future';
+
+/** Retorna o status de alerta para um conjunto de atividades de um card */
+export function getActivityAlertStatus(activities: CRMActivity[]): ActivityAlertStatus {
+  const today = new Date().toISOString().split('T')[0];
+  const pending = activities.filter(a => a.status === 'pendente');
+  if (pending.length === 0) return 'no_activity';
+  const nearest = [...pending].sort((a, b) => a.dueDate.localeCompare(b.dueDate))[0];
+  if (nearest.dueDate < today) return 'overdue';
+  if (nearest.dueDate === today) return 'today';
+  return 'future';
+}

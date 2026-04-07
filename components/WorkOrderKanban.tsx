@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Image as ImageIcon, Calendar, ChevronLeft, ChevronRight, UserRound, Clock, Maximize2, Minimize2 } from 'lucide-react';
+import { Image as ImageIcon, Calendar, ChevronLeft, ChevronRight, Clock, Maximize2, Minimize2 } from 'lucide-react';
 import { WorkOrder, PhaseConfig, AppUser, SalesOrder } from '../types';
 import { WorkOrderModal } from './WorkOrderModal';
+import { ActivityBadge } from './ActivityBadge';
 import { formatOsLabel } from '../hooks/useWorkOrders';
 import { useKanbanInteraction } from '../hooks/useKanbanInteraction';
 import { getInitials as globalGetInitials } from '../utils/userUtils';
@@ -75,6 +76,17 @@ const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, deadli
     return appUsers.find(u => u.name === workOrder.sellerName || u.email === workOrder.sellerName);
   }, [appUsers, workOrder.sellerName]);
 
+  /** Dias desde que a O.S. entrou na fase atual de produção */
+  const daysInPhase = React.useMemo(() => {
+    const phase = workOrder.productionPhase;
+    const logs = workOrder.logs ?? [];
+    const phaseEntry = logs
+      .filter(l => l.action === 'phase_changed' && l.toPhase === phase)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+    const ref = phaseEntry ? new Date(phaseEntry.createdAt) : new Date(workOrder.createdAt);
+    return Math.floor((Date.now() - ref.getTime()) / 86_400_000);
+  }, [workOrder.logs, workOrder.productionPhase, workOrder.createdAt]);
+
   const handleNav = (e: React.MouseEvent, dir: 1 | -1) => {
     e.stopPropagation();
     setImgIndex(i => (i + dir + drawings.length) % drawings.length);
@@ -91,10 +103,19 @@ const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, deadli
           className={`bg-white rounded-2xl p-3 shadow-sm cursor-pointer select-none transition-all
             ${snapshot.isDragging ? 'shadow-xl rotate-1 scale-[1.02]' : 'hover:shadow-md'}`}
         >
-          {/* Priority badge */}
-          <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider mb-1.5 ${priorityCfg.bg} ${priorityCfg.text}`}>
-            {priorityCfg.label}
-          </span>
+          {/* Priority badge + activity signal */}
+          <div className="flex items-center justify-between mb-1.5">
+            <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider ${priorityCfg.bg} ${priorityCfg.text}`}>
+              {priorityCfg.label}
+            </span>
+            <div onClick={e => e.stopPropagation()}>
+              <ActivityBadge
+                referenceId={workOrder.id}
+                referenceType="work_order"
+                daysInStage={daysInPhase}
+              />
+            </div>
+          </div>
 
           {/* Client & OS */}
           <p className="font-black text-gray-900 text-xs leading-snug truncate">

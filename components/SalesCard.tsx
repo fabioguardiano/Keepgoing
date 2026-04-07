@@ -1,8 +1,9 @@
 import React from 'react';
 import { Draggable } from '@hello-pangea/dnd';
-import { Calendar, User as UserIcon, DollarSign, CheckCircle2, Lock, GripVertical, ArrowRight, EyeOff } from 'lucide-react';
+import { Calendar, DollarSign, CheckCircle2, Lock, GripVertical, ArrowRight, EyeOff } from 'lucide-react';
 import { SalesOrder, AppUser, SalesPhaseConfig } from '../types';
 import { CRMSection } from './CRMSection';
+import { ActivityBadge } from './ActivityBadge';
 import { getInitials } from '../utils/userUtils';
 
 interface SalesCardProps {
@@ -84,7 +85,7 @@ export const SalesCard: React.FC<SalesCardProps> = ({
           onClick={() => canEdit && handleEdit(sale)}
         >
           <div className="flex justify-between items-start mb-2">
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">#{sale.orderNumber}</span>
               {sale.isOsGenerated && (
                 <span className="bg-green-100 text-green-600 text-[8px] font-black px-1.5 py-0.5 rounded uppercase flex items-center gap-1">
@@ -115,7 +116,15 @@ export const SalesCard: React.FC<SalesCardProps> = ({
                 </span>
               )}
             </div>
-            <GripVertical className="text-slate-300 group-hover:text-slate-400 transition-colors w-4 h-4 shrink-0" />
+            <div className="flex items-center gap-1 shrink-0">
+              <ActivityBadge
+                referenceId={sale.id}
+                referenceType="sale"
+                daysInStage={daysElapsed}
+                currentUserName={currentUser?.name}
+              />
+              <GripVertical className="text-slate-300 group-hover:text-slate-400 transition-colors w-4 h-4" />
+            </div>
           </div>
 
           <h4 className="font-black text-slate-800 dark:text-white text-sm mb-1 group-hover:text-[var(--primary-color)] transition-colors line-clamp-1">{sale.clientName}</h4>
