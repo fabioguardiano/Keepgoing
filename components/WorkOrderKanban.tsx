@@ -306,11 +306,36 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkO
     const sale = salesMap[wo.saleId];
     if (sale) {
       const relevantIds = new Set(wo.saleItemIds || []);
-      const saleItems = (sale.items || []).filter(i =>
-        (relevantIds.size === 0 || relevantIds.has(i.id)) &&
-        (i.category === 'Acabamentos' || ((i.length || 0) > 0 && !(i.m2 && i.m2 > 0)))
-      );
-      const fromSale = saleItems.reduce((a, i) => a + (i.quantity * (i.length || 0)), 0);
+      const saleItems = (sale.items || []).filter((i: any) => {
+        // Filtra itens que pertencem a esta O.S.
+        const belongsToOS = relevantIds.size === 0 || relevantIds.has(i.id);
+        if (!belongsToOS) return false;
+        // É de acabamento se:
+        // (a) tem category explicitamente definida, OU
+        // (b) tem comprimento mas NÃO tem largura nem metragem quadrada
+        const isLinear =
+          i.category === 'Acabamentos' ||
+          (
+            (Number(i.length) || 0) > 0 &&
+            (Number(i.m2) || 0) === 0 &&
+            (Number(i.width) || 0) === 0
+          );
+        return isLinear;
+      });
+      const fromSale = saleItems.reduce((a: number, i: any) => a + (Number(i.quantity) * (Number(i.length) || 0)), 0);
+      // DEBUG — remover após confirmar
+      if (workOrders.length > 0 && phase.name === workOrders[0]?.productionPhase) {
+        console.log('[Kanban Linear Debug]', {
+          phase: phase.name,
+          wo_id: wo.id,
+          saleId: wo.saleId,
+          saleFound: !!sale,
+          saleItemsCount: sale?.items?.length,
+          relevantItemsCount: saleItems.length,
+          saleItems: saleItems.map((i: any) => ({ desc: i.description, cat: i.category, len: i.length, m2: i.m2, w: i.width })),
+          fromSale
+        });
+      }
       if (fromSale > 0) return acc + fromSale;
     }
 
