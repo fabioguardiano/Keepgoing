@@ -302,13 +302,31 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                       {brands.map(b => <option key={b.id} value={b.description}>{b.description}</option>)}
                     </select>
                   </div>
-                  <div className="col-span-2">
+                  <div className="col-span-4">
+                    <label className={labelClass}>Fornecedor</label>
+                    <select className={inputClass} value={formData.supplier} onChange={e => setFormData({...formData, supplier: e.target.value})}>
+                      <option value="">Selecione...</option>
+                      {suppliers.map(s => <option key={s.id} value={s.tradingName}>{s.tradingName}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-12 gap-4">
+                  <div className="col-span-3">
                     <label className={labelClass}>Unidade</label>
                     <input className={inputClass} value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value.toUpperCase()})} />
                   </div>
-                  <div className="col-span-2">
+                  <div className="col-span-3">
                     <label className={labelClass}>Espessura (CM)</label>
                     <input type="number" step="0.1" className={inputClass} value={formData.thickness || ''} onChange={e => setFormData({...formData, thickness: Number(e.target.value)})} />
+                  </div>
+                  <div className="col-span-3">
+                    <label className={labelClass}>Estoque Mínimo</label>
+                    <input type="number" className={inputClass} value={formData.minStock} onChange={e => setFormData({...formData, minStock: Number(e.target.value)})} />
+                  </div>
+                  <div className="col-span-3">
+                    <label className={labelClass}>Saldo em Estoque</label>
+                    <input type="number" className={inputClass} value={formData.stockQuantity} onChange={e => setFormData({...formData, stockQuantity: Number(e.target.value)})} />
                   </div>
                 </div>
               </div>
