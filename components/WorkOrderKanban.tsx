@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Image as ImageIcon, Calendar, ChevronLeft, ChevronRight, UserRound, Clock, Maximize2, Minimize2 } from 'lucide-react';
-import { WorkOrder, PhaseConfig, AppUser } from '../types';
+import { WorkOrder, PhaseConfig, AppUser, SalesOrder } from '../types';
 import { WorkOrderModal } from './WorkOrderModal';
 import { formatOsLabel } from '../hooks/useWorkOrders';
 import { useKanbanInteraction } from '../hooks/useKanbanInteraction';
@@ -11,6 +11,7 @@ interface WorkOrderKanbanProps {
   workOrders: WorkOrder[];
   phases: PhaseConfig[];
   appUsers: AppUser[];
+  sales?: SalesOrder[];
   currentUserName: string;
   canCancelOS: boolean;
   canEditDeadline: boolean;
@@ -273,24 +274,47 @@ interface KanbanColumnProps {
   onCardClick: (wo: WorkOrder) => void;
   dragDisabled: boolean;
   appUsers: AppUser[];
+  sales?: SalesOrder[];
 }
 
-const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkOrders, deadlineWarningDays, deadlineUrgentDays, onCardClick, dragDisabled, appUsers }) => {
+const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkOrders, deadlineWarningDays, deadlineUrgentDays, onCardClick, dragDisabled, appUsers, sales }) => {
+  const salesMap = React.useMemo(() => {
+    const m: Record<string, SalesOrder> = {};
+    (sales || []).forEach(s => { m[s.id] = s; });
+    return m;
+  }, [sales]);
+
   const totalM2 = workOrders.reduce((acc, wo) => acc + (wo.totalM2 || 0), 0);
   const totalLinear = workOrders.reduce((acc, wo) => {
-    // 1. Tenta o campo consolidado
+    // 1. Campo consolidado já salvo na O.S.
     if ((wo.totalLinear || 0) > 0) return acc + wo.totalLinear;
-    
-    // 2. Se não tiver, tenta somar do array de resumos (acabamentos)
+
+    // 2. Array de resumos salvo na O.S.
     const summaryLinear = (wo.finishingsLinear || []).reduce((a, f) => a + (f.totalLinear || 0), 0);
     if (summaryLinear > 0) return acc + summaryLinear;
-    
-    // 3. Se ainda for 0 (O.S. muito antiga), tenta calcular direto dos itens
-    const itemsLinear = (wo.items || [])
-      .filter(i => (i.length || 0) > 0 && !(i.width && i.width > 0))
-      .reduce((a, i) => a + (i.quantity * (i.length || 0)), 0);
-      
-    return acc + itemsLinear;
+
+    // 3. Itens salvos dentro da O.S. (coluna 'items')
+    const savedItems = wo.items || [];
+    if (savedItems.length > 0) {
+      const fromSaved = savedItems
+        .filter(i => (i.category === 'Acabamentos' || ((i.length || 0) > 0 && !(i.m2 && i.m2 > 0))))
+        .reduce((a, i) => a + (i.quantity * (i.length || 0)), 0);
+      if (fromSaved > 0) return acc + fromSaved;
+    }
+
+    // 4. Vai direto na venda original (O.S. muito antigas sem dados migrados)
+    const sale = salesMap[wo.saleId];
+    if (sale) {
+      const relevantIds = new Set(wo.saleItemIds || []);
+      const saleItems = (sale.items || []).filter(i =>
+        (relevantIds.size === 0 || relevantIds.has(i.id)) &&
+        (i.category === 'Acabamentos' || ((i.length || 0) > 0 && !(i.m2 && i.m2 > 0)))
+      );
+      const fromSale = saleItems.reduce((a, i) => a + (i.quantity * (i.length || 0)), 0);
+      if (fromSale > 0) return acc + fromSale;
+    }
+
+    return acc;
   }, 0);
 
   return (
@@ -353,6 +377,7 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
   workOrders,
   phases,
   appUsers,
+  sales,
   currentUserName,
   canCancelOS,
   canEditDeadline,
@@ -481,6 +506,7 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
               onCardClick={setSelectedWorkOrder}
               dragDisabled={!canMoveCards}
               appUsers={appUsers}
+              sales={sales}
             />
           ))}
           </div>

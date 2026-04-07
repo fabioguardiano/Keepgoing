@@ -571,6 +571,7 @@ const App: React.FC = () => {
             workOrders={workOrders}
             phases={phases}
             appUsers={appUsers}
+            sales={sales}
             currentUserName={user?.name || user?.email || 'Usuário'}
             canCancelOS={getAccess('producao') === 'full'}
             canEditDeadline={getAccess('producao') === 'full'}
