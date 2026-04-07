@@ -286,70 +286,36 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkO
 
   const totalM2 = workOrders.reduce((acc, wo) => acc + (wo.totalM2 || 0), 0);
   const totalLinear = workOrders.reduce((acc, wo) => {
-    // 1. Campo consolidado já salvo na O.S.
+    // 1. Campo consolidado já salvo na O.S. (novas O.S.)
     if ((wo.totalLinear || 0) > 0) return acc + wo.totalLinear;
 
     // 2. Array de resumos salvo na O.S.
     const summaryLinear = (wo.finishingsLinear || []).reduce((a, f) => a + (f.totalLinear || 0), 0);
     if (summaryLinear > 0) return acc + summaryLinear;
 
-    // 3. Itens salvos dentro da O.S. (coluna 'items')
-    const savedItems = wo.items || [];
-    if (savedItems.length > 0) {
-      const fromSaved = savedItems
-        .filter(i => (i.category === 'Acabamentos' || ((i.length || 0) > 0 && !(i.m2 && i.m2 > 0))))
-        .reduce((a, i) => a + (i.quantity * (i.length || 0)), 0);
-      if (fromSaved > 0) return acc + fromSaved;
-    }
+    // 3. Itens salvos na O.S. (mesma lógica do calcMetrics)
+    const fromSavedItems = (wo.items || [])
+      .filter(i => i.category === 'Acabamentos' && (i.length || 0) > 0)
+      .reduce((a, i) => a + (i.quantity * (i.length || 0)), 0);
+    if (fromSavedItems > 0) return acc + fromSavedItems;
 
-    // 4. Vai direto na venda original (O.S. muito antigas sem dados migrados)
+    // 4. Busca direto na venda (O.S. antigas — mesma lógica do calcMetrics)
     const sale = salesMap[wo.saleId];
     if (sale) {
-      const relevantIds = new Set(wo.saleItemIds || []);
-      const saleItems = (sale.items || []).filter((i: any) => {
-        // Filtra itens que pertencem a esta O.S.
-        const belongsToOS = relevantIds.size === 0 || relevantIds.has(i.id);
-        if (!belongsToOS) return false;
-        // É de acabamento se:
-        // (a) tem category explicitamente definida, OU
-        // (b) tem comprimento mas NÃO tem largura nem metragem quadrada
-        const isLinear =
-          i.category === 'Acabamentos' ||
-          (
-            (Number(i.length) || 0) > 0 &&
-            (Number(i.m2) || 0) === 0 &&
-            (Number(i.width) || 0) === 0
-          );
-        return isLinear;
-      });
-      const fromSale = saleItems.reduce((a: number, i: any) => a + (Number(i.quantity) * (Number(i.length) || 0)), 0);
-      // DEBUG — remover após confirmar
-      console.log('[Kanban Linear Debug]', {
-        phase: phase.name,
-        wo_id: wo.id.slice(0, 8),
-        saleId: wo.saleId?.slice(0, 8),
-        saleFound: !!sale,
-        wo_totalLinear: wo.totalLinear,
-        wo_finishingsLinear: wo.finishingsLinear,
-        wo_items_count: (wo.items || []).length,
-        saleItemsTotal: sale?.items?.length ?? 'n/a',
-        relevantIds: [...new Set(wo.saleItemIds || [])].length,
-        linearItemsFound: saleItems.length,
-        linearItems: saleItems.map((i: any) => ({
-          desc: i.description,
-          cat: i.category,
-          qty: i.quantity,
-          len: i.length,
-          m2: i.m2,
-          w: i.width
-        })),
-        fromSale
-      });
+      const relevantIds = new Set((wo.saleItemIds || []) as string[]);
+      const fromSale = ((sale.items || []) as any[]).reduce((a: number, i: any) => {
+        if (relevantIds.size > 0 && !relevantIds.has(i.id)) return a;
+        if (String(i.category) === 'Acabamentos' && (Number(i.length) || 0) > 0) {
+          return a + Number(i.quantity) * Number(i.length);
+        }
+        return a;
+      }, 0);
       if (fromSale > 0) return acc + fromSale;
     }
 
     return acc;
   }, 0);
+
 
   return (
   <div 
