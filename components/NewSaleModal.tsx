@@ -1585,7 +1585,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                       <Eye size={14} /> Somente leitura
                     </div>
                   ) : !isEditMode ? (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 pointer-events-auto">
                        <button
                         onClick={() => setIsEditMode(true)}
                         className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-black shadow-lg shadow-amber-500/30 transition-all flex items-center gap-2 text-[10px]"
