@@ -330,7 +330,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
             servicePercentage: itemService,
             environment: activeEnvironment,
             materialId: resolvedMaterialId,
-            materialName: resolvedMaterialName
+            materialName: resolvedMaterialName,
+            category: matFromMaterials?.type || matFromProducts?.type || originalItem?.category
           };
         }
         return item;
@@ -352,7 +353,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
         servicePercentage: itemService,
         environment: activeEnvironment,
         materialId: resolvedMaterialId,
-        materialName: resolvedMaterialName
+        materialName: resolvedMaterialName,
+        category: matFromMaterials?.type || matFromProducts?.type
       };
       setItems([...items, newItem]);
     }

@@ -189,8 +189,10 @@ export const useWorkOrders = (companyId?: string) => {
       }
       await fetchWorkOrders();
       return true;
-    } catch (err) {
-      console.error('Erro ao criar O.S.:', err);
+    } catch (err: any) {
+      console.error('Erro detalhado ao criar O.S.:', err);
+      // Se houver mensagem de erro do Supabase, logamos ela
+      if (err.message) console.error('Mensagem Supabase:', err.message);
       return false;
     }
   };
