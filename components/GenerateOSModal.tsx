@@ -15,17 +15,18 @@ const calcMetrics = (items: OrderItem[], itemIds: string[]) => {
         quantity: item.quantity,
         unit: item.unit || 'un'
       });
-    } else if ((item.m2 || 0) > 0) {
-      const key = item.materialName || 'Sem Material';
-      if (!m2Map[key]) m2Map[key] = { materialName: item.materialName || key, materialId: item.materialId, totalM2: 0 };
-      m2Map[key].totalM2 = Math.round((m2Map[key].totalM2 + item.m2!) * 10000) / 10000;
-    } else if ((item.length || 0) > 0 && !(item.width && item.width > 0)) {
+    } else if (item.category === 'Acabamentos') {
       const key = item.description || item.materialName || 'Acabamento';
       if (!linMap[key]) linMap[key] = { itemName: item.description || key, materialName: item.materialName, totalLinear: 0, totalQty: 0 };
       linMap[key].totalLinear = Math.round((linMap[key].totalLinear + item.quantity * (item.length || 0)) * 10000) / 10000;
       linMap[key].totalQty += item.quantity;
+    } else if ((item.m2 || 0) > 0) {
+      const key = item.materialName || 'Sem Material';
+      if (!m2Map[key]) m2Map[key] = { materialName: item.materialName || key, materialId: item.materialId, totalM2: 0 };
+      m2Map[key].totalM2 = Math.round((m2Map[key].totalM2 + item.m2!) * 10000) / 10000;
     }
   });
+
   const materialsM2 = Object.values(m2Map);
   const finishingsLinear = Object.values(linMap);
   return {
@@ -468,8 +469,10 @@ export const GenerateOSModal: React.FC<Props> = ({ sale, existingOSMap, onConfir
                                         <div className="flex items-center gap-2 text-[11px] text-slate-400 flex-shrink-0">
                                           {item.materialName && <span>{item.materialName}</span>}
                                           {dim && <span className="font-mono">{dim}</span>}
-                                          {(item.m2 || 0) > 0 && (
+                                          {(item.m2 || 0) > 0 ? (
                                             <span className="font-black text-slate-600 dark:text-slate-300">{fmtM2(item.m2!)}</span>
+                                          ) : (item.length || 0) > 0 && (
+                                            <span className="font-black text-slate-600 dark:text-slate-300">{fmtLin(item.quantity * item.length!)}</span>
                                           )}
                                           {item.quantity > 1 && (
                                             <span className="bg-slate-200 dark:bg-slate-600 px-1.5 py-0.5 rounded font-bold">{item.quantity}x</span>
@@ -528,7 +531,20 @@ export const GenerateOSModal: React.FC<Props> = ({ sale, existingOSMap, onConfir
                             </div>
                           </div>
                         )}
-                        {group.materialsM2.length === 0 && group.finishingsLinear.length === 0 && (
+                        {group.resaleProducts && group.resaleProducts.length > 0 && (
+                          <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-3">
+                            <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">
+                              <Package size={12} /> Produtos de Revenda
+                            </div>
+                            {group.resaleProducts.map((p, i) => (
+                              <div key={i} className="flex justify-between text-xs py-0.5">
+                                <span className="font-medium text-slate-600 dark:text-slate-300 truncate max-w-[140px]">{p.description}</span>
+                                <span className="font-black text-slate-800 dark:text-white ml-2">{p.quantity} {p.unit}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {group.materialsM2.length === 0 && group.finishingsLinear.length === 0 && (!group.resaleProducts || group.resaleProducts.length === 0) && (
                           <div className="col-span-2 text-xs text-slate-400 italic">Nenhuma metragem calculada para este grupo.</div>
                         )}
                       </div>

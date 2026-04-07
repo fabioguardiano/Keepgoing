@@ -474,7 +474,9 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                                   </div>
                                 </div>
                                 <div className="text-right flex-shrink-0">
-                                  <div className="font-bold text-gray-900">{item.quantity} {item.unit}</div>
+                                  <div className="font-bold text-gray-900">
+                                    {item.unit === 'm²' ? (item.m2?.toFixed(4).replace('.', ',') + ' m²') : `${item.quantity} ${item.unit || 'un'}`}
+                                  </div>
                                 </div>
                               </div>
                             ))}
