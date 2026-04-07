@@ -1,3 +1,13 @@
+/**
+ * useExchangeRates
+ *
+ * Busca cotações de USD e EUR em relação ao BRL via proxy server-side
+ * (/api/exchange-rates). O proxy evita bloqueios de CSP ao fazer a
+ * chamada externa servidor-a-servidor.
+ *
+ * Atualiza a cada 5 minutos. Em caso de falha, mantém o último valor
+ * obtido ou exibe valores padrão realistas.
+ */
 import { useState, useEffect } from 'react';
 import { ExchangeRates } from '../types';
 
@@ -8,41 +18,33 @@ export const useExchangeRates = () => {
     const controller = new AbortController();
 
     const fetchRates = async () => {
-      const urls = [
-        'https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL',
-        'https://economia.awesomeapi.com.br/last/USD-BRL,EUR-BRL'
-      ];
+      try {
+        const response = await fetch('/api/exchange-rates', {
+          signal: controller.signal,
+        });
 
-      for (const url of urls) {
-        try {
-          const response = await fetch(url, { signal: controller.signal });
-          if (response.ok) {
-            const data = await response.json();
-            // Suporta formatos diferentes (alguns endpoints retornam chaves com hífen ou sem)
-            const usd = data.USDBRL || data['USD-BRL'] || data.USD;
-            const eur = data.EURBRL || data['EUR-BRL'] || data.EUR;
-
-            if (usd?.bid && eur?.bid) {
-              setExchangeRates({
-                usd: Number(usd.bid),
-                eur: Number(eur.bid),
-                lastUpdate: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-              });
-              return; // Sucesso, encerra tentativas
-            }
-          }
-        } catch (error: any) {
-          if (error?.name === 'AbortError') return;
-          console.warn(`[CurrencyAPI] Falha ao buscar cotação de ${url}:`, error.message);
+        if (!response.ok) {
+          throw new Error(`Proxy retornou ${response.status}`);
         }
-      }
 
-      // Se todas as tentativas falharem, exibe os novos defaults realistas
-      setExchangeRates(prev => prev.usd > 0 ? prev : { 
-        usd: 5.15, 
-        eur: 5.95, 
-        lastUpdate: 'Offline' 
-      });
+        const data = await response.json();
+
+        if (data.usd && data.eur) {
+          setExchangeRates({
+            usd: data.usd,
+            eur: data.eur,
+            lastUpdate: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+          });
+        }
+      } catch (error: any) {
+        if (error?.name === 'AbortError') return;
+        console.warn('[CurrencyAPI] Falha ao buscar cotação:', error.message);
+
+        // Mantém o último valor carregado; se ainda não há nenhum, usa padrão
+        setExchangeRates(prev =>
+          prev.usd > 0 ? prev : { usd: 5.15, eur: 5.95, lastUpdate: 'Offline' }
+        );
+      }
     };
 
     fetchRates();
