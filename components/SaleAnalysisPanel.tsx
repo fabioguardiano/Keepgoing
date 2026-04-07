@@ -21,7 +21,7 @@ interface SaleAnalysis {
   comissaoArquiteto: number;
 
   // Apuração de Custo
-  materiaPrimaComPerdas: number;
+  custoMercadoriaVendida: number;
   frete: number;
   reservaTecnica: number;
   comissaoVendedorCusto: number;
@@ -71,12 +71,14 @@ function calcSaleAnalysis(
     if ((i.servicePercentage ?? 0) > 0) return false;
     if (!i.materialId) return false;
     const prod = products.find(p => p.id === i.materialId);
-    return prod ? (!i.m2 || i.m2 === 0) : false;
+    return prod ? (!i.m2 || i.m2 === 0) && prod.type === 'Produtos de Revenda' : false;
   });
 
-  const serviceItems = items.filter(i =>
-    (i.servicePercentage ?? 0) > 0 || !i.materialId
-  );
+  const serviceItems = items.filter(i => {
+    if ((i.servicePercentage ?? 0) > 0 || !i.materialId) return true;
+    const prod = products.find(p => p.id === i.materialId);
+    return prod ? (!i.m2 || i.m2 === 0) && prod.type === 'Acabamentos' : false;
+  });
 
   // Valores de venda por tipo
   const valorMaterialPrima = materialItems.reduce((s, i) => s + (i.totalPrice || 0), 0);
@@ -93,27 +95,27 @@ function calcSaleAnalysis(
   // Métricas de área
   const totalM2 = materialItems.reduce((s, i) => s + (i.m2 || 0), 0);
 
-  // Custo real de cada material (com perdas e frete unitário) + comissão por item
-  let materiaPrimaComPerdas = 0;
+  // Custo real de cada material (CMV que já inclui frete e perdas)
+  let custoMercadoriaVendida = 0;
   let impostosMaterial = 0;
   let comissaoVendedorMaterial = 0;
   materialItems.forEach(i => {
     const mat = materials.find(m => m.id === i.materialId);
-    if (mat) {
-      const custoBase = mat.unitCost;
-      const freteUnitario = mat.freightCost || 0;
-      const perdaPct = mat.lossPercentage || 0;
-      const taxPct = mat.taxPercentage || 0;
-      const commPct = mat.commissionPercentage || 0;
-      const qty = i.m2 && i.m2 > 0 ? i.m2 : i.quantity;
-      const custoSemPerda = (custoBase + freteUnitario) * qty;
-      const custoComPerda = custoSemPerda * (1 + perdaPct / 100);
-      materiaPrimaComPerdas += custoComPerda;
-      impostosMaterial += custoSemPerda * (taxPct / 100);
+    // Prioriza o CMV salvo no item (snapshot da venda)
+    const unitCMV = i.cmv ?? mat?.cmv ?? 0;
+    const qty = i.m2 && i.m2 > 0 ? i.m2 : i.quantity;
+
+    if (unitCMV > 0) {
+      custoMercadoriaVendida += unitCMV * qty;
+      // Impostos e comissões ainda são baseados no valor ou custo base se necessário, 
+      // mas aqui mantemos a lógica de impostos do mat se houver.
+      const taxPct = mat?.taxPercentage || 0;
+      const commPct = mat?.commissionPercentage || 0;
+      impostosMaterial += (unitCMV * qty) * (taxPct / 100); // Impostos sobre o custo? Geralmente é sobre a venda, mas mantendo consistência com o que estava.
       comissaoVendedorMaterial += (i.totalPrice || 0) * (commPct / 100);
     } else {
       // Sem cadastro: usa 60% do preço de venda como estimativa de custo
-      materiaPrimaComPerdas += (i.totalPrice || 0) * 0.6;
+      custoMercadoriaVendida += (i.totalPrice || 0) * 0.6;
     }
   });
 
@@ -164,8 +166,7 @@ function calcSaleAnalysis(
   const impostosTotais = impostosMaterial + impostosProdRevenda + impostosServicos;
 
   const valorApurado =
-    materiaPrimaComPerdas +
-    frete +
+    custoMercadoriaVendida +
     reservaTecnica +
     comissaoVendedorCusto +
     comissaoArquiteto +
@@ -177,8 +178,7 @@ function calcSaleAnalysis(
   const resultado = valorVenda - custosTotal - despesasAdmin;
   const gainPct = valorVenda > 0 ? (resultado / valorVenda) * 100 : 0;
 
-  // Parcelamento 1–6 meses com juros simples (aproximado baseado no método de pagamento)
-  const paymentMethod = null; // sem acesso direto, usamos 0% de juros
+  // Parcelamento 1–6 meses sem juros
   const juros = 0;
   const parcelas = [1, 2, 3, 4, 5, 6].map(n => ({
     mes: n,
@@ -194,7 +194,7 @@ function calcSaleAnalysis(
     valorVenda,
     comissaoVendedor,
     comissaoArquiteto,
-    materiaPrimaComPerdas,
+    custoMercadoriaVendida,
     frete,
     reservaTecnica,
     comissaoVendedorCusto,
@@ -279,8 +279,7 @@ export const SaleAnalysisPanel: React.FC<SaleAnalysisPanelProps> = ({
         {/* Coluna 2 — Apuração de Custo */}
         <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
           <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-3">Apuração de Custo</h4>
-          <Row label="Matéria Prima com Perdas" value={a.materiaPrimaComPerdas} />
-          <Row label="Frete" value={a.frete} />
+          <Row label="Custo Mercadoria Vendida (CMV)" value={a.custoMercadoriaVendida} />
           <Row label="Reserva Técnica (Arq.)" value={a.reservaTecnica} />
           <Row label="Comissão do Vendedor" value={a.comissaoVendedorCusto} />
           <Row label="Valor Mão de Obra" value={0} />
