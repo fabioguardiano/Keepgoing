@@ -475,7 +475,13 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                                 </div>
                                 <div className="text-right flex-shrink-0">
                                   <div className="font-bold text-gray-900">
-                                    {item.unit === 'm²' ? (item.m2?.toFixed(4).replace('.', ',') + ' m²') : `${item.quantity} ${item.unit || 'un'}`}
+                                    {(item.unit === 'm²' || (item.m2 || 0) > 0) ? (
+                                      <span>{(item.m2 || 0).toFixed(4).replace('.', ',')} m²</span>
+                                    ) : (item.length || 0) > 0 ? (
+                                      <span>{(item.quantity * item.length!).toFixed(2).replace('.', ',')} m lin.</span>
+                                    ) : (
+                                      <span>{item.quantity} {item.unit || 'un'}</span>
+                                    )}
                                   </div>
                                 </div>
                               </div>
