@@ -257,7 +257,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const isProductMaterial = products.some(
     p => p.description === itemMaterialId && p.type === 'Produtos de Revenda'
   );
-  // True quando é Acabamento (precisa de comprimento linear, mas não de largura)
+  // True quando é Acabamento — quantidade já é o total em m lin., sem campo de comprimento
   const isAcabamentoMaterial = products.some(
     p => p.description === itemMaterialId && p.type === 'Acabamentos'
   );
@@ -313,14 +313,14 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
     // Validate dimensions
     // Matéria Prima: exige comprimento e largura
-    // Acabamentos: exige apenas comprimento linear
+    // Acabamentos: quantidade já é o total em m lin. — sem campo de comprimento separado
     // Produtos de Revenda: não exige dimensões
     if (!isProductMaterial && !isAcabamentoMaterial && (itemLength <= 0 || itemWidth <= 0)) {
       alert('Por favor, preencha o Comprimento e a Largura do item antes de adicionar.');
       return;
     }
-    if (isAcabamentoMaterial && itemLength <= 0) {
-      alert('Por favor, preencha o Comprimento (m lin.) do acabamento antes de adicionar.');
+    if (isAcabamentoMaterial && !(itemQty > 0)) {
+      alert('Por favor, preencha a Quantidade (m lin.) do acabamento antes de adicionar.');
       return;
     }
 
@@ -334,7 +334,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
             unit: m2 > 0 ? 'm²' : isAcabamentoMaterial ? 'm lin.' : 'un',
             unitPrice: itemPrice,
             totalPrice: total,
-            length: isAcabamentoMaterial ? itemLength : m2 > 0 ? itemLength : 0,
+            length: isAcabamentoMaterial ? 1 : m2 > 0 ? itemLength : 0,
             width: isAcabamentoMaterial ? 0 : itemWidth,
             m2: isAcabamentoMaterial ? 0 : m2,
             cmv: matFromMaterials?.cmv || matFromProducts?.unitCost || 0,
@@ -357,7 +357,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
         unitPrice: itemPrice,
         totalPrice: total,
         status: 'pendente',
-        length: isAcabamentoMaterial ? itemLength : m2 > 0 ? itemLength : 0,
+        length: isAcabamentoMaterial ? 1 : m2 > 0 ? itemLength : 0,
         width: isAcabamentoMaterial ? 0 : itemWidth,
         m2: isAcabamentoMaterial ? 0 : m2,
         cmv: matFromMaterials?.cmv || matFromProducts?.unitCost || 0,
@@ -1226,21 +1226,22 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                       </td>
                                       <td className="px-3 py-3 text-center text-[11px] font-bold text-black dark:text-slate-300">{Number(item.quantity || 0).toFixed(2)}</td>
                                       {(() => {
-                                        const isMat = materials.some(m => m.id === item.materialId);
+                                        const isAcab = item.category === 'Acabamentos';
+                                        const isMat = !isAcab && materials.some(m => m.id === item.materialId);
                                         const missingLen = isMat && !(item.length > 0);
                                         const missingWid = isMat && !(item.width > 0);
                                         return (
                                           <>
                                             <td className={`px-3 py-3 text-center text-[11px] font-bold ${missingLen ? 'text-red-500 bg-red-50' : 'text-black dark:text-slate-300'}`}>
-                                              {missingLen ? <span title="Comprimento obrigatório">⚠ 0.000</span> : Number(item.length).toFixed(3)}
+                                              {isAcab ? '—' : missingLen ? <span title="Comprimento obrigatório">⚠ 0.000</span> : Number(item.length).toFixed(3)}
                                             </td>
                                             <td className={`px-3 py-3 text-center text-[11px] font-bold ${missingWid ? 'text-red-500 bg-red-50' : 'text-black dark:text-slate-300'}`}>
-                                              {missingWid ? <span title="Largura obrigatória">⚠ 0.000</span> : Number(item.width).toFixed(3)}
+                                              {isAcab ? '—' : missingWid ? <span title="Largura obrigatória">⚠ 0.000</span> : Number(item.width).toFixed(3)}
                                             </td>
                                           </>
                                         );
                                       })()}
-                                      <td className="px-3 py-3 text-center text-[11px] font-bold text-black dark:text-slate-300">{Number(item.m2 || 0).toFixed(2) || '0.00'}</td>
+                                      <td className="px-3 py-3 text-center text-[11px] font-bold text-black dark:text-slate-300">{item.category === 'Acabamentos' ? '—' : (Number(item.m2 || 0).toFixed(2) || '0.00')}</td>
                                       <td className="px-3 py-3 text-right text-[11px] font-bold text-black dark:text-slate-300">R$ {(item.unitPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                       <td className="px-3 py-3 text-center text-[10px] whitespace-nowrap w-[80px]">
                                         <div className="flex flex-col items-center">
@@ -1354,12 +1355,12 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                   }
                                 }} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" /></td>
                                 <td className="p-1.5">
-                                  {isProductMaterial && activeEnvironment === (env === 'Sem Ambiente' ? '' : env)
+                                  {(isProductMaterial || isAcabamentoMaterial) && activeEnvironment === (env === 'Sem Ambiente' ? '' : env)
                                     ? <div className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] text-black text-center">—</div>
                                     : <input type="number" step="0.001" ref={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? lengthRef : null} value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemLength : 0} onChange={e => setItemLength(parseFloat(e.target.value))} onKeyDown={e => {
                                         if (e.key === 'Enter') {
                                           e.preventDefault();
-                                          isAcabamentoMaterial ? priceRef.current?.focus() : widthRef.current?.focus();
+                                          widthRef.current?.focus();
                                         }
                                       }} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" />
                                   }
@@ -1376,7 +1377,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                   }
                                 </td>
                                 <td className="p-1.5 text-center text-[10px] font-black text-black">
-                                   {activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? (isProductMaterial ? '-' : isAcabamentoMaterial ? ` m` : calculateM2(itemLength, itemWidth, itemQty).toFixed(2)) : '0.00'}
+                                   {activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? (isProductMaterial || isAcabamentoMaterial ? '—' : calculateM2(itemLength, itemWidth, itemQty).toFixed(2)) : '—'}
                                 </td>
                                 <td className="p-1.5"><input type="number" step="0.01" ref={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? priceRef : null} value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemPrice : 0} onChange={e => setItemPrice(parseFloat(e.target.value))} onKeyDown={e => {
                                   if (e.key === 'Enter') {

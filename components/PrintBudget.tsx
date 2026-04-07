@@ -233,7 +233,8 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
               </thead>
               <tbody>
                 {envItems.map((item, idx) => {
-                  const hasDimensions = fmtDim(item.length) !== null || fmtDim(item.width) !== null;
+                  const isAcab = item.category === 'Acabamentos';
+                  const hasDimensions = !isAcab && (fmtDim(item.length) !== null || fmtDim(item.width) !== null);
                   const m2 = item.m2 || (item.length && item.width ? item.length * item.width * (item.quantity || 1) : null);
                   const matName = materials.find(m => m.id === item.materialId)?.name || item.materialName || '-';
                   const isOdd = idx % 2 === 0;
