@@ -30,11 +30,17 @@ export const useLegacyMigration = (companyId?: string): MigrationResult => {
     const run = async () => {
       try {
         // 1. Verifica se a migração já foi feita
-        const { data: company } = await supabase
+        // Usa maybeSingle() e trata 400 defensivamente — a coluna pode não existir
+        const { data: company, error: checkError } = await supabase
           .from('companies')
           .select('legacy_migration_done')
           .eq('id', companyId)
-          .single();
+          .maybeSingle();
+
+        if (checkError) {
+          // Coluna não existe ou RLS bloqueou — assume não migrado, mas não aborta
+          console.warn('[useLegacyMigration] Aviso ao verificar flag:', checkError.message);
+        }
 
         if (company?.legacy_migration_done) {
           setResult(r => ({ ...r, done: true }));
