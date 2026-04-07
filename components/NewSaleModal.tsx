@@ -253,9 +253,13 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
     }
   }, [architect]);
 
-  // True when the selected material is an Acabamento or Produto de Revenda (no dimensions needed)
+  // True quando é Produto de Revenda (sem dimensões)
   const isProductMaterial = products.some(
-    p => p.description === itemMaterialId
+    p => p.description === itemMaterialId && p.type === 'Produtos de Revenda'
+  );
+  // True quando é Acabamento (precisa de comprimento linear, mas não de largura)
+  const isAcabamentoMaterial = products.some(
+    p => p.description === itemMaterialId && p.type === 'Acabamentos'
   );
 
   const calculateM2 = (l: number, w: number, q: number) => {
@@ -307,9 +311,16 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
       return;
     }
 
-    // Validate dimensions (only for materials that require m²)
-    if (!isProductMaterial && (itemLength <= 0 || itemWidth <= 0)) {
+    // Validate dimensions
+    // Matéria Prima: exige comprimento e largura
+    // Acabamentos: exige apenas comprimento linear
+    // Produtos de Revenda: não exige dimensões
+    if (!isProductMaterial && !isAcabamentoMaterial && (itemLength <= 0 || itemWidth <= 0)) {
       alert('Por favor, preencha o Comprimento e a Largura do item antes de adicionar.');
+      return;
+    }
+    if (isAcabamentoMaterial && itemLength <= 0) {
+      alert('Por favor, preencha o Comprimento (m lin.) do acabamento antes de adicionar.');
       return;
     }
 
@@ -320,12 +331,12 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
             ...item,
             description: itemDesc,
             quantity: itemQty,
-            unit: m2 > 0 ? 'm²' : 'un',
+            unit: m2 > 0 ? 'm²' : isAcabamentoMaterial ? 'm lin.' : 'un',
             unitPrice: itemPrice,
             totalPrice: total,
-            length: itemLength,
-            width: itemWidth,
-            m2: m2,
+            length: isAcabamentoMaterial ? itemLength : m2 > 0 ? itemLength : 0,
+            width: isAcabamentoMaterial ? 0 : itemWidth,
+            m2: isAcabamentoMaterial ? 0 : m2,
             cmv: matFromMaterials?.cmv || matFromProducts?.unitCost || 0,
             servicePercentage: itemService,
             environment: activeEnvironment,
@@ -342,13 +353,13 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
         id: crypto.randomUUID(),
         description: itemDesc,
         quantity: itemQty,
-        unit: m2 > 0 ? 'm²' : 'un',
+        unit: m2 > 0 ? 'm²' : isAcabamentoMaterial ? 'm lin.' : 'un',
         unitPrice: itemPrice,
         totalPrice: total,
         status: 'pendente',
-        length: itemLength,
-        width: itemWidth,
-        m2: m2,
+        length: isAcabamentoMaterial ? itemLength : m2 > 0 ? itemLength : 0,
+        width: isAcabamentoMaterial ? 0 : itemWidth,
+        m2: isAcabamentoMaterial ? 0 : m2,
         cmv: matFromMaterials?.cmv || matFromProducts?.unitCost || 0,
         servicePercentage: itemService,
         environment: activeEnvironment,
@@ -1338,7 +1349,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                 <td className="p-1.5"><input type="number" step="1" ref={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? qtyRef : null} value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemQty : 1} onFocus={() => setActiveEnvironment(env === 'Sem Ambiente' ? '' : env)} onChange={e => setItemQty(parseFloat(e.target.value))} onKeyDown={e => {
                                   if (e.key === 'Enter') {
                                     e.preventDefault();
-                                    const next = isProductMaterial ? priceRef.current : lengthRef.current;
+                                    const next = (isProductMaterial || isAcabamentoMaterial) ? priceRef.current : lengthRef.current;
                                     next ? next.focus() : addItem();
                                   }
                                 }} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" /></td>
@@ -1348,13 +1359,13 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                     : <input type="number" step="0.001" ref={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? lengthRef : null} value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemLength : 0} onChange={e => setItemLength(parseFloat(e.target.value))} onKeyDown={e => {
                                         if (e.key === 'Enter') {
                                           e.preventDefault();
-                                          widthRef.current?.focus();
+                                          isAcabamentoMaterial ? priceRef.current?.focus() : widthRef.current?.focus();
                                         }
                                       }} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" />
                                   }
                                 </td>
                                 <td className="p-1.5">
-                                  {isProductMaterial && activeEnvironment === (env === 'Sem Ambiente' ? '' : env)
+                                   {(isProductMaterial || isAcabamentoMaterial) && activeEnvironment === (env === 'Sem Ambiente' ? '' : env)
                                     ? <div className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] text-black text-center">—</div>
                                     : <input type="number" step="0.001" ref={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? widthRef : null} value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemWidth : 0} onChange={e => setItemWidth(parseFloat(e.target.value))} onKeyDown={e => {
                                         if (e.key === 'Enter') {
@@ -1365,7 +1376,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                   }
                                 </td>
                                 <td className="p-1.5 text-center text-[10px] font-black text-black">
-                                  {isProductMaterial && activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? '—' : activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? calculateM2(itemLength, itemWidth, itemQty).toFixed(2) : '0.00'}
+                                   {activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? (isProductMaterial ? '-' : isAcabamentoMaterial ? ` m` : calculateM2(itemLength, itemWidth, itemQty).toFixed(2)) : '0.00'}
                                 </td>
                                 <td className="p-1.5"><input type="number" step="0.01" ref={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? priceRef : null} value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemPrice : 0} onChange={e => setItemPrice(parseFloat(e.target.value))} onKeyDown={e => {
                                   if (e.key === 'Enter') {
