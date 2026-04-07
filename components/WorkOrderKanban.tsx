@@ -324,18 +324,27 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkO
       });
       const fromSale = saleItems.reduce((a: number, i: any) => a + (Number(i.quantity) * (Number(i.length) || 0)), 0);
       // DEBUG — remover após confirmar
-      if (workOrders.length > 0 && phase.name === workOrders[0]?.productionPhase) {
-        console.log('[Kanban Linear Debug]', {
-          phase: phase.name,
-          wo_id: wo.id,
-          saleId: wo.saleId,
-          saleFound: !!sale,
-          saleItemsCount: sale?.items?.length,
-          relevantItemsCount: saleItems.length,
-          saleItems: saleItems.map((i: any) => ({ desc: i.description, cat: i.category, len: i.length, m2: i.m2, w: i.width })),
-          fromSale
-        });
-      }
+      console.log('[Kanban Linear Debug]', {
+        phase: phase.name,
+        wo_id: wo.id.slice(0, 8),
+        saleId: wo.saleId?.slice(0, 8),
+        saleFound: !!sale,
+        wo_totalLinear: wo.totalLinear,
+        wo_finishingsLinear: wo.finishingsLinear,
+        wo_items_count: (wo.items || []).length,
+        saleItemsTotal: sale?.items?.length ?? 'n/a',
+        relevantIds: [...new Set(wo.saleItemIds || [])].length,
+        linearItemsFound: saleItems.length,
+        linearItems: saleItems.map((i: any) => ({
+          desc: i.description,
+          cat: i.category,
+          qty: i.quantity,
+          len: i.length,
+          m2: i.m2,
+          w: i.width
+        })),
+        fromSale
+      });
       if (fromSale > 0) return acc + fromSale;
     }
 
