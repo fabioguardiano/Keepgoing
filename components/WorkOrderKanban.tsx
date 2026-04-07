@@ -277,7 +277,11 @@ interface KanbanColumnProps {
 
 const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkOrders, deadlineWarningDays, deadlineUrgentDays, onCardClick, dragDisabled, appUsers }) => {
   const totalM2 = workOrders.reduce((acc, wo) => acc + (wo.totalM2 || 0), 0);
-  const totalLinear = workOrders.reduce((acc, wo) => acc + (wo.totalLinear || 0), 0);
+  const totalLinear = workOrders.reduce((acc, wo) => {
+    // Busca no resumo se o campo totalLinear não estiver preenchido (casos legados)
+    const woLinear = wo.totalLinear || (wo.finishingsLinear || []).reduce((a, f) => a + (f.totalLinear || 0), 0);
+    return acc + woLinear;
+  }, 0);
 
   return (
   <div 
@@ -306,7 +310,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkO
           )}
           {totalLinear > 0 && (
             <span className="text-[12px] font-black text-slate-400">
-              {totalLinear.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} m
+              {totalLinear.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} m lin.
             </span>
           )}
         </div>
