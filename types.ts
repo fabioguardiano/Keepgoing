@@ -32,6 +32,8 @@ export interface PhaseConfig {
   isRequired?: boolean;
   requiresResponsible: boolean;
   code?: string;
+  desirableDays?: number;   // dias desejáveis na fase (borda laranja)
+  alertDays?: number;       // dias máximos na fase (borda vermelha)
 }
 
 export const INITIAL_PHASES: PhaseConfig[] = [

@@ -386,6 +386,38 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                                         </div>
                                                                     </div>
 
+                                                                    {/* Tempo desejável na fase */}
+                                                                    <div className="flex items-center gap-2" title="Borda laranja após esse número de dias na fase">
+                                                                        <label className="text-[10px] font-black text-orange-400 uppercase tracking-tighter whitespace-nowrap">Tempo</label>
+                                                                        <div className="flex items-center gap-1 bg-white border border-orange-200 rounded-lg px-2 py-1">
+                                                                            <input
+                                                                                type="number"
+                                                                                min={1}
+                                                                                value={phase.desirableDays ?? ''}
+                                                                                onChange={e => onUpdatePhase(phase.name, { desirableDays: parseInt(e.target.value) || undefined })}
+                                                                                placeholder="--"
+                                                                                className="w-8 text-xs font-bold text-slate-700 bg-transparent focus:outline-none text-center"
+                                                                            />
+                                                                            <span className="text-[10px] font-bold text-slate-300">d</span>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Alerta máximo na fase */}
+                                                                    <div className="flex items-center gap-2" title="Borda vermelha após esse número de dias na fase">
+                                                                        <label className="text-[10px] font-black text-red-400 uppercase tracking-tighter whitespace-nowrap">Alerta</label>
+                                                                        <div className="flex items-center gap-1 bg-white border border-red-200 rounded-lg px-2 py-1">
+                                                                            <input
+                                                                                type="number"
+                                                                                min={1}
+                                                                                value={phase.alertDays ?? ''}
+                                                                                onChange={e => onUpdatePhase(phase.name, { alertDays: parseInt(e.target.value) || undefined })}
+                                                                                placeholder="--"
+                                                                                className="w-8 text-xs font-bold text-slate-700 bg-transparent focus:outline-none text-center"
+                                                                            />
+                                                                            <span className="text-[10px] font-bold text-slate-300">d</span>
+                                                                        </div>
+                                                                    </div>
+
                                                                     {/* Requirement Toggle */}
                                                                     <div className="flex items-center gap-2">
                                                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter whitespace-nowrap">Exigir Responsável</span>

@@ -61,12 +61,13 @@ interface WOCardProps {
   index: number;
   deadlineWarningDays: number;
   deadlineUrgentDays: number;
+  phaseConfig?: PhaseConfig;
   onClick: (wo: WorkOrder) => void;
   dragDisabled: boolean;
   appUsers: AppUser[];
 }
 
-const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, deadlineWarningDays, deadlineUrgentDays, onClick, dragDisabled, appUsers }) => {
+const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, deadlineWarningDays, deadlineUrgentDays, phaseConfig, onClick, dragDisabled, appUsers }) => {
   const priority = workOrder.priority || 'media';
   const priorityCfg = PRIORITY_CONFIG[priority];
   const drawings = workOrder.drawingUrls?.length ? workOrder.drawingUrls : (workOrder.drawingUrl ? [workOrder.drawingUrl] : []);
@@ -87,6 +88,18 @@ const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, deadli
     return Math.floor((Date.now() - ref.getTime()) / 86_400_000);
   }, [workOrder.logs, workOrder.productionPhase, workOrder.createdAt]);
 
+  /** Status de borda baseado em tempo na fase vs configuração da fase */
+  const phaseDeadlineStatus = React.useMemo((): 'none' | 'warning' | 'alert' => {
+    const desirable = phaseConfig?.desirableDays ?? 0;
+    const alert = phaseConfig?.alertDays ?? 0;
+    if (desirable === 0 && alert === 0) return 'none';
+    const lateThreshold = Math.max(desirable, alert);
+    const warnThreshold = Math.min(desirable, alert);
+    if (daysInPhase >= lateThreshold) return 'alert';
+    if (daysInPhase >= warnThreshold) return 'warning';
+    return 'none';
+  }, [phaseConfig, daysInPhase]);
+
   const handleNav = (e: React.MouseEvent, dir: 1 | -1) => {
     e.stopPropagation();
     setImgIndex(i => (i + dir + drawings.length) % drawings.length);
@@ -101,7 +114,12 @@ const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, deadli
           {...provided.dragHandleProps}
           onClick={() => onClick(workOrder)}
           className={`bg-white rounded-2xl p-3 shadow-sm cursor-pointer select-none transition-all
-            ${snapshot.isDragging ? 'shadow-xl rotate-1 scale-[1.02]' : 'hover:shadow-md'}`}
+            ${snapshot.isDragging ? 'shadow-xl rotate-1 scale-[1.02]' : 'hover:shadow-md'}
+            ${phaseDeadlineStatus === 'alert'
+              ? 'border-2 border-red-400 bg-red-50/20'
+              : phaseDeadlineStatus === 'warning'
+                ? 'border-2 border-orange-400 bg-orange-50/20'
+                : 'border border-transparent'}`}
         >
           {/* Priority badge + activity signal */}
           <div className="flex items-center justify-between mb-1.5">
@@ -382,7 +400,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkO
             ${snapshot.isDraggingOver ? 'bg-[var(--primary-color)]/10' : 'bg-gray-100/60'}`}
         >
           {workOrders.map((wo, index) => (
-            <WOCard key={wo.id} workOrder={wo} allWorkOrders={allWorkOrders} index={index} deadlineWarningDays={deadlineWarningDays} deadlineUrgentDays={deadlineUrgentDays} onClick={onCardClick} dragDisabled={dragDisabled} appUsers={appUsers} />
+            <WOCard key={wo.id} workOrder={wo} allWorkOrders={allWorkOrders} index={index} deadlineWarningDays={deadlineWarningDays} deadlineUrgentDays={deadlineUrgentDays} phaseConfig={phase} onClick={onCardClick} dragDisabled={dragDisabled} appUsers={appUsers} />
           ))}
           {provided.placeholder}
         </div>
