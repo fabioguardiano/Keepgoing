@@ -278,9 +278,19 @@ interface KanbanColumnProps {
 const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkOrders, deadlineWarningDays, deadlineUrgentDays, onCardClick, dragDisabled, appUsers }) => {
   const totalM2 = workOrders.reduce((acc, wo) => acc + (wo.totalM2 || 0), 0);
   const totalLinear = workOrders.reduce((acc, wo) => {
-    // Busca no resumo se o campo totalLinear não estiver preenchido (casos legados)
-    const woLinear = wo.totalLinear || (wo.finishingsLinear || []).reduce((a, f) => a + (f.totalLinear || 0), 0);
-    return acc + woLinear;
+    // 1. Tenta o campo consolidado
+    if ((wo.totalLinear || 0) > 0) return acc + wo.totalLinear;
+    
+    // 2. Se não tiver, tenta somar do array de resumos (acabamentos)
+    const summaryLinear = (wo.finishingsLinear || []).reduce((a, f) => a + (f.totalLinear || 0), 0);
+    if (summaryLinear > 0) return acc + summaryLinear;
+    
+    // 3. Se ainda for 0 (O.S. muito antiga), tenta calcular direto dos itens
+    const itemsLinear = (wo.items || [])
+      .filter(i => (i.length || 0) > 0 && !(i.width && i.width > 0))
+      .reduce((a, i) => a + (i.quantity * (i.length || 0)), 0);
+      
+    return acc + itemsLinear;
   }, 0);
 
   return (
