@@ -6,8 +6,16 @@ const calcMetrics = (items: OrderItem[], itemIds: string[]) => {
   const filtered = items.filter(i => itemIds.includes(i.id));
   const m2Map: Record<string, WorkOrderMaterialM2> = {};
   const linMap: Record<string, WorkOrderFinishingLinear> = {};
+  const resaleProducts: Array<{ description: string; quantity: number; unit: string }> = [];
+
   filtered.forEach(item => {
-    if ((item.m2 || 0) > 0) {
+    if (item.category === 'Produtos de Revenda') {
+      resaleProducts.push({
+        description: item.description || 'Produto de Revenda',
+        quantity: item.quantity,
+        unit: item.unit || 'un'
+      });
+    } else if ((item.m2 || 0) > 0) {
       const key = item.materialName || 'Sem Material';
       if (!m2Map[key]) m2Map[key] = { materialName: item.materialName || key, materialId: item.materialId, totalM2: 0 };
       m2Map[key].totalM2 = Math.round((m2Map[key].totalM2 + item.m2!) * 10000) / 10000;
@@ -23,6 +31,7 @@ const calcMetrics = (items: OrderItem[], itemIds: string[]) => {
   return {
     materialsM2,
     finishingsLinear,
+    resaleProducts,
     totalM2: Math.round(materialsM2.reduce((a, x) => a + x.totalM2, 0) * 10000) / 10000,
     totalLinear: Math.round(finishingsLinear.reduce((a, x) => a + x.totalLinear, 0) * 10000) / 10000,
   };
@@ -48,6 +57,7 @@ export interface OSGroup {
   finishingsLinear: WorkOrderFinishingLinear[];
   totalM2: number;
   totalLinear: number;
+  resaleProducts?: Array<{ description: string; quantity: number; unit: string }>;
   logs: Array<{ environment: string; action: 'created' | 'reissued'; reason?: string; userName?: string }>;
 }
 

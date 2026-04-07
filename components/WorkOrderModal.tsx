@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, Image as ImageIcon, Plus, Briefcase, Calendar, Layers, User, ChevronDown, Trash2, Clock, ZoomIn, Lock, Pencil, XCircle, AlertTriangle, Printer, ShieldAlert, Eye, EyeOff } from 'lucide-react';
+import { X, Upload, Image as ImageIcon, Plus, Briefcase, Calendar, Layers, Package, User, ChevronDown, Trash2, Clock, ZoomIn, Lock, Pencil, XCircle, AlertTriangle, Printer, ShieldAlert, Eye, EyeOff } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { WorkOrder, WorkOrderLog, PhaseConfig, AppUser } from '../types';
 import { formatOsLabel } from '../hooks/useWorkOrders';
@@ -439,18 +439,40 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                           <span className="font-semibold text-gray-800 ml-2 flex-shrink-0">{f.totalLinear.toFixed(3)} m lin.</span>
                         </div>
                       ))}
-                      {workOrder.totalM2 > 0 && (
+                      {(workOrder.totalM2 > 0 || workOrder.materialsM2.length > 0) && (
                         <div className="pt-1.5 border-t border-gray-100 flex justify-between text-sm font-bold text-gray-800">
                           <span>Total m²</span>
                           <span>{workOrder.totalM2.toFixed(4)} m²</span>
                         </div>
                       )}
-                      {workOrder.totalLinear > 0 && (
+                      {(workOrder.totalLinear > 0 || workOrder.finishingsLinear.length > 0) && (
                         <div className="flex justify-between text-sm font-bold text-gray-800">
                           <span>Total linear</span>
                           <span>{workOrder.totalLinear.toFixed(3)} m lin.</span>
                         </div>
                       )}
+                    </div>
+                  </section>
+                )}
+
+                {/* Produtos de Revenda */}
+                {workOrder.resaleProducts && workOrder.resaleProducts.length > 0 && (
+                  <section className="mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="p-1.5 bg-blue-50 rounded-lg">
+                        <Package className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Produtos de Revenda</h3>
+                    </div>
+                    <div className="bg-gray-50/50 rounded-xl border border-gray-100 p-3 space-y-2">
+                      {workOrder.resaleProducts.map((p, i) => (
+                        <div key={i} className="flex justify-between items-center text-sm">
+                          <span className="text-gray-600 truncate">{p.description}</span>
+                          <span className="font-semibold text-gray-800 ml-2 flex-shrink-0">
+                            {p.quantity} {p.unit}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </section>
                 )}

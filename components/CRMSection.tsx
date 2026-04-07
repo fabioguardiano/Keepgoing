@@ -8,9 +8,12 @@ interface CRMSectionProps {
   onSaveSale: (sale: SalesOrder) => void;
   currentUser?: AppUser | null;
   defaultExpanded?: boolean;
+  compact?: boolean;
 }
 
-export const CRMSection: React.FC<CRMSectionProps> = ({ sale, onSaveSale, currentUser, defaultExpanded = false }) => {
+export const CRMSection: React.FC<CRMSectionProps> = ({ 
+  sale, onSaveSale, currentUser, defaultExpanded = false, compact = false 
+}) => {
   const [newCrmNote, setNewCrmNote] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -74,21 +77,21 @@ export const CRMSection: React.FC<CRMSectionProps> = ({ sale, onSaveSale, curren
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
+    <div className={`bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 ${compact ? 'rounded-2xl' : 'rounded-3xl'} overflow-hidden shadow-sm`}>
       <div 
-        className="px-6 py-4 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border-b border-slate-100 dark:border-slate-800"
+        className={`${compact ? 'px-3 py-2' : 'px-6 py-4'} bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-all ${!isExpanded && compact ? '' : 'border-b border-slate-100 dark:border-slate-800'}`}
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-[var(--primary-color)] text-white rounded-xl shadow-sm">
-            <UserIcon size={18} />
+        <div className={`flex items-center ${compact ? 'gap-2' : 'gap-3'}`}>
+          <div className={`${compact ? 'p-1.5 bg-slate-400' : 'p-2 bg-[var(--primary-color)]'} text-white rounded-xl shadow-sm shrink-0`}>
+            <UserIcon size={compact ? 12 : 18} />
           </div>
-          <div>
-            <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100 uppercase tracking-[0.15em] flex items-center gap-2">
+          <div className="leading-tight">
+            <h3 className={`${compact ? 'text-[8px] mb-0.5' : 'text-xs'} font-bold text-slate-800 dark:text-slate-100 uppercase tracking-[0.1em] flex items-center gap-1.5`}>
               CRM / Gestão Comercial
-              <ChevronDown size={14} className={`transition-transform text-slate-400 ${isExpanded ? 'rotate-180' : ''}`} />
+              <ChevronDown size={compact ? 10 : 14} className={`transition-transform text-slate-400 ${isExpanded ? 'rotate-180' : ''}`} />
             </h3>
-            <span className="text-[10px] font-bold text-slate-400">
+            <span className={`${compact ? 'text-[7px]' : 'text-[10px]'} font-bold text-slate-400`}>
               {allNotes.length} interação{allNotes.length !== 1 ? 'es' : ''} registrada{allNotes.length !== 1 ? 's' : ''}
             </span>
           </div>

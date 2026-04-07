@@ -129,13 +129,14 @@ export const SalesCard: React.FC<SalesCardProps> = ({
           </div>
 
           <div 
-            className="pt-2 border-t border-slate-100 dark:border-slate-800/50"
+            className="pt-1.5 border-t border-slate-100 dark:border-slate-800/50"
             onClick={(e) => e.stopPropagation()}
           >
             <CRMSection 
               sale={sale} 
               onSaveSale={onSaveSale} 
               currentUser={currentUser} 
+              compact={true}
             />
           </div>
 

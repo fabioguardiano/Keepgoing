@@ -45,6 +45,7 @@ const map = (r: any): WorkOrder => ({
   priority: r.priority || 'media',
   assignedUsers: r.assigned_users || [],
   sellerName: r.seller_name || undefined,
+  resaleProducts: r.resale_products || [],
 });
 
 const addBusinessDays = (date: Date, days: number): Date => {
@@ -131,6 +132,7 @@ export const useWorkOrders = (companyId?: string) => {
       finishingsLinear: any[];
       totalM2: number;
       totalLinear: number;
+      resaleProducts?: any[];
       logs: Array<{ environment: string; action: 'created' | 'reissued'; reason?: string; userName?: string }>;
     }>
   ): Promise<boolean> => {
@@ -164,6 +166,7 @@ export const useWorkOrders = (companyId?: string) => {
             finishings_linear: order.finishingsLinear,
             total_m2: order.totalM2,
             total_linear: order.totalLinear,
+            resale_products: order.resaleProducts || [],
           })
           .select()
           .single();

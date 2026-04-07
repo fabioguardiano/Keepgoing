@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calculator, Box, Tag, Layers, TrendingUp, ShieldCheck, Info, Package, Diamond, DollarSign } from 'lucide-react';
+import { X, Calculator, Box, Tag, Layers, TrendingUp, ShieldCheck, Info, Package, Diamond, DollarSign, RefreshCw } from 'lucide-react';
 import { Material, Category, Brand, ProductGroup, Supplier } from '../types';
 
 interface NewMaterialModalProps {
@@ -71,6 +71,14 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
     return parseFloat(numeric) || 0;
   };
 
+  const getCurrencySymbol = (curr?: string) => {
+    switch (curr) {
+      case 'USD': return 'US$';
+      case 'EUR': return '€';
+      default: return 'R$';
+    }
+  };
+
   useEffect(() => {
     if (editingMaterial) {
       const { id, ...rest } = editingMaterial;
@@ -128,7 +136,12 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
 
   // Logic for Price Calculation (Professional Markup Divisor)
   useEffect(() => {
-    const cost = Number(formData.unitCost) || 0;
+    const rawCost = Number(formData.unitCost) || 0;
+    const rate = formData.currency === 'USD' ? formData.dolarRate : formData.currency === 'EUR' ? formData.euroRate : 1;
+    
+    // Custo convertido para BRL antes de impostos e frete
+    const cost = rawCost * rate;
+
     const difal = Number(formData.difal || 0) / 100;
     const freight = Number(formData.freightCost) || 0;
     const loss = Number(formData.lossPercentage) / 100;
@@ -137,7 +150,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
     const commission = Number(formData.commissionPercentage) / 100;
     const discount = Number(formData.discountPercentage) / 100;
 
-    // 1. Custo Base (Fábrica + Imposto de Entrada + Logística)
+    // 1. Custo Base (Fábrica convertido + Imposto de Entrada + Logística)
     const costBase = (cost * (1 + difal)) + freight;
     
     // 2. CMV (Ajustado pela Perda Física/Yield)
@@ -156,7 +169,12 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
       cmv: Number(cmvValue.toFixed(2)),
       contributionMargin: Number(marginAmount.toFixed(2))
     }));
-  }, [formData.unitCost, formData.difal, formData.freightCost, formData.lossPercentage, formData.taxPercentage, formData.profitMargin, formData.commissionPercentage, formData.discountPercentage]);
+  }, [
+    formData.unitCost, formData.difal, formData.freightCost, 
+    formData.lossPercentage, formData.taxPercentage, formData.profitMargin, 
+    formData.commissionPercentage, formData.discountPercentage,
+    formData.currency, formData.dolarRate, formData.euroRate
+  ]);
 
   if (!isOpen) return null;
 
@@ -202,6 +220,14 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const syncRates = () => {
+    setFormData(prev => ({
+      ...prev,
+      dolarRate: exchangeRates.usd,
+      euroRate: exchangeRates.eur
+    }));
   };
 
   const inputClass = "w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/20 font-bold text-slate-700 transition-all text-xs";
@@ -294,14 +320,16 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                 
                 {/* Fixed Inputs Panel */}
                 <div className="col-span-4 space-y-3 bg-slate-50/50 p-5 rounded-3xl border border-slate-100">
-                  <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-2 mb-4">
-                    <DollarSign size={14} className="text-slate-400" /> Variáveis de Custo
-                  </h4>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-2">
+                      <DollarSign size={14} className="text-slate-400" /> Variáveis de Custo
+                    </h4>
+                  </div>
                   
                   <div className="flex items-center justify-between gap-4">
-                    <label className={labelClass}>Custo Fábrica</label>
+                    <label className={labelClass}>Custo Fábrica ({formData.currency})</label>
                     <div className="relative">
-                      <span className="absolute left-2 top-2 text-[10px] font-bold text-slate-400">R$</span>
+                      <span className="absolute left-2 top-2 text-[10px] font-bold text-slate-400">{getCurrencySymbol(formData.currency)}</span>
                       <input type="text" className={`${inputClass} !w-28 text-right !pl-7`} value={brlDisplay.unitCost}
                         onChange={e => { const r = e.target.value.replace(/[^0-9,]/g,''); setBrlDisplay(p=>({...p,unitCost:r})); setFormData(p=>({...p,unitCost:parseBRL(r)})); }}
                         onBlur={() => setBrlDisplay(p=>({...p,unitCost:fmtBRL(formData.unitCost)}))} />
@@ -314,7 +342,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                   </div>
 
                   <div className="flex items-center justify-between gap-4">
-                    <label className={labelClass}>Frete / Logística</label>
+                    <label className={labelClass}>Frete / Logística (R$)</label>
                     <div className="relative">
                       <span className="absolute left-2 top-2 text-[10px] font-bold text-slate-400">R$</span>
                       <input type="text" className={`${inputClass} !w-28 text-right !pl-7`} value={brlDisplay.freightCost}
@@ -343,20 +371,28 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                     </div>
                   </div>
 
-                  <div className="pt-4 grid grid-cols-2 gap-3 border-t border-slate-200">
-                    <div className="relative group">
-                       <label className={labelClass}>Cotação Dólar</label>
-                       <div className="relative">
-                         <span className="absolute left-2 top-2 text-[8px] font-bold text-slate-400">US$</span>
-                         <input type="number" step="0.01" className={`${inputClass} !pl-7 text-right`} value={formData.dolarRate} onChange={e => setFormData({...formData, dolarRate: Number(e.target.value)})} />
-                       </div>
+                  <div className="pt-4 border-t border-slate-200">
+                    <div className="flex items-center justify-between mb-2">
+                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Cotações Históricas</label>
+                       <button type="button" onClick={syncRates} className="p-1 hover:bg-slate-200 rounded text-slate-400 transition-all flex items-center gap-1 text-[8px] font-black uppercase" title="Sincronizar com mercado agora">
+                         <RefreshCw size={10} /> Sincronizar
+                       </button>
                     </div>
-                    <div className="relative group">
-                       <label className={labelClass}>Cotação Euro</label>
-                       <div className="relative">
-                         <span className="absolute left-2 top-2 text-[8px] font-bold text-slate-400">€</span>
-                         <input type="number" step="0.01" className={`${inputClass} !pl-7 text-right`} value={formData.euroRate} onChange={e => setFormData({...formData, euroRate: Number(e.target.value)})} />
-                       </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="relative group">
+                         <label className={labelClass}>{"USD -> BRL"}</label>
+                         <div className="relative">
+                           <span className="absolute left-2 top-2 text-[8px] font-bold text-slate-400">R$</span>
+                           <input type="number" step="0.01" className={`${inputClass} !pl-7 text-right`} value={formData.dolarRate} onChange={e => setFormData({...formData, dolarRate: Number(e.target.value)})} />
+                         </div>
+                      </div>
+                      <div className="relative group">
+                         <label className={labelClass}>{"EUR -> BRL"}</label>
+                         <div className="relative">
+                           <span className="absolute left-2 top-2 text-[8px] font-bold text-slate-400">R$</span>
+                           <input type="number" step="0.01" className={`${inputClass} !pl-7 text-right`} value={formData.euroRate} onChange={e => setFormData({...formData, euroRate: Number(e.target.value)})} />
+                         </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -372,6 +408,15 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                     </div>
 
                     <div className="space-y-5">
+                      {formData.currency !== 'BRL' && (
+                        <div className="flex items-center justify-between px-3 py-2 bg-emerald-100/30 rounded-xl border border-emerald-100/50">
+                           <span className="text-[9px] font-black text-emerald-700/60 uppercase tracking-widest">Custo Base (R$)</span>
+                           <span className="text-xs font-black text-emerald-800">
+                             R$ {(formData.unitCost * (formData.currency === 'USD' ? formData.dolarRate : formData.euroRate)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                           </span>
+                        </div>
+                      )}
+                      
                       <div className="flex items-center justify-between">
                          <span className="flex items-center gap-1.5 text-[10px] font-black text-emerald-600/70 uppercase tracking-widest" title="Custo Base dividido pelo rendimento (Yield). Considera impostos de entrada e perdas físicas.">
                            CMV (Real)
@@ -399,7 +444,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                   <div className="bg-slate-50 border border-slate-200 p-5 rounded-3xl space-y-4">
                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tabela Especial B2B</h4>
                      <div className="flex items-center justify-between bg-white p-3 rounded-2xl border border-slate-100">
-                        <label className={labelClass}>Valor Fixo</label>
+                        <label className={labelClass}>Valor Fixo (R$)</label>
                         <input type="number" className="bg-transparent text-right font-black text-slate-700 w-24 focus:outline-none" value={formData.specialTableValue} onChange={e => setFormData({...formData, specialTableValue: Number(e.target.value)})} />
                      </div>
                   </div>
@@ -411,7 +456,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                   {/* Applied Price */}
                   <div className="bg-slate-900 text-white p-6 rounded-[32px] shadow-xl ring-8 ring-slate-100">
                     <div className="flex items-center justify-between mb-3">
-                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">Preço de Venda Final</label>
+                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">Moeda de Venda</label>
                        <div className="flex gap-2 p-1 bg-slate-800 rounded-lg">
                           {(['BRL', 'USD', 'EUR'] as const).map(curr => (
                             <button key={curr} type="button" onClick={() => setFormData({...formData, currency: curr})} className={`px-2 py-0.5 rounded text-[8px] font-black tracking-tighter transition-all ${formData.currency === curr ? 'bg-emerald-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}>{curr}</button>
@@ -419,7 +464,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                        </div>
                     </div>
                     <div className="flex items-center gap-2 mb-6">
-                       <span className="text-xl font-black text-slate-600">R$</span>
+                       <span className="text-xl font-black text-slate-600">{getCurrencySymbol(formData.currency)}</span>
                        <input
                          type="text"
                          className="bg-transparent border-b-2 border-slate-700 w-full text-3xl font-black focus:outline-none focus:border-emerald-500 transition-colors"

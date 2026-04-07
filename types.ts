@@ -371,11 +371,13 @@ export interface OrderItem {
   length?: number;
   width?: number;
   m2?: number;
+  cmv?: number;
   environment?: string;
   servicePercentage?: number;
   materialId?: string;
   materialName?: string;
   productId?: string;
+  category?: string;
 }
 
 export interface Payment {
@@ -616,6 +618,15 @@ export interface InstallmentPayment {
   notes?: string;
 }
 
+export interface ReconciliationEntry {
+  date: string;           // YYYY-MM-DD
+  by: string;             // nome do usuário
+  reason: string;         // ex: 'Edição de pedido'
+  previousValue: number;
+  newValue: number;
+  strategy: 'proportional' | 'last_installment' | 'new_installment' | 'reduction';
+}
+
 export interface AccountInstallment {
   id: string;
   number: number;
@@ -630,6 +641,7 @@ export interface AccountInstallment {
   paymentMethodName?: string;
   notes?: string;
   payments?: InstallmentPayment[];
+  reconciliations?: ReconciliationEntry[];
 }
 
 export interface AccountReceivable {
@@ -776,6 +788,7 @@ export interface WorkOrder {
   finishingsLinear: WorkOrderFinishingLinear[];
   totalM2: number;
   totalLinear: number;
+  resaleProducts?: Array<{ description: string; quantity: number; unit: string }>;
   createdAt: string;
   updatedAt?: string;
   logs?: WorkOrderLog[];

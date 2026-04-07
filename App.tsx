@@ -6,6 +6,7 @@ import { Login } from './components/Login';
 import { SplashScreen } from './components/SplashScreen';
 import { PlaceholderView } from './components/PlaceholderView';
 import { IdleWarningModal } from './components/IdleWarningModal';
+import { ReconciliationModal, ReconciliationData, ReconciliationStrategy } from './components/ReconciliationModal';
 import { useIdleTimer } from './hooks/useIdleTimer';
 import { RecentActivity } from './components/RecentActivity';
 import { View, ProductionPhase, SalesOrder, OrderService } from './types';
@@ -130,6 +131,14 @@ const App: React.FC = () => {
     loadingSettings,
   } = useSettings(setOrders, setSales, activeCompanyId);
 
+  // Estado do modal de reconciliação financeira
+  const [pendingReconciliation, setPendingReconciliation] = useState<{
+    data: ReconciliationData;
+    sale: SalesOrder;
+    resolve: (strategy: ReconciliationStrategy, extraDueDate?: string) => void;
+    reject: () => void;
+  } | null>(null);
+
   // Idle session timer
   const { isWarning: idleWarning, secondsLeft: idleSecondsLeft, reset: resetIdleTimer } = useIdleTimer({
     timeoutMinutes: idleTimeoutMinutes,
@@ -156,112 +165,227 @@ const App: React.FC = () => {
   };
 
   // 6. Handlers de Negócio Orquestrados
-  const handleSaveSale = async (s: SalesOrder) => {
-    // ── Prepara reconciliação se for alteração de pedido existente ─────────────
-    let diffToReconcile = 0;
-    const isEditingPedido = s.id && sales.find(x => x.id === s.id)?.status === 'Pedido';
-    
-    // ── Logica de Reconciliação Financeira ────────────────────────────────────
-    if (isEditingPedido && s.status === 'Pedido') {
-      const oldSale = sales.find(x => x.id === s.id);
-      const oldTotal = oldSale?.totals?.geral || 0;
-      const newTotal = s.totals?.geral || 0;
-      const oldDP = oldSale?.downPaymentValue || 0;
-      const newDP = s.downPaymentValue || 0;
-      
-      // Calculamos a diferença líquida que deve ser refletida nas parcelas
-      // (Novo Total - Nova Entrada) - (Total Antigo - Entrada Antiga)
-      diffToReconcile = Math.round(((newTotal - newDP) - (oldTotal - oldDP)) * 100) / 100;
+
+  // Utilitário: aplica reconciliação nas parcelas conforme estratégia escolhida
+  const applyReconciliation = (
+    installments: import('./types').AccountInstallment[],
+    diff: number,
+    strategy: ReconciliationStrategy,
+    newPendingAmount: number,
+    extraDueDate?: string,
+    userName?: string,
+  ): import('./types').AccountInstallment[] => {
+    const today = new Date().toISOString().split('T')[0];
+    const byUser = userName || 'Sistema';
+    const pending = installments.filter(i => i.status === 'pendente' || i.status === 'atrasado');
+    const paid = installments.filter(i => i.status === 'pago' || i.status === 'parcial');
+
+    const mkRecon = (prev: number, next: number): import('./types').ReconciliationEntry => ({
+      date: today, by: byUser, reason: 'Edição de pedido',
+      previousValue: prev, newValue: next, strategy,
+    });
+
+    if (strategy === 'proportional' && pending.length > 0) {
+      const n = pending.length;
+      const base = Math.floor((newPendingAmount / n) * 100) / 100;
+      const remainder = Math.round((newPendingAmount - base * n) * 100) / 100;
+      const updatedPending = pending.map((inst, i) => {
+        const newVal = Math.round((i === 0 ? base + remainder : base) * 100) / 100;
+        return { ...inst, value: newVal, reconciliations: [...(inst.reconciliations || []), mkRecon(inst.value, newVal)] };
+      });
+      return [...paid, ...updatedPending].sort((a, b) => a.number - b.number);
     }
 
+    if (strategy === 'last_installment') {
+      if (pending.length === 0) {
+        // Sem pendentes: cria nova parcela de ajuste
+        return [...installments, {
+          id: crypto.randomUUID(),
+          number: installments.length + 1,
+          dueDate: today,
+          value: Math.round(diff * 100) / 100,
+          status: 'pendente' as const,
+          notes: 'Ajuste de aditivo — sem parcelas pendentes',
+          reconciliations: [mkRecon(0, diff)],
+        }];
+      }
+      return installments.map((inst) => {
+        const isLast = inst === pending[pending.length - 1];
+        if (!isLast) return inst;
+        const newVal = Math.round((inst.value + diff) * 100) / 100;
+        return { ...inst, value: newVal, reconciliations: [...(inst.reconciliations || []), mkRecon(inst.value, newVal)] };
+      }).filter(i => i.value > 0 || i.status === 'pago' || i.status === 'parcial');
+    }
+
+    if (strategy === 'new_installment' && diff > 0) {
+      return [...installments, {
+        id: crypto.randomUUID(),
+        number: installments.length + 1,
+        dueDate: extraDueDate || today,
+        value: Math.round(diff * 100) / 100,
+        status: 'pendente' as const,
+        notes: 'Parcela de aditivo — edição de pedido',
+        reconciliations: [mkRecon(0, diff)],
+      }];
+    }
+
+    return installments;
+  };
+
+  const handleSaveSale = async (s: SalesOrder) => {
+    const round = (n: number) => Math.round(n * 100) / 100;
+    const isEditingPedido = !!(s.id && sales.find(x => x.id === s.id)?.status === 'Pedido');
+    const oldSale = isEditingPedido ? sales.find(x => x.id === s.id) : null;
+    const userName = appUsers.find(u => u.email === user?.email)?.name || user?.email || 'Sistema';
+
+    // ── Calcula impacto financeiro antes de salvar ────────────────────────────
+    let reconciliationNeeded = false;
+    let reconciliationData: ReconciliationData | null = null;
+
+    if (isEditingPedido && s.status === 'Pedido') {
+      const saleId = s.id!;
+      const saleAR = receivables.find(r => r.saleId === saleId && r.category === 'Venda' && r.status !== 'cancelado');
+
+      if (saleAR) {
+        const oldTotal = oldSale?.totals?.geral || 0;
+        const newTotal = s.totals?.geral || 0;
+        const oldDP = oldSale?.downPaymentValue || 0;
+        const newDP = s.downPaymentValue || 0;
+
+        // Parcelas pagas vs pendentes
+        const paidInsts = saleAR.installments.filter(i => i.status === 'pago' || i.status === 'parcial');
+        const pendingInsts = saleAR.installments.filter(i => i.status === 'pendente' || i.status === 'atrasado');
+        const paidAmount = round(paidInsts.reduce((acc, i) => acc + (i.paidValue ?? i.value), 0));
+        const pendingAmount = round(pendingInsts.reduce((acc, i) => acc + i.value, 0));
+
+        // Entrada já paga?
+        const dpAR = receivables.find(r => r.saleId === saleId && r.category === 'Entrada' && r.status !== 'cancelado');
+        const dpPaid = dpAR ? (dpAR.status === 'quitado' || dpAR.status === 'parcial') : false;
+
+        // Saldo pendente novo = newTotal - entrada (paga ou não) - já recebido nas parcelas
+        const effectiveDP = dpPaid ? (dpAR?.totalValue || newDP) : newDP;
+        const newPendingAmount = round(newTotal - effectiveDP - paidAmount);
+        const diff = round(newPendingAmount - pendingAmount);
+
+        const pmChanged = !!(s.paymentMethodId && s.paymentMethodId !== saleAR.paymentMethodId);
+        const installmentsCountChanged = (s.paymentInstallments || 1) !== (oldSale?.paymentInstallments || 1);
+        const dueDateChanged = !!(s.firstDueDate && s.firstDueDate !== oldSale?.firstDueDate);
+        const dpChanged = round(newDP) !== round(oldDP);
+
+        const needsRecon = Math.abs(diff) > 0.01 || pmChanged || installmentsCountChanged || dueDateChanged;
+
+        if (needsRecon) {
+          reconciliationNeeded = true;
+          reconciliationData = {
+            oldTotal, newTotal, oldDP, newDP,
+            paidAmount, pendingAmount, newPendingAmount, diff,
+            dpPaid, dpChanged, pmChanged, installmentsCountChanged, dueDateChanged,
+            oldPM: paymentMethods.find(p => p.id === saleAR.paymentMethodId),
+            newPM: paymentMethods.find(p => p.id === s.paymentMethodId),
+            oldInstallmentsCount: oldSale?.paymentInstallments || 1,
+            newInstallmentsCount: s.paymentInstallments || 1,
+            oldFirstDueDate: oldSale?.firstDueDate,
+            newFirstDueDate: s.firstDueDate,
+            existingAR: saleAR,
+            pendingInstallments: pendingInsts,
+            paidInstallments: paidInsts,
+          };
+        }
+      }
+    }
+
+    // ── Pede confirmação via modal se houver impacto financeiro ──────────────
+    let chosenStrategy: ReconciliationStrategy = 'proportional';
+    let chosenExtraDueDate: string | undefined;
+
+    if (reconciliationNeeded && reconciliationData) {
+      const userChoice = await new Promise<{ strategy: ReconciliationStrategy; extraDueDate?: string } | null>(resolve => {
+        setPendingReconciliation({
+          data: reconciliationData!,
+          sale: s,
+          resolve: (strategy, extraDueDate) => {
+            setPendingReconciliation(null);
+            resolve({ strategy, extraDueDate });
+          },
+          reject: () => {
+            setPendingReconciliation(null);
+            resolve(null);
+          },
+        });
+      });
+      if (!userChoice) return; // usuário cancelou — não salva nada
+      chosenStrategy = userChoice.strategy;
+      chosenExtraDueDate = userChoice.extraDueDate;
+    }
+
+    // ── Salva a venda no banco ────────────────────────────────────────────────
     try {
       const savedSale = await saveSaleBase(s);
       const saleId = (savedSale as any)?.id || s.id;
 
-      // 1. Executa Reconciliação e/ou atualização de condições de pagamento
-      if (isEditingPedido && s.status === 'Pedido') {
-        const saleAR = receivables.find(r => r.saleId === saleId && r.category === 'Venda' && r.status !== 'cancelado');
-        if (saleAR) {
-          let newInstallments = [...saleAR.installments];
-          let needsSave = false;
-          let reconNote = '';
+      // 1. Executa reconciliação financeira com a estratégia escolhida
+      if (isEditingPedido && s.status === 'Pedido' && reconciliationData) {
+        const saleAR = reconciliationData.existingAR;
+        let newInstallments = [...saleAR.installments];
+        let needsSave = false;
+        let reconNote = '';
 
-          // ── Reconciliação de Valor ────────────────────────────────────────
-          if (Math.abs(diffToReconcile) > 0.01) {
-            if (diffToReconcile > 0) {
-              const lastPending = [...newInstallments].reverse().find(i => i.status === 'pendente');
-              if (lastPending) {
-                lastPending.value = Math.round((lastPending.value + diffToReconcile) * 100) / 100;
-              } else {
-                newInstallments.push({
-                  id: crypto.randomUUID(),
-                  number: newInstallments.length + 1,
-                  dueDate: new Date().toISOString().split('T')[0],
-                  value: diffToReconcile,
-                  status: 'pendente',
-                  notes: 'Ajuste de Aditivo de Pedido'
-                } as any);
-              }
-            } else {
-              let remainingToSub = Math.abs(diffToReconcile);
-              const pendingIndices = newInstallments
-                .map((inst, idx) => ({ inst, idx }))
-                .filter(x => x.inst.status === 'pendente')
-                .sort((a, b) => b.inst.number - a.inst.number);
-              for (const { idx } of pendingIndices) {
-                if (remainingToSub <= 0) break;
-                const sub = Math.min(newInstallments[idx].value, remainingToSub);
-                newInstallments[idx].value = Math.round((newInstallments[idx].value - sub) * 100) / 100;
-                remainingToSub = Math.round((remainingToSub - sub) * 100) / 100;
-              }
-            }
-            reconNote = `\n[RECONCILIAÇÃO ${new Date().toLocaleDateString('pt-BR')}] Ajuste de valor: ${diffToReconcile > 0 ? '+' : ''}${diffToReconcile.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
-            newInstallments = newInstallments.filter(i => i.value > 0 || i.status === 'pago');
-            needsSave = true;
-          }
+        // ── Reconciliação de Valor ────────────────────────────────────────
+        if (Math.abs(reconciliationData.diff) > 0.01) {
+          newInstallments = applyReconciliation(
+            newInstallments,
+            reconciliationData.diff,
+            chosenStrategy,
+            reconciliationData.newPendingAmount,
+            chosenExtraDueDate,
+            userName,
+          );
+          const sign = reconciliationData.diff > 0 ? '+' : '';
+          reconNote = `\n[RECONCILIAÇÃO ${new Date().toLocaleDateString('pt-BR')} por ${userName}] `
+            + `Ajuste de valor: ${sign}${reconciliationData.diff.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} `
+            + `| Estratégia: ${chosenStrategy}`;
+          needsSave = true;
+        }
 
-          // ── Atualização de Vencimentos (só parcelas pendentes) ────────────
-          const oldSale = sales.find(x => x.id === s.id);
-          if (s.firstDueDate && s.firstDueDate !== oldSale?.firstDueDate) {
-            const allPending = newInstallments.every(i => i.status === 'pendente');
-            if (allPending && newInstallments.length > 0) {
-              const firstDate = new Date(s.firstDueDate + 'T12:00:00');
-              newInstallments = newInstallments.map((inst, i) => ({
-                ...inst,
-                dueDate: new Date(firstDate.getFullYear(), firstDate.getMonth() + i, firstDate.getDate()).toISOString().split('T')[0],
-              }));
-              needsSave = true;
-            }
-          }
+        // ── Atualização de Vencimentos (só parcelas pendentes) ────────────
+        if (reconciliationData.dueDateChanged && s.firstDueDate) {
+          const firstDate = new Date(s.firstDueDate + 'T12:00:00');
+          let pendingIdx = 0;
+          newInstallments = newInstallments.map(inst => {
+            if (inst.status !== 'pendente' && inst.status !== 'atrasado') return inst;
+            const newDate = new Date(firstDate.getFullYear(), firstDate.getMonth() + pendingIdx, firstDate.getDate()).toISOString().split('T')[0];
+            pendingIdx++;
+            return { ...inst, dueDate: newDate };
+          });
+          needsSave = true;
+        }
 
-          // ── Atualização de Forma de Pagamento ────────────────────────────
-          const pmChanged = s.paymentMethodId && s.paymentMethodId !== saleAR.paymentMethodId;
-          const pm = pmChanged ? paymentMethods.find(p => p.id === s.paymentMethodId) : null;
+        // ── Atualização de Forma de Pagamento ────────────────────────────
+        const pmChanged = reconciliationData.pmChanged;
+        const newPM = reconciliationData.newPM;
 
-          if (needsSave || pmChanged) {
-            const finalInsts = newInstallments;
-            const updatedTotal = finalInsts.reduce((acc, i) => acc + i.value, 0);
-            const paidValue = finalInsts.filter(i => i.status === 'pago').reduce((acc, i) => acc + (i.paidValue || i.value), 0);
-            await handleSaveReceivable({
-              ...saleAR,
-              installments: finalInsts,
-              totalValue: updatedTotal,
-              paidValue,
-              paymentMethodId: pmChanged ? s.paymentMethodId : saleAR.paymentMethodId,
-              paymentMethodName: pmChanged ? (pm?.name || s.paymentMethodName || saleAR.paymentMethodName) : saleAR.paymentMethodName,
-              status: (updatedTotal - paidValue) <= 0 ? 'quitado' : (paidValue > 0 ? 'parcial' : 'pendente'),
-              notes: (saleAR.notes || '') + reconNote,
-            });
-          }
+        if (needsSave || pmChanged) {
+          const updatedTotal = round(newInstallments.reduce((acc, i) => acc + i.value, 0));
+          const paidValue = round(newInstallments
+            .filter(i => i.status === 'pago' || i.status === 'parcial')
+            .reduce((acc, i) => acc + (i.paidValue ?? i.value), 0));
+          const remaining = round(updatedTotal - paidValue);
+          await handleSaveReceivable({
+            ...saleAR,
+            installments: newInstallments,
+            totalValue: updatedTotal,
+            paidValue,
+            paymentMethodId: pmChanged ? s.paymentMethodId : saleAR.paymentMethodId,
+            paymentMethodName: pmChanged ? (newPM?.name || s.paymentMethodName || saleAR.paymentMethodName) : saleAR.paymentMethodName,
+            status: remaining <= 0.01 ? 'quitado' : paidValue > 0 ? 'parcial' : 'pendente',
+            notes: (saleAR.notes || '') + reconNote,
+          });
         }
       }
 
-      // 2. Criação de AR — roda sempre que status é Pedido.
-      //    hasDownAR / hasRegularAR previnem duplicação.
-      //    Também cobre Pedidos antigos que não tiveram AR criado (ex: bloqueio RLS anterior).
+      // 2. Criação de AR (primeira vez) — hasDownAR / hasRegularAR previnem duplicação
       if (s.status === 'Pedido') {
         const existingARs = receivables.filter(r => r.saleId === saleId && r.status !== 'cancelado');
-
 
         // ── AR de Entrada ──
         if (s.downPaymentValue && s.downPaymentValue > 0 && s.downPaymentDueDate) {
@@ -301,21 +425,21 @@ const App: React.FC = () => {
           const hasRegularAR = existingARs.some(r => r.category === 'Venda');
           if (!hasRegularAR) {
             const pm = paymentMethods.find(p => p.id === s.paymentMethodId);
-            const grossTotal = s.totals?.geral ?? s.totalValue ?? 0;
+            const grossTotal = s.totals?.geral ?? (s as any).totalValue ?? 0;
             const total = grossTotal - (s.downPaymentValue || 0);
             const n = s.paymentInstallments || 1;
             const firstDate = new Date(s.firstDueDate + 'T12:00:00');
-            const fee = (pm?.installmentFee ?? 0);
+            const fee = pm?.installmentFee ?? 0;
             const netTotal = fee > 0 && n > 1
-              ? Math.round(total * (1 - (fee * (n - 1)) / 100) * 100) / 100
+              ? round(total * (1 - (fee * (n - 1)) / 100))
               : total;
             const baseValue = Math.floor((netTotal / n) * 100) / 100;
-            const diff = Math.round((netTotal - baseValue * n) * 100) / 100;
+            const diffVal = round(netTotal - baseValue * n);
             const installments = Array.from({ length: n }, (_, i) => ({
               id: crypto.randomUUID(),
               number: i + 1,
               dueDate: new Date(firstDate.getFullYear(), firstDate.getMonth() + i, firstDate.getDate()).toISOString().split('T')[0],
-              value: i === 0 ? baseValue + diff : baseValue,
+              value: i === 0 ? baseValue + diffVal : baseValue,
               status: 'pendente' as const,
             }));
             const feeNote = fee > 0 && n > 1
@@ -344,6 +468,7 @@ const App: React.FC = () => {
         }
       }
 
+      // 3. Geração de O.S.
       if (s.isOsGenerated) {
         const osExists = orders.some(o => o.orderNumber === s.orderNumber || o.id === s.id);
         if (!osExists) {
@@ -753,6 +878,14 @@ const App: React.FC = () => {
           secondsLeft={idleSecondsLeft}
           onContinue={resetIdleTimer}
           onLogout={handleLogout}
+        />
+      )}
+      {pendingReconciliation && (
+        <ReconciliationModal
+          data={pendingReconciliation.data}
+          onConfirm={(strategy, extraDueDate) => pendingReconciliation.resolve(strategy, extraDueDate)}
+          onCancel={pendingReconciliation.reject}
+          currentUser={appUsers.find(u => u.email === user?.email)?.name || user?.email || 'Sistema'}
         />
       )}
       <Sidebar

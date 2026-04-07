@@ -1,5 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
+import { X, Printer } from 'lucide-react';
 import { SalesOrder, CompanyInfo, Client, Material, AppUser } from '../types';
 import { fmt } from '../utils/formatting';
 
@@ -11,6 +12,7 @@ interface PrintBudgetProps {
   blurMeasurements?: boolean;
   sellerUser?: AppUser;
   hideM2Unit?: boolean;
+  onClose: () => void;
 }
 
 const fmtDim = (v?: number) =>
@@ -24,6 +26,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
   blurMeasurements = false,
   sellerUser,
   hideM2Unit = true,
+  onClose,
 }) => {
   const today = new Date().toLocaleDateString('pt-BR');
   const currentTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -56,7 +59,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
 
   const content = (
     <div
-      className="print-only bg-white text-black w-full"
+      className="bg-white text-black w-full"
       style={{ fontFamily: '"Calibri", "Arial", sans-serif', fontSize: '11px', lineHeight: '1.35' }}
     >
       {/* ── CABEÇALHO ────────────────────────────────────────── */}
@@ -458,5 +461,72 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
     </div>
   );
 
-  return createPortal(content, document.body);
+  const handlePrint = () => {
+    window.print();
+    setTimeout(onClose, 300);
+  };
+
+  return createPortal(
+    <>
+      {/* Preview modal — hidden when printing */}
+      <div className="no-print fixed inset-0 z-[9999] flex flex-col bg-black/70 backdrop-blur-sm">
+        {/* Toolbar */}
+        <div className="flex items-center justify-between px-6 py-3 bg-slate-900 text-white shrink-0">
+          <div className="flex items-center gap-3">
+            <Printer size={18} className="text-slate-400" />
+            <span className="font-bold text-sm">
+              Pré-visualização — {sale.status === 'Pedido' ? 'Pedido de Compra' : 'Orçamento'} #{sale.orderNumber}
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handlePrint}
+              className="flex items-center gap-2 px-4 py-2 bg-[var(--primary-color)] hover:opacity-90 text-white rounded-lg font-bold text-sm transition-all shadow"
+            >
+              <Printer size={15} /> Imprimir
+            </button>
+            <button
+              onClick={onClose}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-bold text-sm transition-all"
+            >
+              <X size={15} /> Fechar
+            </button>
+          </div>
+        </div>
+
+        {/* Scrollable paper area */}
+        <div className="flex-1 overflow-y-auto bg-slate-600 py-8 px-4 flex flex-col items-center">
+          <div
+            style={{
+              width: '210mm',
+              fontFamily: '"Calibri", "Arial", sans-serif',
+              fontSize: '11px',
+              lineHeight: '1.35',
+              color: 'black',
+              /* @page margins: 5mm top, 0mm bottom → 292mm content per page */
+              backgroundImage: [
+                'linear-gradient(to bottom,',
+                '  white 0,',
+                '  white 292mm,',
+                '  #475569 292mm,',
+                '  #475569 297mm,',
+                '  white 297mm',
+                ')',
+              ].join(' '),
+              backgroundSize: '100% 297mm',
+              backgroundRepeat: 'repeat-y',
+              padding: '5mm 15mm 0mm 15mm',
+              boxShadow: '0 4px 32px rgba(0,0,0,0.4)',
+            }}
+          >
+            {content}
+          </div>
+        </div>
+      </div>
+
+      {/* Print-only content — for window.print() */}
+      <div className="print-only">{content}</div>
+    </>,
+    document.body
+  );
 };

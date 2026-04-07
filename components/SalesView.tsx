@@ -196,10 +196,6 @@ export const SalesView: React.FC<SalesViewProps> = ({
 
   const handlePrint = useCallback((sale: SalesOrder) => {
     setPrintingSale(sale);
-    setTimeout(() => {
-      window.print();
-      setPrintingSale(null);
-    }, 100);
   }, []);
 
   const handleNewSale = useCallback(() => {
@@ -835,12 +831,13 @@ export const SalesView: React.FC<SalesViewProps> = ({
         />
       )}
       {printingSale && (
-        <PrintBudget 
-          sale={printingSale} 
-          companyInfo={companyInfo} 
+        <PrintBudget
+          sale={printingSale}
+          companyInfo={companyInfo}
           materials={materials}
           client={clients.find(c => c.id === printingSale.clientId)}
           sellerUser={appUsers.find(u => u.name === printingSale.seller || u.email === printingSale.seller)}
+          onClose={() => setPrintingSale(null)}
         />
       )}
 

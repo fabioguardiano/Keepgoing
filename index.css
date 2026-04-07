@@ -50,6 +50,11 @@
     display: none !important;
   }
 
+  /* Hide preview overlay when printing */
+  .no-print {
+    display: none !important;
+  }
+
   /* But make sure any .print-only attached directly to body (via Portal) shows normally */
   body > .print-only {
     display: block !important;

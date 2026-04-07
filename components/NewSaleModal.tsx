@@ -8,7 +8,6 @@ import { DiscountRequestModal, CommissionRequestModal } from './AuthModal';
 import { CRMSection } from './CRMSection';
 import { SaleAnalysisPanel } from './SaleAnalysisPanel';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 
 interface NewSaleModalProps {
@@ -121,10 +120,6 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
     };
 
     setPrintingSale(tempSale);
-    setTimeout(() => {
-      window.print();
-      setPrintingSale(null);
-    }, 100);
   };
   
   // Initialize states with initialData if present
@@ -331,6 +326,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
             length: itemLength,
             width: itemWidth,
             m2: m2,
+            cmv: matFromMaterials?.cmv || matFromProducts?.unitCost || 0,
             servicePercentage: itemService,
             environment: activeEnvironment,
             materialId: resolvedMaterialId,
@@ -352,6 +348,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
         length: itemLength,
         width: itemWidth,
         m2: m2,
+        cmv: matFromMaterials?.cmv || matFromProducts?.unitCost || 0,
         servicePercentage: itemService,
         environment: activeEnvironment,
         materialId: resolvedMaterialId,
@@ -553,6 +550,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
           materialId: resolvedId,
           materialName: resolvedName,
           unitPrice: newUnitPrice,
+          cmv: matFromMaterials?.cmv || matFromProducts?.unitCost || 0,
           totalPrice: baseTotal + serviceBonus
         };
       }
@@ -568,9 +566,10 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
         if (material) {
           const m2 = item.m2 || 0;
           const newUnitPrice = material.sellingPrice || 0;
+          const newCMV = material.cmv || 0;
           const baseTotal = m2 > 0 ? (m2 * newUnitPrice) : (item.quantity * newUnitPrice);
           const serviceBonus = baseTotal * ((item.servicePercentage || 0) / 100);
-          return { ...item, unitPrice: newUnitPrice, totalPrice: baseTotal + serviceBonus };
+          return { ...item, unitPrice: newUnitPrice, cmv: newCMV, totalPrice: baseTotal + serviceBonus };
         }
       }
       return item;
@@ -718,7 +717,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
     try {
       await onSave(newSale, keepOpen);
       if (keepOpen) {
-        alert('Orçamento gravado com sucesso!');
+        setIsEditMode(false);
       } else {
         onClose();
       }
@@ -886,14 +885,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
           </div>
         </div>
 
-        <div className={`flex-1 overflow-y-auto custom-scrollbar ${(!isEditMode && !isLocked) ? 'opacity-95 select-none' : isLocked ? 'pointer-events-none select-none opacity-80' : ''}`}>
-           {(!isEditMode && !isLocked) && (
-             <div 
-               className="absolute inset-0 z-50 cursor-pointer" 
-               onClick={() => setIsEditMode(true)}
-               title="Clique em 'Alterar' no rodapé para editar"
-             />
-           )}
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className={`${(!isEditMode && !isLocked) ? 'pointer-events-none select-none opacity-95' : isLocked ? 'pointer-events-none select-none opacity-80' : ''}`}>
 
           {/* Section 1: Header Info (Sticky) */}
           <div className="sticky top-0 z-[20] bg-white dark:bg-slate-900 px-4 pt-4 pb-4 border-b border-slate-100 dark:border-slate-800 space-y-3">
@@ -1813,6 +1806,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
             )}
           </div>
         </div>
+        </div>
       </div>
 
       {isClientModalOpen && (
@@ -1830,16 +1824,16 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
           }}
         />
       )}
-      {printingSale && createPortal(
-        <PrintBudget 
-          sale={printingSale} 
-          companyInfo={companyInfo} 
+      {printingSale && (
+        <PrintBudget
+          sale={printingSale}
+          companyInfo={companyInfo}
           materials={materials}
           client={clients.find(c => c.id === printingSale.clientId)}
           blurMeasurements={blurMeasurements}
           hideM2Unit={hideM2Unit}
-        />,
-        document.body
+          onClose={() => setPrintingSale(null)}
+        />
       )}
 
       {/* Discount Authorization Request Modal */}
