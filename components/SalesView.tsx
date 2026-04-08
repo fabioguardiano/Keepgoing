@@ -1034,26 +1034,16 @@ export const SalesView: React.FC<SalesViewProps> = ({
                 Sem esses dados, <strong>nenhuma conta a receber será gerada</strong> automaticamente para esta venda.
               </p>
             </div>
-            <div className="px-6 pb-6 flex gap-3">
+            <div className="px-6 pb-6">
               <button
                 onClick={() => {
                   setEditingSale(incompleteWinSale.sale);
                   setIsNewSaleModalOpen(true);
                   setIncompleteWinSale(null);
                 }}
-                className="flex-1 py-2.5 rounded-2xl bg-[var(--primary-color)] text-white font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all"
+                className="w-full py-2.5 rounded-2xl bg-[var(--primary-color)] text-white font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all"
               >
                 Completar Dados
-              </button>
-              <button
-                onClick={() => {
-                  onSaveSale({ ...incompleteWinSale.sale, salesPhase: 'Pedido/Ganho', status: 'Pedido' });
-                  fireConfetti(true);
-                  setIncompleteWinSale(null);
-                }}
-                className="flex-1 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 font-bold text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-sm"
-              >
-                Ganhar mesmo assim
               </button>
             </div>
           </div>
