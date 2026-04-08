@@ -283,18 +283,30 @@ export const SalesView: React.FC<SalesViewProps> = ({
           <p className="text-slate-500 font-medium">Gestão comercial e conversão de pedidos</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl flex">
-            <button 
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
+            <button
               onClick={() => setViewMode('kanban')}
-              className={`p-2 rounded-xl transition-all ${viewMode === 'kanban' ? 'bg-white dark:bg-slate-700 shadow-sm text-[var(--primary-color)]' : 'text-slate-400'}`}
+              title="Visualização Kanban"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                viewMode === 'kanban'
+                  ? 'bg-white dark:bg-slate-700 text-[var(--primary-color)] shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
             >
-              <LayoutGrid size={20} />
+              <LayoutGrid size={15} />
+              Kanban
             </button>
-            <button 
+            <button
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded-xl transition-all ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 shadow-sm text-[var(--primary-color)]' : 'text-slate-400'}`}
+              title="Visualização em Lista"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                viewMode === 'list'
+                  ? 'bg-white dark:bg-slate-700 text-[var(--primary-color)] shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
             >
-              <List size={20} />
+              <List size={15} />
+              Lista
             </button>
           </div>
           {canEdit && (
