@@ -27,6 +27,8 @@ export const CRMSection: React.FC<CRMSectionProps> = ({
   const recognitionRef = useRef<any>(null);
   const baseTextRef = useRef('');    // texto no textarea antes de começar a falar
   const isHoldingRef = useRef(false);
+  const [srSupported, setSrSupported] = useState<boolean | null>(null);
+  const [micError, setMicError] = useState<string | null>(null);
 
   const allNotes = (sale.crmNotes || []) as CRMNote[];
   const displayedNotes = showAllNotes ? allNotes : allNotes.slice(-3);
@@ -34,14 +36,19 @@ export const CRMSection: React.FC<CRMSectionProps> = ({
   // ─── Speech Recognition setup ────────────────────────────────────────────────
   useEffect(() => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) return;
+    if (!SR) {
+      setSrSupported(false);
+      return;
+    }
+    setSrSupported(true);
 
     const rec = new SR();
-    rec.continuous = true;        // não para em pausas
-    rec.interimResults = true;    // resultados em tempo real
+    rec.continuous = true;
+    rec.interimResults = true;
     rec.lang = 'pt-BR';
 
     rec.onresult = (event: any) => {
+      setMicError(null);
       let finalChunk = '';
       let interimChunk = '';
 
@@ -64,16 +71,23 @@ export const CRMSection: React.FC<CRMSectionProps> = ({
       setInterimText(interimChunk);
     };
 
-    rec.onerror = () => {
+    rec.onerror = (event: any) => {
       setIsListening(false);
       setInterimText('');
       isHoldingRef.current = false;
+      const code = event?.error || 'desconhecido';
+      if (code === 'not-allowed' || code === 'service-not-allowed') {
+        setMicError('Permissão de microfone negada. Clique no ícone de cadeado na barra de endereço e permita o microfone.');
+      } else if (code === 'no-speech') {
+        setMicError(null); // silencioso — ninguém falou
+      } else {
+        setMicError(`Erro no microfone: ${code}`);
+      }
     };
 
     rec.onend = () => {
       setIsListening(false);
       setInterimText('');
-      // Se o usuário ainda está segurando, reinicia (browser para automaticamente em alguns casos)
       if (isHoldingRef.current) {
         try { rec.start(); } catch (_) {}
       }
@@ -283,20 +297,22 @@ export const CRMSection: React.FC<CRMSectionProps> = ({
                 readOnly={isListening}
               />
 
-              {/* Mic button — press and hold */}
-              <button
-                onPointerDown={startListening}
-                onPointerUp={stopListening}
-                onPointerLeave={stopListening}
-                onPointerCancel={stopListening}
-                title={isListening ? 'Solte para parar' : 'Segure para falar'}
-                className={`absolute right-3 top-3 p-2.5 rounded-xl transition-all select-none touch-none
-                  ${isListening
-                    ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 scale-110'
-                    : 'text-slate-400 hover:text-[var(--primary-color)] hover:bg-orange-50 dark:hover:bg-slate-700'}`}
-              >
-                <Mic size={20} className={isListening ? 'animate-pulse' : ''} />
-              </button>
+              {/* Mic button — press and hold (only if browser supports it) */}
+              {srSupported !== false && (
+                <button
+                  onPointerDown={startListening}
+                  onPointerUp={stopListening}
+                  onPointerLeave={stopListening}
+                  onPointerCancel={stopListening}
+                  title={isListening ? 'Solte para parar' : 'Segure para falar'}
+                  className={`absolute right-3 top-3 p-2.5 rounded-xl transition-all select-none touch-none
+                    ${isListening
+                      ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 scale-110'
+                      : 'text-slate-400 hover:text-[var(--primary-color)] hover:bg-orange-50 dark:hover:bg-slate-700'}`}
+                >
+                  <Mic size={20} className={isListening ? 'animate-pulse' : ''} />
+                </button>
+              )}
 
               {/* Live transcription hint */}
               {isListening && (
@@ -307,8 +323,17 @@ export const CRMSection: React.FC<CRMSectionProps> = ({
               )}
             </div>
 
+            {/* Mic error */}
+            {micError && (
+              <p className="text-[10px] font-bold text-red-500 text-center px-2">{micError}</p>
+            )}
+
             {/* Mic hint */}
-            {!isListening && (
+            {srSupported === false ? (
+              <p className="text-[9px] text-slate-400 font-bold text-center">
+                Microfone não disponível neste navegador. Use Chrome ou Edge.
+              </p>
+            ) : !isListening && !micError && (
               <p className="text-[9px] text-slate-400 font-bold text-center">
                 <Mic size={9} className="inline mr-1" />
                 Segure o microfone para falar — solte quando terminar
