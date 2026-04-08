@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calculator, Box, Tag, Layers, TrendingUp, ShieldCheck, Mail, Info } from 'lucide-react';
 import { ProductService, View } from '../types';
+import { UNITS, DEFAULT_UNIT_PRODUCT } from '../utils/units';
 
 interface NewProductModalProps {
   isOpen: boolean;
@@ -22,7 +23,7 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
     code: '',
     group: '',
     description: '',
-    unit: 'UN',
+    unit: DEFAULT_UNIT_PRODUCT,
     stockBalance: 0,
     minStock: 0,
     unitCost: 0,
@@ -69,7 +70,7 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
         code: nextCode,
         group: '',
         description: '',
-        unit: 'UN',
+        unit: DEFAULT_UNIT_PRODUCT,
         stockBalance: 0,
         minStock: 0,
         unitCost: 0,
@@ -236,7 +237,11 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
                 </div>
                 <div>
                   <label className={labelClass}>Unidade</label>
-                  <input required className={inputClass} placeholder="M2, UN, ML..." value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value.toUpperCase()})} />
+                  <select required className={inputClass} value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})}>
+                    {UNITS.map(u => (
+                      <option key={u.value} value={u.value}>{u.label} — {u.description}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="grid grid-cols-2 gap-4 md:col-span-1">
                   <div>

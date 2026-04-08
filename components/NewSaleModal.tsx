@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, User, ShoppingBag, Plus, Trash2, Calculator, Save, FileText, Search, Tag, Users, Printer, Edit2, RotateCcw, Check, GripVertical, PlusCircle, Copy, Pencil, Lock, AlertTriangle, Eye, ClipboardList, DollarSign, ChevronDown } from 'lucide-react';
 import { SalesOrder, OrderItem, Client, Architect, AppUser, SalesChannel, Material, ProductService, CompanyInfo, SalesPhaseConfig, ServiceGroup, PaymentMethod, WorkOrder, Authorization } from '../types';
+import { DEFAULT_UNIT_MATERIAL, DEFAULT_UNIT_FINISHING, DEFAULT_UNIT_PRODUCT } from '../utils/units';
 import { ClientSelectModal } from './ClientSelectModal';
 import { PrintBudget } from './PrintBudget';
 import { GenerateOSModal } from './GenerateOSModal';
@@ -331,7 +332,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
             ...item,
             description: itemDesc,
             quantity: itemQty,
-            unit: m2 > 0 ? 'm²' : isAcabamentoMaterial ? 'm lin.' : 'un',
+            unit: m2 > 0 ? DEFAULT_UNIT_MATERIAL : isAcabamentoMaterial ? DEFAULT_UNIT_FINISHING : DEFAULT_UNIT_PRODUCT,
             unitPrice: itemPrice,
             totalPrice: total,
             length: isAcabamentoMaterial ? 1 : m2 > 0 ? itemLength : 0,

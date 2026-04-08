@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calculator, Box, Tag, Layers, TrendingUp, ShieldCheck, Info, Package, Diamond, DollarSign, RefreshCw } from 'lucide-react';
 import { Material, Category, Brand, ProductGroup, Supplier } from '../types';
+import { UNITS, DEFAULT_UNIT_MATERIAL } from '../utils/units';
 
 interface NewMaterialModalProps {
   isOpen: boolean;
@@ -26,7 +27,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
     registrationDate: new Date().toISOString().split('T')[0],
     group: '',
     brand: '',
-    unit: 'M2',
+    unit: DEFAULT_UNIT_MATERIAL,
     stockQuantity: 0,
     minStock: 0,
     supplier: '',
@@ -100,7 +101,7 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
         registrationDate: new Date().toISOString().split('T')[0],
         group: '',
         brand: '',
-        unit: 'M2',
+        unit: DEFAULT_UNIT_MATERIAL,
         stockQuantity: 0,
         minStock: 0,
         supplier: '',
@@ -314,7 +315,11 @@ export const NewMaterialModal: React.FC<NewMaterialModalProps> = ({
                 <div className="grid grid-cols-12 gap-4">
                   <div className="col-span-3">
                     <label className={labelClass}>Unidade</label>
-                    <input className={inputClass} value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value.toUpperCase()})} />
+                    <select className={inputClass} value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})}>
+                      {UNITS.map(u => (
+                        <option key={u.value} value={u.value}>{u.label} — {u.description}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="col-span-3">
                     <label className={labelClass}>Espessura (CM)</label>
