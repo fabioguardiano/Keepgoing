@@ -68,8 +68,7 @@ const ServiceGroupsView = lazy(() => lazyRetry(() => import('./components/Servic
 const PayablesView      = lazy(() => lazyRetry(() => import('./components/PayablesView').then(m => ({ default: m.PayablesView }))));
 const BankAccountsView  = lazy(() => lazyRetry(() => import('./components/BankAccountsView').then(m => ({ default: m.BankAccountsView }))));
 const PayablePaymentMethodsView = lazy(() => lazyRetry(() => import('./components/PayablePaymentMethodsView').then(m => ({ default: m.PayablePaymentMethodsView }))));
-const WorkOrdersView    = lazy(() => lazyRetry(() => import('./components/WorkOrdersView').then(m => ({ default: m.WorkOrdersView }))));
-const WorkOrderKanban   = lazy(() => lazyRetry(() => import('./components/WorkOrderKanban').then(m => ({ default: m.WorkOrderKanban }))));
+const ProducaoView      = lazy(() => lazyRetry(() => import('./components/ProducaoView').then(m => ({ default: m.ProducaoView }))));
 const MeasurementSchedule = lazy(() => lazyRetry(() => import('./components/MeasurementSchedule').then(m => ({ default: m.MeasurementSchedule }))));
 
 
@@ -570,8 +569,9 @@ const App: React.FC = () => {
     switch (currentView) {
       case 'Produção':
         return (
-          <WorkOrderKanban
+          <ProducaoView
             workOrders={workOrders}
+            loading={loadingWO}
             phases={phases}
             appUsers={appUsers}
             sales={sales}
@@ -587,14 +587,6 @@ const App: React.FC = () => {
             onCancelWorkOrder={cancelWorkOrder}
             onAddDrawing={addDrawing}
             onDeleteDrawing={deleteDrawing}
-          />
-        );
-      case 'O.S. de Produção':
-        return (
-          <WorkOrdersView
-            workOrders={workOrders}
-            loading={loadingWO}
-            onUpdateStatus={updateWorkOrderStatus}
           />
         );
       case 'Agenda de Medição':

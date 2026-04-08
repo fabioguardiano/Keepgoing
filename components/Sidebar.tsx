@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Diamond, LayoutDashboard, Package, BarChart3, Users, Settings, PlusCircle, MapPin, ShoppingBag, Wallet, Box, ChevronDown, ChevronRight, Truck, Briefcase, Wrench, TrendingUp, ClipboardList, Landmark } from 'lucide-react';
+import { Diamond, Package, BarChart3, Users, Settings, PlusCircle, MapPin, ShoppingBag, Wallet, Box, ChevronDown, ChevronRight, Truck, Briefcase, Wrench, TrendingUp, ClipboardList, Landmark } from 'lucide-react';
 import { View, CompanyInfo, ModuleKey, SubModuleKey, AccessLevel } from '../types';
 
 interface SidebarProps {
@@ -62,9 +62,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
         { icon: Wrench,     label: 'Mão de obra (Instalação)',view: 'Mão de obra (Instalação)' as View,module: 'estoque' },
       ]
     },
-    { icon: ShoppingBag,   label: 'Vendas',            view: 'Vendas' as View,            module: 'vendas' },
-    { icon: ClipboardList, label: 'O.S. de Produção',  view: 'O.S. de Produção' as View,  module: 'producao', },
-    { icon: LayoutDashboard,label: 'Produção',          view: 'Produção' as View,          module: 'producao' },
+    { icon: ShoppingBag,    label: 'Vendas',    view: 'Vendas' as View,    module: 'vendas' },
+    { icon: ClipboardList,  label: 'Produção',  view: 'Produção' as View,  module: 'producao' },
     { icon: MapPin,        label: 'Agenda de Entregas', view: 'Agenda de Entregas' as View,module: 'agenda_entregas' },
     { icon: ClipboardList, label: 'Agenda de Medição', view: 'Agenda de Medição' as View,module: 'agenda_medicao' },
     {
