@@ -24,6 +24,7 @@ import { useSettings } from './hooks/useSettings';
 import { useAccountsReceivable } from './hooks/useAccountsReceivable';
 import { useAccountsPayable } from './hooks/useAccountsPayable';
 import { useBillCategories } from './hooks/useBillCategories';
+import { useAccountPlan } from './hooks/useAccountPlan';
 import { usePaymentMethods } from './hooks/usePaymentMethods';
 import { usePaymentTypes } from './hooks/usePaymentTypes';
 import { usePayablePaymentMethods } from './hooks/usePayablePaymentMethods';
@@ -105,6 +106,7 @@ const App: React.FC = () => {
   const { receivables, handleSaveReceivable, deleteReceivable, payInstallment: payReceivableInstallmentBase, unpayInstallment: unpayReceivableInstallment } = useAccountsReceivable(activeCompanyId, logActivity);
   const { payables, handleSavePayable, deletePayable, settleBill, cancelBill } = useAccountsPayable(activeCompanyId, logActivity);
   const { categories: billCategories, saveCategory: saveBillCategory, deleteCategory: deleteBillCategory } = useBillCategories(activeCompanyId);
+  const { groups: accountGroups, plan: accountPlan, loading: loadingAccountPlan, saveGroup: saveAccountGroup, deleteGroup: deleteAccountGroup, savePlanItem, deletePlanItem, togglePlanActive, importDefaults: importAccountPlanDefaults } = useAccountPlan(activeCompanyId);
   const { paymentMethods, handleSavePaymentMethod, deletePaymentMethod, toggleActive } = usePaymentMethods(activeCompanyId);
   const { bankAccounts, saveBankAccount, deleteBankAccount, toggleBankAccount } = useBankAccounts(activeCompanyId);
   const { paymentTypes, handleSavePaymentType, deletePaymentType: handleDeletePaymentType } = usePaymentTypes(activeCompanyId);
@@ -801,6 +803,8 @@ const App: React.FC = () => {
             paymentMethods={payablePMs}
             suppliers={suppliers}
             categories={billCategories}
+            accountPlan={accountPlan}
+            accountGroups={accountGroups}
             onSave={handleSavePayable}
             onDelete={deletePayable}
             onSettle={settleBill}
@@ -808,6 +812,21 @@ const App: React.FC = () => {
             onSaveCategory={saveBillCategory}
             onDeleteCategory={deleteBillCategory}
             canEdit={getAccess('financeiro') === 'full'}
+          />
+        );
+      case 'Plano de Contas':
+        return (
+          <PlanoContasView
+            groups={accountGroups}
+            plan={accountPlan}
+            loading={loadingAccountPlan}
+            canEdit={getAccess('financeiro') === 'full'}
+            onSaveGroup={saveAccountGroup}
+            onDeleteGroup={deleteAccountGroup}
+            onSavePlanItem={savePlanItem}
+            onDeletePlanItem={deletePlanItem}
+            onTogglePlanActive={togglePlanActive}
+            onImportDefaults={importAccountPlanDefaults}
           />
         );
       case 'Formas de PGTO AR':

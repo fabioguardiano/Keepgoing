@@ -73,6 +73,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
       subItems: [
         { icon: TrendingUp, label: 'Contas a Receber',    view: 'Contas a Receber' as View,    module: 'financeiro', subModule: 'contas_receber' as SubModuleKey },
         { icon: Wallet,     label: 'Contas a Pagar',      view: 'Contas a Pagar' as View,      module: 'financeiro', subModule: 'contas_pagar' as SubModuleKey },
+        { icon: ClipboardList, label: 'Plano de Contas',  view: 'Plano de Contas' as View,     module: 'financeiro' },
         { icon: Landmark,   label: 'Contas Bancárias',    view: 'Contas Bancárias' as View,    module: 'financeiro' },
         { icon: ShoppingBag,label: 'Formas de PGTO AR',  view: 'Formas de PGTO AR' as View,  module: 'financeiro', subModule: 'formas_pagamento' as SubModuleKey },
         { icon: ShoppingBag,label: 'Formas de PGTO CP',  view: 'Formas de PGTO CP' as View,  module: 'financeiro', subModule: 'formas_pagamento' as SubModuleKey },

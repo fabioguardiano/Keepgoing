@@ -898,7 +898,8 @@ export type View =
   | 'Formas de PGTO AR'
   | 'Tipos de Pagamento'
   | 'Contas Bancárias'
-  | 'Formas de PGTO CP';
+  | 'Formas de PGTO CP'
+  | 'Plano de Contas';
 
 export type User = AppUser;
 
