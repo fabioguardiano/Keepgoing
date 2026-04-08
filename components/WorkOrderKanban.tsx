@@ -316,36 +316,47 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkO
   }, [sales]);
 
   const totalM2 = workOrders.reduce((acc, wo) => acc + (wo.totalM2 || 0), 0);
-  const totalLinear = workOrders.reduce((acc, wo) => {
-    // 1. Campo consolidado já salvo na O.S. (novas O.S.)
-    if ((wo.totalLinear || 0) > 0) return acc + wo.totalLinear;
 
-    // 2. Array de resumos salvo na O.S.
-    const summaryLinear = (wo.finishingsLinear || []).reduce((a, f) => a + (f.totalLinear || 0), 0);
-    if (summaryLinear > 0) return acc + summaryLinear;
-
-    // 3. Itens salvos na O.S. (mesma lógica do calcMetrics)
-    const fromSavedItems = (wo.items || [])
-      .filter(i => i.category === 'Acabamentos' && (i.length || 0) > 0)
+  // Separate ML (metros) from UND (units) for column header
+  const { totalLinear, totalUND } = workOrders.reduce((acc, wo) => {
+    // ML: use saved totalLinear or derive from finishingsLinear (ML only) or items
+    const mlFromSaved = (wo.totalLinear || 0) > 0 ? wo.totalLinear : 0;
+    const mlFromArray = (wo.finishingsLinear || [])
+      .filter(f => (f.unit || 'ML').toUpperCase() === 'ML')
+      .reduce((a, f) => a + (f.totalLinear || 0), 0);
+    const mlFromItems = (wo.items || [])
+      .filter(i => i.category === 'Acabamentos' && (i.unit || 'ML').toUpperCase() === 'ML' && (i.length || 0) > 0)
       .reduce((a, i) => a + (i.quantity * (i.length || 0)), 0);
-    if (fromSavedItems > 0) return acc + fromSavedItems;
 
-    // 4. Busca direto na venda (O.S. antigas — mesma lógica do calcMetrics)
-    const sale = salesMap[wo.saleId];
-    if (sale) {
-      const relevantIds = new Set((wo.saleItemIds || []) as string[]);
-      const fromSale = ((sale.items || []) as any[]).reduce((a: number, i: any) => {
-        if (relevantIds.size > 0 && !relevantIds.has(i.id)) return a;
-        if (String(i.category) === 'Acabamentos' && (Number(i.length) || 0) > 0) {
-          return a + Number(i.quantity) * Number(i.length);
-        }
-        return a;
-      }, 0);
-      if (fromSale > 0) return acc + fromSale;
+    let ml = mlFromSaved || mlFromArray || mlFromItems;
+
+    // Fallback for legacy OS without unit info: use sale items
+    if (ml === 0) {
+      const sale = salesMap[wo.saleId];
+      if (sale) {
+        const relevantIds = new Set((wo.saleItemIds || []) as string[]);
+        ml = ((sale.items || []) as any[]).reduce((a: number, i: any) => {
+          if (relevantIds.size > 0 && !relevantIds.has(i.id)) return a;
+          const unit = (i.unit || 'ML').toString().toUpperCase();
+          if (String(i.category) === 'Acabamentos' && unit === 'ML' && (Number(i.length) || 0) > 0) {
+            return a + Number(i.quantity) * Number(i.length);
+          }
+          return a;
+        }, 0);
+      }
     }
 
-    return acc;
-  }, 0);
+    // UND: from finishingsLinear or items
+    const undFromArray = (wo.finishingsLinear || [])
+      .filter(f => (f.unit || 'ML').toUpperCase() !== 'ML')
+      .reduce((a, f) => a + (f.totalQty || 0), 0);
+    const undFromItems = (wo.items || [])
+      .filter(i => i.category === 'Acabamentos' && (i.unit || 'ML').toUpperCase() !== 'ML')
+      .reduce((a, i) => a + i.quantity, 0);
+    const und = (wo.totalQty != null ? wo.totalQty : undFromArray || undFromItems);
+
+    return { totalLinear: acc.totalLinear + ml, totalUND: acc.totalUND + und };
+  }, { totalLinear: 0, totalUND: 0 });
 
 
   return (
@@ -377,6 +388,14 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkO
             <span className="text-[12px] font-black text-slate-400">
               {totalLinear.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} m lin.
             </span>
+          )}
+          {totalUND > 0 && (
+            <>
+              {(totalM2 > 0 || totalLinear > 0) && <span className="text-[12px] text-slate-300">·</span>}
+              <span className="text-[12px] font-black text-slate-400">
+                {totalUND} und
+              </span>
+            </>
           )}
         </div>
       )}

@@ -36,6 +36,7 @@ const map = (r: any): WorkOrder => ({
   finishingsLinear: r.finishings_linear || [],
   totalM2: Number(r.total_m2 || 0),
   totalLinear: Number(r.total_linear || 0),
+  totalQty: r.total_qty != null ? Number(r.total_qty) : undefined,
   createdAt: r.created_at,
   updatedAt: r.updated_at,
   logs: (r.work_order_logs || []).map(mapLog),
@@ -133,6 +134,7 @@ export const useWorkOrders = (companyId?: string) => {
       finishingsLinear: any[];
       totalM2: number;
       totalLinear: number;
+      totalQty?: number;
       resaleProducts?: any[];
       items: any[];
       logs: Array<{ environment: string; action: 'created' | 'reissued'; reason?: string; userName?: string }>;
@@ -168,6 +170,7 @@ export const useWorkOrders = (companyId?: string) => {
             finishings_linear: order.finishingsLinear,
             total_m2: order.totalM2,
             total_linear: order.totalLinear,
+            total_qty: order.totalQty ?? null,
             resale_products: order.resaleProducts || [],
             items: order.items || [],
           })

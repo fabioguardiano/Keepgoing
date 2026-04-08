@@ -755,8 +755,9 @@ export interface WorkOrderMaterialM2 {
 export interface WorkOrderFinishingLinear {
   itemName: string;
   materialName?: string;
-  totalLinear: number;
-  totalQty: number;
+  totalLinear: number;  // metros acumulados (unit = ML)
+  totalQty: number;     // quantidade acumulada (unit = UND ou similar)
+  unit: string;         // 'ML' | 'UND' | ...
 }
 
 export interface WorkOrderLog {
@@ -789,7 +790,8 @@ export interface WorkOrder {
   materialsM2: WorkOrderMaterialM2[];
   finishingsLinear: WorkOrderFinishingLinear[];
   totalM2: number;
-  totalLinear: number;
+  totalLinear: number;   // total em metros (itens ML)
+  totalQty?: number;     // total em unidades (itens UND/outros)
   resaleProducts?: Array<{ description: string; quantity: number; unit: string }>;
   items?: OrderItem[];
   createdAt: string;

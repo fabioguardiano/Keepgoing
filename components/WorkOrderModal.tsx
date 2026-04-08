@@ -494,37 +494,55 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                 )}
 
                 {/* Metragens */}
-                {(workOrder.materialsM2.length > 0 || workOrder.finishingsLinear.length > 0) && (
-                  <section>
-                    <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3">Metragens</h3>
-                    <div className="space-y-1.5">
-                      {workOrder.materialsM2.map((m, i) => (
-                        <div key={i} className="flex justify-between items-center text-sm">
-                          <span className="text-gray-600 truncate">{m.materialName}</span>
-                          <span className="font-semibold text-gray-800 ml-2 flex-shrink-0">{m.totalM2.toFixed(4)} m²</span>
-                        </div>
-                      ))}
-                      {workOrder.finishingsLinear.map((f, i) => (
-                        <div key={i} className="flex justify-between items-center text-sm">
-                          <span className="text-gray-600 truncate">{f.itemName}</span>
-                          <span className="font-semibold text-gray-800 ml-2 flex-shrink-0">{f.totalLinear.toFixed(3)} m lin.</span>
-                        </div>
-                      ))}
-                      {(workOrder.totalM2 > 0 || workOrder.materialsM2.length > 0) && (
-                        <div className="pt-1.5 border-t border-gray-100 flex justify-between text-sm font-bold text-gray-800">
-                          <span>Total m²</span>
-                          <span>{workOrder.totalM2.toFixed(4)} m²</span>
-                        </div>
-                      )}
-                      {(workOrder.totalLinear > 0 || workOrder.finishingsLinear.length > 0) && (
-                        <div className="flex justify-between text-sm font-bold text-gray-800">
-                          <span>Total linear</span>
-                          <span>{workOrder.totalLinear.toFixed(3)} m lin.</span>
-                        </div>
-                      )}
-                    </div>
-                  </section>
-                )}
+                {(workOrder.materialsM2.length > 0 || workOrder.finishingsLinear.length > 0) && (() => {
+                  const mlItems  = workOrder.finishingsLinear.filter(f => (f.unit || 'ML').toUpperCase() === 'ML');
+                  const undItems = workOrder.finishingsLinear.filter(f => (f.unit || 'ML').toUpperCase() !== 'ML');
+                  const totalML  = mlItems.reduce((a, f) => a + f.totalLinear, 0);
+                  const totalUND = undItems.reduce((a, f) => a + f.totalQty, 0);
+                  return (
+                    <section>
+                      <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3">Metragens</h3>
+                      <div className="space-y-1.5">
+                        {workOrder.materialsM2.map((m, i) => (
+                          <div key={i} className="flex justify-between items-center text-sm">
+                            <span className="text-gray-600 truncate">{m.materialName}</span>
+                            <span className="font-semibold text-gray-800 ml-2 flex-shrink-0">{m.totalM2.toFixed(4)} m²</span>
+                          </div>
+                        ))}
+                        {mlItems.map((f, i) => (
+                          <div key={i} className="flex justify-between items-center text-sm">
+                            <span className="text-gray-600 truncate">{f.itemName}</span>
+                            <span className="font-semibold text-gray-800 ml-2 flex-shrink-0">{f.totalLinear.toFixed(3)} m lin.</span>
+                          </div>
+                        ))}
+                        {undItems.map((f, i) => (
+                          <div key={`und-${i}`} className="flex justify-between items-center text-sm">
+                            <span className="text-gray-600 truncate">{f.itemName}</span>
+                            <span className="font-semibold text-gray-800 ml-2 flex-shrink-0">{f.totalQty} und</span>
+                          </div>
+                        ))}
+                        {(workOrder.totalM2 > 0 || workOrder.materialsM2.length > 0) && (
+                          <div className="pt-1.5 border-t border-gray-100 flex justify-between text-sm font-bold text-gray-800">
+                            <span>Total m²</span>
+                            <span>{workOrder.totalM2.toFixed(4)} m²</span>
+                          </div>
+                        )}
+                        {totalML > 0 && (
+                          <div className="flex justify-between text-sm font-bold text-gray-800">
+                            <span>Total m lin.</span>
+                            <span>{totalML.toFixed(3)} m lin.</span>
+                          </div>
+                        )}
+                        {totalUND > 0 && (
+                          <div className="flex justify-between text-sm font-bold text-gray-800">
+                            <span>Total serviços UND</span>
+                            <span>{totalUND} und</span>
+                          </div>
+                        )}
+                      </div>
+                    </section>
+                  );
+                })()}
 
                 {/* Produtos de Revenda */}
                 {workOrder.resaleProducts && workOrder.resaleProducts.length > 0 && (

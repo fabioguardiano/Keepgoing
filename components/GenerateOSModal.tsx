@@ -16,10 +16,16 @@ const calcMetrics = (items: OrderItem[], itemIds: string[]) => {
         unit: item.unit || 'un'
       });
     } else if (item.category === 'Acabamentos') {
+      const unit = (item.unit || 'ML').toUpperCase();
       const key = item.description || item.materialName || 'Acabamento';
-      if (!linMap[key]) linMap[key] = { itemName: item.description || key, materialName: item.materialName, totalLinear: 0, totalQty: 0 };
-      linMap[key].totalLinear = Math.round((linMap[key].totalLinear + item.quantity * (item.length || 0)) * 10000) / 10000;
-      linMap[key].totalQty += item.quantity;
+      if (!linMap[key]) linMap[key] = { itemName: item.description || key, materialName: item.materialName, totalLinear: 0, totalQty: 0, unit };
+      if (unit === 'ML') {
+        // Para ML, quantity já é o total em metros (length=1 internamente)
+        linMap[key].totalLinear = Math.round((linMap[key].totalLinear + item.quantity * (item.length || 1)) * 10000) / 10000;
+      } else {
+        // Para UND e outras unidades, acumula apenas quantidade
+        linMap[key].totalQty += item.quantity;
+      }
     } else if ((item.m2 || 0) > 0) {
       const key = item.materialName || 'Sem Material';
       if (!m2Map[key]) m2Map[key] = { materialName: item.materialName || key, materialId: item.materialId, totalM2: 0 };
@@ -34,7 +40,8 @@ const calcMetrics = (items: OrderItem[], itemIds: string[]) => {
     finishingsLinear,
     resaleProducts,
     totalM2: Math.round(materialsM2.reduce((a, x) => a + x.totalM2, 0) * 10000) / 10000,
-    totalLinear: Math.round(finishingsLinear.reduce((a, x) => a + x.totalLinear, 0) * 10000) / 10000,
+    totalLinear: Math.round(finishingsLinear.reduce((a, x) => a + (x.unit === 'ML' ? x.totalLinear : 0), 0) * 10000) / 10000,
+    totalQty: finishingsLinear.reduce((a, x) => a + (x.unit !== 'ML' ? x.totalQty : 0), 0),
   };
 };
 
