@@ -80,7 +80,7 @@ export const PaymentTypesView: React.FC<PaymentTypesViewProps> = ({ paymentTypes
               <Wallet className="text-indigo-600" size={24} />
             </div>
             <div>
-              <h1 className="text-xl font-black text-slate-800 tracking-tight leading-none mb-1">Tipos de Pagamento</h1>
+              <h1 className="text-xl font-black text-slate-800 tracking-tight leading-none mb-1">Tipos de PGTO AR</h1>
               <p className="text-[11px] text-slate-500 font-medium">Categorização para o financeiro</p>
             </div>
           </div>
@@ -129,7 +129,7 @@ export const PaymentTypesView: React.FC<PaymentTypesViewProps> = ({ paymentTypes
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
                 <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-20">Cód.</th>
-                <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tipo de Pagamento</th>
+                <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tipos de PGTO AR</th>
                 <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Data Cadastro</th>
                 <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
                 <th className="px-5 py-3 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ações</th>
@@ -206,7 +206,7 @@ export const PaymentTypesView: React.FC<PaymentTypesViewProps> = ({ paymentTypes
             <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-bold text-slate-800 dark:text-white">
-                  {editingType ? 'Editar Tipo' : 'Novo Tipo de Pagamento'}
+                  {editingType ? 'Editar Tipo' : 'Novo Tipo de PGTO AR'}
                 </h3>
                 <p className="text-slate-500 text-sm">Configuração de categoria financeira</p>
               </div>
