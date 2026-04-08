@@ -99,11 +99,22 @@ export const CRMSection: React.FC<CRMSectionProps> = ({
   // ─── Press-and-hold handlers ─────────────────────────────────────────────────
   const startListening = useCallback((e: React.PointerEvent) => {
     e.stopPropagation();
-    if (!recognitionRef.current) return;
+    if (!recognitionRef.current) {
+      setMicError('Microfone não inicializado. Recarregue a página.');
+      return;
+    }
+    setMicError(null);
     isHoldingRef.current = true;
     baseTextRef.current = newCrmNote;
     setIsListening(true);
-    try { recognitionRef.current.start(); } catch (_) {}
+    try {
+      recognitionRef.current.start();
+    } catch (err: any) {
+      console.error('[CRM Mic] start() error:', err);
+      setMicError(`Erro ao iniciar microfone: ${err?.message || String(err)}`);
+      setIsListening(false);
+      isHoldingRef.current = false;
+    }
   }, [newCrmNote]);
 
   const stopListening = useCallback((e: React.PointerEvent) => {
