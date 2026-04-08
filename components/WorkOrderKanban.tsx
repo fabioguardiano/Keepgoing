@@ -452,8 +452,8 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
 
   const firstPhaseName = phases[0]?.name || '';
 
-  // Group work orders by phase — exclui canceladas do kanban
-  const activeWorkOrders = workOrders.filter(wo => wo.status !== 'Cancelada');
+  // Group work orders by phase — exclui canceladas e entregues do kanban
+  const activeWorkOrders = workOrders.filter(wo => wo.status !== 'Cancelada' && wo.status !== 'Entregue');
   const columnMap: Record<string, WorkOrder[]> = {};
   phases.forEach(ph => { columnMap[ph.name] = []; });
 

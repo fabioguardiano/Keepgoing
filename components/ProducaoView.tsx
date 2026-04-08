@@ -29,13 +29,14 @@ interface ProducaoViewProps {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const STATUS_TABS: Array<{ label: string; value: WorkOrder['status'] | 'Todos' }> = [
-  { label: 'Todos', value: 'Todos' },
+type StatusFilter = WorkOrder['status'] | 'Todos' | 'Arquivadas';
+
+const STATUS_TABS: Array<{ label: string; value: StatusFilter }> = [
+  { label: 'Em andamento', value: 'Todos' },
   { label: 'Aguardando', value: 'Aguardando' },
   { label: 'Em Produção', value: 'Em Produção' },
   { label: 'Concluído', value: 'Concluído' },
-  { label: 'Entregue', value: 'Entregue' },
-  { label: 'Cancelada', value: 'Cancelada' },
+  { label: 'Arquivadas', value: 'Arquivadas' },
 ];
 
 const PHASE_COLORS: Record<string, string> = {
@@ -96,7 +97,7 @@ export const ProducaoView: React.FC<ProducaoViewProps> = ({
     (localStorage.getItem('producao_viewmode') as 'kanban' | 'list') || 'kanban'
   );
   const [searchTerm, setSearchTerm]     = useState('');
-  const [statusFilter, setStatusFilter] = useState<WorkOrder['status'] | 'Todos'>('Todos');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('Todos');
   const [selectedWO, setSelectedWO]     = useState<WorkOrder | null>(null);
 
   const handleViewChange = (mode: 'kanban' | 'list') => {
@@ -108,7 +109,15 @@ export const ProducaoView: React.FC<ProducaoViewProps> = ({
   const filteredList = useMemo(() => {
     const q = searchTerm.toLowerCase();
     return workOrders.filter(wo => {
-      const matchStatus = statusFilter === 'Todos' || wo.status === statusFilter;
+      let matchStatus: boolean;
+      if (statusFilter === 'Arquivadas') {
+        matchStatus = wo.status === 'Entregue' || wo.status === 'Cancelada';
+      } else if (statusFilter === 'Todos') {
+        // "Em andamento" — exclui arquivadas (mesmo que o Kanban)
+        matchStatus = wo.status !== 'Entregue' && wo.status !== 'Cancelada';
+      } else {
+        matchStatus = wo.status === statusFilter;
+      }
       const matchSearch = !q ||
         String(wo.osNumber).includes(q) ||
         (wo.clientName || '').toLowerCase().includes(q) ||
@@ -134,6 +143,16 @@ export const ProducaoView: React.FC<ProducaoViewProps> = ({
     return workOrders.find(w => w.id === selectedWO.id) ?? selectedWO;
   }, [workOrders, selectedWO]);
 
+  // Count archived (Entregue + Cancelada) — hidden from Kanban
+  const archivedCount = useMemo(() =>
+    workOrders.filter(wo => wo.status === 'Entregue' || wo.status === 'Cancelada').length,
+  [workOrders]);
+
+  const goToArchived = () => {
+    setStatusFilter('Arquivadas');
+    handleViewChange('list');
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -156,7 +175,17 @@ export const ProducaoView: React.FC<ProducaoViewProps> = ({
             </div>
             <div>
               <h1 className="text-xl font-black text-slate-800 dark:text-white">Produção</h1>
-              <p className="text-xs text-slate-400 mt-0.5">{workOrders.length} ordens no total</p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <p className="text-xs text-slate-400">{workOrders.filter(wo => wo.status !== 'Entregue' && wo.status !== 'Cancelada').length} em andamento</p>
+                {archivedCount > 0 && viewMode === 'kanban' && (
+                  <button
+                    onClick={goToArchived}
+                    className="text-[10px] font-black text-slate-400 hover:text-[var(--primary-color)] bg-slate-100 dark:bg-slate-800 hover:bg-[var(--primary-color)]/10 px-2 py-0.5 rounded-full transition-all uppercase tracking-wider"
+                  >
+                    {archivedCount} arquivadas
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -266,7 +295,11 @@ export const ProducaoView: React.FC<ProducaoViewProps> = ({
             <div
               key={wo.id}
               onClick={() => setSelectedWO(wo)}
-              className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-[var(--primary-color)]/30 transition-all overflow-hidden cursor-pointer"
+              className={`rounded-2xl border shadow-sm hover:shadow-md transition-all overflow-hidden cursor-pointer ${
+                wo.status === 'Entregue' || wo.status === 'Cancelada'
+                  ? 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 opacity-80 hover:opacity-100 hover:border-slate-300'
+                  : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:border-[var(--primary-color)]/30'
+              }`}
             >
               {/* Card header */}
               <div className="px-5 py-3.5 flex items-center justify-between border-b border-slate-50 dark:border-slate-700/60">

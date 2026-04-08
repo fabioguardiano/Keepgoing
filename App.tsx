@@ -581,7 +581,13 @@ const App: React.FC = () => {
             canMoveCards={getAccess('producao') === 'full'}
             deadlineWarningDays={deadlineWarningDays}
             deadlineUrgentDays={deadlineUrgentDays}
-            onUpdatePhase={updateWorkOrderPhase}
+            onUpdatePhase={(id, toPhase, fromPhase, userName) => {
+              updateWorkOrderPhase(id, toPhase, fromPhase, userName);
+              // Auto-arquivar ao chegar na última fase
+              if (phases.length > 0 && toPhase === phases[phases.length - 1].name) {
+                updateWorkOrderStatus(id, 'Entregue');
+              }
+            }}
             onUpdate={updateWorkOrder}
             onUpdateDeliveryDate={updateDeliveryDate}
             onCancelWorkOrder={cancelWorkOrder}
