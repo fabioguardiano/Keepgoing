@@ -235,16 +235,32 @@ export const ReconciliationModal: React.FC<Props> = ({ data, onConfirm, onCancel
               <div className="space-y-1">
                 {preview.map((inst, i) => (
                   <div key={inst.id} className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
-                    <span className="text-xs font-bold text-slate-600 dark:text-slate-400">Parcela {inst.number}</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-slate-400 line-through">R$ {fmt(pendingInstallments[i]?.value ?? inst.value)}</span>
+                      <span className="text-xs font-bold text-slate-600 dark:text-slate-400">Parcela {inst.number}</span>
+                      {inst.dueDate && (
+                        <span className="text-[10px] text-slate-400">
+                          {new Date(inst.dueDate + 'T12:00:00').toLocaleDateString('pt-BR')}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {pendingInstallments[i]?.value !== inst.value && (
+                        <span className="text-[10px] text-slate-400 line-through">R$ {fmt(pendingInstallments[i]?.value ?? inst.value)}</span>
+                      )}
                       <span className="text-xs font-black text-slate-800 dark:text-white">R$ {fmt(inst.value)}</span>
                     </div>
                   </div>
                 ))}
                 {strategy === 'new_installment' && (
                   <div className="flex items-center justify-between px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                    <span className="text-xs font-bold text-blue-600">+ Nova parcela (aditivo)</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-blue-600">+ Nova parcela (aditivo)</span>
+                      {extraDueDate && (
+                        <span className="text-[10px] text-blue-400">
+                          {new Date(extraDueDate + 'T12:00:00').toLocaleDateString('pt-BR')}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-xs font-black text-blue-700">R$ {fmt(diff)}</span>
                   </div>
                 )}
