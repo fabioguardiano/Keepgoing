@@ -3,7 +3,6 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import { Image as ImageIcon, Calendar, ChevronLeft, ChevronRight, Clock, Maximize2, Minimize2 } from 'lucide-react';
 import { WorkOrder, PhaseConfig, AppUser, SalesOrder } from '../types';
 import { WorkOrderModal } from './WorkOrderModal';
-import { ActivityBadge } from './ActivityBadge';
 import { formatOsLabel } from '../hooks/useWorkOrders';
 import { useKanbanInteraction } from '../hooks/useKanbanInteraction';
 import { getInitials as globalGetInitials } from '../utils/userUtils';
@@ -121,18 +120,11 @@ const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, deadli
                 ? 'border-2 border-orange-400 bg-orange-50/20'
                 : 'border border-transparent'}`}
         >
-          {/* Priority badge + activity signal */}
+          {/* Priority badge */}
           <div className="flex items-center justify-between mb-1.5">
             <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider ${priorityCfg.bg} ${priorityCfg.text}`}>
               {priorityCfg.label}
             </span>
-            <div onClick={e => e.stopPropagation()}>
-              <ActivityBadge
-                referenceId={workOrder.id}
-                referenceType="work_order"
-                daysInStage={daysInPhase}
-              />
-            </div>
           </div>
 
           {/* Client & OS */}
