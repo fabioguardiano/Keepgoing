@@ -688,6 +688,65 @@ export interface BillTransaction {
   notes?: string;
 }
 
+// ─── Plano de Contas ──────────────────────────────────────────────────────────
+
+export interface AccountGroup {
+  id: string;
+  companyId: string;
+  code: number;           // 1, 2, 3, 4, 5
+  name: string;
+  isAdmin: boolean;       // D.A. — Despesa Administrativa
+  createdAt: string;
+}
+
+export interface AccountPlanItem {
+  id: string;
+  companyId: string;
+  code: number;           // ex: 5020
+  groupId: string;
+  groupCode?: number;     // desnormalizado para exibição
+  groupName?: string;     // desnormalizado para exibição
+  name: string;
+  costType: 'Fixo' | 'Variável';
+  defaultPaymentMethod?: string;
+  isOperational: boolean; // C.OP.
+  active: boolean;
+  createdAt: string;
+}
+
+// Dados padrão para seed inicial (importados pela UI)
+export const DEFAULT_ACCOUNT_GROUPS: Omit<AccountGroup, 'id' | 'companyId' | 'createdAt'>[] = [
+  { code: 1, name: 'DEDUÇÕES',                               isAdmin: false },
+  { code: 2, name: 'CUSTOS DOS PRODUTOS / SERVIÇOS VENDIDOS', isAdmin: false },
+  { code: 3, name: 'DESPESAS DE VENDAS',                     isAdmin: false },
+  { code: 4, name: 'DESPESAS ADMINISTRATIVAS',               isAdmin: true  },
+  { code: 5, name: 'DESPESAS FINANCEIRAS',                   isAdmin: false },
+];
+
+export interface DefaultAccountPlanEntry {
+  code: number;
+  groupCode: number;
+  name: string;
+  costType: 'Fixo' | 'Variável';
+  isOperational: boolean;
+  active: boolean;
+  defaultPaymentMethod?: string;
+}
+
+export const DEFAULT_ACCOUNT_PLAN: DefaultAccountPlanEntry[] = [
+  { code: 2010, groupCode: 2, name: 'Matéria-prima',           costType: 'Variável', isOperational: true,  active: true },
+  { code: 2020, groupCode: 2, name: 'Insumos de Produção',     costType: 'Variável', isOperational: true,  active: true },
+  { code: 2030, groupCode: 2, name: '13º Salário e Férias',    costType: 'Fixo',     isOperational: true,  active: true },
+  { code: 2040, groupCode: 2, name: 'Água e Esgoto',           costType: 'Fixo',     isOperational: true,  active: true },
+  { code: 3010, groupCode: 3, name: 'Combustível p/ Entregas', costType: 'Variável', isOperational: true,  active: true },
+  { code: 3020, groupCode: 3, name: 'Combustível p/ Medição',  costType: 'Variável', isOperational: true,  active: true },
+  { code: 3030, groupCode: 3, name: 'Comissões',               costType: 'Variável', isOperational: true,  active: true },
+  { code: 4010, groupCode: 4, name: 'Aluguel',                 costType: 'Fixo',     isOperational: true,  active: true },
+  { code: 4020, groupCode: 4, name: 'Material de Limpeza',     costType: 'Fixo',     isOperational: false, active: true },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export interface AccountPayable {
   id: string;
   description: string;
@@ -701,7 +760,9 @@ export interface AccountPayable {
   paymentMethodId?: string;
   paymentMethodName?: string;
   category: string;
-  categoryId?: string;               // ref → BillCategory.id
+  categoryId?: string;               // legado — ref → BillCategory.id
+  accountPlanId?: string;            // novo — ref → AccountPlanItem.id
+  accountPlanName?: string;          // desnormalizado para exibição
   dueDate: string;
   competenceDate?: string;           // data de competência (YYYY-MM-DD)
   recurrence?: 'none' | 'monthly' | 'yearly';

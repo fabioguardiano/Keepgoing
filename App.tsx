@@ -68,6 +68,7 @@ const ServiceGroupsView = lazy(() => lazyRetry(() => import('./components/Servic
 const PayablesView      = lazy(() => lazyRetry(() => import('./components/PayablesView').then(m => ({ default: m.PayablesView }))));
 const BankAccountsView  = lazy(() => lazyRetry(() => import('./components/BankAccountsView').then(m => ({ default: m.BankAccountsView }))));
 const PayablePaymentMethodsView = lazy(() => lazyRetry(() => import('./components/PayablePaymentMethodsView').then(m => ({ default: m.PayablePaymentMethodsView }))));
+const PlanoContasView   = lazy(() => lazyRetry(() => import('./components/PlanoContasView').then(m => ({ default: m.PlanoContasView }))));
 const ProducaoView      = lazy(() => lazyRetry(() => import('./components/ProducaoView').then(m => ({ default: m.ProducaoView }))));
 const MeasurementSchedule = lazy(() => lazyRetry(() => import('./components/MeasurementSchedule').then(m => ({ default: m.MeasurementSchedule }))));
 

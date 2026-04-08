@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Printer } from 'lucide-react';
 import { SalesOrder, CompanyInfo, Client, Material, AppUser } from '../types';
@@ -28,6 +28,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
   hideM2Unit = true,
   onClose,
 }) => {
+  const [hidePrices, setHidePrices] = useState(false);
   const today = new Date().toLocaleDateString('pt-BR');
   const currentTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   const isPedido = sale.status === 'Pedido';
@@ -224,11 +225,11 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
                 <tr style={{ backgroundColor: '#f1f5f9', fontSize: '8.5px', fontWeight: 700, borderBottom: '1px solid #000' }}>
                   <th style={{ padding: '3px 4px', textAlign: 'left', width: '5%' }}>Qtde.</th>
                   <th style={{ padding: '3px 4px', textAlign: 'left', width: hideM2Unit ? '20%' : '12%' }}>Descrição</th>
-                  <th style={{ padding: '3px 4px', textAlign: 'left', width: '41%' }}>Matéria Prima / Material</th>
+                  <th style={{ padding: '3px 4px', textAlign: 'left', width: hidePrices ? (hideM2Unit ? '55%' : '47%') : '41%' }}>Matéria Prima / Material</th>
                   <th style={{ padding: '3px 4px', textAlign: 'center', width: '10%' }}>Comp. (m)</th>
                   <th style={{ padding: '3px 4px', textAlign: 'center', width: '10%' }}>Larg. (m)</th>
                   {!hideM2Unit && <th style={{ padding: '3px 4px', textAlign: 'center', width: '8%' }}>M² / Un</th>}
-                  <th style={{ padding: '3px 4px', textAlign: 'right', width: '14%' }}>Total (R$)</th>
+                  {!hidePrices && <th style={{ padding: '3px 4px', textAlign: 'right', width: '14%' }}>Total (R$)</th>}
                 </tr>
               </thead>
               <tbody>
@@ -271,24 +272,28 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
                             : (item.unit === 'un' ? item.quantity : '—')}
                         </td>
                       )}
-                      <td style={{ padding: '3px 4px', textAlign: 'right', fontWeight: 900 }}>
-                        {fmt(item.totalPrice || 0)}
-                      </td>
+                      {!hidePrices && (
+                        <td style={{ padding: '3px 4px', textAlign: 'right', fontWeight: 900 }}>
+                          {fmt(item.totalPrice || 0)}
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
               </tbody>
               {/* Sub-rodapé do ambiente */}
-              <tfoot>
-                <tr style={{ backgroundColor: '#e2e8f0', borderTop: '1px solid #000' }}>
-                  <td colSpan={6} style={{ padding: '3px 8px', fontWeight: 700, fontSize: '9px', textAlign: 'right' }}>
-                    Sub-Total — {env}:
-                  </td>
-                  <td style={{ padding: '3px 8px', fontWeight: 900, fontSize: '10px', textAlign: 'right' }}>
-                    {fmt(envTotal)}
-                  </td>
-                </tr>
-              </tfoot>
+              {!hidePrices && (
+                <tfoot>
+                  <tr style={{ backgroundColor: '#e2e8f0', borderTop: '1px solid #000' }}>
+                    <td colSpan={hideM2Unit ? 5 : 6} style={{ padding: '3px 8px', fontWeight: 700, fontSize: '9px', textAlign: 'right' }}>
+                      Sub-Total — {env}:
+                    </td>
+                    <td style={{ padding: '3px 8px', fontWeight: 900, fontSize: '10px', textAlign: 'right' }}>
+                      {fmt(envTotal)}
+                    </td>
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
         );
@@ -341,29 +346,31 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {/* Resumo financeiro */}
               {/* Resumo financeiro */}
-              <div style={{ border: '2px solid #000' }}>
-                <div style={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid #000', padding: '5px 10px', display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontWeight: 700 }}>Sub-Total Geral</span>
-                  <span style={{ fontWeight: 700 }}>R$ {fmt(subtotal)}</span>
-                </div>
-                {frete > 0 && (
-                  <div style={{ padding: '5px 10px', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0' }}>
-                    <span style={{ fontWeight: 700 }}>Frete / Entrega</span>
-                    <span style={{ fontWeight: 700 }}>+ R$ {fmt(frete)}</span>
+              {!hidePrices && (
+                <div style={{ border: '2px solid #000' }}>
+                  <div style={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid #000', padding: '5px 10px', display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontWeight: 700 }}>Sub-Total Geral</span>
+                    <span style={{ fontWeight: 700 }}>R$ {fmt(subtotal)}</span>
                   </div>
-                )}
-                {discount > 0 && (
-                  <div style={{ padding: '5px 10px', display: 'flex', justifyContent: 'space-between', color: '#b91c1c', borderBottom: '1px solid #e2e8f0' }}>
-                    <span style={{ fontWeight: 700 }}>Desconto</span>
-                    <span style={{ fontWeight: 700 }}>- R$ {fmt(discount)}</span>
+                  {frete > 0 && (
+                    <div style={{ padding: '5px 10px', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0' }}>
+                      <span style={{ fontWeight: 700 }}>Frete / Entrega</span>
+                      <span style={{ fontWeight: 700 }}>+ R$ {fmt(frete)}</span>
+                    </div>
+                  )}
+                  {discount > 0 && (
+                    <div style={{ padding: '5px 10px', display: 'flex', justifyContent: 'space-between', color: '#b91c1c', borderBottom: '1px solid #e2e8f0' }}>
+                      <span style={{ fontWeight: 700 }}>Desconto</span>
+                      <span style={{ fontWeight: 700 }}>- R$ {fmt(discount)}</span>
+                    </div>
+                  )}
+                  {/* Comissão do arquiteto removida da impressão para o cliente conforme solicitado */}
+                  <div style={{ backgroundColor: '#000', color: '#fff', padding: '8px 10px', display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontWeight: 900, fontSize: '12px' }}>VALOR TOTAL</span>
+                    <span style={{ fontWeight: 900, fontSize: '13px' }}>R$ {fmt(total)}</span>
                   </div>
-                )}
-                {/* Comissão do arquiteto removida da impressão para o cliente conforme solicitado */}
-                <div style={{ backgroundColor: '#000', color: '#fff', padding: '8px 10px', display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontWeight: 900, fontSize: '12px' }}>VALOR TOTAL</span>
-                  <span style={{ fontWeight: 900, fontSize: '13px' }}>R$ {fmt(total)}</span>
                 </div>
-              </div>
+              )}
 
               {/* Condições de Pagamento */}
               {sale.paymentMethodName && (
@@ -371,18 +378,18 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
                   <div style={{ fontWeight: 900, fontSize: '9px', textTransform: 'uppercase', marginBottom: '4px', color: '#000' }}>
                     Condições de Pagamento
                   </div>
-                  <div style={{ fontWeight: 700, fontSize: '10px', marginBottom: rows ? '5px' : '0' }}>
+                  <div style={{ fontWeight: 700, fontSize: '10px', marginBottom: (rows && !hidePrices) ? '5px' : '0' }}>
                     {sale.paymentMethodName}
-                    {n > 1 && (
+                    {!hidePrices && n > 1 && (
                       <span style={{ marginLeft: '6px', fontWeight: 900, color: '#000' }}>
                         — {n}x de R$ {fmtR(baseValue)}
                       </span>
                     )}
-                    {n === 1 && (
+                    {!hidePrices && n === 1 && (
                       <span style={{ marginLeft: '6px', fontWeight: 900, color: '#000' }}>— à vista</span>
                     )}
                   </div>
-                  {rows && (
+                  {rows && !hidePrices && (
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px' }}>
                       <thead>
                         <tr style={{ backgroundColor: '#f1f5f9' }}>
@@ -479,19 +486,33 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
               Pré-visualização — {sale.status === 'Pedido' ? 'Pedido de Compra' : 'Orçamento'} #{sale.orderNumber}
             </span>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handlePrint}
-              className="flex items-center gap-2 px-4 py-2 bg-[var(--primary-color)] hover:opacity-90 text-white rounded-lg font-bold text-sm transition-all shadow"
-            >
-              <Printer size={15} /> Imprimir
-            </button>
-            <button
-              onClick={onClose}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-bold text-sm transition-all"
-            >
-              <X size={15} /> Fechar
-            </button>
+          <div className="flex items-center gap-6">
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={hidePrices}
+                onChange={e => setHidePrices(e.target.checked)}
+                className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-[var(--primary-color)] focus:ring-offset-slate-900"
+              />
+              <span className="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">
+                Ocultar Valores Financeiros
+              </span>
+            </label>
+            <div className="h-6 w-px bg-slate-700" />
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handlePrint}
+                className="flex items-center gap-2 px-4 py-2 bg-[var(--primary-color)] hover:opacity-90 text-white rounded-lg font-bold text-sm transition-all shadow"
+              >
+                <Printer size={15} /> Imprimir
+              </button>
+              <button
+                onClick={onClose}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-bold text-sm transition-all"
+              >
+                <X size={15} /> Fechar
+              </button>
+            </div>
           </div>
         </div>
 

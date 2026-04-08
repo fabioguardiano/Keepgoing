@@ -3,7 +3,7 @@ import {
   Plus, X, Check, Trash2, Edit2, Anchor, TrendingUp, ChevronDown, ChevronUp,
   Search, AlertTriangle, Settings, Receipt, DollarSign, Info, Ban, RotateCcw,
 } from 'lucide-react';
-import { AccountPayable, BillCategory, BillTransaction, PayablePaymentMethod, Supplier } from '../types';
+import { AccountPayable, BillCategory, BillTransaction, PayablePaymentMethod, Supplier, AccountPlanItem, AccountGroup } from '../types';
 import { fmt, fmtDate } from '../utils/formatting';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -334,16 +334,19 @@ const SettleBillModal: React.FC<SettleProps> = ({ bill, paymentMethods, onSettle
 // ─── NewBillModal ─────────────────────────────────────────────────────────────
 interface NewBillProps {
   categories: BillCategory[];
+  accountPlan: AccountPlanItem[];
+  accountGroups: AccountGroup[];
   suppliers: Supplier[];
   paymentMethods: PayablePaymentMethod[];
   editData?: AccountPayable | null;
   onSave: (ap: any) => Promise<any>;
   onClose: () => void;
 }
-const NewBillModal: React.FC<NewBillProps> = ({ categories, suppliers, paymentMethods, editData, onSave, onClose }) => {
+const NewBillModal: React.FC<NewBillProps> = ({ categories, accountPlan, accountGroups, suppliers, paymentMethods, editData, onSave, onClose }) => {
   const isEdit = !!editData?.id;
   const [desc, setDesc] = useState(editData?.description || '');
   const [categoryId, setCategoryId] = useState(editData?.categoryId || '');
+  const [accountPlanId, setAccountPlanId] = useState(editData?.accountPlanId || '');
   const [supplierId, setSupplierId] = useState(editData?.supplierId || '');
   const [supplierName, setSupplierName] = useState(editData?.supplierName || '');
   const [totalValue, setTotalValue] = useState(editData?.totalValue ? formatCurrencyInput(editData.totalValue.toFixed(2).replace('.', '')) : '');
@@ -370,6 +373,7 @@ const NewBillModal: React.FC<NewBillProps> = ({ categories, suppliers, paymentMe
     setSaving(true);
     const pm = paymentMethods.find(p => p.id === pmId);
     const cat = categories.find(c => c.id === categoryId);
+    const planItem = accountPlan.find(p => p.id === accountPlanId);
     await onSave({
       id: editData?.id,
       description: desc.trim(),
@@ -381,8 +385,10 @@ const NewBillModal: React.FC<NewBillProps> = ({ categories, suppliers, paymentMe
       transactions: editData?.transactions || [],
       paymentMethodId: pmId || undefined,
       paymentMethodName: pm?.name,
-      category: cat?.name || 'Outros',
+      category: planItem?.name || cat?.name || 'Outros',
       categoryId: categoryId || undefined,
+      accountPlanId: accountPlanId || undefined,
+      accountPlanName: planItem?.name,
       dueDate,
       competenceDate: competenceDate || undefined,
       recurrence,
@@ -409,24 +415,68 @@ const NewBillModal: React.FC<NewBillProps> = ({ categories, suppliers, paymentMe
               className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30" />
           </div>
 
-          {/* Categoria */}
+          {/* Conta do Plano de Contas */}
           <div>
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Categoria</label>
-            <div className="grid grid-cols-3 gap-2">
-              {categories.map(cat => (
-                <button key={cat.id} onClick={() => setCategoryId(cat.id)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 transition-all text-left ${categoryId === cat.id ? 'border-[var(--primary-color)] bg-[var(--primary-color)]/5' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'}`}>
-                  <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: cat.color }} />
-                  <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{cat.name}</span>
-                </button>
-              ))}
-            </div>
-            {selectedCategory && (
-              <div className="mt-2 flex items-center gap-2">
-                <NatureBadge nature={selectedCategory.nature} />
-                <span className="text-[10px] text-slate-400">
-                  {selectedCategory.nature === 'Fixa' ? 'Custo operacional constante (aluguel, software, etc.)' : 'Depende do volume de vendas/uso'}
-                </span>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+              Conta Analítica *
+            </label>
+            {accountPlan.length > 0 ? (
+              <>
+                <select
+                  required
+                  value={accountPlanId}
+                  onChange={e => {
+                    setAccountPlanId(e.target.value);
+                    // auto-preenche forma de pagamento padrão da conta
+                    const item = accountPlan.find(p => p.id === e.target.value);
+                    if (item?.defaultPaymentMethod && !pmId) {
+                      const match = paymentMethods.find(p => p.name === item.defaultPaymentMethod);
+                      if (match) setPmId(match.id);
+                    }
+                  }}
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30"
+                >
+                  <option value="">— Selecione uma conta —</option>
+                  {accountGroups.map(g => {
+                    const items = accountPlan.filter(p => p.groupId === g.id && p.active);
+                    if (items.length === 0) return null;
+                    return (
+                      <optgroup key={g.id} label={`${g.code} — ${g.name}`}>
+                        {items.map(item => (
+                          <option key={item.id} value={item.id}>
+                            {item.code} · {item.name} ({item.costType})
+                          </option>
+                        ))}
+                      </optgroup>
+                    );
+                  })}
+                </select>
+                {accountPlanId && (() => {
+                  const item = accountPlan.find(p => p.id === accountPlanId);
+                  if (!item) return null;
+                  return (
+                    <div className="mt-2 flex items-center gap-2">
+                      <NatureBadge nature={item.costType === 'Fixo' ? 'Fixa' : 'Variável'} />
+                      {item.defaultPaymentMethod && (
+                        <span className="text-[10px] text-slate-400">Meio padrão: {item.defaultPaymentMethod}</span>
+                      )}
+                    </div>
+                  );
+                })()}
+              </>
+            ) : (
+              /* Fallback: categorias legadas se plano de contas não configurado */
+              <div>
+                <div className="grid grid-cols-3 gap-2">
+                  {categories.map(cat => (
+                    <button key={cat.id} type="button" onClick={() => setCategoryId(cat.id)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 transition-all text-left ${categoryId === cat.id ? 'border-[var(--primary-color)] bg-[var(--primary-color)]/5' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'}`}>
+                      <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: cat.color }} />
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{cat.name}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-amber-500 mt-2">Configure o Plano de Contas para substituir as categorias manuais.</p>
               </div>
             )}
           </div>
@@ -658,6 +708,8 @@ interface Props {
   paymentMethods: PayablePaymentMethod[];
   suppliers: Supplier[];
   categories: BillCategory[];
+  accountPlan: AccountPlanItem[];
+  accountGroups: AccountGroup[];
   onSave: (ap: any) => Promise<any>;
   onDelete: (id: string) => Promise<void>;
   onSettle: (id: string, tx: any) => Promise<boolean>;
@@ -668,7 +720,7 @@ interface Props {
 }
 
 export const PayablesView: React.FC<Props> = ({
-  accounts, paymentMethods, suppliers, categories,
+  accounts, paymentMethods, suppliers, categories, accountPlan, accountGroups,
   onSave, onDelete, onSettle, onCancel, onSaveCategory, onDeleteCategory, canEdit,
 }) => {
   const [showNew, setShowNew] = useState(false);
@@ -912,6 +964,8 @@ export const PayablesView: React.FC<Props> = ({
       {(showNew || editData) && (
         <NewBillModal
           categories={categories}
+          accountPlan={accountPlan}
+          accountGroups={accountGroups}
           suppliers={suppliers}
           paymentMethods={paymentMethods}
           editData={editData}
