@@ -12,6 +12,7 @@ interface PrintBudgetProps {
   blurMeasurements?: boolean;
   sellerUser?: AppUser;
   hideM2Unit?: boolean;
+  hidePrices?: boolean;
   onClose: () => void;
 }
 
@@ -26,9 +27,10 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
   blurMeasurements = false,
   sellerUser,
   hideM2Unit = true,
+  hidePrices: hidePricesProp = false,
   onClose,
 }) => {
-  const [hidePrices, setHidePrices] = useState(false);
+  const [hidePrices, setHidePrices] = useState(hidePricesProp);
   const today = new Date().toLocaleDateString('pt-BR');
   const currentTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   const isPedido = sale.status === 'Pedido';

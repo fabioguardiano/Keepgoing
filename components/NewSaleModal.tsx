@@ -53,6 +53,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const [printingSale, setPrintingSale] = useState<SalesOrder | null>(null);
   const [blurMeasurements, setBlurMeasurements] = useState(false);
   const [hideM2Unit, setHideM2Unit] = useState(true);
+  const [hidePrices, setHidePrices] = useState(false);
   const [showGenerateOS, setShowGenerateOS] = useState(false);
   const [showDiscountRequest, setShowDiscountRequest] = useState(false);
   const [showCommissionRequest, setShowCommissionRequest] = useState(false);
@@ -861,6 +862,18 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   />
                   <span className="text-[11px] font-bold text-black dark:text-slate-300 group-hover:text-black dark:group-hover:text-white transition-colors">
                     Ocultar M² / Unidade
+                  </span>
+                </label>
+                <div className="w-px h-6 bg-orange-200 dark:bg-slate-600"></div>
+                <label className="flex items-center gap-2 px-3 cursor-pointer group" title="Ocultar valores financeiros (preços, subtotais e resumo financeiro) na impressão">
+                  <input 
+                    type="checkbox" 
+                    checked={hidePrices}
+                    onChange={(e) => setHidePrices(e.target.checked)}
+                    className="w-4 h-4 rounded text-[var(--primary-color)] focus:ring-[var(--primary-color)]"
+                  />
+                  <span className="text-[11px] font-bold text-black dark:text-slate-300 group-hover:text-black dark:group-hover:text-white transition-colors">
+                    Ocultar Valores
                   </span>
                 </label>
                 <div className="w-px h-6 bg-orange-200 dark:bg-slate-600"></div>
@@ -1847,6 +1860,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
           client={clients.find(c => c.id === printingSale.clientId)}
           blurMeasurements={blurMeasurements}
           hideM2Unit={hideM2Unit}
+          hidePrices={hidePrices}
           onClose={() => setPrintingSale(null)}
         />
       )}
