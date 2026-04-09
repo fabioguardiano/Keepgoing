@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   Plus, X, Check, Trash2, Edit2, Anchor, TrendingUp, ChevronDown, ChevronUp,
-  Search, AlertTriangle, Settings, Receipt, DollarSign, Info, Ban, RotateCcw,
+  Search, AlertTriangle, Receipt, DollarSign, Info, Ban,
 } from 'lucide-react';
 import { AccountPayable, BillCategory, BillTransaction, PayablePaymentMethod, Supplier, AccountPlanItem, AccountGroup } from '../types';
 import { fmt, fmtDate } from '../utils/formatting';
@@ -29,11 +29,6 @@ const isBillOverdue = (b: AccountPayable) => {
   return new Date(b.dueDate + 'T23:59:59') < now;
 };
 
-const PALETTE = [
-  '#EF4444','#F97316','#F59E0B','#EAB308','#84CC16',
-  '#10B981','#06B6D4','#3B82F6','#6366F1','#8B5CF6',
-  '#EC4899','#6B7280',
-];
 
 const RECURRENCE_LABEL: Record<string, string> = {
   none: 'Sem Recorrência',
@@ -67,92 +62,6 @@ const STATUS_LABEL: Record<string, string> = {
 const StatusBadge = ({ bill }: { bill: AccountPayable }) => {
   const key = isBillOverdue(bill) && bill.status === 'pendente' ? 'atrasado' : bill.status;
   return <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide ${STATUS_STYLE[key]}`}>{STATUS_LABEL[key]}</span>;
-};
-
-// ─── CategoryManagerModal ─────────────────────────────────────────────────────
-interface CatMgrProps {
-  categories: BillCategory[];
-  onSave: (cat: { id?: string; name: string; color: string; nature: 'Fixa' | 'Variável' }) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
-  onClose: () => void;
-}
-const CategoryManagerModal: React.FC<CatMgrProps> = ({ categories, onSave, onDelete, onClose }) => {
-  const [editing, setEditing] = useState<{ id?: string; name: string; color: string; nature: 'Fixa' | 'Variável' } | null>(null);
-  const [saving, setSaving] = useState(false);
-
-  const startNew = () => setEditing({ name: '', color: '#6366F1', nature: 'Variável' });
-
-  const handleSave = async () => {
-    if (!editing || !editing.name.trim()) return;
-    setSaving(true);
-    await onSave(editing);
-    setSaving(false);
-    setEditing(null);
-  };
-
-  return (
-    <div className="fixed inset-0 z-[600] flex items-center justify-center bg-black/60 p-4">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md shadow-2xl flex flex-col max-h-[80vh] overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-          <h3 className="font-black text-slate-800 dark:text-white">Categorias</h3>
-          <button onClick={onClose} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full"><X size={16} /></button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          {categories.map(cat => (
-            <div key={cat.id} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
-              <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ background: cat.color }} />
-              <span className="flex-1 text-sm font-bold text-slate-700 dark:text-slate-200">{cat.name}</span>
-              <NatureBadge nature={cat.nature} />
-              <button onClick={() => setEditing({ id: cat.id, name: cat.name, color: cat.color, nature: cat.nature })}
-                className="p-1.5 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-slate-600 transition-all">
-                <Edit2 size={13} />
-              </button>
-              {!cat.id?.startsWith('dc-') && (
-                <button onClick={() => onDelete(cat.id)} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-slate-400 hover:text-red-500 transition-all">
-                  <Trash2 size={13} />
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-        {editing ? (
-          <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
-            <input value={editing.name} onChange={e => setEditing(p => p && ({ ...p, name: e.target.value }))}
-              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30"
-              placeholder="Nome da categoria" />
-            <div className="flex gap-2 flex-wrap">
-              {PALETTE.map(c => (
-                <button key={c} onClick={() => setEditing(p => p && ({ ...p, color: c }))}
-                  className={`w-7 h-7 rounded-full transition-all ${editing.color === c ? 'ring-2 ring-offset-2 ring-slate-600 scale-110' : ''}`}
-                  style={{ background: c }} />
-              ))}
-            </div>
-            <div className="flex gap-2">
-              {(['Fixa', 'Variável'] as const).map(n => (
-                <button key={n} onClick={() => setEditing(p => p && ({ ...p, nature: n }))}
-                  className={`flex-1 py-2 rounded-xl text-xs font-black transition-all ${editing.nature === n ? 'bg-[var(--primary-color)] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
-                  {n}
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => setEditing(null)} className="flex-1 py-2 border border-slate-200 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50">Cancelar</button>
-              <button onClick={handleSave} disabled={saving}
-                className="flex-1 py-2 bg-[var(--primary-color)] text-white rounded-xl text-sm font-bold hover:opacity-90 disabled:opacity-50">
-                {saving ? 'Salvando...' : 'Salvar'}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="p-4 border-t border-slate-100 dark:border-slate-800">
-            <button onClick={startNew} className="w-full py-2.5 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-400 hover:border-[var(--primary-color)] hover:text-[var(--primary-color)] transition-all flex items-center justify-center gap-2">
-              <Plus size={15} /> Nova Categoria
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
 };
 
 // ─── SettleBillModal ─────────────────────────────────────────────────────────
@@ -356,8 +265,6 @@ const NewBillModal: React.FC<NewBillProps> = ({ categories, accountPlan, account
   const [pmId, setPmId] = useState(editData?.paymentMethodId || '');
   const [notes, setNotes] = useState(editData?.notes || '');
   const [saving, setSaving] = useState(false);
-
-  const selectedCategory = categories.find(c => c.id === categoryId);
 
   const handleSupplierChange = (id: string) => {
     setSupplierId(id);
@@ -569,14 +476,14 @@ const NewBillModal: React.FC<NewBillProps> = ({ categories, accountPlan, account
 // ─── BillRow ──────────────────────────────────────────────────────────────────
 interface BillRowProps {
   bill: AccountPayable;
-  category?: BillCategory;
+  planItem?: AccountPlanItem;
   canEdit: boolean;
   onSettle: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onCancel: () => void;
 }
-const BillRow: React.FC<BillRowProps> = ({ bill, category, canEdit, onSettle, onEdit, onDelete, onCancel }) => {
+const BillRow: React.FC<BillRowProps> = ({ bill, planItem, canEdit, onSettle, onEdit, onDelete, onCancel }) => {
   const [expanded, setExpanded] = useState(false);
   const overdue = isBillOverdue(bill);
   const pct = bill.totalValue > 0 ? (bill.paidValue / bill.totalValue) * 100 : 0;
@@ -585,9 +492,9 @@ const BillRow: React.FC<BillRowProps> = ({ bill, category, canEdit, onSettle, on
     <>
       <tr className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors ${overdue ? 'bg-red-50/30 dark:bg-red-900/5' : ''}`}>
         <td className="px-4 py-3 w-6">
-          {category ? (
-            <div title={`${category.nature} — ${category.name}`}>
-              {category.nature === 'Fixa'
+          {planItem ? (
+            <div title={`${planItem.costType} — ${planItem.name}`}>
+              {planItem.costType === 'Fixo'
                 ? <Anchor size={14} className="text-blue-400" />
                 : <TrendingUp size={14} className="text-orange-400" />
               }
@@ -599,10 +506,9 @@ const BillRow: React.FC<BillRowProps> = ({ bill, category, canEdit, onSettle, on
           <p className="font-bold text-sm text-slate-800 dark:text-white leading-tight">{bill.description}</p>
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             {bill.supplierName && <p className="text-xs text-slate-400">{bill.supplierName}</p>}
-            {category && (
-              <span className="flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md" style={{ background: category.color + '20', color: category.color }}>
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: category.color }} />
-                {category.name}
+            {(planItem || bill.accountPlanName || bill.category) && (
+              <span className="flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300">
+                {planItem?.name || bill.accountPlanName || bill.category}
               </span>
             )}
             {bill.recurrence && bill.recurrence !== 'none' && (
@@ -714,19 +620,16 @@ interface Props {
   onDelete: (id: string) => Promise<void>;
   onSettle: (id: string, tx: any) => Promise<boolean>;
   onCancel: (id: string) => Promise<boolean>;
-  onSaveCategory: (cat: any) => Promise<void>;
-  onDeleteCategory: (id: string) => Promise<void>;
   canEdit: boolean;
 }
 
 export const PayablesView: React.FC<Props> = ({
   accounts, paymentMethods, suppliers, categories, accountPlan, accountGroups,
-  onSave, onDelete, onSettle, onCancel, onSaveCategory, onDeleteCategory, canEdit,
+  onSave, onDelete, onSettle, onCancel, canEdit,
 }) => {
   const [showNew, setShowNew] = useState(false);
   const [editData, setEditData] = useState<AccountPayable | null>(null);
   const [settlingBill, setSettlingBill] = useState<AccountPayable | null>(null);
-  const [showCatMgr, setShowCatMgr] = useState(false);
 
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [natureFilter, setNatureFilter] = useState<string>('todos');
@@ -745,13 +648,14 @@ export const PayablesView: React.FC<Props> = ({
         if (statusFilter === 'atrasado' && !isOverdue) return false;
         if (statusFilter !== 'atrasado' && a.status !== statusFilter) return false;
       }
-      // category nature
+      // nature filter (via account plan costType)
       if (natureFilter !== 'todos') {
-        const cat = categories.find(c => c.id === a.categoryId);
-        if (!cat || cat.nature !== natureFilter) return false;
+        const planItem = accountPlan.find(p => p.id === a.accountPlanId);
+        const costType = planItem?.costType === 'Fixo' ? 'Fixa' : planItem?.costType === 'Variável' ? 'Variável' : null;
+        if (!costType || costType !== natureFilter) return false;
       }
-      // specific category
-      if (catFilter && a.categoryId !== catFilter) return false;
+      // specific account plan item filter
+      if (catFilter && a.accountPlanId !== catFilter) return false;
       // search
       if (search) {
         const q = search.toLowerCase();
@@ -774,7 +678,7 @@ export const PayablesView: React.FC<Props> = ({
       }
       return true;
     }).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-  }, [accounts, statusFilter, natureFilter, catFilter, search, dateFilter, dateFrom, dateTo, categories]);
+  }, [accounts, statusFilter, natureFilter, catFilter, search, dateFilter, dateFrom, dateTo, accountPlan]);
 
   // KPIs (all, not just filtered)
   const { totalPendente, totalPago, totalGeral, atrasados } = useMemo(() => ({
@@ -812,9 +716,6 @@ export const PayablesView: React.FC<Props> = ({
           <p className="text-slate-500 text-sm font-medium">Gerencie seus pagamentos e despesas</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setShowCatMgr(true)} className="p-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all" title="Gerenciar categorias">
-            <Settings size={16} />
-          </button>
           {canEdit && (
             <button onClick={() => { setEditData(null); setShowNew(true); }}
               className="bg-[var(--primary-color)] text-white px-5 py-2.5 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[var(--primary-color)]/20 hover:opacity-90 transition-all">
@@ -868,21 +769,21 @@ export const PayablesView: React.FC<Props> = ({
             ))}
           </div>
 
-          {/* Category pills */}
-          <div className="flex gap-1.5 flex-wrap">
-            <button onClick={() => setCatFilter('')}
-              className={`px-3 py-1 rounded-full text-[11px] font-black transition-all ${!catFilter ? 'bg-slate-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200'}`}>
-              Todas
-            </button>
-            {categories.map(cat => (
-              <button key={cat.id} onClick={() => setCatFilter(catFilter === cat.id ? '' : cat.id)}
-                className={`flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-black transition-all ${catFilter === cat.id ? 'text-white' : 'text-slate-600 dark:text-slate-300'}`}
-                style={catFilter === cat.id ? { background: cat.color } : { background: cat.color + '20' }}>
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: cat.color }} />
-                {cat.name}
+          {/* Account plan filter pills */}
+          {accountPlan.length > 0 && (
+            <div className="flex gap-1.5 flex-wrap">
+              <button onClick={() => setCatFilter('')}
+                className={`px-3 py-1 rounded-full text-[11px] font-black transition-all ${!catFilter ? 'bg-slate-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200'}`}>
+                Todas
               </button>
-            ))}
-          </div>
+              {accountPlan.filter(p => p.active).map(p => (
+                <button key={p.id} onClick={() => setCatFilter(catFilter === p.id ? '' : p.id)}
+                  className={`px-3 py-1 rounded-full text-[11px] font-black transition-all ${catFilter === p.id ? 'bg-slate-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200'}`}>
+                  {p.name}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Search e date filter à direita */}
           <div className="flex items-center gap-2 ml-auto">
@@ -938,7 +839,7 @@ export const PayablesView: React.FC<Props> = ({
                 <BillRow
                   key={bill.id}
                   bill={bill}
-                  category={categories.find(c => c.id === bill.categoryId)}
+                  planItem={accountPlan.find(p => p.id === bill.accountPlanId)}
                   canEdit={canEdit}
                   onSettle={() => setSettlingBill(bill)}
                   onEdit={() => { setEditData(bill); setShowNew(true); }}
@@ -983,14 +884,7 @@ export const PayablesView: React.FC<Props> = ({
         />
       )}
 
-      {showCatMgr && (
-        <CategoryManagerModal
-          categories={categories}
-          onSave={onSaveCategory}
-          onDelete={onDeleteCategory}
-          onClose={() => setShowCatMgr(false)}
-        />
-      )}
+
     </div>
   );
 };

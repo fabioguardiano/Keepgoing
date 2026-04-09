@@ -105,7 +105,7 @@ const App: React.FC = () => {
   const { products, handleSaveProduct, deleteProduct } = useProducts(activeCompanyId, logActivity);
   const { receivables, handleSaveReceivable, deleteReceivable, payInstallment: payReceivableInstallmentBase, unpayInstallment: unpayReceivableInstallment } = useAccountsReceivable(activeCompanyId, logActivity);
   const { payables, handleSavePayable, deletePayable, settleBill, cancelBill } = useAccountsPayable(activeCompanyId, logActivity);
-  const { categories: billCategories, saveCategory: saveBillCategory, deleteCategory: deleteBillCategory } = useBillCategories(activeCompanyId);
+  const { categories: billCategories } = useBillCategories(activeCompanyId);
   const { groups: accountGroups, plan: accountPlan, loading: loadingAccountPlan, saveGroup: saveAccountGroup, deleteGroup: deleteAccountGroup, savePlanItem, deletePlanItem, togglePlanActive, importDefaults: importAccountPlanDefaults } = useAccountPlan(activeCompanyId);
   const { paymentMethods, handleSavePaymentMethod, deletePaymentMethod, toggleActive } = usePaymentMethods(activeCompanyId);
   const { bankAccounts, saveBankAccount, deleteBankAccount, toggleBankAccount } = useBankAccounts(activeCompanyId);
@@ -809,8 +809,6 @@ const App: React.FC = () => {
             onDelete={deletePayable}
             onSettle={settleBill}
             onCancel={cancelBill}
-            onSaveCategory={saveBillCategory}
-            onDeleteCategory={deleteBillCategory}
             canEdit={getAccess('financeiro') === 'full'}
           />
         );
