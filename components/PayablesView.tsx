@@ -352,6 +352,7 @@ const NewBillModal: React.FC<NewBillProps> = ({ categories, accountPlan, account
     if (!dueDate) return alert('Informe a data de vencimento.');
 
     setSaving(true);
+    try {
 
     if (useInstallments && numInstallments > 1 && !isEdit) {
       const base = buildBillBase();
@@ -391,7 +392,11 @@ const NewBillModal: React.FC<NewBillProps> = ({ categories, accountPlan, account
       });
     }
 
-    setSaving(false);
+    } catch (err) {
+      console.error('Erro ao salvar conta:', err);
+    } finally {
+      setSaving(false);
+    }
     onClose();
   };
 
