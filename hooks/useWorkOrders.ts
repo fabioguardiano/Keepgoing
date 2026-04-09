@@ -67,9 +67,9 @@ export const useWorkOrders = (companyId?: string) => {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loadingWO, setLoadingWO] = useState(true);
 
-  const fetchWorkOrders = async () => {
-    if (!companyId) { setLoadingWO(false); return; }
-    setLoadingWO(true);
+  const fetchWorkOrders = async (silent = false) => {
+    if (!companyId) { if (!silent) setLoadingWO(false); return; }
+    if (!silent) setLoadingWO(true);
     try {
       const { data, error } = await supabase
         .from('work_orders')
@@ -82,7 +82,7 @@ export const useWorkOrders = (companyId?: string) => {
     } catch (err) {
       console.error('Erro ao carregar O.S.:', err);
     } finally {
-      setLoadingWO(false);
+      if (!silent) setLoadingWO(false);
     }
   };
 
@@ -98,7 +98,7 @@ export const useWorkOrders = (companyId?: string) => {
         table: 'work_orders',
         filter: `company_id=eq.${companyId}`
       }, () => {
-        fetchWorkOrders();
+        fetchWorkOrders(true); // silent — não exibe spinner para não desmontar o Kanban
       })
       .subscribe();
 
