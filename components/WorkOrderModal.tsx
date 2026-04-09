@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, Image as ImageIcon, Plus, Briefcase, Calendar, Layers, Package, CheckSquare, Ruler, User, ChevronDown, Trash2, Clock, ZoomIn, Lock, Pencil, XCircle, AlertTriangle, Printer } from 'lucide-react';
+import { X, Upload, Image as ImageIcon, Plus, Briefcase, Calendar, Layers, Package, CheckSquare, Ruler, User, ChevronDown, Trash2, Clock, ZoomIn, Lock, Pencil, XCircle, AlertTriangle, Printer, Eye, EyeOff } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import { createPortal } from 'react-dom';
 import { WorkOrder, WorkOrderLog, PhaseConfig, AppUser, OrderItem } from '../types';
 import { formatOsLabel } from '../hooks/useWorkOrders';
@@ -138,6 +139,10 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
 
   // Confirmação de exclusão de desenho técnico
   const [drawingConfirm, setDrawingConfirm] = useState<string | null>(null); // url do desenho a excluir
+  const [drawingPassword, setDrawingPassword] = useState('');
+  const [drawingPasswordVisible, setDrawingPasswordVisible] = useState(false);
+  const [drawingConfirmError, setDrawingConfirmError] = useState('');
+  const [drawingConfirmLoading, setDrawingConfirmLoading] = useState(false);
 
   const currentPhase = workOrder.productionPhase || phases[0]?.name || '';
   const sortedLogs = [...(workOrder.logs || [])].sort(
@@ -167,12 +172,28 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
 
   const handleDeleteDrawingRequest = (url: string) => {
     setDrawingConfirm(url);
+    setDrawingPassword('');
+    setDrawingConfirmError('');
   };
 
   const handleConfirmDeleteDrawing = async () => {
     if (!drawingConfirm) return;
-    await onDeleteDrawing(workOrder.id, drawingConfirm);
-    setDrawingConfirm(null);
+    if (!drawingPassword.trim()) { setDrawingConfirmError('Informe sua senha para confirmar.'); return; }
+    setDrawingConfirmLoading(true);
+    setDrawingConfirmError('');
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) throw new Error('Usuário não identificado.');
+      const { error } = await supabase.auth.signInWithPassword({ email: user.email, password: drawingPassword });
+      if (error) throw new Error('Senha incorreta. Verifique e tente novamente.');
+      await onDeleteDrawing(workOrder.id, drawingConfirm);
+      setDrawingConfirm(null);
+      setDrawingPassword('');
+    } catch (err: any) {
+      setDrawingConfirmError(err.message || 'Erro ao validar.');
+    } finally {
+      setDrawingConfirmLoading(false);
+    }
   };
 
   const handleAddUser = (user: AppUser) => {
@@ -794,7 +815,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       {/* Diálogo de confirmação para exclusão de desenho técnico */}
       {drawingConfirm && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-5">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-5">
             <div className="flex items-start gap-3">
               <div className="p-2.5 bg-red-100 rounded-xl shrink-0">
                 <Trash2 size={20} className="text-red-600" />
@@ -804,20 +825,47 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                 <p className="text-xs text-gray-500 mt-0.5">Esta ação não pode ser desfeita.</p>
               </div>
             </div>
-            <p className="text-sm text-gray-700">Tem certeza que deseja remover este desenho da O.S.?</p>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-gray-600 uppercase tracking-wider">Confirme sua senha</label>
+              <div className="relative">
+                <input
+                  type={drawingPasswordVisible ? 'text' : 'password'}
+                  value={drawingPassword}
+                  onChange={e => { setDrawingPassword(e.target.value); setDrawingConfirmError(''); }}
+                  onKeyDown={e => e.key === 'Enter' && handleConfirmDeleteDrawing()}
+                  placeholder="Digite sua senha de acesso"
+                  className="w-full px-4 py-2.5 pr-10 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-red-400/40 focus:border-red-400 transition-all"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={() => setDrawingPasswordVisible(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {drawingPasswordVisible ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+              {drawingConfirmError && (
+                <p className="text-xs text-red-500 font-medium">{drawingConfirmError}</p>
+              )}
+            </div>
             <div className="flex gap-2 justify-end">
               <button
-                onClick={() => setDrawingConfirm(null)}
-                className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors"
+                onClick={() => { setDrawingConfirm(null); setDrawingPassword(''); setDrawingConfirmError(''); }}
+                disabled={drawingConfirmLoading}
+                className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleConfirmDeleteDrawing}
-                className="px-5 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-bold transition-colors flex items-center gap-2"
+                disabled={drawingConfirmLoading || !drawingPassword.trim()}
+                className="px-5 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-bold transition-colors disabled:opacity-50 flex items-center gap-2"
               >
-                <Trash2 size={14} />
-                Excluir
+                {drawingConfirmLoading
+                  ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  : <Lock size={14} />}
+                {drawingConfirmLoading ? 'Verificando...' : 'Confirmar exclusão'}
               </button>
             </div>
           </div>
