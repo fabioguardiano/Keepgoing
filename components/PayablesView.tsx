@@ -266,42 +266,131 @@ const NewBillModal: React.FC<NewBillProps> = ({ categories, accountPlan, account
   const [notes, setNotes] = useState(editData?.notes || '');
   const [saving, setSaving] = useState(false);
 
+  // ── Parcelamento ──────────────────────────────────────────────────────────
+  const [useInstallments, setUseInstallments] = useState(false);
+  const [numInstallments, setNumInstallments] = useState(2);
+  const [intervalDays, setIntervalDays] = useState(30);
+  const [installValues, setInstallValues] = useState<string[]>([]);
+
+  const tvNum = parseFloat(totalValue.replace(/\./g, '').replace(',', '.')) || 0;
+
+  const distributeValues = (n: number, total: number): string[] => {
+    const totalCents = Math.round(total * 100);
+    const base = Math.floor(totalCents / n);
+    const remainder = totalCents - base * n;
+    return Array.from({ length: n }, (_, i) =>
+      formatCurrencyInput(String(base + (i === n - 1 ? remainder : 0)))
+    );
+  };
+
+  const getInstallDueDate = (index: number): string => {
+    if (!dueDate) return '';
+    const d = new Date(dueDate + 'T12:00:00');
+    d.setDate(d.getDate() + index * intervalDays);
+    return d.toISOString().split('T')[0];
+  };
+
+  const handleToggleInstallments = (enabled: boolean) => {
+    setUseInstallments(enabled);
+    if (enabled) setInstallValues(distributeValues(numInstallments, tvNum));
+  };
+
+  const handleNumChange = (n: number) => {
+    const clamped = Math.max(2, Math.min(48, n));
+    setNumInstallments(clamped);
+    setInstallValues(distributeValues(clamped, tvNum));
+  };
+
+  const handleTotalValueChange = (raw: string) => {
+    const formatted = formatCurrencyInput(raw);
+    setTotalValue(formatted);
+    if (useInstallments) {
+      const total = parseFloat(formatted.replace(/\./g, '').replace(',', '.')) || 0;
+      setInstallValues(distributeValues(numInstallments, total));
+    }
+  };
+
+  const handleInstallValueChange = (index: number, raw: string) => {
+    const next = [...installValues];
+    next[index] = formatCurrencyInput(raw);
+    setInstallValues(next);
+  };
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
   const handleSupplierChange = (id: string) => {
     setSupplierId(id);
     const sup = suppliers.find(s => s.id === id);
     setSupplierName(sup?.tradingName || sup?.legalName || '');
   };
 
-  const handleSave = async () => {
-    if (!desc.trim()) return alert('Informe a descrição.');
-    const tv = parseFloat(totalValue.replace(/\./g, '').replace(',', '.')) || 0;
-    if (!tv || tv <= 0) return alert('Informe o valor total.');
-    if (!dueDate) return alert('Informe a data de vencimento.');
-    setSaving(true);
+  const buildBillBase = () => {
     const pm = paymentMethods.find(p => p.id === pmId);
     const cat = categories.find(c => c.id === categoryId);
     const planItem = accountPlan.find(p => p.id === accountPlanId);
-    await onSave({
-      id: editData?.id,
-      description: desc.trim(),
+    return {
       supplierId: supplierId || undefined,
       supplierName: supplierName || undefined,
-      totalValue: tv,
-      paidValue: editData?.paidValue || 0,
-      installments: editData?.installments || [],
-      transactions: editData?.transactions || [],
+      paidValue: 0,
+      installments: [],
+      transactions: [],
       paymentMethodId: pmId || undefined,
       paymentMethodName: pm?.name,
       category: planItem?.name || cat?.name || 'Outros',
       categoryId: categoryId || undefined,
       accountPlanId: accountPlanId || undefined,
       accountPlanName: planItem?.name,
-      dueDate,
       competenceDate: competenceDate || undefined,
-      recurrence,
+      recurrence: 'none' as const,
       notes,
-      status: editData?.status || 'pendente',
-    });
+      status: 'pendente' as const,
+    };
+  };
+
+  const handleSave = async () => {
+    if (!desc.trim()) return alert('Informe a descrição.');
+    if (!tvNum || tvNum <= 0) return alert('Informe o valor total.');
+    if (!dueDate) return alert('Informe a data de vencimento.');
+
+    setSaving(true);
+
+    if (useInstallments && numInstallments > 1 && !isEdit) {
+      const base = buildBillBase();
+      for (let i = 0; i < numInstallments; i++) {
+        const iv = parseFloat((installValues[i] || '').replace(/\./g, '').replace(',', '.')) || tvNum / numInstallments;
+        await onSave({
+          ...base,
+          description: `${desc.trim()} (${i + 1}/${numInstallments})`,
+          totalValue: iv,
+          dueDate: getInstallDueDate(i),
+        });
+      }
+    } else {
+      const pm = paymentMethods.find(p => p.id === pmId);
+      const cat = categories.find(c => c.id === categoryId);
+      const planItem = accountPlan.find(p => p.id === accountPlanId);
+      await onSave({
+        id: editData?.id,
+        description: desc.trim(),
+        supplierId: supplierId || undefined,
+        supplierName: supplierName || undefined,
+        totalValue: tvNum,
+        paidValue: editData?.paidValue || 0,
+        installments: editData?.installments || [],
+        transactions: editData?.transactions || [],
+        paymentMethodId: pmId || undefined,
+        paymentMethodName: pm?.name,
+        category: planItem?.name || cat?.name || 'Outros',
+        categoryId: categoryId || undefined,
+        accountPlanId: accountPlanId || undefined,
+        accountPlanName: planItem?.name,
+        dueDate,
+        competenceDate: competenceDate || undefined,
+        recurrence,
+        notes,
+        status: editData?.status || 'pendente',
+      });
+    }
+
     setSaving(false);
     onClose();
   };
@@ -407,25 +496,109 @@ const NewBillModal: React.FC<NewBillProps> = ({ categories, accountPlan, account
           {/* Valor e datas */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Valor Total *</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                {useInstallments ? 'Valor Total (soma) *' : 'Valor Total *'}
+              </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">R$</span>
                 <input
                   type="text"
                   inputMode="numeric"
                   value={totalValue}
-                  onChange={e => setTotalValue(formatCurrencyInput(e.target.value))}
+                  onChange={e => handleTotalValueChange(e.target.value)}
                   placeholder="0,00"
                   className="w-full pl-9 pr-3 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30"
                 />
               </div>
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Vencimento *</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+                {useInstallments ? 'Vencimento 1ª parcela *' : 'Vencimento *'}
+              </label>
               <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
                 className="w-full px-3 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30" />
             </div>
           </div>
+
+          {/* Toggle parcelamento (só para nova conta) */}
+          {!isEdit && (
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => handleToggleInstallments(!useInstallments)}
+                className={`w-full flex items-center justify-between px-4 py-3 text-sm font-black transition-all ${useInstallments ? 'bg-[var(--primary-color)]/8 text-[var(--primary-color)]' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+              >
+                <span className="flex items-center gap-2">
+                  <span className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${useInstallments ? 'bg-[var(--primary-color)] border-[var(--primary-color)]' : 'border-slate-300 dark:border-slate-600'}`}>
+                    {useInstallments && <Check size={10} className="text-white" />}
+                  </span>
+                  Parcelar em múltiplas parcelas
+                </span>
+                <span className="text-[10px] font-medium text-slate-400">ex: 4 boletos mensais</span>
+              </button>
+
+              {useInstallments && (
+                <div className="px-4 pb-4 pt-2 border-t border-slate-100 dark:border-slate-700 space-y-3">
+                  {/* Config */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Nº parcelas</label>
+                      <input
+                        type="number"
+                        min={2} max={48}
+                        value={numInstallments}
+                        onChange={e => handleNumChange(parseInt(e.target.value) || 2)}
+                        className="w-16 px-2 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-center focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 flex-1">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Intervalo</label>
+                      <select
+                        value={intervalDays}
+                        onChange={e => setIntervalDays(parseInt(e.target.value))}
+                        className="flex-1 px-2 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30"
+                      >
+                        <option value={30}>Mensal (30 dias)</option>
+                        <option value={15}>Quinzenal (15 dias)</option>
+                        <option value={7}>Semanal (7 dias)</option>
+                        <option value={60}>Bimestral (60 dias)</option>
+                        <option value={90}>Trimestral (90 dias)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Preview table */}
+                  {tvNum > 0 && dueDate && (
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                      <div className="grid grid-cols-[40px_1fr_1fr] bg-slate-50 dark:bg-slate-800 px-3 py-1.5">
+                        <span className="text-[10px] font-black text-slate-400">#</span>
+                        <span className="text-[10px] font-black text-slate-400">VENCIMENTO</span>
+                        <span className="text-[10px] font-black text-slate-400 text-right">VALOR</span>
+                      </div>
+                      {Array.from({ length: numInstallments }, (_, i) => (
+                        <div key={i} className={`grid grid-cols-[40px_1fr_1fr] items-center px-3 py-2 ${i < numInstallments - 1 ? 'border-b border-slate-100 dark:border-slate-700' : ''}`}>
+                          <span className="text-[11px] font-black text-slate-400">{i + 1}/{numInstallments}</span>
+                          <span className="text-xs font-bold text-slate-600 dark:text-slate-300">{fmtDate(getInstallDueDate(i))}</span>
+                          <div className="flex justify-end">
+                            <div className="relative w-28">
+                              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">R$</span>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                value={installValues[i] || ''}
+                                onChange={e => handleInstallValueChange(i, e.target.value)}
+                                className="w-full pl-7 pr-2 py-1 text-xs font-bold text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--primary-color)]/40"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -433,15 +606,17 @@ const NewBillModal: React.FC<NewBillProps> = ({ categories, accountPlan, account
               <input type="date" value={competenceDate} onChange={e => setCompetenceDate(e.target.value)}
                 className="w-full px-3 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30" />
             </div>
-            <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Recorrência</label>
-              <select value={recurrence} onChange={e => setRecurrence(e.target.value as any)}
-                className="w-full px-3 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30">
-                <option value="none">Sem recorrência</option>
-                <option value="monthly">Mensal</option>
-                <option value="yearly">Anual</option>
-              </select>
-            </div>
+            {!useInstallments && (
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Recorrência</label>
+                <select value={recurrence} onChange={e => setRecurrence(e.target.value as any)}
+                  className="w-full px-3 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/30">
+                  <option value="none">Sem recorrência</option>
+                  <option value="monthly">Mensal</option>
+                  <option value="yearly">Anual</option>
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Forma de pagamento e notas */}
@@ -465,7 +640,13 @@ const NewBillModal: React.FC<NewBillProps> = ({ categories, accountPlan, account
           <button onClick={onClose} className="flex-1 py-2.5 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold text-sm text-slate-500 hover:bg-slate-50 transition-all">Cancelar</button>
           <button onClick={handleSave} disabled={saving}
             className="flex-2 px-8 py-2.5 bg-[var(--primary-color)] text-white rounded-2xl font-bold text-sm hover:opacity-90 disabled:opacity-50 transition-all">
-            {saving ? 'Salvando...' : isEdit ? 'Atualizar' : 'Cadastrar'}
+            {saving
+              ? `Salvando${useInstallments && !isEdit ? ` (${numInstallments}x)` : ''}...`
+              : isEdit
+                ? 'Atualizar'
+                : useInstallments
+                  ? `Cadastrar ${numInstallments} parcelas`
+                  : 'Cadastrar'}
           </button>
         </div>
       </div>
