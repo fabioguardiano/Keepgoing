@@ -8,14 +8,19 @@ const calcMetrics = (items: OrderItem[], itemIds: string[]) => {
   const linMap: Record<string, WorkOrderFinishingLinear> = {};
   const resaleProducts: Array<{ description: string; quantity: number; unit: string }> = [];
 
+  const isLinearService = (cat?: string) => {
+    const c = (cat || '').toLowerCase().trim();
+    return c === 'acabamentos' || c === 'serviços' || c === 'servicos' || c === 'colocação' || c === 'colocacao' || c === 'serviço' || c === 'servico';
+  };
+
   filtered.forEach(item => {
-    if (item.category === 'Produtos de Revenda') {
+    if ((item.category || '').toLowerCase().trim() === 'produtos de revenda') {
       resaleProducts.push({
         description: item.description || 'Produto de Revenda',
         quantity: item.quantity,
         unit: item.unit || 'un'
       });
-    } else if (item.category === 'Acabamentos') {
+    } else if (isLinearService(item.category)) {
       const unit = (item.unit || 'ML').toUpperCase();
       const key = item.description || item.materialName || 'Acabamento';
       if (!linMap[key]) linMap[key] = { itemName: item.description || key, materialName: item.materialName, totalLinear: 0, totalQty: 0, unit };
