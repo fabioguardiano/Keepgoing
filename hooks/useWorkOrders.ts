@@ -108,12 +108,13 @@ export const useWorkOrders = (companyId?: string) => {
   }, [companyId]);
 
   // Retorna o próximo os_sub_number para um dado os_number (número do pedido)
-  const getNextSubNumber = async (osNumber: number): Promise<number> => {
+  const getNextSubNumber = async (osNumber: string | number): Promise<number> => {
+    const cleanNum = typeof osNumber === 'number' ? osNumber : parseInt(String(osNumber).replace(/\D/g, '') || '0');
     const { data } = await supabase
       .from('work_orders')
       .select('os_sub_number')
       .eq('company_id', companyId!)
-      .eq('os_number', osNumber)
+      .eq('os_number', cleanNum)
       .order('os_sub_number', { ascending: false })
       .limit(1);
     return data && data.length > 0 ? (data[0].os_sub_number ?? 0) + 1 : 1;
@@ -122,7 +123,7 @@ export const useWorkOrders = (companyId?: string) => {
   const createWorkOrders = async (
     orders: Array<{
       saleId: string;
-      saleOrderNumber?: number;
+      saleOrderNumber?: string | number;
       clientName?: string;
       clientId?: string;
       sellerName?: string;
@@ -143,18 +144,23 @@ export const useWorkOrders = (companyId?: string) => {
     if (!companyId) return false;
     try {
       // os_number = número do pedido; os_sub_number = sequencial dentro do pedido
-      const osNumber = orders[0]?.saleOrderNumber ?? 0;
+      const rawOsNumber = orders[0]?.saleOrderNumber ?? 0;
+      const osNumber = typeof rawOsNumber === 'number' ? rawOsNumber : parseInt(String(rawOsNumber).replace(/\D/g, '') || '0');
       let nextSub = await getNextSubNumber(osNumber);
 
       for (const order of orders) {
+        const orderCleanNum = typeof order.saleOrderNumber === 'number' 
+          ? order.saleOrderNumber 
+          : parseInt(String(order.saleOrderNumber).replace(/\D/g, '') || '0');
+
         const { data: wo, error } = await supabase
           .from('work_orders')
           .insert({
             company_id: companyId,
-            os_number: order.saleOrderNumber ?? 0,
+            os_number: orderCleanNum,
             os_sub_number: nextSub++,
             sale_id: order.saleId,
-            sale_order_number: order.saleOrderNumber,
+            sale_order_number: orderCleanNum,
             client_name: up(order.clientName) || '',
             client_id: order.clientId || null,
             seller_name: up(order.sellerName) || null,
@@ -176,7 +182,12 @@ export const useWorkOrders = (companyId?: string) => {
           })
           .select()
           .single();
-        if (error) throw error;
+        
+        if (error) {
+          console.error('[createWorkOrders] Erro no insert da work_order:', error);
+          throw error;
+        }
+
         const envLogs = order.logs.map(l => ({
           company_id: companyId,
           work_order_id: wo.id,
@@ -186,15 +197,19 @@ export const useWorkOrders = (companyId?: string) => {
           reason: l.reason || null,
           user_name: l.userName || null,
         }));
+        
         if (envLogs.length > 0) {
-          await supabase.from('work_order_logs').insert(envLogs);
+          const { error: logError } = await supabase.from('work_order_logs').insert(envLogs);
+          if (logError) {
+            console.error('[createWorkOrders] Erro ao inserir logs:', logError);
+            // Não bloqueamos a criação da OS por erro no log, mas avisamos no console
+          }
         }
       }
       await fetchWorkOrders();
       return true;
     } catch (err: any) {
       console.error('Erro detalhado ao criar O.S.:', err);
-      // Se houver mensagem de erro do Supabase, logamos ela
       if (err.message) console.error('Mensagem Supabase:', err.message);
       return false;
     }

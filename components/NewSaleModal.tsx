@@ -1915,9 +1915,12 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
               deliveryDeadline: deliveryDeadline || initialData.deliveryDeadline,
               ...g,
             })));
+            
             if (success) {
               setShowGenerateOS(false);
               alert(`${groups.length} O.S. gerada(s) com sucesso!`);
+            } else {
+              alert('Erro ao gerar O.S. Verifique os dados e tente novamente. Se o problema persistir, contate o suporte.');
             }
           }}
           onClose={() => setShowGenerateOS(false)}
