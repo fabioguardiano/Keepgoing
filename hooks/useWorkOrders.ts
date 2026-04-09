@@ -277,8 +277,6 @@ export const useWorkOrders = (companyId?: string) => {
       to_phase: toPhase,
       user_name: userName,
     });
-
-    await fetchWorkOrders();
   };
 
   const updateDeliveryDate = async (id: string, newDate: string, justification: string, authorizedBy: string) => {
@@ -299,7 +297,6 @@ export const useWorkOrders = (companyId?: string) => {
     });
 
     setWorkOrders(prev => prev.map(w => w.id === id ? { ...w, deliveryDate: newDate } : w));
-    await fetchWorkOrders();
   };
 
   const updateWorkOrder = async (id: string, updates: Partial<Pick<WorkOrder, 'priority' | 'assignedUsers' | 'notes' | 'drawingUrl' | 'drawingUrls'>>) => {

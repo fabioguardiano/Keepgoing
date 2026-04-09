@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Image as ImageIcon, Calendar, ChevronLeft, ChevronRight, Clock, Maximize2, Minimize2 } from 'lucide-react';
 import { WorkOrder, PhaseConfig, AppUser, SalesOrder } from '../types';
@@ -455,11 +455,10 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
   }, []);
 
   // Sync selectedWorkOrder whenever workOrders updates (add/delete drawing, phase change, etc.)
-  useEffect(() => {
-    if (!selectedWorkOrder) return;
-    const updated = workOrders.find(w => w.id === selectedWorkOrder.id);
-    if (updated) setSelectedWorkOrder(updated);
-  }, [workOrders]);
+  const syncedSelectedWO = useMemo(() => {
+    if (!selectedWorkOrder) return null;
+    return workOrders.find(w => w.id === selectedWorkOrder.id) ?? selectedWorkOrder;
+  }, [workOrders, selectedWorkOrder]);
 
   const firstPhaseName = phases[0]?.name || '';
 
@@ -605,9 +604,9 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
         </div>
       </div>
 
-      {selectedWorkOrder && (
+      {syncedSelectedWO && (
         <WorkOrderModal
-          workOrder={selectedWorkOrder}
+          workOrder={syncedSelectedWO}
           allWorkOrders={workOrders}
           phases={phases}
           appUsers={appUsers}
