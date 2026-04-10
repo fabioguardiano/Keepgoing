@@ -41,6 +41,7 @@ import { useCRMActivities } from './hooks/useCRMActivities';
 import { ActivityAlertProvider } from './contexts/ActivityAlertContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LiquidBackground } from './components/LiquidBackground';
+import { SecurityLayer } from './components/SecurityLayer';
 
 // Retry automático quando chunk falha por deploy (hash antigo não existe mais)
 const lazyRetry = <T,>(fn: () => Promise<T>): Promise<T> =>
@@ -900,52 +901,54 @@ const App: React.FC = () => {
       completeCRMActivity={completeCRMActivity}
       deleteCRMActivity={deleteCRMActivity}
     >
-    <LiquidBackground />
-    <div className="flex h-screen overflow-hidden relative z-10 transition-colors duration-500">
-      {idleWarning && (
-        <IdleWarningModal
-          secondsLeft={idleSecondsLeft}
-          onContinue={resetIdleTimer}
-          onLogout={handleLogout}
-        />
-      )}
-      {pendingReconciliation && (
-        <ReconciliationModal
-          data={pendingReconciliation.data}
-          onConfirm={(strategy, extraDueDate) => pendingReconciliation.resolve(strategy, extraDueDate)}
-          onCancel={pendingReconciliation.reject}
-          currentUser={appUsers.find(u => u.email === user?.email)?.name || user?.email || 'Sistema'}
-        />
-      )}
-      <Sidebar
-        isOpen={isSidebarOpen}
-        toggle={() => setIsSidebarOpen(!isSidebarOpen)}
-        currentView={currentView}
-        onViewChange={setCurrentView}
-        companyInfo={companyInfo}
-        exchangeRates={exchangeRates}
-        getAccess={getAccess}
-      />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <Header
-          user={appUsers.find(u => u.email === user?.email) || user!}
-          onLogout={handleLogout}
-          onSearch={setSearchQuery}
-          onToggleActivity={() => setIsHistoryOpen(!isHistoryOpen)}
-          authorizations={authorizations}
-          onApproveDiscount={(id, msg) => resolveAuthorization(id, 'approved', msg)}
-          onRejectDiscount={(id, msg) => resolveAuthorization(id, 'rejected', msg)}
-        />
-        <RecentActivity activities={activities} isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} currentUserName={user?.name || user?.email} />
-        <main className="flex-1 overflow-x-auto p-4 kanban-container">
-          <ErrorBoundary>
-            <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-8 h-8 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin" /></div>}>
-              {renderContent()}
-            </Suspense>
-          </ErrorBoundary>
-        </main>
-      </div>
-    </div>
+      <SecurityLayer user={user} appUsers={appUsers}>
+        <LiquidBackground />
+        <div className="flex h-screen overflow-hidden relative z-10 transition-colors duration-500">
+          {idleWarning && (
+            <IdleWarningModal
+              secondsLeft={idleSecondsLeft}
+              onContinue={resetIdleTimer}
+              onLogout={handleLogout}
+            />
+          )}
+          {pendingReconciliation && (
+            <ReconciliationModal
+              data={pendingReconciliation.data}
+              onConfirm={(strategy, extraDueDate) => pendingReconciliation.resolve(strategy, extraDueDate)}
+              onCancel={pendingReconciliation.reject}
+              currentUser={appUsers.find(u => u.email === user?.email)?.name || user?.email || 'Sistema'}
+            />
+          )}
+          <Sidebar
+            isOpen={isSidebarOpen}
+            toggle={() => setIsSidebarOpen(!isSidebarOpen)}
+            currentView={currentView}
+            onViewChange={setCurrentView}
+            companyInfo={companyInfo}
+            exchangeRates={exchangeRates}
+            getAccess={getAccess}
+          />
+          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <Header
+              user={appUsers.find(u => u.email === user?.email) || user!}
+              onLogout={handleLogout}
+              onSearch={setSearchQuery}
+              onToggleActivity={() => setIsHistoryOpen(!isHistoryOpen)}
+              authorizations={authorizations}
+              approveAuthorization={resolveAuthorization}
+              rejectAuthorization={resolveAuthorization}
+            />
+            <RecentActivity activities={activities} isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} currentUserName={user?.name || user?.email} />
+            <main className="flex-1 overflow-x-auto p-4 kanban-container">
+              <ErrorBoundary>
+                <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-8 h-8 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin" /></div>}>
+                  {renderContent()}
+                </Suspense>
+              </ErrorBoundary>
+            </main>
+          </div>
+        </div>
+      </SecurityLayer>
     </ActivityAlertProvider>
   );
 };

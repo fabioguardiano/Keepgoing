@@ -848,7 +848,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     onChange={(e) => setBlurMeasurements(e.target.checked)}
                     className="w-4 h-4 rounded text-[var(--primary-color)] focus:ring-[var(--primary-color)]"
                   />
-                  <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100 group-hover:text-black dark:group-hover:text-white transition-colors">
+                  <span className="text-[10px] font-bold text-slate-800 dark:text-slate-100 group-hover:text-black dark:group-hover:text-white transition-colors">
                     Ocultar Medidas
                   </span>
                 </label>
@@ -860,7 +860,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     onChange={(e) => setHideM2Unit(e.target.checked)}
                     className="w-4 h-4 rounded text-[var(--primary-color)] focus:ring-[var(--primary-color)]"
                   />
-                  <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100 group-hover:text-black dark:group-hover:text-white transition-colors">
+                  <span className="text-[10px] font-bold text-slate-800 dark:text-slate-100 group-hover:text-black dark:group-hover:text-white transition-colors">
                     Ocultar M² / Unidade
                   </span>
                 </label>
@@ -872,22 +872,14 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     onChange={(e) => setHidePrices(e.target.checked)}
                     className="w-4 h-4 rounded text-[var(--primary-color)] focus:ring-[var(--primary-color)]"
                   />
-                  <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100 group-hover:text-black dark:group-hover:text-white transition-colors">
+                  <span className="text-[10px] font-bold text-slate-800 dark:text-slate-100 group-hover:text-black dark:group-hover:text-white transition-colors">
                     Ocultar Valores
                   </span>
                 </label>
                 <div className="w-px h-6 bg-slate-200 dark:bg-white/10"></div>
                 <button
-                  onClick={handlePrint}
-                  className="p-2 text-[var(--primary-color)] hover:bg-white dark:hover:bg-white/5 rounded-xl transition-all flex items-center gap-1.5 font-bold text-[11px]"
-                  title="Imprimir Orçamento"
-                >
-                  <Printer size={15} /> Imprimir
-                </button>
-                <div className="w-px h-6 bg-slate-200 dark:bg-white/10"></div>
-                <button
                   onClick={() => syncPricesWithMaterials()}
-                  className="p-2 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-white/5 rounded-xl transition-all flex items-center gap-1.5 font-bold text-[11px]"
+                  className="p-2 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-white/5 rounded-xl transition-all flex items-center gap-1.5 font-bold text-[10px]"
                   title="Sincronizar preços com o cadastro de materiais"
                 >
                   <RotateCcw size={15} /> Atualizar Preços
@@ -897,13 +889,21 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     <div className="w-px h-6 bg-slate-200 dark:bg-white/10"></div>
                     <button
                       onClick={() => setShowGenerateOS(true)}
-                      className="p-2 text-emerald-600 hover:bg-white dark:hover:bg-white/5 rounded-xl transition-all flex items-center gap-1.5 font-bold text-[11px]"
+                      className="p-2 text-emerald-600 hover:bg-white dark:hover:bg-white/5 rounded-xl transition-all flex items-center gap-1.5 font-bold text-[10px]"
                       title="Gerar Ordens de Serviço de Produção"
                     >
                       <ClipboardList size={15} /> Gerar O.S.
                     </button>
                   </>
                 )}
+                <div className="w-px h-6 bg-slate-200 dark:bg-white/10"></div>
+                <button
+                  onClick={handlePrint}
+                  className="p-2 text-[var(--primary-color)] hover:bg-white dark:hover:bg-white/5 rounded-xl transition-all flex items-center gap-1.5 font-bold text-[10px]"
+                  title="Imprimir Orçamento"
+                >
+                  <Printer size={15} /> Imprimir
+                </button>
               </div>
             )}
             <button onClick={handleCloseAttempt} className="p-3 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-white dark:hover:bg-white/5 rounded-2xl transition-all shadow-sm">
@@ -1126,6 +1126,42 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
             {/* Section 2: Items Grouped by Environment */}
             <DragDropContext onDragEnd={onDragEnd}>
             <div className="space-y-4">
+              {/* Add New Environment */}
+              <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-white/5 rounded-2xl border border-dashed border-slate-200 dark:border-white/10 shadow-sm">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    ref={newEnvRef}
+                    placeholder="Nome do Novo Ambiente (ex: Lavanderia, Suíte Master...)"
+                    value={newEnvironmentName}
+                    onChange={e => setNewEnvironmentName(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && newEnvironmentName.trim()) {
+                        const envName = newEnvironmentName.trim();
+                        setActiveEnvironment(envName);
+                        setNewEnvironmentName('');
+                        // Focus the first item field of the newly created environment table
+                        setTimeout(() => itemDescRef.current?.focus(), 100);
+                      }
+                    }}
+                    className="w-full p-2.5 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl outline-none font-bold text-sm text-slate-800 dark:text-white focus:border-[var(--primary-color)] transition-all shadow-inner"
+                  />
+                </div>
+                <button
+                  onClick={() => {
+                    if (newEnvironmentName.trim()) {
+                      const envName = newEnvironmentName.trim();
+                      setActiveEnvironment(envName);
+                      setNewEnvironmentName('');
+                      setTimeout(() => itemDescRef.current?.focus(), 100);
+                    }
+                  }}
+                  className="px-5 py-2.5 bg-white dark:bg-white/5 text-[var(--primary-color)] border border-orange-100 dark:border-white/10 rounded-xl font-black text-sm hover:bg-orange-50 dark:hover:bg-white/10 transition-all flex items-center gap-2 shadow-sm"
+                >
+                  <PlusCircle size={16} /> Criar Ambiente
+                </button>
+              </div>
+
               {environments.map((env) => {
                 const envItems = items.filter(i => (i.environment || 'Sem Ambiente') === env);
                 const envTotal = envItems.reduce((acc, i) => acc + i.totalPrice, 0);
@@ -1142,28 +1178,28 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                             <div className="flex items-center gap-1 opacity-0 group-hover/header:opacity-100 transition-opacity">
                               <button
                                 onClick={() => syncPricesWithMaterials(env)}
-                                className="p-1.5 text-black hover:text-black hover:bg-blue-50 rounded-lg transition-all"
+                                className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-[var(--primary-color)] hover:bg-blue-50 dark:hover:bg-white/5 rounded-lg transition-all"
                                 title="Atualizar preços deste ambiente"
                               >
                                 <RotateCcw size={14} />
                               </button>
                               <button
                                 onClick={() => renameEnvironment(env === 'Sem Ambiente' ? '' : env)}
-                                className="p-1.5 text-black hover:text-black hover:bg-blue-50 rounded-lg transition-all"
+                                className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-[var(--primary-color)] hover:bg-blue-50 dark:hover:bg-white/5 rounded-lg transition-all"
                                 title="Renomear Ambiente"
                               >
                                 <Pencil size={14} />
                               </button>
                               <button
                                 onClick={() => duplicateEnvironment(env === 'Sem Ambiente' ? '' : env)}
-                                className="p-1.5 text-black hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all"
+                                className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-white/5 rounded-lg transition-all"
                                 title="Duplicar Ambiente"
                               >
                                 <Copy size={14} />
                               </button>
                               <button
                                 onClick={() => deleteEnvironment(env === 'Sem Ambiente' ? '' : env)}
-                                className="p-1.5 text-black hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-white/5 rounded-lg transition-all"
                                 title="Excluir Ambiente"
                               >
                                 <Trash2 size={14} />
@@ -1260,7 +1296,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                       <td className="px-3 py-3 text-center text-[10px] whitespace-nowrap w-[80px]">
                                         <div className="flex flex-col items-center">
                                           <span className="font-bold text-slate-800 dark:text-slate-200">{Number(item.servicePercentage || 0).toFixed(2)}%</span>
-                                          <span className="text-[9px] font-black text-black">
+                                          <span className="text-[9px] font-black text-slate-900 dark:text-slate-100">
                                             {(() => {
                                               const bTotal = (item.m2 || item.quantity) ? ((item.m2 || 0) > 0 ? (item.m2 || 0) * item.unitPrice : item.quantity * item.unitPrice) : 0;
                                               return `R$ ${(bTotal * ((item.servicePercentage || 0) / 100)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -1467,41 +1503,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 );
               })}
 
-              {/* Add New Environment */}
-              <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-white/5 rounded-2xl border border-dashed border-slate-200 dark:border-white/10 shadow-sm">
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    ref={newEnvRef}
-                    placeholder="Nome do Novo Ambiente (ex: Lavanderia, Suíte Master...)"
-                    value={newEnvironmentName}
-                    onChange={e => setNewEnvironmentName(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && newEnvironmentName.trim()) {
-                        const envName = newEnvironmentName.trim();
-                        setActiveEnvironment(envName);
-                        setNewEnvironmentName('');
-                        // Focus the first item field of the newly created environment table
-                        setTimeout(() => itemDescRef.current?.focus(), 100);
-                      }
-                    }}
-                    className="w-full p-2.5 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl outline-none font-bold text-sm text-slate-800 dark:text-white focus:border-[var(--primary-color)] transition-all shadow-inner"
-                  />
-                </div>
-                <button
-                  onClick={() => {
-                    if (newEnvironmentName.trim()) {
-                      const envName = newEnvironmentName.trim();
-                      setActiveEnvironment(envName);
-                      setNewEnvironmentName('');
-                      setTimeout(() => itemDescRef.current?.focus(), 100);
-                    }
-                  }}
-                  className="px-5 py-2.5 bg-white dark:bg-white/5 text-[var(--primary-color)] border border-orange-100 dark:border-white/10 rounded-xl font-black text-sm hover:bg-orange-50 dark:hover:bg-white/10 transition-all flex items-center gap-2 shadow-sm"
-                >
-                  <PlusCircle size={16} /> Criar Ambiente
-                </button>
-              </div>
+
             </div>
           </DragDropContext>
 
@@ -1524,7 +1526,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   <span className="font-black text-xs">R$ {(subtotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <label className="text-[9px] font-black text-black uppercase whitespace-nowrap">Frete / Entrega (R$)</label>
+                  <label className="text-[9px] font-black text-slate-800 dark:text-slate-300 uppercase whitespace-nowrap">Frete / Entrega (R$)</label>
                   <input
                     type="text"
                     value={deliveryFee > 0 ? deliveryFee.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : ''}
@@ -1538,7 +1540,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex-1">
-                    <label className="text-[9px] font-black text-black uppercase mb-1 block">Desconto (%)</label>
+                    <label className="text-[9px] font-black text-slate-800 dark:text-slate-300 uppercase mb-1 block">Desconto (%)</label>
                     <input 
                       type="number" 
                       step="0.01"
@@ -1557,7 +1559,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     />
                   </div>
                   <div className="flex-1">
-                    <label className="text-[9px] font-black text-black uppercase mb-1 block font-premium">Valor Desconto (R$)</label>
+                    <label className="text-[9px] font-black text-slate-800 dark:text-slate-300 uppercase mb-1 block font-premium">Valor Desconto (R$)</label>
                     <input 
                       type="text" 
                       value={discountValue > 0 ? discountValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : ''}
@@ -1591,8 +1593,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 )}
                 <div className="pt-4 border-t border-slate-100 dark:border-white/10 flex justify-between items-end">
                   <div>
-                    <span className="text-[9px] font-black text-black uppercase tracking-widest block mb-0.5">Total Geral</span>
-                    <p className="text-xl font-black text-black tracking-tight">R$ {(totalGeral || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    <span className="text-[9px] font-black text-slate-900 dark:text-white uppercase tracking-widest block mb-0.5">Total Geral</span>
+                    <p className="text-xl font-black text-slate-900 dark:text-white tracking-tight">R$ {(totalGeral || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   </div>
                   {isLocked ? (
                     <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 rounded-xl text-emerald-600 dark:text-emerald-400 text-[10px] font-black">

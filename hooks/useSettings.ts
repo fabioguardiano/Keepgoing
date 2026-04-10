@@ -69,6 +69,7 @@ export const useSettings = (
               company_id: row.company_id,
               createdAt: row.created_at || new Date().toISOString().slice(0, 10),
               avatarUrl: row.avatar_url || undefined,
+              isSecurityRequired: row.is_security_required ?? true,
             };
           });
           setAppUsers(mapped);
@@ -431,6 +432,7 @@ export const useSettings = (
           company_id: userCompanyId,
           created_at: u.createdAt || new Date().toISOString().slice(0, 10),
           avatar_url: u.avatarUrl || null,
+          is_security_required: u.isSecurityRequired ?? true,
         });
       } catch (err) {
         console.error('[handleSaveUser] Erro ao persistir app_user novo:', err);
@@ -484,6 +486,7 @@ export const useSettings = (
         company_id: u.company_id || userCompanyId,
         created_at: u.createdAt || new Date().toISOString().slice(0, 10),
         avatar_url: u.avatarUrl || null,
+        is_security_required: u.isSecurityRequired ?? true,
       });
       if (error) {
         console.error('[handleSaveUser] Erro ao atualizar app_user:', error);

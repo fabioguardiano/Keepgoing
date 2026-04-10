@@ -111,6 +111,7 @@ export interface AppUser {
   company_id?: string;
   createdAt: string;
   avatarUrl?: string;
+  isSecurityRequired?: boolean;
 }
 
 export interface ProductionStaff {

@@ -84,12 +84,12 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[var(--primary-color)] p-1.5 bg-orange-50 rounded-xl">
+            <span className="text-[var(--primary-color)] p-1.5 bg-orange-50 dark:bg-orange-500/10 rounded-xl">
               {getCategoryIcon()}
             </span>
-            <h1 className="text-2xl font-black text-slate-800 tracking-tight">{category}</h1>
+            <h1 className="management-title">{category}</h1>
           </div>
-          <p className="text-slate-500 font-medium">Gestão técnica e precificação de itens</p>
+          <p className="management-subtitle">Gestão técnica e precificação de itens</p>
         </div>
         <button 
           onClick={handleAddNew}
@@ -99,13 +99,14 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
         </button>
       </div>
 
-      <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4">
+      {/* Search Header */}
+      <div className="management-header-card flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input 
             type="text"
             placeholder="Buscar por descrição, código ou grupo..."
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/20 font-medium text-sm"
+            className="management-input w-full pl-12 pr-4 py-3"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -127,17 +128,17 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
         </button>
       </div>
 
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="management-container overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/50 border-b border-slate-100">
+              <tr className="bg-slate-50/50 dark:bg-white/5 border-b border-slate-100 dark:border-white/5">
                 <th onClick={() => handleSort('code')} className="px-6 py-4 cursor-pointer group hover:bg-slate-100/50 transition-colors w-32">
                   <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
                     Código <SortIcon field="code" />
                   </div>
                 </th>
-                <th onClick={() => handleSort('description')} className="px-6 py-4 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                <th onClick={() => handleSort('description')} className="px-6 py-4 cursor-pointer group hover:bg-slate-100/50 dark:hover:bg-white/5 transition-colors">
                   <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
                     Descrição do Item <SortIcon field="description" />
                   </div>
@@ -160,11 +161,11 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-50 dark:divide-white/5">
               {filteredAndSortedProducts.map(product => (
-                <tr key={product.id} className="hover:bg-slate-50/50 transition-colors group">
+                <tr key={product.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors group">
                   <td className="px-6 py-4">
-                    <span className="text-xs font-black text-slate-400 bg-slate-100 px-2 py-1 rounded-lg">
+                    <span className="text-xs font-black text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-lg">
                       {product.code || String(filteredAndSortedProducts.indexOf(product) + 1).padStart(2, '0')}
                     </span>
                   </td>
@@ -180,7 +181,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                         </div>
                       )}
                       <div>
-                        <div className="text-sm font-black text-slate-800 leading-tight">{product.description}</div>
+                        <div className="text-sm font-black text-slate-800 dark:text-white leading-tight">{product.description}</div>
                         <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{product.brand || 'Marca não inf.'}</div>
                       </div>
                     </div>
@@ -198,7 +199,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                       <div className="text-[9px] font-black text-red-400 uppercase tracking-tighter">Abaixo do Mínimo ({product.minStock})</div>
                     )}
                   </td>
-                  <td className="px-6 py-4 font-black text-slate-700">
+                  <td className="px-6 py-4 font-black text-slate-700 dark:text-slate-300">
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.sellingPrice)}
                   </td>
                   <td className="px-6 py-4 text-right">

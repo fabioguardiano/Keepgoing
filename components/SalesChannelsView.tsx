@@ -72,8 +72,8 @@ export const SalesChannelsView: React.FC<SalesChannelsViewProps> = ({ channels, 
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Canais de Vendas</h1>
-          <p className="text-slate-500 font-medium">Gerencie a origem e canais de entrada dos seus pedidos</p>
+          <h1 className="management-title">Canais de Vendas</h1>
+          <p className="management-subtitle">Gerencie a origem e canais de entrada dos seus pedidos</p>
         </div>
         <button
           onClick={() => {
@@ -88,13 +88,13 @@ export const SalesChannelsView: React.FC<SalesChannelsViewProps> = ({ channels, 
       </div>
 
       {/* Search Header */}
-      <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4">
+      <div className="management-header-card flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input
             type="text"
             placeholder="Buscar canal..."
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium text-sm"
+            className="management-input w-full pl-12 pr-4 py-3"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -116,19 +116,19 @@ export const SalesChannelsView: React.FC<SalesChannelsViewProps> = ({ channels, 
         </button>
       </div>
 
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="management-container overflow-hidden">
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100">
+              <tr className="bg-slate-50/50 dark:bg-white/5 border-b border-slate-100 dark:border-white/5">
                 <th onClick={() => handleSort('id')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
                   <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">Cód <SortIcon field="id" /></div>
                 </th>
-                <th onClick={() => handleSort('name')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                <th onClick={() => handleSort('name')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 dark:hover:bg-white/5 transition-colors">
                   <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">Descrição <SortIcon field="name" /></div>
                 </th>
-                <th onClick={() => handleSort('createdAt')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
+                <th onClick={() => handleSort('createdAt')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 dark:hover:bg-white/5 transition-colors">
                   <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">Data Cadastro <SortIcon field="createdAt" /></div>
                 </th>
                 <th className="px-6 py-5 text-right">
@@ -136,9 +136,9 @@ export const SalesChannelsView: React.FC<SalesChannelsViewProps> = ({ channels, 
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-50 dark:divide-white/5">
               {filteredChannels.map((channel, index) => (
-                <tr key={channel.id} className={`hover:bg-slate-50/50 transition-colors group ${channel.status === 'inativo' ? 'opacity-60' : ''}`}>
+                <tr key={channel.id} className={`hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors group ${channel.status === 'inativo' ? 'opacity-60' : ''}`}>
                   <td className="px-6 py-5">
                     <span className="text-sm font-black text-primary bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20 shadow-sm">
                       #{channel.code ?? index + 1}
@@ -146,7 +146,7 @@ export const SalesChannelsView: React.FC<SalesChannelsViewProps> = ({ channels, 
                   </td>
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-black text-slate-800">{channel.name}</span>
+                      <span className="text-sm font-black text-slate-800 dark:text-white">{channel.name}</span>
                       {channel.status === 'inativo' && (
                         <span className="text-[10px] font-bold bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full uppercase tracking-wider">Inativo</span>
                       )}
@@ -192,13 +192,13 @@ export const SalesChannelsView: React.FC<SalesChannelsViewProps> = ({ channels, 
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[3000] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-[32px] w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="management-modal rounded-[32px] w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-bold text-slate-800 dark:text-white">
                   {editingChannel ? 'Editar Canal' : 'Novo Canal'}
                 </h3>
-                <p className="text-slate-500 text-sm">Preencha o nome do canal</p>
+                <p className="management-subtitle text-sm">Preencha o nome do canal</p>
               </div>
               <button 
                 onClick={() => setIsModalOpen(false)}
@@ -213,7 +213,7 @@ export const SalesChannelsView: React.FC<SalesChannelsViewProps> = ({ channels, 
                 <label className={labelClass}>Código</label>
                 <input
                   readOnly
-                  className={`${inputClass} cursor-not-allowed opacity-60`}
+                  className="management-input w-full px-4 py-3 bg-slate-100 dark:bg-slate-800/50 cursor-not-allowed opacity-60"
                   value={editingChannel?.code ?? (channels.reduce((max, x) => Math.max(max, x.code ?? 0), 0) + 1)}
                 />
               </div>
@@ -221,7 +221,7 @@ export const SalesChannelsView: React.FC<SalesChannelsViewProps> = ({ channels, 
                 <label className={labelClass}>Nome do Canal</label>
                 <input
                   required
-                  className={inputClass}
+                  className="management-input w-full px-4 py-3"
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Ex: Facebook, Parceria Arquiteto X..."

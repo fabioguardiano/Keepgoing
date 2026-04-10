@@ -405,35 +405,48 @@ export const PermissionsTab: React.FC<Props> = ({
                 <p className="text-sm font-bold text-slate-800 truncate">{user.name}</p>
                 <p className="text-xs text-slate-400">{user.email}</p>
               </div>
-              <select
-                value={user.profileId ?? ''}
-                onChange={e => {
-                  const pid = e.target.value;
-                  let nextRole = user.role;
-                  const profile = profiles.find(p => p.id === pid);
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onSaveUser({ ...user, isSecurityRequired: !user.isSecurityRequired })}
+                  title={user.isSecurityRequired ? "Proteção de Interface ATIVA" : "Proteção de Interface DESATIVADA"}
+                  className={`p-2 rounded-lg transition-all border-2 flex items-center justify-center ${
+                    user.isSecurityRequired
+                      ? 'bg-primary/10 border-primary/20 text-primary'
+                      : 'bg-slate-50 border-slate-200 text-slate-400 opacity-60'
+                  }`}
+                >
+                  <ShieldCheck size={18} />
+                </button>
+                <select
+                  value={user.profileId ?? ''}
+                  onChange={e => {
+                    const pid = e.target.value;
+                    let nextRole = user.role;
+                    const profile = profiles.find(p => p.id === pid);
 
-                  if (pid.startsWith('profile-')) {
-                    const r = pid.replace('profile-', '') as any;
-                    if (['admin', 'manager', 'seller', 'driver', 'viewer'].includes(r)) {
-                      nextRole = r;
+                    if (pid.startsWith('profile-')) {
+                      const r = pid.replace('profile-', '') as any;
+                      if (['admin', 'manager', 'seller', 'driver', 'viewer'].includes(r)) {
+                        nextRole = r;
+                      }
+                    } else if (profile?.name.toLowerCase().includes('medidor') || profile?.name.toLowerCase().includes('entregador')) {
+                      nextRole = 'driver';
+                    } else if (profile?.name.toLowerCase().includes('vendedor')) {
+                      nextRole = 'seller';
+                    } else if (profile?.name.toLowerCase().includes('gerente')) {
+                      nextRole = 'manager';
                     }
-                  } else if (profile?.name.toLowerCase().includes('medidor') || profile?.name.toLowerCase().includes('entregador')) {
-                    nextRole = 'driver';
-                  } else if (profile?.name.toLowerCase().includes('vendedor')) {
-                    nextRole = 'seller';
-                  } else if (profile?.name.toLowerCase().includes('gerente')) {
-                    nextRole = 'manager';
-                  }
 
-                  onSaveUser({ ...user, profileId: pid || undefined, role: nextRole });
-                }}
-                className="text-xs font-bold border border-slate-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-700 min-w-[160px]"
-              >
-                <option value="">— Sem perfil (role padrão) —</option>
-                {profiles.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
+                    onSaveUser({ ...user, profileId: pid || undefined, role: nextRole });
+                  }}
+                  className="text-xs font-bold border border-slate-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-700 min-w-[160px]"
+                >
+                  <option value="">— Sem perfil (role padrão) —</option>
+                  {profiles.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           ))}
         </div>

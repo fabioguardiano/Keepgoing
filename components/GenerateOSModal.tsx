@@ -396,9 +396,7 @@ export const GenerateOSModal: React.FC<Props> = ({ sale, existingOSMap, onConfir
                                   {(item.m2 || 0) > 0 && (
                                     <span className="font-black text-slate-600 dark:text-slate-300">{fmtM2(item.m2!)}</span>
                                   )}
-                                  {item.quantity > 1 && (
-                                    <span className="bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded font-bold">{item.quantity}x</span>
-                                  )}
+                                  <span className="bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded font-bold">{item.quantity} pçs</span>
                                 </div>
                               </button>
                             );
@@ -486,9 +484,7 @@ export const GenerateOSModal: React.FC<Props> = ({ sale, existingOSMap, onConfir
                                           ) : (item.length || 0) > 0 && (
                                             <span className="font-black text-slate-600 dark:text-slate-300">{fmtLin(item.quantity * item.length!)}</span>
                                           )}
-                                          {item.quantity > 1 && (
-                                            <span className="bg-slate-200 dark:bg-slate-600 px-1.5 py-0.5 rounded font-bold">{item.quantity}x</span>
-                                          )}
+                                          <span className="bg-slate-200 dark:bg-slate-600 px-1.5 py-0.5 rounded font-bold">{item.quantity} pçs</span>
                                         </div>
                                         <button
                                           onClick={() => removeItemFromGroup(group.id, item.id)}

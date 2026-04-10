@@ -193,7 +193,7 @@ export const ServiceGroupsView: React.FC<ServiceGroupsViewProps> = ({ groups, on
             </thead>
             <tbody className="divide-y divide-slate-50 dark:divide-white/5">
               {filteredGroups.map((group) => (
-                <tr key={group.id} className={`hover:bg-slate-50/50 transition-colors group ${group.status === 'inativo' ? 'opacity-60' : ''}`}>
+                <tr key={group.id} className={`hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors group ${group.status === 'inativo' ? 'opacity-60' : ''}`}>
                   <td className="px-6 py-5">
                     <span className="text-sm font-black text-primary bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20 shadow-sm">
                       #{group.code}
@@ -273,7 +273,7 @@ export const ServiceGroupsView: React.FC<ServiceGroupsViewProps> = ({ groups, on
                   <input
                     required
                     readOnly
-                    className={`${inputClass} bg-slate-100 dark:bg-slate-800 cursor-not-allowed`}
+                    className="management-input w-full px-4 py-3 bg-slate-100 dark:bg-slate-800/50 cursor-not-allowed"
                     value={formData.code}
                     onChange={e => setFormData({ ...formData, code: e.target.value })}
                   />
@@ -406,7 +406,7 @@ export const ServiceGroupsView: React.FC<ServiceGroupsViewProps> = ({ groups, on
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-3 bg-[var(--primary-color)] hover:opacity-90 text-white rounded-xl font-bold shadow-lg shadow-[var(--primary-color)]/20 transition-all active:scale-95 font-bold"
+                  className="flex-1 px-6 py-3 bg-[var(--primary-color)] hover:opacity-90 text-white rounded-xl font-bold shadow-lg shadow-[var(--primary-color)]/20 transition-all active:scale-95 uppercase text-xs tracking-widest"
                 >
                   Salvar Grupo
                 </button>

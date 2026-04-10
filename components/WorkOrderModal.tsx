@@ -433,6 +433,10 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
                                 <div className="flex-1 pr-2">
                                   <div className="font-medium text-gray-800">{item.description}</div>
                                   <div className="text-gray-500 text-[10px] flex gap-1.5 mt-0.5">
+                                    <span className="bg-orange-100 text-orange-700 px-1.5 rounded flex items-center gap-1 font-bold">
+                                      <Package className="w-2.5 h-2.5" />
+                                      {item.quantity} {item.quantity > 1 ? 'pçs' : 'pç'}
+                                    </span>
                                     {fmtDim(item) && (
                                       <span className="bg-gray-100 px-1 rounded flex items-center gap-1">
                                         <Ruler className="w-2.5 h-2.5" />

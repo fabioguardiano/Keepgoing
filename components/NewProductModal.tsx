@@ -141,10 +141,11 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-white w-full max-w-3xl rounded-[32px] shadow-2xl overflow-hidden border border-slate-100">
-        <div className="bg-[var(--primary-color)] p-6 text-white flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
+      <div className="management-modal w-full max-w-3xl rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="bg-[var(--primary-color)] p-6 text-white flex justify-between items-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent pointer-events-none" />
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md border border-white/20">
               <Calculator size={24} />
             </div>
             <div>
@@ -152,7 +153,7 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
               <p className="text-white/70 text-xs font-bold uppercase tracking-wider">{formData.type}</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 relative z-10">
             <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-xl backdrop-blur-md border border-white/10">
               <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">Status:</span>
               <select 
@@ -170,7 +171,7 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
           </div>
         </div>
 
-        <div className="px-8 flex border-b border-slate-100 bg-white">
+        <div className="px-8 flex border-b border-slate-100 dark:border-white/5 bg-white/50 dark:bg-black/20 backdrop-blur-md">
           {[
             { id: 'geral', label: 'Dados Básicos', icon: Box },
             { id: 'precos', label: 'Formação de Preço', icon: TrendingUp },
@@ -189,24 +190,24 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
           ))}
         </div>
 
-        <form onSubmit={handleSubmit} className="p-8 max-h-[65vh] overflow-y-auto custom-scrollbar bg-white">
+        <form onSubmit={handleSubmit} className="p-8 max-h-[65vh] overflow-y-auto custom-scrollbar">
           {activeTab === 'geral' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="md:col-span-1">
                   <label className={labelClass}>Código</label>
-                  <input required readOnly className={`${inputClass} bg-slate-100 cursor-not-allowed`} value={formData.code} onChange={() => {}} />
+                  <input required readOnly className="management-input w-full px-4 py-2.5 bg-slate-100 dark:bg-white/5 cursor-not-allowed" value={formData.code} />
                 </div>
                 <div className="md:col-span-2">
                   <label className={labelClass}>Grupo de Produto</label>
                   <select 
-                    className={inputClass}
+                    className="management-input w-full px-4 py-2.5"
                     value={formData.group}
                     onChange={e => setFormData({...formData, group: e.target.value})}
                   >
-                    <option value="">Selecione um grupo...</option>
+                    <option value="" className="dark:bg-slate-900">Selecione um grupo...</option>
                     {productGroups.map(group => (
-                      <option key={group.code} value={group.description}>
+                      <option key={group.code} value={group.description} className="dark:bg-slate-900">
                         {group.code} - {group.description}
                       </option>
                     ))}
@@ -214,22 +215,22 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
                 </div>
                 <div className="md:col-span-1">
                   <label className={labelClass}>Nº Fabricante</label>
-                  <input className={inputClass} value={formData.manufacturerNumber || ''} onChange={e => setFormData({...formData, manufacturerNumber: e.target.value})} />
+                  <input className="management-input w-full px-4 py-2.5" value={formData.manufacturerNumber || ''} onChange={e => setFormData({...formData, manufacturerNumber: e.target.value})} />
                 </div>
                 <div className="md:col-span-4">
                   <label className={labelClass}>Descrição do Produto / Serviço</label>
-                  <input required className={inputClass} placeholder="EX: CUBA DE LOUCA EMBUTIR RETANGULAR BRANCA..." value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+                  <input required className="management-input w-full px-4 py-2.5" placeholder="EX: CUBA DE LOUCA EMBUTIR RETANGULAR BRANCA..." value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
                 </div>
                 <div className="md:col-span-2">
                   <label className={labelClass}>Marca</label>
                   <select 
-                    className={inputClass}
+                    className="management-input w-full px-4 py-2.5"
                     value={formData.brand || ''}
                     onChange={e => setFormData({...formData, brand: e.target.value})}
                   >
-                    <option value="">Selecione uma marca...</option>
+                    <option value="" className="dark:bg-slate-900">Selecione uma marca...</option>
                     {brands.map(brand => (
-                      <option key={brand.code} value={brand.description}>
+                      <option key={brand.code} value={brand.description} className="dark:bg-slate-900">
                         {brand.code} - {brand.description}
                       </option>
                     ))}
@@ -237,27 +238,27 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
                 </div>
                 <div>
                   <label className={labelClass}>Unidade</label>
-                  <select required className={inputClass} value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})}>
+                  <select required className="management-input w-full px-4 py-2.5" value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})}>
                     {UNITS.map(u => (
-                      <option key={u.value} value={u.value}>{u.label} — {u.description}</option>
+                      <option key={u.value} value={u.value} className="dark:bg-slate-900">{u.label} — {u.description}</option>
                     ))}
                   </select>
                 </div>
                 <div className="grid grid-cols-2 gap-4 md:col-span-1">
                   <div>
                     <label className={labelClass}>Estoque</label>
-                    <input type="number" className={inputClass} value={formData.stockBalance} onChange={e => setFormData({...formData, stockBalance: Number(e.target.value)})} />
+                    <input type="number" className="management-input w-full px-4 py-2.5" value={formData.stockBalance} onChange={e => setFormData({...formData, stockBalance: Number(e.target.value)})} />
                   </div>
                   <div>
                     <label className={labelClass}>Mínimo</label>
-                    <input type="number" className={inputClass} value={formData.minStock} onChange={e => setFormData({...formData, minStock: Number(e.target.value)})} />
+                    <input type="number" className="management-input w-full px-4 py-2.5" value={formData.minStock} onChange={e => setFormData({...formData, minStock: Number(e.target.value)})} />
                   </div>
                 </div>
-                <div className="md:col-span-4 p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
+                <div className="md:col-span-4 p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-dashed border-slate-300 dark:border-white/10">
                   <label className={labelClass}>Foto da Matéria Prima / Produto</label>
                   <div className="flex items-center gap-6">
                     <div className="relative group">
-                      <div className="w-32 h-32 bg-white rounded-2xl border border-slate-200 flex items-center justify-center overflow-hidden shadow-inner font-black text-slate-200 uppercase text-[10px] tracking-widest">
+                      <div className="w-32 h-32 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-white/10 flex items-center justify-center overflow-hidden shadow-inner font-black text-slate-200 dark:text-slate-700 uppercase text-[10px] tracking-widest">
                         {formData.imageUrl ? (
                           <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" />
                         ) : (
@@ -278,8 +279,8 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
                       )}
                     </div>
                     <div className="flex-1">
-                      <p className="text-[11px] text-slate-500 mb-3 font-medium">Use fotos nítidas para facilitar a identificação em orçamentos e pedidos. Formatos aceitos: JPG, PNG. Máx: 2MB.</p>
-                      <label className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 cursor-pointer hover:bg-slate-50 transition-all shadow-sm">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3 font-medium">Use fotos nítidas para facilitar a identificação em orçamentos e pedidos. Formatos aceitos: JPG, PNG. Máx: 2MB.</p>
+                      <label className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-600 dark:text-white cursor-pointer hover:bg-slate-50 dark:hover:bg-white/20 transition-all shadow-sm">
                         <span>Escolher Imagem</span>
                         <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                       </label>
@@ -294,53 +295,53 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
               {/* Cost Section */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="p-6 bg-slate-50 rounded-[24px] border border-slate-100 space-y-4">
-                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <div className="p-6 bg-slate-50 dark:bg-white/5 rounded-[24px] border border-slate-100 dark:border-white/5 space-y-4">
+                  <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
                     <Layers size={14} /> Custos de Entrada
                   </h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className={labelClass}>Custo Unitário (R$)</label>
-                      <input type="text" inputMode="decimal" className={inputClass} value={brlDisplay.unitCost}
+                      <input type="text" inputMode="decimal" className="management-input w-full px-4 py-2.5" value={brlDisplay.unitCost}
                         onChange={e => { const r = e.target.value.replace(/[^0-9,]/g,''); setBrlDisplay(p=>({...p,unitCost:r})); setFormData(p=>({...p,unitCost:parseBRL(r)})); }}
                         onBlur={() => setBrlDisplay(p=>({...p,unitCost:fmtBRL(formData.unitCost)}))} />
                     </div>
                     <div>
                       <label className={labelClass}>Frete (R$)</label>
-                      <input type="text" inputMode="decimal" className={inputClass} value={brlDisplay.freight}
+                      <input type="text" inputMode="decimal" className="management-input w-full px-4 py-2.5" value={brlDisplay.freight}
                         onChange={e => { const r = e.target.value.replace(/[^0-9,]/g,''); setBrlDisplay(p=>({...p,freight:r})); setFormData(p=>({...p,freight:parseBRL(r)})); }}
                         onBlur={() => setBrlDisplay(p=>({...p,freight:fmtBRL(formData.freight)}))} />
                     </div>
                     <div>
                       <label className={labelClass}>Perdas (%)</label>
-                      <input type="number" className={inputClass} value={formData.lossPercentage} onChange={e => setFormData({...formData, lossPercentage: Number(e.target.value)})} />
+                      <input type="number" className="management-input w-full px-4 py-2.5" value={formData.lossPercentage} onChange={e => setFormData({...formData, lossPercentage: Number(e.target.value)})} />
                     </div>
                     <div>
                       <label className={labelClass}>Imposto (%)</label>
-                      <input type="number" className={inputClass} value={formData.taxPercentage} onChange={e => setFormData({...formData, taxPercentage: Number(e.target.value)})} />
+                      <input type="number" className="management-input w-full px-4 py-2.5" value={formData.taxPercentage} onChange={e => setFormData({...formData, taxPercentage: Number(e.target.value)})} />
                     </div>
                   </div>
                 </div>
 
-                <div className="p-6 bg-orange-50/30 rounded-[24px] border border-orange-100 space-y-4">
-                  <h3 className="text-[10px] font-black text-orange-400 uppercase tracking-widest flex items-center gap-2">
+                <div className="p-6 bg-orange-50/30 dark:bg-orange-500/5 rounded-[24px] border border-orange-100 dark:border-orange-500/20 space-y-4">
+                  <h3 className="text-[10px] font-black text-orange-400 dark:text-orange-500 uppercase tracking-widest flex items-center gap-2">
                     <TrendingUp size={14} /> Margens e Venda
                   </h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className={labelClass}>Lucro Desejado (%)</label>
-                      <input type="number" className={inputClass} value={formData.profitMargin} onChange={e => setFormData({...formData, profitMargin: Number(e.target.value)})} />
+                      <input type="number" className="management-input w-full px-4 py-2.5" value={formData.profitMargin} onChange={e => setFormData({...formData, profitMargin: Number(e.target.value)})} />
                     </div>
                     <div>
                       <label className={labelClass}>Comissão (%)</label>
-                      <input type="number" className={inputClass} value={formData.commissionPercentage} onChange={e => setFormData({...formData, commissionPercentage: Number(e.target.value)})} />
+                      <input type="number" className="management-input w-full px-4 py-2.5" value={formData.commissionPercentage} onChange={e => setFormData({...formData, commissionPercentage: Number(e.target.value)})} />
                     </div>
                     <div className="col-span-2">
-                      <div className="bg-white p-4 rounded-xl border border-orange-100">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-4">Simulador de Resultado</label>
+                      <div className="bg-white/50 dark:bg-black/20 backdrop-blur-md p-4 rounded-xl border border-orange-100 dark:border-orange-500/20">
+                        <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-4">Simulador de Resultado</label>
                         <div className="flex justify-between items-end">
                           <div>
-                            <div className="text-[10px] font-bold text-slate-400 uppercase">Sugerido</div>
+                            <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Sugerido</div>
                             <div className="text-xl font-black text-[var(--primary-color)]">R$ {formData.suggestedPrice.toFixed(2)}</div>
                           </div>
                           <div className="text-right">
@@ -348,7 +349,7 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
                             <input
                               type="text"
                               inputMode="decimal"
-                              className="w-32 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-right font-black text-slate-800"
+                              className="w-32 px-3 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-right font-black text-slate-800 dark:text-white"
                               value={brlDisplay.sellingPrice}
                               onChange={e => { const r = e.target.value.replace(/[^0-9,]/g,''); setBrlDisplay(p=>({...p,sellingPrice:r})); setFormData(p=>({...p,sellingPrice:parseBRL(r)})); }}
                               onBlur={() => setBrlDisplay(p=>({...p,sellingPrice:fmtBRL(formData.sellingPrice)}))}
@@ -361,7 +362,7 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 p-4 bg-blue-50 text-blue-600 rounded-2xl border border-blue-100 text-[10px] font-bold">
+              <div className="flex items-center gap-2 p-4 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-2xl border border-blue-100 dark:border-blue-500/20 text-[10px] font-bold">
                 <Info size={16} />
                 O preço sugerido é calculado automaticamente com base no Markup técnico configurado.
               </div>
@@ -373,28 +374,28 @@ export const NewProductModal: React.FC<NewProductModalProps> = ({
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className={labelClass}>NCM (Classificação Fiscal)</label>
-                  <input className={inputClass} placeholder="0000.00.00" value={formData.nfeData?.ncm || ''} onChange={e => setFormData({...formData, nfeData: {...(formData.nfeData || {cfop: '', icms: 0, ipi: 0}), ncm: e.target.value}})} />
+                  <input className="management-input w-full px-4 py-2.5" placeholder="0000.00.00" value={formData.nfeData?.ncm || ''} onChange={e => setFormData({...formData, nfeData: {...(formData.nfeData || {cfop: '', icms: 0, ipi: 0}), ncm: e.target.value}})} />
                 </div>
                 <div>
                   <label className={labelClass}>CFOP Padrão</label>
-                  <input className={inputClass} placeholder="5102" value={formData.nfeData?.cfop || ''} onChange={e => setFormData({...formData, nfeData: {...(formData.nfeData || {ncm: '', icms: 0, ipi: 0}), cfop: e.target.value}})} />
+                  <input className="management-input w-full px-4 py-2.5" placeholder="5102" value={formData.nfeData?.cfop || ''} onChange={e => setFormData({...formData, nfeData: {...(formData.nfeData || {ncm: '', icms: 0, ipi: 0}), cfop: e.target.value}})} />
                 </div>
                 <div>
                   <label className={labelClass}>ICMS (%)</label>
-                  <input type="number" className={inputClass} value={formData.nfeData?.icms || 0} onChange={e => setFormData({...formData, nfeData: {...(formData.nfeData || {ncm: '', cfop: '', ipi: 0}), icms: Number(e.target.value)}})} />
+                  <input type="number" className="management-input w-full px-4 py-2.5" value={formData.nfeData?.icms || 0} onChange={e => setFormData({...formData, nfeData: {...(formData.nfeData || {ncm: '', cfop: '', ipi: 0}), icms: Number(e.target.value)}})} />
                 </div>
                 <div>
                   <label className={labelClass}>IPI (%)</label>
-                  <input type="number" className={inputClass} value={formData.nfeData?.ipi || 0} onChange={e => setFormData({...formData, nfeData: {...(formData.nfeData || {ncm: '', cfop: '', icms: 0}), ipi: Number(e.target.value)}})} />
+                  <input type="number" className="management-input w-full px-4 py-2.5" value={formData.nfeData?.ipi || 0} onChange={e => setFormData({...formData, nfeData: {...(formData.nfeData || {ncm: '', cfop: '', icms: 0}), ipi: Number(e.target.value)}})} />
                 </div>
               </div>
             </div>
           )}
         </form>
 
-        <div className="p-8 bg-slate-50 flex justify-end gap-4 border-t border-slate-100">
-          <button type="button" onClick={onClose} className="px-6 py-3 rounded-2xl font-bold text-slate-500 hover:bg-slate-200 transition-all">Cancelar</button>
-          <button onClick={handleSubmit} className="px-8 py-3 bg-[var(--primary-color)] text-white rounded-2xl font-black shadow-lg shadow-[var(--primary-color)]/20 hover:bg-[var(--secondary-color)] transition-all transform hover:scale-[1.02] active:scale-95">Salvar Cadastro Técnico</button>
+        <div className="p-8 bg-white/50 dark:bg-black/40 backdrop-blur-md flex justify-end gap-4 border-t border-slate-100 dark:border-white/5">
+          <button type="button" onClick={onClose} className="px-6 py-3 rounded-2xl font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 transition-all uppercase text-xs tracking-widest">Cancelar</button>
+          <button onClick={handleSubmit} className="px-8 py-3 bg-[var(--primary-color)] text-white rounded-2xl font-black shadow-lg shadow-[var(--primary-color)]/20 hover:bg-[var(--secondary-color)] transition-all transform hover:scale-[1.02] active:scale-95 uppercase text-xs tracking-widest">Salvar Cadastro Técnico</button>
         </div>
       </div>
     </div>
