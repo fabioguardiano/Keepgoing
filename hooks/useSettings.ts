@@ -409,7 +409,7 @@ export const useSettings = (
             signUpResult.error?.toLowerCase().includes('já possui uma conta')) {
           return 'Este email já possui uma conta cadastrada no sistema.';
         }
-        return 'Erro ao criar acesso. Verifique os dados e tente novamente.';
+        return signUpResult.error || 'Erro ao criar acesso. Verifique os dados e tente novamente.';
       }
 
       // Usa o ID do Auth do resultado do Admin API como ID do app_user para consistência

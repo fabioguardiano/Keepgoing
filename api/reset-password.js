@@ -128,8 +128,11 @@ export default async function handler(req, res) {
     if (action === 'update_email' && (!userId || !newEmail)) {
       return res.status(400).json({ error: 'Parâmetros insuficientes para troca de email.' });
     }
-    if (newPassword && newPassword.length < 8) {
-      return res.status(400).json({ error: 'A senha deve ter no mínimo 8 caracteres.' });
+    if (newPassword) {
+      const COMPLEXITY_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+      if (!COMPLEXITY_RE.test(newPassword)) {
+        return res.status(400).json({ error: 'A senha deve ter no mínimo 8 caracteres e incluir pelo menos uma letra maiúscula, uma minúscula e um número.' });
+      }
     }
     if (email && !EMAIL_RE.test(email)) {
       return res.status(400).json({ error: 'E-mail inválido.' });

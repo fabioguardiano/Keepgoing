@@ -98,7 +98,12 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, existingEmails, 
     e.preventDefault();
     if (emailDuplicate) return;
     setLoading(true);
-    setError(null);
+    const COMPLEXITY_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (password && !COMPLEXITY_RE.test(password)) {
+      setError('A senha deve ter no mínimo 8 caracteres e incluir pelo menos uma letra maiúscula, uma minúscula e um número.');
+      setLoading(false);
+      return;
+    }
 
     const err = await onSave({
       id: initial?.id || String(Date.now()),
@@ -261,15 +266,19 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, existingEmails, 
                 required={!isEditing}
                 type="password"
                 disabled={loading}
-                minLength={6}
+                minLength={8}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 className={inputClass}
-                placeholder={isEditing ? 'Deixe em branco para manter a atual' : 'Mínimo 6 caracteres'}
+                placeholder={isEditing ? 'Deixe em branco para manter a atual' : 'Mínimo 8 caracteres, com Maiúscula e Número'}
               />
-              {!isEditing && (
+              {!isEditing ? (
                 <p className="mt-1.5 ml-1 text-xs text-slate-400 flex items-center gap-1">
-                  O usuário poderá alterar a senha após confirmar o email.
+                  Mínimo 8 caracteres, incluindo uma letra maiúscula e um número.
+                </p>
+              ) : (
+                <p className="mt-1.5 ml-1 text-xs text-slate-400 flex items-center gap-1">
+                  Se preenchido, deve ter 8+ caracteres, maiúscula e número.
                 </p>
               )}
             </div>
