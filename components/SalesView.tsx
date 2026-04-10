@@ -9,6 +9,8 @@ import { SalesCard } from './SalesCard';
 import { CRMSection } from './CRMSection';
 import { supabase } from '../lib/supabase';
 import { useKanbanInteraction } from '../hooks/useKanbanInteraction';
+import { AnimatedNumber } from './AnimatedNumber';
+import { AnimatedCard } from './AnimatedCard';
 
 interface SalesViewProps {
   sales: SalesOrder[];
@@ -320,42 +322,50 @@ export const SalesView: React.FC<SalesViewProps> = ({
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="management-header-card py-2.5 px-4 flex items-center gap-3">
+        <AnimatedCard delay={0.1} className="management-header-card py-2.5 px-4 flex items-center gap-3">
           <div className="p-2 bg-orange-500/10 rounded-xl">
              <Clock className="text-orange-500" size={18} />
           </div>
           <div>
             <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block leading-tight">Orçamentos</span>
-            <p className="text-lg font-black text-slate-800 dark:text-white leading-tight">{scopedSales.filter(s => s.status === 'Orçamento').length}</p>
+            <p className="text-lg font-black text-slate-800 dark:text-white leading-tight">
+              <AnimatedNumber value={scopedSales.filter(s => s.status === 'Orçamento').length} />
+            </p>
           </div>
-        </div>
-        <div className="management-header-card py-2.5 px-4 flex items-center gap-3">
+        </AnimatedCard>
+        <AnimatedCard delay={0.2} className="management-header-card py-2.5 px-4 flex items-center gap-3">
           <div className="p-2 bg-green-500/10 rounded-xl">
             <CheckCircle2 className="text-green-500" size={18} />
           </div>
           <div>
             <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block leading-tight">Confirmados</span>
-            <p className="text-lg font-black text-slate-800 dark:text-white leading-tight">{scopedSales.filter(s => s.status === 'Confirmado' || s.status === 'Pedido').length}</p>
+            <p className="text-lg font-black text-slate-800 dark:text-white leading-tight">
+              <AnimatedNumber value={scopedSales.filter(s => s.status === 'Confirmado' || s.status === 'Pedido').length} />
+            </p>
           </div>
-        </div>
-        <div className="management-header-card py-2.5 px-4 flex items-center gap-3">
+        </AnimatedCard>
+        <AnimatedCard delay={0.3} className="management-header-card py-2.5 px-4 flex items-center gap-3">
           <div className="p-2 bg-blue-500/10 rounded-xl">
             <ShoppingBag className="text-blue-500" size={18} />
           </div>
           <div>
             <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block leading-tight">Em Produção</span>
-            <p className="text-lg font-black text-slate-800 dark:text-white leading-tight">{scopedSales.filter(s => s.status === 'Pedido' && s.phase !== 'Entregue').length}</p>
+            <p className="text-lg font-black text-slate-800 dark:text-white leading-tight">
+              <AnimatedNumber value={scopedSales.filter(s => s.status === 'Pedido' && s.phase !== 'Entregue').length} />
+            </p>
           </div>
-        </div>
-        <div className="management-header-card py-2.5 px-4 flex items-center gap-3">
+        </AnimatedCard>
+        <AnimatedCard delay={0.4} className="management-header-card py-2.5 px-4 flex items-center gap-3">
           <div className="p-2 bg-purple-500/10 rounded-xl">
             <CheckCircle2 className="text-purple-500" size={18} />
           </div>
           <div>
             <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block leading-tight">Finalizados</span>
-            <p className="text-lg font-black text-slate-800 dark:text-white leading-tight">{scopedSales.filter(s => s.status === 'Finalizado' || s.phase === 'Entregue').length}</p>
+            <p className="text-lg font-black text-slate-800 dark:text-white leading-tight">
+              <AnimatedNumber value={scopedSales.filter(s => s.status === 'Finalizado' || s.phase === 'Entregue').length} />
+            </p>
           </div>
-        </div>
+        </AnimatedCard>
       </div>
 
       {viewMode === 'list' ? (

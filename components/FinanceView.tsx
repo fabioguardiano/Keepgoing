@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Wallet, Plus, TrendingUp, TrendingDown, DollarSign, Calendar, Filter } from 'lucide-react';
 import { FinanceTransaction } from '../types';
+import { AnimatedNumber } from './AnimatedNumber';
+import { AnimatedCard } from './AnimatedCard';
+import { motion } from 'framer-motion';
 
 interface FinanceViewProps {
   transactions: FinanceTransaction[];
@@ -29,34 +32,50 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ transactions, onAddTra
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm overflow-hidden relative">
+        <AnimatedCard delay={0.1} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm overflow-hidden relative">
           <div className="absolute top-0 right-0 p-4 opacity-5">
             <TrendingUp size={80} />
           </div>
           <span className="text-sm font-bold text-slate-400 uppercase tracking-widest block mb-1">Receitas</span>
-          <p className="text-3xl font-black text-green-600 mb-2">R$ {receitas.toLocaleString('pt-BR')}</p>
+          <p className="text-3xl font-black text-green-600 mb-2">
+            R$ <AnimatedNumber value={receitas} />
+          </p>
           <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-             <div className="h-full bg-green-500 w-[70%]" />
+             <motion.div 
+               initial={{ width: 0 }}
+               animate={{ width: '70%' }}
+               transition={{ duration: 1, delay: 0.5 }}
+               className="h-full bg-green-500" 
+             />
           </div>
-        </div>
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm overflow-hidden relative">
+        </AnimatedCard>
+        <AnimatedCard delay={0.2} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm overflow-hidden relative">
           <div className="absolute top-0 right-0 p-4 opacity-5">
             <TrendingDown size={80} />
           </div>
           <span className="text-sm font-bold text-slate-400 uppercase tracking-widest block mb-1">Despesas</span>
-          <p className="text-3xl font-black text-red-500 mb-2">R$ {despesas.toLocaleString('pt-BR')}</p>
+          <p className="text-3xl font-black text-red-500 mb-2">
+            R$ <AnimatedNumber value={despesas} />
+          </p>
           <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-             <div className="h-full bg-red-400 w-[30%]" />
+             <motion.div 
+               initial={{ width: 0 }}
+               animate={{ width: '30%' }}
+               transition={{ duration: 1, delay: 0.6 }}
+               className="h-full bg-red-400" 
+             />
           </div>
-        </div>
-        <div className="bg-white p-6 rounded-3xl border border-[var(--primary-color)]/20 shadow-md shadow-[var(--primary-color)]/5 overflow-hidden relative">
+        </AnimatedCard>
+        <AnimatedCard delay={0.3} className="bg-white p-6 rounded-3xl border border-[var(--primary-color)]/20 shadow-md shadow-[var(--primary-color)]/5 overflow-hidden relative">
           <div className="absolute top-0 right-0 p-4 opacity-5 text-[var(--primary-color)]">
             <DollarSign size={80} />
           </div>
           <span className="text-sm font-bold text-[var(--primary-color)] uppercase tracking-widest block mb-1">Saldo Líquido</span>
-          <p className="text-4xl font-black text-slate-800 tracking-tight">R$ {(receitas - despesas).toLocaleString('pt-BR')}</p>
+          <p className="text-4xl font-black text-slate-800 tracking-tight">
+            R$ <AnimatedNumber value={receitas - despesas} />
+          </p>
           <p className="text-xs font-bold text-slate-400 mt-2 italic">Saldo total do período selecionado</p>
-        </div>
+        </AnimatedCard>
       </div>
 
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">

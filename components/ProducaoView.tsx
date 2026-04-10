@@ -3,6 +3,8 @@ import { LayoutDashboard, List, Search, Filter, ClipboardList, Ruler, Package, C
 import { WorkOrder, PhaseConfig, AppUser, SalesOrder } from '../types';
 import { WorkOrderKanban } from './WorkOrderKanban';
 import { WorkOrderModal } from './WorkOrderModal';
+import { AnimatedNumber } from './AnimatedNumber';
+import { motion } from 'framer-motion';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -176,14 +178,18 @@ export const ProducaoView: React.FC<ProducaoViewProps> = ({
             <div>
               <h1 className="text-xl font-black text-slate-800 dark:text-white">Produção</h1>
               <div className="flex items-center gap-2 mt-0.5">
-                <p className="text-xs text-slate-400">{workOrders.filter(wo => wo.status !== 'Entregue' && wo.status !== 'Cancelada').length} em andamento</p>
+                <p className="text-xs text-slate-400">
+                  <AnimatedNumber value={workOrders.filter(wo => wo.status !== 'Entregue' && wo.status !== 'Cancelada').length} /> em andamento
+                </p>
                 {archivedCount > 0 && viewMode === 'kanban' && (
-                  <button
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
                     onClick={goToArchived}
                     className="text-[10px] font-black text-slate-400 hover:text-[var(--primary-color)] bg-slate-100 dark:bg-slate-800 hover:bg-[var(--primary-color)]/10 px-2 py-0.5 rounded-full transition-all uppercase tracking-wider"
                   >
-                    {archivedCount} arquivadas
-                  </button>
+                    <AnimatedNumber value={archivedCount} /> arquivadas
+                  </motion.button>
                 )}
               </div>
             </div>

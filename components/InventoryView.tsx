@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Box, Plus, Search, Package, AlertTriangle, TrendingUp, TrendingDown, Trash2, Edit2, Diamond, ShoppingBag, Wrench, MapPin, PowerOff, ArrowUpDown } from 'lucide-react';
 import { Material, Brand, ProductGroup, Supplier, Category } from '../types';
 import { NewMaterialModal } from './NewMaterialModal';
+import { AnimatedNumber } from './AnimatedNumber';
+import { AnimatedCard } from './AnimatedCard';
 
 interface InventoryViewProps {
   materials: Material[];
@@ -100,33 +102,41 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="management-stat-card">
+        <AnimatedCard delay={0.1} className="management-stat-card">
           <div className="flex items-center gap-4 mb-2">
             <div className="p-3 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 rounded-2xl">
               <Package size={24} />
             </div>
             <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">Total em Estoque</span>
           </div>
-          <p className="text-3xl font-black text-slate-800 dark:text-white">{materials.reduce((acc, m) => acc + m.stockQuantity, 0)} <span className="text-sm font-bold text-slate-400">unidades</span></p>
-        </div>
-        <div className="management-stat-card">
+          <p className="text-3xl font-black text-slate-800 dark:text-white">
+            <AnimatedNumber value={materials.reduce((acc, m) => acc + m.stockQuantity, 0)} />
+            <span className="text-sm font-bold text-slate-400 ml-2">unidades</span>
+          </p>
+        </AnimatedCard>
+        <AnimatedCard delay={0.2} className="management-stat-card">
           <div className="flex items-center gap-4 mb-2">
             <div className="p-3 bg-orange-50 dark:bg-orange-950/30 text-primary rounded-2xl">
               <TrendingUp size={24} />
             </div>
             <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">Valor em Estoque</span>
           </div>
-          <p className="text-3xl font-black text-slate-800 dark:text-white">R$ {materials.reduce((acc, m) => acc + (m.stockQuantity * m.unitCost), 0).toLocaleString('pt-BR')}</p>
-        </div>
-        <div className="management-stat-card">
+          <p className="text-3xl font-black text-slate-800 dark:text-white">
+            R$ <AnimatedNumber value={materials.reduce((acc, m) => acc + (m.stockQuantity * m.unitCost), 0)} />
+          </p>
+        </AnimatedCard>
+        <AnimatedCard delay={0.3} className="management-stat-card">
           <div className="flex items-center gap-4 mb-2">
             <div className="p-3 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 rounded-2xl">
               <AlertTriangle size={24} />
             </div>
             <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">Abaixo do Mínimo</span>
           </div>
-          <p className="text-3xl font-black text-slate-800 dark:text-white">{materials.filter(m => m.stockQuantity < m.minStock).length} <span className="text-sm font-bold text-slate-400">itens</span></p>
-        </div>
+          <p className="text-3xl font-black text-slate-800 dark:text-white">
+            <AnimatedNumber value={materials.filter(m => m.stockQuantity < m.minStock).length} />
+            <span className="text-sm font-bold text-slate-400 ml-2">itens</span>
+          </p>
+        </AnimatedCard>
       </div>
 
       <div className="management-header-card flex flex-col md:flex-row gap-4">

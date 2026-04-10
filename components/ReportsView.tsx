@@ -2,6 +2,9 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { BarChart3, TrendingUp, TrendingDown, Clock, CheckCircle, Calendar, DollarSign, Target, Layers, Bot, Send, Loader2, User, Sparkles, ChevronRight } from 'lucide-react';
 import { OrderService, Delivery, AccountReceivable } from '../types';
 import { supabase } from '../lib/supabase';
+import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatedNumber } from './AnimatedNumber';
+import { AnimatedCard } from './AnimatedCard';
 
 interface ReportsViewProps {
   orders: OrderService[];
@@ -63,39 +66,67 @@ function LineChart({ data }: { data: { label: string; value: number }[] }) {
           <stop offset="100%" stopColor="var(--primary-color, #004D4D)" stopOpacity="0.02" />
         </linearGradient>
       </defs>
-      <path d={fill} fill="url(#lineGrad)" />
-      <path d={path} fill="none" stroke="var(--primary-color, #004D4D)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <motion.path 
+        d={fill} 
+        fill="url(#lineGrad)"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1, delay: 0.5 }}
+      />
+      <motion.path 
+        d={path} 
+        fill="none" 
+        stroke="var(--primary-color, #004D4D)" 
+        strokeWidth="2.5" 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        initial={{ pathLength: 0, opacity: 0 }}
+        animate={{ pathLength: 1, opacity: 1 }}
+        transition={{ duration: 1.5, ease: "easeInOut" }}
+      />
       {pts.map((p, i) => (
-        <g key={i}>
+        <motion.g 
+          key={i}
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 1 + (i * 0.05), duration: 0.3 }}
+        >
           <circle cx={p.x} cy={p.y} r="4" fill="var(--primary-color, #004D4D)" />
           <circle cx={p.x} cy={p.y} r="7" fill="var(--primary-color, #004D4D)" fillOpacity="0.15" />
-        </g>
+        </motion.g>
       ))}
     </svg>
   );
 }
 
 // ── KPI Card ──────────────────────────────────────────────────────────────────
-function KpiCard({ icon, label, value, sub, trend, color }: {
+function KpiCard({ icon, label, value, sub, trend, color, delay = 0 }: {
   icon: React.ReactNode; label: string; value: string; sub?: string;
-  trend?: { value: string; up: boolean }; color: string;
+  trend?: { value: string; up: boolean }; color: string; delay?: number;
 }) {
+  // Extrair o número da string de valor para o AnimatedNumber
+  const numericValue = parseFloat(value.replace(/[^0-9.]/g, '')) || 0;
+  const prefix = value.includes('R$') ? 'R$ ' : '';
+  const suffix = value.includes('m²') ? ' m²' : '';
+
   return (
-    <div className="p-5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex flex-col gap-3">
+    <AnimatedCard delay={delay} className="p-5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex flex-col gap-3">
       <div className="flex items-center gap-3">
         <div className={`p-2 rounded-lg ${color}`}>{icon}</div>
         <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider leading-tight">{label}</h3>
       </div>
-      <p className="text-2xl font-black text-slate-900 dark:text-white leading-none">{value}</p>
+      <p className="text-2xl font-black text-slate-900 dark:text-white leading-none">
+        {prefix}<AnimatedNumber value={numericValue} />{suffix}
+      </p>
       {sub && <p className="text-[11px] text-slate-400 font-medium">{sub}</p>}
       {trend && (
         <div className={`flex items-center gap-1 text-[11px] font-bold ${trend.up ? 'text-green-600' : 'text-red-500'}`}>
           {trend.up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
           <span>{trend.value}</span>
-          <span className="text-slate-400 font-normal">vs período anterior</span>
+          <span className="text-slate-400 font-normal ml-1">vs período anterior</span>
         </div>
       )}
-    </div>
+    </AnimatedCard>
   );
 }
 
@@ -314,16 +345,16 @@ Responda perguntas sobre esses dados de forma clara e acionável.`;
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <KpiCard icon={<BarChart3 size={18} />} label="Total O.S." value={String(producaoData.totalOS)}
                 color="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                trend={{ value: '+12%', up: true }} />
+                trend={{ value: '+12%', up: true }} delay={0.1} />
               <KpiCard icon={<CheckCircle size={18} />} label="Concluídas" value={String(producaoData.concludedOS)}
                 color="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"
-                sub={`Taxa: ${producaoData.totalOS > 0 ? Math.round((producaoData.concludedOS / producaoData.totalOS) * 100) : 0}%`} />
-              <KpiCard icon={<Calendar size={18} />} label="Total m²" value={producaoData.totalArea.toFixed(1)}
+                sub={`Taxa: ${producaoData.totalOS > 0 ? Math.round((producaoData.concludedOS / producaoData.totalOS) * 100) : 0}%`} delay={0.2} />
+              <KpiCard icon={<Calendar size={18} />} label="Total m²" value={producaoData.totalArea.toFixed(1) + ' m²'}
                 color="bg-orange-100 dark:bg-orange-900/30 text-[var(--primary-color)]"
-                sub="Metragem concluída" />
+                sub="Metragem concluída" delay={0.3} />
               <KpiCard icon={<Clock size={18} />} label="Tempo Médio" value="4.2"
                 color="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400"
-                sub="dias por O.S." trend={{ value: '-0.5d', up: true }} />
+                sub="dias por O.S." trend={{ value: '-0.5d', up: true }} delay={0.4} />
             </div>
 
             {/* Bar Chart */}
@@ -336,22 +367,29 @@ Responda perguntas sobre esses dados de forma clara e acionável.`;
                 <BarChart3 className="text-[var(--primary-color)] opacity-20" size={32} />
               </div>
               <div className="flex-1 flex items-end justify-around gap-4 pb-4 px-4">
-                {producaoData.chart.map(bar => {
+                {producaoData.chart.map((bar, idx) => {
                   const h = (bar.value / maxBar) * 100;
                   return (
                     <div key={bar.label} className="flex-1 flex flex-col items-center gap-4 group h-full justify-end">
                       <div className="relative w-full max-w-[80px] flex flex-col items-center justify-end h-full">
                         <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded shadow-xl whitespace-nowrap z-10">
-                          {bar.value.toFixed(1)} m²
+                          <AnimatedNumber value={bar.value} /> m²
                         </div>
-                        <div style={{ height: `${h}%`, backgroundColor: bar.color }}
-                          className="w-full rounded-t-xl shadow-lg transition-all duration-700 group-hover:brightness-110 group-hover:-translate-y-1">
+                        <motion.div 
+                          initial={{ height: 0 }}
+                          animate={{ height: `${h}%` }}
+                          transition={{ duration: 1, delay: 0.2 + (idx * 0.1), ease: [0.16, 1, 0.3, 1] }}
+                          style={{ backgroundColor: bar.color }}
+                          className="w-full rounded-t-xl shadow-lg transition-all group-hover:brightness-110 group-hover:-translate-y-1"
+                        >
                           <div className="w-full h-full bg-gradient-to-t from-black/20 to-transparent rounded-t-xl" />
-                        </div>
+                        </motion.div>
                       </div>
                       <div className="text-center">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter mb-1">{bar.label}</p>
-                        <p className="text-sm font-bold text-slate-700 dark:text-slate-300">{bar.value.toFixed(1)}</p>
+                        <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                          <AnimatedNumber value={bar.value} />
+                        </p>
                       </div>
                     </div>
                   );
