@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Mic, Save, Loader2, Clock, ChevronDown, User as UserIcon, Edit2, Check, X } from 'lucide-react';
 import { SalesOrder, AppUser, CRMNote } from '../types';
 import { getInitials } from '../utils/userUtils';
+import { AnimatedNumber } from './AnimatedNumber';
 
 interface CRMSectionProps {
   sale: SalesOrder;
@@ -200,7 +201,7 @@ export const CRMSection: React.FC<CRMSectionProps> = ({
               <ChevronDown size={compact ? 10 : 14} className={`transition-transform text-slate-400 ${isExpanded ? 'rotate-180' : ''}`} />
             </h3>
             <span className={`${compact ? 'text-[7px]' : 'text-[10px]'} font-bold text-slate-400`}>
-              {allNotes.length} interação{allNotes.length !== 1 ? 'es' : ''} registrada{allNotes.length !== 1 ? 's' : ''}
+              <AnimatedNumber value={allNotes.length} /> interação{allNotes.length !== 1 ? 'es' : ''} registrada{allNotes.length !== 1 ? 's' : ''}
             </span>
           </div>
         </div>
