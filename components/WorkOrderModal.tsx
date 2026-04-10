@@ -771,7 +771,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       )}
       {/* Portal de Impressão do Desenho */}
       {printingDrawing && createPortal(
-        <div className="print-only fixed inset-0 bg-white z-[9999] flex flex-col p-6">
+        <div className="print-only fixed inset-0 bg-white z-[9999] flex flex-col p-6 h-[280mm] overflow-hidden">
           {/* Cabeçalho da Impressão */}
           <div className="flex justify-between items-start border-b-2 border-gray-100 pb-3 mb-4 shrink-0">
              <div className="space-y-1">

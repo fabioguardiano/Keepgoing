@@ -156,7 +156,7 @@
 
   /* But make sure any .print-only attached directly to body (via Portal) shows normally */
   body > .print-only {
-    display: block !important;
+    display: flex !important;
     position: relative !important;
     width: 100%;
     margin: 0;
@@ -171,7 +171,7 @@
 
 @media print {
   .print-only {
-    display: block !important;
+    /* Permitir que o componente defina seu display */
   }
 }
 
