@@ -230,6 +230,8 @@ export const ProducaoView: React.FC<ProducaoViewProps> = ({
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
+              name="search_os_kanban"
+              autoComplete="off"
               placeholder="Buscar por cliente, n° O.S. ou ambiente..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}

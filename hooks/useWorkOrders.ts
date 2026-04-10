@@ -308,8 +308,11 @@ export const useWorkOrders = (companyId?: string) => {
     if (updates.drawingUrl !== undefined) payload.drawing_url = updates.drawingUrl;
     if (updates.drawingUrls !== undefined) payload.drawing_urls = updates.drawingUrls;
 
-    await supabase.from('work_orders').update(payload).eq('id', id).eq('company_id', companyId);
+    // Atualização Otimista
     setWorkOrders(prev => prev.map(wo => wo.id === id ? { ...wo, ...updates } : wo));
+    
+    // Atualização Remota
+    await supabase.from('work_orders').update(payload).eq('id', id).eq('company_id', companyId);
   };
 
   const ALLOWED_DRAWING_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];

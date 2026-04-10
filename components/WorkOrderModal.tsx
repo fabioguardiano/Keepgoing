@@ -790,21 +790,6 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
               alt="Desenho para Impressão" 
               className="max-w-full max-h-[85vh] object-contain shadow-sm"
             />
-            
-             <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="flex flex-col justify-around items-center h-full w-full py-20">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="flex flex-col items-center border-[2px] border-red-600/45 px-8 py-3 rounded-[20px] transform -rotate-[30deg] scale-90">
-                      <span className="text-[3.5rem] font-black text-center leading-none uppercase tracking-[0.2em] whitespace-nowrap block text-red-600/45">
-                        CÓPIA NÃO OFICIAL
-                      </span>
-                      <span className="text-sm font-black text-center block mt-1 uppercase tracking-widest text-red-600/45">
-                        USE O DESENHO ORIGINAL
-                      </span>
-                    </div>
-                  ))}
-                </div>
-             </div>
 
             {/* Rodapé da Impressão */}
             <div className="absolute bottom-4 left-8 right-8 flex justify-between text-[10px] text-gray-400 font-bold border-t border-gray-100 pt-2">

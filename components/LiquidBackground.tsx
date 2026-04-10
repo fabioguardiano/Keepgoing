@@ -16,9 +16,8 @@ export const LiquidBackground: React.FC = () => {
         className="liquid-blob top-[20%] right-[10%] bg-[var(--accent-color)]" 
         style={{ opacity: 0.05, filter: 'blur(150px)' }}
       />
-      
       {/* Subtle overlay to soften the look */}
-      <div className="absolute inset-0 backdrop-blur-[2px] opacity-20" />
+      <div className="absolute inset-0 opacity-10" />
     </div>
   );
 };

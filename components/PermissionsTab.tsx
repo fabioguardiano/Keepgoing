@@ -401,21 +401,23 @@ export const PermissionsTab: React.FC<Props> = ({
         <h3 className="text-sm font-black text-slate-700 uppercase tracking-widest mb-1">Atribuição de Perfis</h3>
         <p className="text-xs text-slate-400 mb-4">Selecione qual perfil cada usuário deve usar</p>
 
-        <div className="space-y-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {appUsers.filter(u => u.status === 'ativo').map(user => (
-            <div key={user.id} className="flex items-center gap-4 p-3 bg-white border border-slate-100 rounded-xl">
-              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-black flex-shrink-0">
-                {user.name.trim().slice(0, 2).toUpperCase()}
+            <div key={user.id} className="flex flex-col gap-3 p-3 bg-white border border-slate-100 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-black flex-shrink-0">
+                  {user.name.trim().slice(0, 2).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-slate-800 truncate">{user.name}</p>
+                  <p className="text-xs text-slate-400 truncate">{user.email}</p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-slate-800 truncate">{user.name}</p>
-                <p className="text-xs text-slate-400">{user.email}</p>
-              </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mt-auto">
                 <button
                   onClick={() => onSaveUser({ ...user, isSecurityRequired: !user.isSecurityRequired })}
                   title={user.isSecurityRequired ? "Proteção de Interface ATIVA" : "Proteção de Interface DESATIVADA"}
-                  className={`p-2 rounded-lg transition-all border-2 flex items-center justify-center ${
+                  className={`p-2 rounded-lg transition-all border-2 flex items-center justify-center flex-shrink-0 ${
                     user.isSecurityRequired
                       ? 'bg-primary/10 border-primary/20 text-primary'
                       : 'bg-slate-50 border-slate-200 text-slate-400 opacity-60'
@@ -445,9 +447,9 @@ export const PermissionsTab: React.FC<Props> = ({
 
                     onSaveUser({ ...user, profileId: pid || undefined, role: nextRole });
                   }}
-                  className="text-xs font-bold border border-slate-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-700 min-w-[160px]"
+                  className="w-full text-xs font-bold border border-slate-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-700"
                 >
-                  <option value="">— Sem perfil (role padrão) —</option>
+                  <option value="">— Sem perfil padrão —</option>
                   {profiles.map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
