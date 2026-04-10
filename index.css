@@ -137,7 +137,7 @@
 @media print {
   @page {
     size: A4;
-    margin: 5mm 15mm 0mm 15mm;
+    margin: 5mm 5mm 5mm 5mm;
   }
 
   body {

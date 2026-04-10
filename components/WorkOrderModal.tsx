@@ -772,9 +772,9 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       {/* Portal de Impressão do Desenho */}
       {printingDrawing && createPortal(
         <div className="print-only fixed inset-0 bg-white z-[9999]">
-          <div className="relative w-full h-full flex items-center justify-center p-8">
+          <div className="relative w-full h-full flex items-center justify-center p-2">
             {/* Cabeçalho da Impressão */}
-            <div className="absolute top-4 left-8 right-8 flex justify-between items-end border-b-2 border-gray-100 pb-2">
+            <div className="absolute top-2 left-4 right-4 flex justify-between items-end border-b-2 border-gray-100 pb-2">
                <div>
                  <h2 className="text-xl font-black text-gray-900">{osLabel}</h2>
                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{workOrder.clientName}</p>
@@ -788,11 +788,11 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
             <img 
               src={printingDrawing} 
               alt="Desenho para Impressão" 
-              className="max-w-full max-h-[85vh] object-contain shadow-sm"
+              className="max-w-full max-h-[92vh] object-contain shadow-sm"
             />
 
             {/* Rodapé da Impressão */}
-            <div className="absolute bottom-4 left-8 right-8 flex justify-between text-[10px] text-gray-400 font-bold border-t border-gray-100 pt-2">
+            <div className="absolute bottom-2 left-4 right-4 flex justify-between text-[10px] text-gray-400 font-bold border-t border-gray-100 pt-2">
                <span>KeepGoing CRM — Módulo de Produção</span>
                <span className="uppercase tracking-widest">{workOrder.productionPhase || 'Produção'}</span>
             </div>

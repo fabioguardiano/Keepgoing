@@ -63,7 +63,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
   const content = (
     <div
       className="bg-white text-black w-full"
-      style={{ fontFamily: '"Calibri", "Arial", sans-serif', fontSize: '11px', lineHeight: '1.35' }}
+      style={{ fontFamily: '"Calibri", "Arial", sans-serif', fontSize: '11px', lineHeight: '1.35', padding: '0 10mm' }}
     >
       {/* ── CABEÇALHO ────────────────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0px' }}>
@@ -539,7 +539,7 @@ export const PrintBudget: React.FC<PrintBudgetProps> = ({
               ].join(' '),
               backgroundSize: '100% 297mm',
               backgroundRepeat: 'repeat-y',
-              padding: '5mm 15mm 0mm 15mm',
+              padding: '5mm 5mm 0mm 5mm',
               boxShadow: '0 4px 32px rgba(0,0,0,0.4)',
             }}
           >
