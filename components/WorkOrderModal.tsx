@@ -771,31 +771,47 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       )}
       {/* Portal de Impressão do Desenho */}
       {printingDrawing && createPortal(
-        <div className="print-only fixed inset-0 bg-white z-[9999]">
-          <div className="relative w-full h-full flex items-center justify-center p-2">
-            {/* Cabeçalho da Impressão */}
-            <div className="absolute top-2 left-4 right-4 flex justify-between items-end border-b-2 border-gray-100 pb-2">
-               <div>
-                 <h2 className="text-xl font-black text-gray-900">{osLabel}</h2>
-                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{workOrder.clientName}</p>
+        <div className="print-only fixed inset-0 bg-white z-[9999] flex flex-col p-6">
+          {/* Cabeçalho da Impressão */}
+          <div className="flex justify-between items-start border-b-2 border-gray-100 pb-3 mb-4 shrink-0">
+             <div className="space-y-1">
+               <h2 className="text-2xl font-black text-gray-900 leading-tight">{osLabel}</h2>
+               <p className="text-[12px] font-black text-gray-700 uppercase tracking-wide">{workOrder.clientName}</p>
+               <div className="flex gap-4 mt-2">
+                 {workOrder.environments.length > 0 && (
+                   <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+                     <span className="text-gray-400">Ambiente:</span> {workOrder.environments.join(', ')}
+                   </div>
+                 )}
+                 {(() => {
+                   const mats = Array.from(new Set((workOrder.items || []).map(i => i.materialName).filter(Boolean)));
+                   return mats.length > 0 ? (
+                     <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+                       <span className="text-gray-400">Material:</span> {mats.join(' / ')}
+                     </div>
+                   ) : null;
+                 })()}
                </div>
-               <div className="text-right">
-                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Desenho Técnico / OS</p>
-                 <p className="text-[9px] text-gray-400 italic">Impresso em {new Date().toLocaleString('pt-BR')}</p>
-               </div>
-            </div>
+             </div>
+             <div className="text-right">
+               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Desenho Técnico / OS</p>
+               <p className="text-[9px] text-gray-400 italic">Impresso em {new Date().toLocaleString('pt-BR')}</p>
+             </div>
+          </div>
 
+          {/* Área do Desenho */}
+          <div className="flex-1 min-h-0 flex items-center justify-center p-4">
             <img 
               src={printingDrawing} 
               alt="Desenho para Impressão" 
-              className="max-w-full max-h-[92vh] object-contain shadow-sm"
+              className="max-w-full max-h-full object-contain"
             />
+          </div>
 
-            {/* Rodapé da Impressão */}
-            <div className="absolute bottom-2 left-4 right-4 flex justify-between text-[10px] text-gray-400 font-bold border-t border-gray-100 pt-2">
-               <span>KeepGoing CRM — Módulo de Produção</span>
-               <span className="uppercase tracking-widest">{workOrder.productionPhase || 'Produção'}</span>
-            </div>
+          {/* Rodapé da Impressão */}
+          <div className="flex justify-between text-[10px] text-gray-400 font-bold border-t border-gray-100 pt-3 mt-4 shrink-0">
+             <span>KeepGoing CRM — Módulo de Produção</span>
+             <span className="uppercase tracking-widest">{workOrder.productionPhase || 'Produção'}</span>
           </div>
         </div>,
         document.body
