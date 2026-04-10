@@ -64,10 +64,10 @@ export const SalesCard: React.FC<SalesCardProps> = ({
   }, [appUsers, sale.seller]);
 
   const statusClasses = {
-    alert: 'border-red-400 dark:border-red-900/50 bg-red-50/10 dark:bg-red-900/10 shadow-red-100 dark:shadow-none shadow-lg',
-    warning: 'border-orange-400 dark:border-orange-900/50 bg-orange-50/10 dark:bg-orange-900/10 shadow-orange-100 dark:shadow-none shadow-md',
-    success: 'border-emerald-400 dark:border-emerald-900/50 bg-emerald-50/10 dark:bg-emerald-900/10 shadow-emerald-50 dark:shadow-none shadow-sm',
-    none: 'border-slate-100 dark:border-slate-800 hover:border-slate-200 shadow-sm'
+    alert: 'border-red-500/50 dark:border-red-500/30 bg-red-500/5 shadow-red-500/10 shadow-lg',
+    warning: 'border-orange-500/50 dark:border-orange-500/30 bg-orange-500/5 shadow-orange-500/10 shadow-md',
+    success: 'border-emerald-500/50 dark:border-emerald-500/30 bg-emerald-500/5 shadow-emerald-500/10 shadow-sm',
+    none: 'border-slate-100 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10 shadow-sm'
   };
 
   const borderClass = sale.status === 'Pedido' 
@@ -81,7 +81,7 @@ export const SalesCard: React.FC<SalesCardProps> = ({
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           ref={provided.innerRef}
-          className={`bg-white dark:bg-slate-900 border p-4 rounded-2xl transition-all group ${canEdit ? 'cursor-grab active:cursor-grabbing' : 'cursor-default opacity-80'} ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-[var(--primary-color)] scale-[1.02] z-50' : canEdit ? 'hover:shadow-md' : ''} ${borderClass}`}
+          className={`bg-white/90 dark:bg-slate-900/40 backdrop-blur-md border p-4 rounded-2xl transition-all group ${canEdit ? 'cursor-grab active:cursor-grabbing' : 'cursor-default opacity-80'} ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-[var(--primary-color)] scale-[1.02] z-50' : canEdit ? 'hover:shadow-md' : ''} ${borderClass}`}
           onClick={() => canEdit && handleEdit(sale)}
         >
           <div className="flex justify-between items-start mb-2">
@@ -93,7 +93,7 @@ export const SalesCard: React.FC<SalesCardProps> = ({
                 </span>
               )}
               {sale.status === 'Pedido' && (
-                <span className="bg-green-100 text-green-700 text-[8px] font-black px-1.5 py-0.5 rounded uppercase flex items-center gap-1" title="Pedido confirmado — bloqueado para edição">
+                <span className="bg-green-500/10 text-green-500 text-[8px] font-black px-1.5 py-0.5 rounded uppercase flex items-center gap-1" title="Pedido confirmado — bloqueado para edição">
                   <Lock size={8} /> Bloqueado
                 </span>
               )}
@@ -138,7 +138,7 @@ export const SalesCard: React.FC<SalesCardProps> = ({
           </div>
 
           <div 
-            className="pt-1.5 border-t border-slate-100 dark:border-slate-800/50"
+            className="pt-1.5 border-t border-slate-100 dark:border-white/5"
             onClick={(e) => e.stopPropagation()}
           >
             <CRMSection 
@@ -149,7 +149,7 @@ export const SalesCard: React.FC<SalesCardProps> = ({
             />
           </div>
 
-          <div className="flex items-center justify-between pt-3 mt-2 border-t border-slate-50 dark:border-slate-800/50">
+          <div className="flex items-center justify-between pt-3 mt-2 border-t border-slate-50 dark:border-white/5">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-black text-[10px] shrink-0 overflow-hidden border border-primary/20 shadow-sm">
                 {sellerUser?.avatarUrl ? (

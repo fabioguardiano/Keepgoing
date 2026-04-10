@@ -40,13 +40,13 @@ const BankAccountForm: React.FC<BankAccountFormProps> = ({ initial, onSave, onCl
 
   return (
     <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div className="management-modal rounded-3xl w-full max-w-md p-6 space-y-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between">
           <h3 className="font-black text-slate-800 dark:text-white flex items-center gap-2">
             <Landmark size={18} className="text-[var(--primary-color)]" />
             {initial ? 'Editar Conta' : 'Nova Conta Bancária'}
           </h3>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400"><X size={16} /></button>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400"><X size={16} /></button>
         </div>
 
         <div className="space-y-3">
@@ -58,7 +58,7 @@ const BankAccountForm: React.FC<BankAccountFormProps> = ({ initial, onSave, onCl
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-1">Banco</label>
-              <input value={form.bankName} onChange={e => set('bankName', e.target.value)} placeholder="Ex: Bradesco, Itaú..." className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-sm" />
+              <input value={form.bankName} onChange={e => set('bankName', e.target.value)} placeholder="Ex: Bradesco, Itaú..." className="management-input w-full p-2.5" />
             </div>
             <div>
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-1">Tipo</label>
@@ -71,7 +71,7 @@ const BankAccountForm: React.FC<BankAccountFormProps> = ({ initial, onSave, onCl
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-1">Agência</label>
-              <input value={form.agency} onChange={e => set('agency', e.target.value)} placeholder="0001" className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-sm" />
+              <input value={form.agency} onChange={e => set('agency', e.target.value)} placeholder="0001" className="management-input w-full p-2.5" />
             </div>
             <div>
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-1">Conta</label>
@@ -81,7 +81,7 @@ const BankAccountForm: React.FC<BankAccountFormProps> = ({ initial, onSave, onCl
 
           <div>
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-1">Chave Pix</label>
-            <input value={form.pixKey} onChange={e => set('pixKey', e.target.value)} placeholder="CPF, e-mail, telefone ou chave aleatória" className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-sm" />
+            <input value={form.pixKey} onChange={e => set('pixKey', e.target.value)} placeholder="CPF, e-mail, telefone ou chave aleatória" className="management-input w-full p-2.5" />
           </div>
 
           <div>
@@ -118,7 +118,7 @@ export const BankAccountsView: React.FC<BankAccountsViewProps> = ({ bankAccounts
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
+      <div className="management-container">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
           <div>
             <h2 className="font-black text-slate-800 dark:text-white flex items-center gap-2 text-lg">
@@ -141,9 +141,9 @@ export const BankAccountsView: React.FC<BankAccountsViewProps> = ({ bankAccounts
             <p className="text-xs text-slate-400 mt-1">Cadastre bancos e caixas para registrar destinos de pagamento</p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-100 dark:divide-slate-800">
+          <div className="divide-y divide-slate-100 dark:divide-white/5">
             {bankAccounts.map(ba => (
-              <div key={ba.id} className={`flex items-center gap-4 px-6 py-4 ${!ba.active ? 'opacity-50' : ''}`}>
+              <div key={ba.id} className={`flex items-center gap-4 px-6 py-4 management-row-hover !bg-transparent ${!ba.active ? 'opacity-50' : ''}`}>
                 <div className="w-10 h-10 rounded-2xl bg-[var(--primary-color)]/10 flex items-center justify-center shrink-0">
                   <Landmark size={18} className="text-[var(--primary-color)]" />
                 </div>

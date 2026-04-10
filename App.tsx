@@ -39,6 +39,8 @@ import { useLegacyMigration } from './hooks/useLegacyMigration';
 import { useBankAccounts } from './hooks/useBankAccounts';
 import { useCRMActivities } from './hooks/useCRMActivities';
 import { ActivityAlertProvider } from './contexts/ActivityAlertContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { LiquidBackground } from './components/LiquidBackground';
 
 // Retry automático quando chunk falha por deploy (hash antigo não existe mais)
 const lazyRetry = <T,>(fn: () => Promise<T>): Promise<T> =>
@@ -898,7 +900,8 @@ const App: React.FC = () => {
       completeCRMActivity={completeCRMActivity}
       deleteCRMActivity={deleteCRMActivity}
     >
-    <div className="flex h-screen bg-gray-100 overflow-hidden">
+    <LiquidBackground />
+    <div className="flex h-screen overflow-hidden relative z-10 transition-colors duration-500">
       {idleWarning && (
         <IdleWarningModal
           secondsLeft={idleSecondsLeft}

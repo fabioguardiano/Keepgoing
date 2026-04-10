@@ -775,10 +775,10 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[250] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-6xl h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+      <div className="management-modal w-full max-w-6xl h-[94vh] flex flex-col rounded-[2.5rem] p-0 overflow-hidden animate-in fade-in zoom-in duration-300">
         
         {/* Header */}
-        <div className="px-6 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+        <div className="px-6 py-3 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-white/40 dark:bg-white/5 backdrop-blur-md">
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-xl ${saleType === 'Orçamento' ? 'bg-blue-100 text-black' : 'bg-green-100 text-black'}`}>
               <ShoppingBag size={18} />
@@ -787,12 +787,12 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-black text-black dark:text-white tracking-tight">Manutenção de Venda</h2>
                 {isLocked && (
-                  <span className="flex items-center gap-1 bg-green-100 text-black text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  <span className="flex items-center gap-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
                     <Lock size={9} /> Somente Leitura
                   </span>
                 )}
                 {paidAmount > 0 && (
-                  <span className="flex items-center gap-1 bg-amber-100 text-amber-700 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
+                  <span className="flex items-center gap-1 bg-red-500/10 text-red-600 dark:text-red-400 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
                     <AlertTriangle size={10} /> Ajuste Financeiro Ativo
                   </span>
                 )}
@@ -820,7 +820,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                       }
                     }}
                   />
-                  <span className={`text-xs font-bold ${saleType === 'Orçamento' ? 'text-black' : isLocked ? 'text-black hover:text-amber-600' : 'text-black'}`}>
+                  <span className={`text-xs font-bold ${saleType === 'Orçamento' ? 'text-slate-800 dark:text-white' : isLocked ? 'text-slate-600 dark:text-slate-400 hover:text-amber-600' : 'text-slate-800 dark:text-slate-300'}`}>
                     {isLocked ? '⚠ Reverter para Orçamento' : 'Orçamento'}
                   </span>
                 </label>
@@ -833,14 +833,14 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     onChange={() => !isLocked && setSaleType('Pedido')}
                     disabled={isLocked}
                   />
-                  <span className={`text-xs font-bold ${saleType === 'Pedido' ? 'text-black' : 'text-black'}`}>Pedido</span>
+                  <span className={`text-xs font-bold ${saleType === 'Pedido' ? 'text-slate-800 dark:text-white' : 'text-slate-800 dark:text-slate-300'}`}>Pedido</span>
                 </label>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {selectedClient && (
-              <div className="flex items-center gap-4 bg-orange-50/50 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-orange-100/50 dark:border-slate-700">
+              <div className="flex items-center gap-4 bg-white/40 dark:bg-white/5 backdrop-blur-md p-1.5 rounded-2xl border border-slate-100 dark:border-white/5">
                 <label className="flex items-center gap-2 px-3 cursor-pointer group" title="Embaçar as medidas (Comprimento e Largura) na impressão para proteger suas medições">
                   <input 
                     type="checkbox" 
@@ -848,11 +848,11 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     onChange={(e) => setBlurMeasurements(e.target.checked)}
                     className="w-4 h-4 rounded text-[var(--primary-color)] focus:ring-[var(--primary-color)]"
                   />
-                  <span className="text-[11px] font-bold text-black dark:text-slate-300 group-hover:text-black dark:group-hover:text-white transition-colors">
+                  <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100 group-hover:text-black dark:group-hover:text-white transition-colors">
                     Ocultar Medidas
                   </span>
                 </label>
-                <div className="w-px h-6 bg-orange-200 dark:bg-slate-600"></div>
+                <div className="w-px h-6 bg-slate-200 dark:bg-white/10"></div>
                 <label className="flex items-center gap-2 px-3 cursor-pointer group" title="Ocultar a coluna de Metragem Quadrada / Unidade">
                   <input 
                     type="checkbox" 
@@ -860,11 +860,11 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     onChange={(e) => setHideM2Unit(e.target.checked)}
                     className="w-4 h-4 rounded text-[var(--primary-color)] focus:ring-[var(--primary-color)]"
                   />
-                  <span className="text-[11px] font-bold text-black dark:text-slate-300 group-hover:text-black dark:group-hover:text-white transition-colors">
+                  <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100 group-hover:text-black dark:group-hover:text-white transition-colors">
                     Ocultar M² / Unidade
                   </span>
                 </label>
-                <div className="w-px h-6 bg-orange-200 dark:bg-slate-600"></div>
+                <div className="w-px h-6 bg-slate-200 dark:bg-white/10"></div>
                 <label className="flex items-center gap-2 px-3 cursor-pointer group" title="Ocultar valores financeiros (preços, subtotais e resumo financeiro) na impressão">
                   <input 
                     type="checkbox" 
@@ -872,32 +872,32 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     onChange={(e) => setHidePrices(e.target.checked)}
                     className="w-4 h-4 rounded text-[var(--primary-color)] focus:ring-[var(--primary-color)]"
                   />
-                  <span className="text-[11px] font-bold text-black dark:text-slate-300 group-hover:text-black dark:group-hover:text-white transition-colors">
+                  <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100 group-hover:text-black dark:group-hover:text-white transition-colors">
                     Ocultar Valores
                   </span>
                 </label>
-                <div className="w-px h-6 bg-orange-200 dark:bg-slate-600"></div>
+                <div className="w-px h-6 bg-slate-200 dark:bg-white/10"></div>
                 <button
                   onClick={handlePrint}
-                  className="p-2 text-[var(--primary-color)] hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all flex items-center gap-1.5 font-bold text-[11px]"
+                  className="p-2 text-[var(--primary-color)] hover:bg-white dark:hover:bg-white/5 rounded-xl transition-all flex items-center gap-1.5 font-bold text-[11px]"
                   title="Imprimir Orçamento"
                 >
                   <Printer size={15} /> Imprimir
                 </button>
-                <div className="w-px h-6 bg-orange-200 dark:bg-slate-600"></div>
+                <div className="w-px h-6 bg-slate-200 dark:bg-white/10"></div>
                 <button
                   onClick={() => syncPricesWithMaterials()}
-                  className="p-2 text-black hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all flex items-center gap-1.5 font-bold text-[11px]"
+                  className="p-2 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-white/5 rounded-xl transition-all flex items-center gap-1.5 font-bold text-[11px]"
                   title="Sincronizar preços com o cadastro de materiais"
                 >
                   <RotateCcw size={15} /> Atualizar Preços
                 </button>
                 {saleType === 'Pedido' && initialData?.id && createWorkOrders && (
                   <>
-                    <div className="w-px h-6 bg-orange-200 dark:bg-slate-600"></div>
+                    <div className="w-px h-6 bg-slate-200 dark:bg-white/10"></div>
                     <button
                       onClick={() => setShowGenerateOS(true)}
-                      className="p-2 text-emerald-600 hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-all flex items-center gap-1.5 font-bold text-[11px]"
+                      className="p-2 text-emerald-600 hover:bg-white dark:hover:bg-white/5 rounded-xl transition-all flex items-center gap-1.5 font-bold text-[11px]"
                       title="Gerar Ordens de Serviço de Produção"
                     >
                       <ClipboardList size={15} /> Gerar O.S.
@@ -906,7 +906,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 )}
               </div>
             )}
-            <button onClick={handleCloseAttempt} className="p-3 text-black hover:text-black dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-800 rounded-2xl transition-all shadow-sm">
+            <button onClick={handleCloseAttempt} className="p-3 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-white dark:hover:bg-white/5 rounded-2xl transition-all shadow-sm">
               <X size={28} />
             </button>
           </div>
@@ -916,26 +916,26 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
         <div className={`${(!isEditMode && !isLocked) ? 'pointer-events-none select-none opacity-95' : isLocked ? 'pointer-events-none select-none opacity-80' : ''}`}>
 
           {/* Section 1: Header Info (Sticky) */}
-          <div className="sticky top-0 z-[20] bg-white dark:bg-slate-900 px-4 pt-4 pb-4 border-b border-slate-100 dark:border-slate-800 space-y-3">
+          <div className="sticky top-0 z-[20] bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-4 pt-4 pb-4 border-b border-slate-100 dark:border-white/5 space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
               <div className="md:col-span-2">
-                <label className="text-[9px] font-black text-black uppercase tracking-[0.2em] mb-1 block">
+                <label className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mb-1 block">
                   {saleType === 'Orçamento' ? 'Nº Orçamento' : 'Nº Pedido'}
                 </label>
-                <div className="w-full p-2 bg-slate-200 dark:bg-slate-800/80 border-2 border-transparent rounded-xl font-black text-black dark:text-white transition-all text-xs flex items-center h-[38px] uppercase">
+                <div className="w-full p-2 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-xl font-black text-slate-800 dark:text-white transition-all text-xs flex items-center h-[38px] uppercase">
                   {orderNumber}
                 </div>
               </div>
 
               <div className="md:col-span-8">
-                <label className="text-[9px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Cliente</label>
+                <label className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mb-1 block">Cliente</label>
                 <div 
                   onClick={() => !readOnly && setIsClientModalOpen(true)}
-                  className={`w-full p-2 bg-slate-200 dark:bg-slate-800 border-2 border-transparent rounded-xl flex items-center justify-between transition-all h-[38px] ${!readOnly ? 'cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-700 shadow-sm' : 'opacity-70'}`}
+                  className={`w-full p-2 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-xl flex items-center justify-between transition-all h-[38px] ${!readOnly ? 'cursor-pointer hover:bg-slate-200 dark:hover:bg-white/10 shadow-sm' : 'opacity-70'}`}
                 >
                   <div className="flex items-center gap-2 overflow-hidden">
                     <User size={14} className="text-slate-400 shrink-0" />
-                    <span className="font-black text-xs text-black dark:text-white truncate uppercase">
+                    <span className="font-black text-xs text-slate-800 dark:text-white truncate uppercase">
                       {selectedClient ? selectedClient.name : 'Selecionar Cliente...'}
                     </span>
                   </div>
@@ -944,12 +944,12 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
               </div>
 
               <div className="md:col-span-2">
-                <label className="text-[9px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Canal de Venda</label>
+                <label className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mb-1 block">Canal de Venda</label>
                 <div className="relative">
                   <select
                     value={salesChannel}
                     onChange={(e) => setSalesChannel(e.target.value)}
-                    className="w-full p-2 pr-8 bg-slate-200 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-black text-xs text-black dark:text-white transition-all appearance-none h-[38px] uppercase cursor-pointer"
+                    className="w-full p-2 pr-8 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 focus:border-[var(--primary-color)] rounded-xl outline-none font-black text-xs text-slate-800 dark:text-white transition-all appearance-none h-[38px] uppercase cursor-pointer"
                   >
                     <option value="">Canais...</option>
                     {salesChannels.map(channel => (
@@ -964,12 +964,12 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
             {/* Grid 2: Vendedor, Arquiteto e Fase */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div className="md:col-span-1">
-                <label className="text-[9px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Vendedor</label>
+                <label className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mb-1 block">Vendedor</label>
                 <div className="relative">
                   <select
                     value={seller}
                     onChange={(e) => setSeller(e.target.value)}
-                    className="w-full p-2 pr-8 bg-slate-200 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-black text-xs text-black dark:text-white transition-all appearance-none h-[38px] uppercase cursor-pointer"
+                    className="w-full p-2 pr-8 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 focus:border-[var(--primary-color)] rounded-xl outline-none font-black text-xs text-slate-800 dark:text-white transition-all appearance-none h-[38px] uppercase cursor-pointer"
                   >
                     <option value="">Vendedores...</option>
                     {appUsers.filter(u => u.role === 'seller' || u.role === 'admin' || u.role === 'manager').map(u => (
@@ -981,7 +981,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
               </div>
 
               <div className="md:col-span-2">
-                <label className="text-[9px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Arquiteto / Parceiro</label>
+                <label className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mb-1 block">Arquiteto / Parceiro</label>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 relative">
                     <select
@@ -993,7 +993,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                         setArchitectId(arch?.id || '');
                         if (!selectedName) setArchitectCommissionPct(0);
                       }}
-                      className="w-full p-2 pr-8 bg-slate-200 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-black text-xs text-black dark:text-white transition-all appearance-none h-[38px] uppercase cursor-pointer"
+                      className="w-full p-2 pr-8 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 focus:border-[var(--primary-color)] rounded-xl outline-none font-black text-xs text-slate-800 dark:text-white transition-all appearance-none h-[38px] uppercase cursor-pointer"
                     >
                       <option value="">Nenhum parceiro</option>
                       {architects?.filter(a => a.status === 'ativo').map(a => (
@@ -1090,18 +1090,18 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
               </div>
 
               <div className="md:col-span-1">
-                <label className="text-[9px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Fase do Orçamento</label>
+                <label className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mb-1 block">Fase do Orçamento</label>
                 {initialData?.status === 'Cancelado' ? (
-                  <div className="w-full p-2 bg-slate-200 dark:bg-slate-800 rounded-xl font-black text-xs text-red-600 dark:text-red-400 h-[38px] flex items-center px-3 border-2 border-transparent">
+                  <div className="w-full p-2 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-xl font-black text-xs text-red-600 dark:text-red-400 h-[38px] flex items-center px-3">
                     Perdido
                   </div>
                 ) : isLocked ? (
-                  <div className="w-full p-2 bg-slate-200 dark:bg-slate-800 rounded-xl font-black text-xs text-green-600 dark:text-green-400 h-[38px] flex items-center px-3 border-2 border-green-100 dark:border-green-900/30">
+                  <div className="w-full p-2 bg-slate-100 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 rounded-xl font-black text-xs text-emerald-600 dark:text-emerald-400 h-[38px] flex items-center px-3">
                     Ganho ✓
                   </div>
                 ) : isNewSale ? (
-                  <div className="w-full p-2 bg-slate-200 dark:bg-slate-800 rounded-xl font-black text-xs text-slate-400 flex items-center justify-between h-[38px] px-3">
-                    <span className="text-black dark:text-white uppercase truncate">{salesPhase}</span>
+                  <div className="w-full p-2 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-xl font-black text-xs text-slate-400 flex items-center justify-between h-[38px] px-3">
+                    <span className="text-slate-800 dark:text-white uppercase truncate">{salesPhase}</span>
                     <span className="text-[7px] font-black uppercase tracking-tighter text-slate-400 shrink-0 ml-2">Salve p/ liberar</span>
                   </div>
                 ) : (
@@ -1109,7 +1109,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     <select
                       value={salesPhase}
                       onChange={(e) => setSalesPhase(e.target.value as any)}
-                      className="w-full p-2 pr-8 bg-slate-200 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-black text-xs text-black dark:text-white transition-all appearance-none h-[38px] uppercase cursor-pointer px-3"
+                      className="w-full p-2 pr-8 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 focus:border-[var(--primary-color)] rounded-xl outline-none font-black text-xs text-slate-800 dark:text-white transition-all appearance-none h-[38px] uppercase cursor-pointer px-3"
                     >
                       {salesPhases.map(phase => (
                         <option key={phase.name} value={phase.name}>{phase.name}</option>
@@ -1131,14 +1131,14 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 const envTotal = envItems.reduce((acc, i) => acc + i.totalPrice, 0);
 
                 return (
-                  <div key={env} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all">
-                    <div className="px-4 py-3 bg-slate-200 dark:bg-slate-800/30 flex items-center gap-4 border-b border-slate-300 dark:border-slate-800 group/header">
+                  <div key={env} className="bg-white/40 dark:bg-white/5 backdrop-blur-md border border-slate-100 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all">
+                    <div className="px-4 py-3 bg-slate-100 dark:bg-white/5 flex items-center gap-4 border-b border-slate-200 dark:border-white/5 group/header">
                       {/* Esquerda: nome + contagem + ações */}
                       <div className="flex items-center gap-3 min-w-0 flex-shrink-0">
                         <div className="w-1.5 h-7 bg-[var(--primary-color)] rounded-full flex-shrink-0"></div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <h3 className="text-xs font-black text-black dark:text-slate-200 uppercase tracking-widest">{env}</h3>
+                            <h3 className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest">{env}</h3>
                             <div className="flex items-center gap-1 opacity-0 group-hover/header:opacity-100 transition-opacity">
                               <button
                                 onClick={() => syncPricesWithMaterials(env)}
@@ -1170,7 +1170,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                               </button>
                             </div>
                           </div>
-                          <span className="text-[10px] font-bold text-black">
+                          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
                             {envItems.length} {envItems.length === 1 ? 'item' : 'itens'} lançados nesta área
                           </span>
                         </div>
@@ -1178,8 +1178,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
                       {/* Centro: seletor de matéria prima */}
                       <div className="flex-1 flex justify-center">
-                        <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                          <span className="text-[9px] font-black text-black uppercase tracking-tighter whitespace-nowrap">Trocar Matéria Prima:</span>
+                        <div className="flex items-center gap-2 bg-white/60 dark:bg-white/5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm">
+                          <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-tighter whitespace-nowrap">Trocar Matéria Prima:</span>
                           <button
                             type="button"
                             onClick={() => {
@@ -1197,8 +1197,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
                       {/* Direita: subtotal */}
                       <div className="text-right flex-shrink-0">
-                        <span className="text-[9px] font-black text-black uppercase block leading-none mb-0.5">Subtotal {env}</span>
-                        <span className="text-base font-black text-black dark:text-white">R$ {(envTotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase block leading-none mb-0.5">Subtotal {env}</span>
+                        <span className="text-base font-black text-slate-800 dark:text-white">R$ {(envTotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                     </div>
 
@@ -1211,7 +1211,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                         >
                           <table className="w-full text-left border-collapse">
                             <thead>
-                              <tr className="text-[10px] font-black text-black uppercase tracking-widest leading-none border-b border-slate-300 dark:border-slate-800">
+                              <tr className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-none border-b border-slate-200 dark:border-white/5">
                                 <th className="px-3 py-3 w-[160px]">Item</th>
                                 <th className="px-3 py-3 w-[200px]">Matéria Prima</th>
                                 <th className="px-3 py-3 text-center w-[60px]">Qtde</th>
@@ -1224,7 +1224,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                 <th className="px-3 py-3 text-center w-[60px]">Ações</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                               {envItems.map((item, index) => (
                                 <Draggable key={item.id} draggableId={item.id} index={index}>
                                   {(provided, snapshot) => (
@@ -1232,7 +1232,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                       ref={provided.innerRef}
                                       {...provided.draggableProps}
                                       {...provided.dragHandleProps}
-                                      className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group ${editingItemId === item.id ? 'bg-orange-50/50 dark:bg-orange-900/10' : ''} ${snapshot.isDragging ? 'bg-white dark:bg-slate-800 shadow-2xl opacity-80 scale-[1.02] border-2 border-[var(--primary-color)] rounded-xl' : ''}`}
+                                      className={`hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors group ${editingItemId === item.id ? 'bg-orange-500/5 dark:bg-orange-500/10' : ''} ${snapshot.isDragging ? 'bg-white dark:bg-slate-800 shadow-2xl opacity-80 scale-[1.02] border-2 border-[var(--primary-color)] rounded-xl' : ''}`}
                                     >
                                       <td className="px-3 py-3 text-[11px] font-bold text-black dark:text-white w-[160px] max-w-[160px] truncate">{item.description}</td>
                                       <td className="px-3 py-3 text-[11px] font-bold text-black dark:text-slate-300 w-[200px] max-w-[200px] truncate">
@@ -1259,7 +1259,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                       <td className="px-3 py-3 text-right text-[11px] font-bold text-black dark:text-slate-300">R$ {(item.unitPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                       <td className="px-3 py-3 text-center text-[10px] whitespace-nowrap w-[80px]">
                                         <div className="flex flex-col items-center">
-                                          <span className="font-bold text-black">{Number(item.servicePercentage || 0).toFixed(2)}%</span>
+                                          <span className="font-bold text-slate-800 dark:text-slate-200">{Number(item.servicePercentage || 0).toFixed(2)}%</span>
                                           <span className="text-[9px] font-black text-black">
                                             {(() => {
                                               const bTotal = (item.m2 || item.quantity) ? ((item.m2 || 0) > 0 ? (item.m2 || 0) * item.unitPrice : item.quantity * item.unitPrice) : 0;
@@ -1300,7 +1300,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                               {provided.placeholder}
 
                               {/* Add Item Row per Environment */}
-                              <tr className="bg-slate-100 dark:bg-slate-800/20">
+                              <tr className="bg-slate-50 dark:bg-white/5">
                                 <td className="p-1.5 pl-4">
                                   <div className="relative group">
                                     <input
@@ -1345,7 +1345,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                       onKeyDown={handleMaterialKeyDown}
                                       onFocus={() => setActiveEnvironment(env === 'Sem Ambiente' ? '' : env)}
                                       autoComplete="off"
-                                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] transition-colors pr-8 text-black"
+                                      className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] transition-colors pr-8 text-slate-800 dark:text-white"
                                     />
                                     <button
                                       type="button"
@@ -1355,7 +1355,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                         setMaterialSearch(itemMaterialId);
                                         setMaterialPickerOpen(true);
                                       }}
-                                      className="absolute right-2 top-1/2 -translate-y-1/2 text-black hover:text-[var(--primary-color)] p-1"
+                                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[var(--primary-color)] p-1 transition-colors"
                                     >
                                       <Search size={14} />
                                     </button>
@@ -1367,30 +1367,30 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                     const next = (isProductMaterial || isAcabamentoMaterial) ? priceRef.current : lengthRef.current;
                                     next ? next.focus() : addItem();
                                   }
-                                }} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" /></td>
+                                }} className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-slate-800 dark:text-white text-center" /></td>
                                 <td className="p-1.5">
                                   {(isProductMaterial || isAcabamentoMaterial) && activeEnvironment === (env === 'Sem Ambiente' ? '' : env)
-                                    ? <div className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] text-black text-center">—</div>
+                                    ? <div className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-lg p-2 text-[11px] text-slate-400 text-center">—</div>
                                     : <input type="number" step="0.001" ref={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? lengthRef : null} value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemLength : 0} onChange={e => setItemLength(parseFloat(e.target.value))} onKeyDown={e => {
                                         if (e.key === 'Enter') {
                                           e.preventDefault();
                                           widthRef.current?.focus();
                                         }
-                                      }} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" />
+                                      }} className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-slate-800 dark:text-white text-center" />
                                   }
                                 </td>
                                 <td className="p-1.5">
                                    {(isProductMaterial || isAcabamentoMaterial) && activeEnvironment === (env === 'Sem Ambiente' ? '' : env)
-                                    ? <div className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] text-black text-center">—</div>
+                                    ? <div className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-lg p-2 text-[11px] text-slate-400 text-center">—</div>
                                     : <input type="number" step="0.001" ref={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? widthRef : null} value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemWidth : 0} onChange={e => setItemWidth(parseFloat(e.target.value))} onKeyDown={e => {
                                         if (e.key === 'Enter') {
                                           e.preventDefault();
                                           priceRef.current?.focus();
                                         }
-                                      }} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-center" />
+                                      }} className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-slate-800 dark:text-white text-center" />
                                   }
                                 </td>
-                                <td className="p-1.5 text-center text-[10px] font-black text-black">
+                                <td className="p-1.5 text-center text-[10px] font-black text-slate-800 dark:text-white">
                                    {activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? (isProductMaterial || isAcabamentoMaterial ? '—' : calculateM2(itemLength, itemWidth, itemQty).toFixed(2)) : '—'}
                                 </td>
                                 <td className="p-1.5"><input type="number" step="0.01" ref={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? priceRef : null} value={activeEnvironment === (env === 'Sem Ambiente' ? '' : env) ? itemPrice : 0} onChange={e => setItemPrice(parseFloat(e.target.value))} onKeyDown={e => {
@@ -1400,7 +1400,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                   }
                                 }} 
                                 readOnly={!canEditPrice && !!itemMaterialId}
-                                className={`w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-right transition-all ${!canEditPrice && !!itemMaterialId ? 'opacity-50 cursor-not-allowed grayscale' : ''}`} /></td>
+                                className={`w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-lg p-2 text-[11px] font-bold outline-none focus:border-[var(--primary-color)] text-right transition-all text-slate-800 dark:text-white ${!canEditPrice && !!itemMaterialId ? 'opacity-50 cursor-not-allowed grayscale' : ''}`} /></td>
                                 <td className="p-1 w-[80px]">
                                   <div className="flex items-center justify-center gap-0.5">
                                     <input 
@@ -1421,7 +1421,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                           serviceValueRef.current?.focus();
                                         }
                                       }} 
-                                      className="w-[36px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-0.5 py-1.5 text-[10px] font-bold outline-none focus:border-[var(--primary-color)] text-center transition-all text-black"
+                                      className="w-[36px] bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-lg px-0.5 py-1.5 text-[10px] font-bold outline-none focus:border-[var(--primary-color)] text-center transition-all text-slate-800 dark:text-white"
                                       placeholder="%"
                                     />
                                     <input 
@@ -1438,7 +1438,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                                         setItemService(parseFloat(perc.toFixed(2)));
                                       }}
                                       onKeyDown={e => e.key === 'Enter' && addItem()}
-                                      className="w-[62px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-0.5 py-1.5 text-[10px] font-bold outline-none focus:border-[var(--primary-color)] text-right transition-all text-black"
+                                      className="w-[62px] bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-lg px-0.5 py-1.5 text-[10px] font-bold outline-none focus:border-[var(--primary-color)] text-right transition-all text-slate-800 dark:text-white"
                                       placeholder="R$ 0,00"
                                     />
                                   </div>
@@ -1468,7 +1468,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
               })}
 
               {/* Add New Environment */}
-              <div className="flex items-center gap-3 p-3 bg-slate-200 dark:bg-slate-800/30 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700">
+              <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-white/5 rounded-2xl border border-dashed border-slate-200 dark:border-white/10 shadow-sm">
                 <div className="flex-1">
                   <input
                     type="text"
@@ -1485,7 +1485,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                         setTimeout(() => itemDescRef.current?.focus(), 100);
                       }
                     }}
-                    className="w-full p-2.5 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-xl outline-none font-bold text-sm text-black dark:text-white focus:border-[var(--primary-color)] transition-all"
+                    className="w-full p-2.5 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl outline-none font-bold text-sm text-slate-800 dark:text-white focus:border-[var(--primary-color)] transition-all shadow-inner"
                   />
                 </div>
                 <button
@@ -1497,7 +1497,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                       setTimeout(() => itemDescRef.current?.focus(), 100);
                     }
                   }}
-                  className="px-5 py-2.5 bg-white dark:bg-slate-800 text-[var(--primary-color)] border-2 border-orange-100 dark:border-slate-700 rounded-xl font-black text-sm hover:bg-orange-50 transition-all flex items-center gap-2 shadow-sm"
+                  className="px-5 py-2.5 bg-white dark:bg-white/5 text-[var(--primary-color)] border border-orange-100 dark:border-white/10 rounded-xl font-black text-sm hover:bg-orange-50 dark:hover:bg-white/10 transition-all flex items-center gap-2 shadow-sm"
                 >
                   <PlusCircle size={16} /> Criar Ambiente
                 </button>
@@ -1508,20 +1508,20 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-3">
               <div>
-                <label className="text-[9px] font-black text-black uppercase tracking-[0.2em] mb-1 block">Observações</label>
+                <label className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mb-1 block">Observações</label>
                 <textarea
                   value={paymentConditions}
                   onChange={e => setPaymentConditions(e.target.value)}
                   placeholder="Observações adicionais sobre o pagamento..."
-                  className="w-full p-2 bg-slate-200 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none font-bold text-xs text-black dark:text-white transition-all h-24 resize-none"
+                  className="w-full p-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-[var(--primary-color)] rounded-2xl outline-none font-bold text-xs text-slate-800 dark:text-white transition-all h-24 resize-none shadow-sm"
                 ></textarea>
               </div>
 
               {/* Totais, Descontos e Botões (Movido para cá) */}
-              <div className="bg-slate-200 dark:bg-slate-800/50 rounded-xl p-3 space-y-3">
-                <div className="flex justify-between items-center text-slate-500">
-                  <span className="font-bold text-[10px]">Total dos Itens</span>
-                  <span className="font-black text-[10px]">R$ {(subtotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <div className="bg-white/40 dark:bg-white/5 backdrop-blur-md rounded-2xl p-4 space-y-4 border border-slate-100 dark:border-white/5 shadow-xl">
+                <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
+                  <span className="font-bold text-[10px] uppercase tracking-wider">Total dos Itens</span>
+                  <span className="font-black text-xs">R$ {(subtotal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <label className="text-[9px] font-black text-black uppercase whitespace-nowrap">Frete / Entrega (R$)</label>
@@ -1552,7 +1552,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                         setDiscountValue(valNum);
                         setDiscountValueInput(valNum > 0 ? valNum.toFixed(2) : '');
                       }}
-                      className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-bold text-black dark:text-white font-premium"
+                      className="w-full p-2 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl outline-none font-bold text-slate-800 dark:text-white focus:border-[var(--primary-color)] transition-all"
                       placeholder="0,00"
                     />
                   </div>
@@ -1575,7 +1575,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     />
                     {companyInfo.maxDiscountPct !== undefined && (
                       <div className="mt-1 flex justify-between items-center px-1">
-                        <span className="text-[8px] font-bold text-black uppercase">Limite ({companyInfo.maxDiscountPct}%)</span>
+                        <span className="text-[8px] font-bold text-slate-500 uppercase">Limite ({companyInfo.maxDiscountPct}%)</span>
                         <span className="text-[8px] font-black text-slate-500">
                           R$ {(subtotal * (companyInfo.maxDiscountPct / 100)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
@@ -1589,14 +1589,14 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     <span className="text-[10px] font-black">+ $ {architectCommissionValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 )}
-                <div className="pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between items-end">
+                <div className="pt-4 border-t border-slate-100 dark:border-white/10 flex justify-between items-end">
                   <div>
                     <span className="text-[9px] font-black text-black uppercase tracking-widest block mb-0.5">Total Geral</span>
                     <p className="text-xl font-black text-black tracking-tight">R$ {(totalGeral || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   </div>
                   {isLocked ? (
-                    <div className="flex items-center gap-2 px-4 py-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl text-black dark:text-green-400 text-[10px] font-black">
-                      <Eye size={14} /> Somente leitura
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 rounded-xl text-emerald-600 dark:text-emerald-400 text-[10px] font-black">
+                      <Eye size={14} /> Vista Somente Leitura
                     </div>
                   ) : !isEditMode ? (
                     <div className="flex items-center gap-2 pointer-events-auto">
@@ -1608,7 +1608,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                       </button>
                       <button
                         onClick={onClose}
-                        className="px-4 py-2.5 border-2 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 rounded-xl font-black hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-[10px]"
+                        className="px-4 py-2.5 border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 rounded-xl font-black hover:bg-slate-50 dark:hover:bg-white/5 transition-all text-[10px]"
                       >
                         Sair
                       </button>
@@ -1635,7 +1635,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
               </div>
 
               <div>
-                <label className="text-[9px] font-black uppercase tracking-[0.2em] mb-1 block text-black">
+                <label className="text-[9px] font-black uppercase tracking-[0.2em] mb-1 block text-slate-500 dark:text-slate-400">
                   Prazo de Entrega
                 </label>
                 <div className="relative w-28">
@@ -1645,17 +1645,17 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     value={deliveryDeadline}
                     onChange={e => setDeliveryDeadline(e.target.value)}
                     placeholder="0"
-                    className="w-full p-1.5 bg-slate-200 dark:bg-slate-800 border-2 focus:border-[var(--primary-color)] rounded-lg outline-none font-bold text-xs text-black dark:text-white transition-all border-transparent pr-10"
+                    className="w-full p-1.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-[var(--primary-color)] rounded-lg outline-none font-bold text-xs text-slate-800 dark:text-white transition-all pr-10"
                   />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-black text-black uppercase tracking-wider pointer-events-none">d.úteis</span>
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-black text-slate-400 uppercase tracking-wider pointer-events-none">d.úteis</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-3">
               {/* Bloco de Pagamento */}
-              <div className={`rounded-xl p-3 space-y-2 border-2 ${saleType === 'Pedido' ? 'border-[var(--primary-color)]/30 bg-orange-50/40 dark:bg-slate-800/60' : 'border-slate-100 dark:border-slate-800 bg-slate-200 dark:bg-slate-800/30'}`}>
-                <p className={`text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5 ${saleType === 'Pedido' ? 'text-[var(--primary-color)]' : 'text-black'}`}>
+              <div className={`rounded-2xl p-4 space-y-3 border transition-all ${saleType === 'Pedido' ? 'border-[var(--primary-color)]/30 bg-[var(--primary-color)]/5 backdrop-blur-md' : 'border-slate-100 dark:border-white/5 bg-white/40 dark:bg-white/5 shadow-sm'}`}>
+                <p className={`text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5 ${saleType === 'Pedido' ? 'text-[var(--primary-color)]' : 'text-slate-500 dark:text-slate-400'}`}>
                   Condições de Pagamento
                 </p>
                 {/* ── Entrada ── */}
@@ -1667,7 +1667,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                       onChange={e => setDownPaymentEnabled(e.target.checked)}
                       className="accent-[var(--primary-color)] w-3.5 h-3.5"
                     />
-                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Cobrar Entrada</span>
+                    <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Cobrar Entrada</span>
                   </label>
                 </div>
                 {downPaymentEnabled && (
@@ -1675,33 +1675,33 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     <p className="text-[8px] font-black text-amber-700 uppercase tracking-widest">Entrada</p>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="text-[9px] font-bold text-black uppercase tracking-widest block mb-1">Valor (R$)</label>
+                        <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest block mb-1">Valor (R$)</label>
                         <input
                           type="number"
                           min="0"
                           step="0.01"
                           value={downPaymentValue || ''}
                           onChange={e => setDownPaymentValue(parseFloat(e.target.value) || 0)}
-                          className="w-full p-1.5 bg-white rounded-lg border-2 border-transparent focus:border-amber-400 outline-none font-bold text-xs text-black transition-all"
+                          className="w-full p-2 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/10 focus:border-amber-400 outline-none font-bold text-xs text-slate-800 dark:text-white transition-all shadow-sm"
                           placeholder="0,00"
                         />
                       </div>
                       <div>
-                        <label className="text-[9px] font-bold text-black uppercase tracking-widest block mb-1">Vencimento</label>
+                        <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest block mb-1">Vencimento</label>
                         <input
                           type="date"
                           value={downPaymentDueDate}
                           onChange={e => setDownPaymentDueDate(e.target.value)}
-                          className="w-full p-1.5 bg-white rounded-lg border-2 border-transparent focus:border-amber-400 outline-none font-bold text-xs text-black transition-all"
+                          className="w-full p-2 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/10 focus:border-amber-400 outline-none font-bold text-xs text-slate-800 dark:text-white transition-all shadow-sm"
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="text-[9px] font-bold text-black uppercase tracking-widest block mb-1">Forma de Pag. da Entrada</label>
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest block mb-1">Forma de Pag. da Entrada</label>
                       <select
                         value={downPaymentMethodId}
                         onChange={e => setDownPaymentMethodId(e.target.value)}
-                        className="w-full p-1.5 bg-white rounded-lg border-2 border-transparent focus:border-amber-400 outline-none font-bold text-xs text-black appearance-none transition-all"
+                        className="w-full p-2 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/10 focus:border-amber-400 outline-none font-bold text-xs text-slate-800 dark:text-white appearance-none transition-all shadow-sm"
                       >
                         <option value="">-- Selecione --</option>
                         {paymentMethods.filter(p => p.active).map(p => (
@@ -1714,7 +1714,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
                   <div className={`${paymentMethods.find(p => p.id === paymentMethodId)?.type === 'aprazo' ? 'md:col-span-6' : 'md:col-span-8'}`}>
-                    <label className="text-[9px] font-bold text-black uppercase tracking-widest block mb-1">Forma de Pagamento{downPaymentEnabled && downPaymentValue > 0 ? ' do Restante' : ''}</label>
+                    <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest block mb-1">Forma de Pagamento{downPaymentEnabled && downPaymentValue > 0 ? ' do Restante' : ''}</label>
                     <select
                       value={paymentMethodId}
                       onChange={e => {
@@ -1722,7 +1722,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                         setPaymentMethodId(e.target.value);
                         setPaymentInstallments(pm?.type === 'aprazo' ? (pm.installments ?? 1) : 1);
                       }}
-                      className={`w-full p-1.5 bg-white dark:bg-slate-700 rounded-lg border-2 outline-none font-bold text-xs text-black dark:text-white appearance-none transition-all ${saleType === 'Pedido' && !paymentMethodId ? 'border-red-300' : 'border-transparent focus:border-[var(--primary-color)]'}`}
+                      className={`w-full p-2 bg-white dark:bg-white/5 rounded-xl border outline-none font-bold text-xs text-slate-800 dark:text-white appearance-none transition-all shadow-sm ${saleType === 'Pedido' && !paymentMethodId ? 'border-red-300 dark:border-red-900/50' : 'border-slate-100 dark:border-white/10 focus:border-[var(--primary-color)]'}`}
                     >
                       <option value="">-- Selecione --</option>
                       {paymentMethods.filter(p => p.active).map(p => (
@@ -1732,11 +1732,11 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   </div>
                   {paymentMethods.find(p => p.id === paymentMethodId)?.type === 'aprazo' && (
                     <div className="md:col-span-2">
-                      <label className="text-[9px] font-bold text-black uppercase tracking-widest block mb-1">Parc.</label>
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest block mb-1 text-center">Parc.</label>
                       <select
                         value={paymentInstallments}
                         onChange={e => setPaymentInstallments(parseInt(e.target.value))}
-                        className="w-full p-1.5 bg-white dark:bg-slate-700 rounded-lg border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-xs text-black dark:text-white appearance-none"
+                        className="w-full p-2 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/10 focus:border-[var(--primary-color)] outline-none font-bold text-xs text-slate-800 dark:text-white appearance-none text-center shadow-sm"
                       >
                         {Array.from({ length: paymentMethods.find(p => p.id === paymentMethodId)?.installments ?? 1 }, (_, i) => i + 1).map(n => (
                           <option key={n} value={n}>{n}x</option>
@@ -1745,14 +1745,14 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     </div>
                   )}
                   <div className="md:col-span-4">
-                    <label className="text-[9px] font-bold uppercase tracking-widest block mb-1 text-black whitespace-nowrap">
+                    <label className="text-[9px] font-bold uppercase tracking-widest block mb-1 text-slate-500 dark:text-slate-400 whitespace-nowrap">
                       1º Vencimento
                     </label>
                     <input
                       type="date"
                       value={firstDueDate}
                       onChange={e => setFirstDueDate(e.target.value)}
-                      className={`w-full p-1.5 bg-white dark:bg-slate-700 rounded-lg border-2 outline-none font-bold text-xs text-black dark:text-white transition-all ${saleType === 'Pedido' && !firstDueDate ? 'border-red-300' : 'border-transparent focus:border-[var(--primary-color)]'}`}
+                      className={`w-full p-2 bg-white dark:bg-white/5 rounded-xl border outline-none font-bold text-xs text-slate-800 dark:text-white transition-all shadow-sm ${saleType === 'Pedido' && !firstDueDate ? 'border-red-300 dark:border-red-900/50' : 'border-slate-100 dark:border-white/10 focus:border-[var(--primary-color)]'}`}
                     />
                   </div>
                 </div>
@@ -1771,9 +1771,9 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   return (
                     <div className="space-y-1.5">
                       {dpValue > 0 && (
-                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 flex items-center justify-between">
-                          <p className="text-[9px] font-black uppercase tracking-widest text-amber-700">{dpPm?.name || 'Entrada'}</p>
-                          <p className="text-sm font-black text-amber-700">R$ {fmtR(dpValue)}</p>
+                        <div className="bg-amber-500/10 dark:bg-amber-500/5 border border-amber-200/50 dark:border-amber-500/20 rounded-xl p-3 flex items-center justify-between shadow-sm">
+                          <p className="text-[9px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-500">{dpPm?.name || 'Entrada'}</p>
+                          <p className="text-base font-black text-amber-600 dark:text-amber-500">R$ {fmtR(dpValue)}</p>
                         </div>
                       )}
                       <div className="bg-[var(--primary-color)]/10 dark:bg-[var(--primary-color)]/20 rounded-lg p-2.5 border border-[var(--primary-color)]/20">
@@ -1932,8 +1932,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
         const envItems = items.filter(i => (i.environment || 'Sem Ambiente') === materialSwap.env);
         const distinctMaterials = Array.from(new Set(envItems.map(i => i.materialName || '').filter(Boolean)));
         return (
-          <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="fixed inset-0 z-[400] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+            <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-[2.5rem] w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-white/20 dark:border-white/5">
               <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800">
                 <h3 className="text-base font-black text-slate-800 dark:text-white">Trocar Matéria Prima</h3>
                 <p className="text-xs text-slate-500 mt-1">
@@ -1986,29 +1986,29 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
       {showRevert && (
         <div className="fixed inset-0 z-[350] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 bg-amber-50 dark:bg-amber-900/20">
-              <div className="p-2 bg-amber-100 dark:bg-amber-900/40 rounded-xl">
-                <AlertTriangle size={20} className="text-amber-600" />
+            <div className="p-6 border-b border-slate-100 dark:border-white/5 flex items-center gap-3 bg-amber-500/5 dark:bg-amber-500/10">
+              <div className="p-3 bg-amber-500/10 dark:bg-amber-500/20 rounded-2xl">
+                <AlertTriangle size={24} className="text-amber-600 dark:text-amber-500" />
               </div>
-              <div>
-                <h2 className="text-base font-black text-slate-800 dark:text-white">Reverter Pedido para Orçamento</h2>
-                <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">Esta ação requer autenticação e justificativa</p>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-lg font-black text-slate-800 dark:text-white tracking-tight">Reverter Pedido</h2>
+                <p className="text-xs text-amber-600 dark:text-amber-500 font-bold opacity-80 uppercase tracking-widest">Ação requer autenticação</p>
               </div>
             </div>
-            <div className="p-5 space-y-4">
+            <div className="p-6 space-y-5">
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 block">Justificativa obrigatória</label>
+                <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 block">Justificativa obrigatória</label>
                 <textarea
                   autoFocus
                   value={revertJustification}
                   onChange={e => setRevertJustification(e.target.value)}
-                  placeholder="Descreva o motivo do retorno deste pedido..."
-                  className="w-full p-3 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-amber-400 rounded-2xl outline-none font-medium text-sm text-slate-800 dark:text-white resize-none h-24 transition-all"
+                  placeholder="Por que este pedido deve voltar a ser apenas um orçamento?"
+                  className="w-full p-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-amber-400 rounded-3xl outline-none font-bold text-sm text-slate-800 dark:text-white resize-none h-28 transition-all shadow-inner"
                 ></textarea>
               </div>
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1.5">
-                  <Lock size={11} /> Sua senha do sistema
+                <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2 flex items-center gap-1.5">
+                  <Lock size={12} className="text-amber-500" /> Sua senha do sistema
                 </label>
                 <input
                   type="password"
@@ -2016,23 +2016,23 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                   onChange={e => setRevertPassword(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleRevertConfirm()}
                   placeholder="••••••••"
-                  className="w-full p-3 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-amber-400 rounded-2xl outline-none font-bold text-slate-800 dark:text-white transition-all"
+                  className="w-full p-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-amber-400 rounded-2xl outline-none font-black text-slate-800 dark:text-white transition-all shadow-inner"
                 />
               </div>
               {revertError && (
-                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl text-red-600 text-xs font-bold">
+                <div className="flex items-center gap-2 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-600 dark:text-red-400 text-xs font-bold animate-in slide-in-from-top-1">
                   <X size={14} /> {revertError}
                 </div>
               )}
             </div>
-            <div className="p-5 pt-0 flex gap-3">
-              <button onClick={() => setShowRevert(false)} className="flex-1 py-3 px-4 bg-slate-100 dark:bg-slate-800 text-black dark:text-slate-300 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all">
+            <div className="p-6 pt-0 flex gap-3">
+              <button onClick={() => setShowRevert(false)} className="flex-1 py-4 px-4 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 rounded-[1.5rem] font-black text-sm hover:bg-slate-200 dark:hover:bg-white/10 transition-all">
                 Cancelar
               </button>
               <button
                 onClick={handleRevertConfirm}
                 disabled={revertLoading || !revertJustification.trim() || !revertPassword}
-                className="flex-1 py-3 px-4 bg-amber-500 text-white rounded-2xl font-black text-sm shadow-lg shadow-amber-500/20 hover:opacity-90 transition-all disabled:opacity-50"
+                className="flex-1 py-4 px-4 bg-amber-500 text-white rounded-[1.5rem] font-black text-sm shadow-xl shadow-amber-500/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100"
               >
                 {revertLoading ? 'Validando...' : 'Confirmar Retorno'}
               </button>
@@ -2043,33 +2043,33 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
       {/* Product/Service Picker Popup */}
       {productPickerOpen && (
-        <div className="fixed inset-0 z-[350] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+        <div className="fixed inset-0 z-[350] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border border-white/20 dark:border-white/5">
+            <div className="p-6 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-white/40 dark:bg-white/5">
               <div>
-                <h2 className="text-base font-black text-slate-800 dark:text-white tracking-tight">Selecionar Serviço</h2>
-                <p className="text-xs text-slate-500 font-medium">Pesquise e clique para selecionar</p>
+                <h2 className="text-lg font-black text-slate-800 dark:text-white tracking-tight">Selecionar Serviço</h2>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest opacity-70">Catálogo de Serviços Disponíveis</p>
               </div>
               <button onClick={() => {
                 setProductPickerOpen(false);
                 setTimeout(() => itemDescRef.current?.focus(), 100);
-              }} className="p-2 text-slate-400 hover:text-black rounded-xl transition-colors">
-                <X size={20} />
+              }} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all">
+                <X size={24} />
               </button>
             </div>
-            <div className="p-4">
-              <div className="relative mb-3">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <div className="p-6">
+              <div className="relative mb-4">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input
                   autoFocus
                   type="text"
-                  placeholder="Buscar serviço..."
+                  placeholder="O que você está procurando?"
                   value={productSearch}
                   onChange={e => setProductSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none transition-all font-medium text-sm text-slate-800 dark:text-white"
+                  className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-[var(--primary-color)] rounded-[1.5rem] outline-none transition-all font-bold text-sm text-slate-800 dark:text-white shadow-inner"
                 />
               </div>
-              <div className="max-h-[360px] overflow-y-auto custom-scrollbar space-y-1">
+              <div className="max-h-[400px] overflow-y-auto custom-scrollbar space-y-2 pr-1">
                 {(() => {
                   const q = productSearch.toLowerCase();
                   const filteredItems = (services || [])
@@ -2090,25 +2090,21 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                         setProductPickerOpen(false);
                         setTimeout(() => materialRef.current?.focus(), 100);
                       }}
-                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-[var(--primary-color)] hover:bg-orange-50 dark:hover:bg-[var(--primary-color)]/5 transition-all text-left group"
+                      className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl border border-slate-100 dark:border-white/5 hover:border-[var(--primary-color)] hover:bg-orange-500/5 dark:hover:bg-white/10 transition-all text-left group shadow-sm"
                     >
                       <div className="flex flex-col">
-                        <span className="font-bold text-sm text-slate-800 dark:text-white group-hover:text-[var(--primary-color)]">{item.label}</span>
+                        <span className="font-black text-sm text-slate-800 dark:text-white group-hover:text-[var(--primary-color)] transition-colors">{item.label}</span>
                         {(item.price || 0) > 0 && (
-                          <span className="text-[10px] text-slate-400 font-bold">R$ {item.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                          <span className="text-[11px] text-slate-400 font-bold mt-0.5">Venda Sugerida: R$ {item.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                         )}
                       </div>
-                      <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg transition-all ${
-                        item.type === 'Serviço' 
-                          ? 'bg-blue-500/10 text-black group-hover:bg-blue-500 group-hover:text-white' 
-                          : 'bg-amber-500/10 text-amber-600 group-hover:bg-amber-500 group-hover:text-white'
-                      }`}>
+                      <span className="text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all">
                         {item.type}
                       </span>
                     </button>
                   )) : (
-                    <div className="py-10 text-center text-slate-400">
-                      <p className="font-bold text-sm">Nenhum item encontrado</p>
+                    <div className="py-12 text-center text-slate-400">
+                      <p className="font-black text-base uppercase tracking-widest opacity-50">Nenhum serviço encontrado</p>
                     </div>
                   );
                 })()}
@@ -2120,36 +2116,34 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
 
       {/* Material Picker Popup */}
       {materialPickerOpen && (
-        <div className="fixed inset-0 z-[350] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+        <div className="fixed inset-0 z-[400] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 border border-white/20 dark:border-white/5">
+            <div className="p-6 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-white/40 dark:bg-white/5">
               <div>
-                <h2 className="text-base font-black text-slate-800 dark:text-white tracking-tight">
-                  {swapPickerEnv !== null ? 'Trocar Matéria Prima' : 'Selecionar Material'}
-                </h2>
-                <p className="text-xs text-slate-500 font-medium">Matéria Prima, Acabamentos e Produtos de Revenda</p>
+                <h2 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">Materiais & Chapas</h2>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest opacity-70">Selecione o material para o item</p>
               </div>
               <button onClick={() => {
                 setMaterialPickerOpen(false);
                 setSwapPickerEnv(null);
                 if (!swapPickerEnv) setTimeout(() => materialRef.current?.focus(), 100);
-              }} className="p-2 text-slate-400 hover:text-black rounded-xl transition-colors">
-                <X size={20} />
+              }} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all">
+                <X size={28} />
               </button>
             </div>
-            <div className="p-4">
-              <div className="relative mb-3">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <div className="p-6">
+              <div className="relative mb-6">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input
                   autoFocus
                   type="text"
-                  placeholder="Buscar material..."
+                  placeholder="Qual material você deseja?"
                   value={materialSearch}
                   onChange={e => setMaterialSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-[var(--primary-color)] rounded-xl outline-none transition-all font-medium text-sm text-slate-800 dark:text-white"
+                  className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-[var(--primary-color)] rounded-[1.5rem] outline-none transition-all font-bold text-sm text-slate-800 dark:text-white shadow-inner"
                 />
               </div>
-              <div className="max-h-[360px] overflow-y-auto custom-scrollbar space-y-1">
+              <div className="max-h-[400px] overflow-y-auto custom-scrollbar space-y-2 pr-1">
                 {(() => {
                   const q = materialSearch.toLowerCase();
                   const matItems = (materials || [])

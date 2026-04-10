@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Diamond, Package, BarChart3, Users, Settings, PlusCircle, MapPin, ShoppingBag, Wallet, Box, ChevronDown, ChevronRight, Truck, Briefcase, Wrench, TrendingUp, ClipboardList, Landmark } from 'lucide-react';
 import { View, CompanyInfo, ModuleKey, SubModuleKey, AccessLevel } from '../types';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ interface NavItem {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, onViewChange, companyInfo, exchangeRates, getAccess }) => {
+  const { theme } = useTheme();
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
 
   const toggleMenu = (label: string) => {
@@ -99,12 +101,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, currentView, o
 
   return (
     <aside 
-      className={`${isOpen ? 'w-64' : 'w-20'} flex flex-col shrink-0 transition-all duration-300 shadow-2xl z-50`}
+      className={`${isOpen ? 'w-64' : 'w-20'} flex flex-col shrink-0 transition-all duration-300 shadow-2xl z-50 backdrop-blur-xl border-r border-white/10 dark:border-white/5 relative overflow-hidden`}
       style={{ 
-        backgroundColor: 'var(--sidebar-bg)',
+        backgroundColor: theme === 'dark' ? 'rgba(2, 6, 23, 0.4)' : 'rgba(15, 23, 42, 0.95)',
         color: 'var(--sidebar-text)'
       }}
     >
+      <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
       <div className="p-4 flex items-center gap-3 cursor-pointer" onClick={toggle}>
         {isOpen ? (
           <div className="w-full h-16 bg-white rounded-2xl flex items-center justify-center overflow-hidden shrink-0">

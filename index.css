@@ -8,13 +8,103 @@
   --accent-color: #7f13ec;
   --sidebar-bg: #0f172a;
   --sidebar-text: #cbd5e1;
+  --card-bg: #ffffff;
+  --body-bg: #f8fafc;
+}
+
+.dark {
+  --primary-color: #4da5c8;
+  --secondary-color: #fb713b;
+  --accent-color: #a855f7;
+  --sidebar-bg: #020617;
+  --sidebar-text: #94a3b8;
+  --card-bg: rgba(30, 41, 59, 0.7);
+  --body-bg: #020617;
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply transition-colors duration-300;
+    background-color: var(--body-bg);
+    color: theme('colors.slate.900');
     font-family: 'Poppins', sans-serif;
   }
+  .dark body {
+    color: theme('colors.slate.200');
+  }
+}
+
+/* Glassmorphism Utilities */
+.glass-card {
+  @apply backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-2xl;
+  background-color: var(--card-bg);
+}
+
+.management-container {
+  @apply bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-sm rounded-3xl overflow-hidden;
+}
+
+.management-header-card {
+  @apply bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-sm rounded-3xl p-4;
+}
+
+.management-title {
+  @apply text-2xl font-black text-slate-800 dark:text-white tracking-tight;
+}
+
+.management-subtitle {
+  @apply text-slate-500 dark:text-slate-400 font-medium;
+}
+
+.management-row-hover {
+  @apply hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors;
+}
+
+.management-input {
+  @apply bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary dark:text-white text-sm font-medium;
+}
+
+.management-stat-card {
+  @apply bg-white dark:bg-slate-900/40 backdrop-blur-md p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-sm;
+}
+
+.management-modal {
+  @apply bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/10 shadow-2xl;
+}
+
+.liquid-blob {
+  position: fixed;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: -1;
+  opacity: 0.15;
+  pointer-events: none;
+  animation: move-liquid 20s infinite alternate cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+.dark .liquid-blob {
+  opacity: 0.1;
+}
+
+@keyframes move-liquid {
+  0% { transform: translate(-10%, -10%) scale(1); }
+  50% { transform: translate(10%, 15%) scale(1.1); }
+  100% { transform: translate(5%, -5%) scale(0.9); }
+}
+
+@keyframes move-liquid-delayed {
+  0% { transform: translate(10%, 10%) scale(0.9); }
+  50% { transform: translate(-15%, -10%) scale(1.1); }
+  100% { transform: translate(-5%, 5%) scale(1); }
+}
+
+.animate-liquid-delayed {
+  animation: move-liquid-delayed 25s infinite alternate cubic-bezier(0.45, 0, 0.55, 1);
 }
 
 .kanban-column {

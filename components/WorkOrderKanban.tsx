@@ -112,13 +112,15 @@ const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, deadli
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           onClick={() => onClick(workOrder)}
-          className={`bg-white rounded-2xl p-3 shadow-sm cursor-pointer select-none transition-all
-            ${snapshot.isDragging ? 'shadow-xl rotate-1 scale-[1.02]' : 'hover:shadow-md'}
+          className={`rounded-2xl p-3 cursor-pointer select-none transition-all
+            ${snapshot.isDragging 
+              ? 'shadow-2xl rotate-1 scale-[1.05] border-[var(--primary-color)] bg-white z-[9999]' 
+              : 'glass-card hover:shadow-md'}
             ${phaseDeadlineStatus === 'alert'
-              ? 'border-2 border-red-400 bg-red-50/20'
+              ? 'border-2 border-red-400 bg-red-500/10 dark:bg-red-500/20'
               : phaseDeadlineStatus === 'warning'
-                ? 'border-2 border-orange-400 bg-orange-50/20'
-                : 'border border-transparent'}`}
+                ? 'border-2 border-orange-400 bg-orange-500/10 dark:bg-orange-500/20'
+                : 'border-white/20 dark:border-white/5 shadow-sm'}`}
         >
           {/* Priority badge */}
           <div className="flex items-center justify-between mb-1.5">
@@ -128,7 +130,7 @@ const WOCard: React.FC<WOCardProps> = ({ workOrder, allWorkOrders, index, deadli
           </div>
 
           {/* Client & OS */}
-          <p className="font-black text-gray-900 text-xs leading-snug truncate">
+          <p className="font-black text-slate-900 dark:text-white text-xs leading-snug truncate">
             {workOrder.clientName || 'Cliente'}
           </p>
           <p className="text-[10px] text-gray-400 mt-0.5 truncate">
@@ -367,10 +369,10 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkO
     {/* Column header */}
     <div className="mb-3 px-1 space-y-1">
       <div className="flex items-center justify-between">
-        <h3 className="text-[13px] font-black uppercase tracking-widest text-slate-500 truncate">
+        <h3 className="text-[13px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 truncate">
           {phase.name}
         </h3>
-        <span className="ml-2 flex-shrink-0 px-3 py-1.5 rounded-lg bg-slate-200 text-slate-600 text-[12px] font-black min-w-[32px] text-center">
+        <span className="ml-2 flex-shrink-0 px-3 py-1.5 rounded-lg bg-slate-200/50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 text-[12px] font-black min-w-[32px] text-center border border-slate-200 dark:border-slate-700 shadow-sm">
           {workOrders.length}
         </span>
       </div>
@@ -407,8 +409,10 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ phase, workOrders, allWorkO
         <div
           ref={provided.innerRef}
           {...provided.droppableProps}
-          className={`flex-1 min-h-[120px] rounded-2xl p-2 transition-colors space-y-3
-            ${snapshot.isDraggingOver ? 'bg-[var(--primary-color)]/10' : 'bg-gray-100/60'}`}
+          className={`flex-1 min-h-[120px] rounded-2xl p-2 transition-all duration-300 space-y-3
+            ${snapshot.isDraggingOver 
+              ? 'bg-[var(--primary-color)]/20 shadow-inner' 
+              : 'bg-slate-500/5 dark:bg-slate-500/10'}`}
         >
           {workOrders.map((wo, index) => (
             <WOCard key={wo.id} workOrder={wo} allWorkOrders={allWorkOrders} index={index} deadlineWarningDays={deadlineWarningDays} deadlineUrgentDays={deadlineUrgentDays} phaseConfig={phase} onClick={onCardClick} dragDisabled={dragDisabled} appUsers={appUsers} />

@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Bell, LogOut, User as UserIcon, History, ShieldAlert, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Search, Bell, LogOut, User as UserIcon, History, ShieldAlert, CheckCircle, XCircle, Clock, Sun, Moon } from 'lucide-react';
 import { User, Authorization } from '../types';
 import { getInitials } from '../utils/userUtils';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface HeaderProps {
   user: User;
@@ -14,6 +15,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ user, onLogout, onSearch, onToggleActivity, authorizations = [], onApproveDiscount, onRejectDiscount }) => {
+  const { theme, toggleTheme } = useTheme();
   const [showNotifications, setShowNotifications] = useState(false);
   const [approveMsg, setApproveMsg] = useState<Record<string, string>>({});
   const notifRef = useRef<HTMLDivElement>(null);
@@ -39,14 +41,14 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onSearch, onTogg
   const badgeCount = myNotifications.length;
 
   return (
-    <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8 shrink-0">
+    <header className="h-16 bg-white/70 dark:bg-slate-900/40 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between px-8 shrink-0 relative z-50">
 
       {/* Search area */}
       <div className="flex items-center gap-4 flex-1 max-w-xl">
         <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
           <input
-            className="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-xl focus:ring-2 focus:ring-[var(--primary-color)]/50 text-sm transition-all outline-none"
+            className="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800/50 border border-transparent focus:border-[var(--primary-color)]/30 rounded-xl focus:ring-4 focus:ring-[var(--primary-color)]/10 text-sm transition-all outline-none dark:text-white"
             placeholder="Pesquisar projetos, clientes ou materiais..."
             type="text"
             onChange={(e) => onSearch(e.target.value)}
@@ -56,6 +58,15 @@ export const Header: React.FC<HeaderProps> = ({ user, onLogout, onSearch, onTogg
 
       {/* Right Actions */}
       <div className="flex items-center gap-6">
+        
+        {/* Theme Toggle */}
+        <button
+          onClick={toggleTheme}
+          className="p-2 rounded-xl transition-all duration-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-[var(--primary-color)] dark:text-slate-400"
+          title={theme === 'light' ? 'Mudar para modo escuro' : 'Mudar para modo claro'}
+        >
+          {theme === 'light' ? <Moon size={22} className="animate-in spin-in-90 duration-500" /> : <Sun size={22} className="animate-in spin-in-180 duration-500" />}
+        </button>
 
         {/* Activity Toggle */}
         <button

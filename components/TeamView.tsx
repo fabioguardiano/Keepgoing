@@ -129,17 +129,17 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, existingEmails, 
     }
   };
 
-  const inputClass = "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm disabled:opacity-50";
-  const labelClass = "block text-sm font-bold text-slate-700 mb-2 ml-1";
+  const inputClass = "management-input w-full px-4 py-3 disabled:opacity-50";
+  const labelClass = "block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 ml-1";
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[3000] flex items-center justify-center p-4" onClick={!loading ? onClose : undefined}>
-      <form className="bg-white rounded-[32px] w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+      <form className="management-modal rounded-[32px] w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={e => e.stopPropagation()} onSubmit={handleSubmit}>
-        <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+        <div className="px-8 py-6 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
           <div>
-            <h3 className="text-xl font-bold text-slate-800">{isEditing ? 'Editar Usuário' : 'Novo Usuário'}</h3>
-            <p className="text-slate-500 text-sm">Acesso ao sistema</p>
+            <h3 className="text-xl font-bold text-slate-800 dark:text-white">{isEditing ? 'Editar Usuário' : 'Novo Usuário'}</h3>
+            <p className="management-subtitle text-sm">Acesso ao sistema</p>
           </div>
           <button type="button" onClick={!loading ? onClose : undefined} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
             <X className="text-slate-400" />
@@ -228,7 +228,7 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, existingEmails, 
             </div>
 
             {isEditing && (
-              <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl mb-2">
+              <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl mb-2">
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Código</span>
                 <span className="text-sm font-black text-primary bg-primary/10 px-3 py-1 rounded-lg">#{initial?.code || '—'}</span>
               </div>
@@ -315,7 +315,7 @@ const UserForm: React.FC<UserFormProps> = ({ initial, profiles, existingEmails, 
               </div>
             </div>
             <div className="pt-2 flex gap-3">
-              <button type="button" onClick={!loading ? onClose : undefined} disabled={loading} className="flex-1 px-6 py-3 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-50">
+              <button type="button" onClick={!loading ? onClose : undefined} disabled={loading} className="flex-1 px-6 py-3 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all disabled:opacity-50">
                 Cancelar
               </button>
               <button type="submit" disabled={loading || emailDuplicate} className="flex-1 px-6 py-3 bg-primary hover:opacity-90 text-white rounded-xl font-bold shadow-lg shadow-primary/20 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2">
@@ -355,17 +355,17 @@ const StaffForm: React.FC<StaffFormProps> = ({ initial, onSave, onClose }) => {
     onClose();
   };
 
-  const inputClass = "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm";
-  const labelClass = "block text-sm font-bold text-slate-700 mb-2 ml-1";
+  const inputClass = "management-input w-full px-4 py-3";
+  const labelClass = "block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 ml-1";
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[3000] flex items-center justify-center p-4" onClick={onClose}>
-      <form className="bg-white rounded-[32px] w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+      <form className="management-modal rounded-[32px] w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={e => e.stopPropagation()} onSubmit={handleSubmit}>
-        <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+        <div className="px-8 py-6 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
           <div>
-            <h3 className="text-xl font-bold text-slate-800">{initial?.id ? 'Editar Colaborador' : 'Novo Colaborador'}</h3>
-            <p className="text-slate-500 text-sm">Equipe de produção</p>
+            <h3 className="text-xl font-bold text-slate-800 dark:text-white">{initial?.id ? 'Editar Colaborador' : 'Novo Colaborador'}</h3>
+            <p className="management-subtitle text-sm">Equipe de produção</p>
           </div>
           <button type="button" onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
             <X className="text-slate-400" />
@@ -400,7 +400,7 @@ const StaffForm: React.FC<StaffFormProps> = ({ initial, onSave, onClose }) => {
             <input type="number" step="0.01" value={hourlyRate} onChange={e => setHourlyRate(e.target.value)} className={inputClass} placeholder="Ex: 18.50" />
           </div>
           <div className="pt-2 flex gap-3">
-            <button type="button" onClick={onClose} className="flex-1 px-6 py-3 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-all">Cancelar</button>
+            <button type="button" onClick={onClose} className="flex-1 px-6 py-3 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">Cancelar</button>
             <button type="submit" className="flex-1 px-6 py-3 bg-primary hover:bg-secondary text-white rounded-xl font-bold shadow-lg shadow-primary/20 transition-all active:scale-95">
               {initial?.id ? 'Salvar' : 'Cadastrar'}
             </button>
@@ -477,8 +477,8 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Gestão de Equipe</h1>
-          <p className="text-slate-500 font-medium">Usuários do sistema e colaboradores de produção</p>
+          <h1 className="management-title">Gestão de Equipe</h1>
+          <p className="management-subtitle">Usuários do sistema e colaboradores de produção</p>
         </div>
         <button
           onClick={() => tab === 'usuarios' ? setShowUserForm(true) : setShowStaffForm(true)}
@@ -490,25 +490,25 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
       </div>
 
       {/* Search + Tabs */}
-      <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4">
+      <div className="management-header-card flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input
             type="text"
             placeholder="Buscar por nome, email ou função..."
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium text-sm"
+            className="management-input w-full pl-12 pr-4 py-3"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
+          <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700 text-slate-400 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
             <Users size={16} />
             {tab === 'usuarios' 
               ? appUsers.filter(u => !u.status || u.status === 'ativo').length 
               : staff.filter(s => !s.status || s.status === 'ativo').length} Ativos
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
+          <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700 text-slate-400 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
             <PowerOff size={14} />
             {tab === 'usuarios' 
               ? appUsers.filter(u => u.status === 'inativo').length 
@@ -516,7 +516,7 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
           </div>
           <button
             onClick={() => setShowInactive(v => !v)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-xs font-bold uppercase tracking-widest transition-all ${showInactive ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-200'}`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-xs font-bold uppercase tracking-widest transition-all ${showInactive ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-900/30 text-amber-600' : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700 text-slate-400 hover:border-slate-200'}`}
           >
             <PowerOff size={14} />
             {showInactive ? 'Ocultar Inativos' : 'Mostrar Inativos'}
@@ -528,14 +528,14 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
       <div className="flex items-center gap-3">
         <button
           onClick={() => setTab('usuarios')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl border text-xs font-bold uppercase tracking-widest transition-all ${tab === 'usuarios' ? 'bg-primary text-white shadow-lg shadow-primary/20 border-primary' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'}`}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl border text-xs font-bold uppercase tracking-widest transition-all ${tab === 'usuarios' ? 'bg-primary text-white shadow-lg shadow-primary/20 border-primary' : 'bg-white dark:bg-slate-900/40 border-slate-200 dark:border-white/10 text-slate-400 hover:border-slate-300'}`}
         >
           <Shield size={14} />
           Usuários do App
         </button>
         <button
           onClick={() => setTab('producao')}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl border text-xs font-bold uppercase tracking-widest transition-all ${tab === 'producao' ? 'bg-primary text-white shadow-lg shadow-primary/20 border-primary' : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'}`}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl border text-xs font-bold uppercase tracking-widest transition-all ${tab === 'producao' ? 'bg-primary text-white shadow-lg shadow-primary/20 border-primary' : 'bg-white dark:bg-slate-900/40 border-slate-200 dark:border-white/10 text-slate-400 hover:border-slate-300'}`}
         >
           <HardHat size={14} />
           Equipe de Produção
@@ -543,12 +543,12 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="management-container">
         <div className="overflow-x-auto">
           {tab === 'usuarios' ? (
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-100">
+                <tr className="bg-slate-50/50 dark:bg-white/5 border-b border-slate-100 dark:border-white/5">
                   <th className="px-6 py-5"><div className="text-sm font-bold text-slate-400 uppercase tracking-widest">Cód</div></th>
                   <th onClick={() => handleSort('name')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
                     <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">Nome <SortIcon field="name" /></div>
@@ -563,9 +563,9 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
                   <th className="px-6 py-5 text-right"><div className="text-sm font-bold text-slate-400 uppercase tracking-widest">Ações</div></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-slate-50 dark:divide-white/5">
                 {filteredUsers.map((user, index) => (
-                  <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
+                  <tr key={user.id} className="management-row-hover group">
                     <td className="px-6 py-6">
                       <span className="text-sm font-black text-primary bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20 shadow-sm">
                         #{user.code || '—'}
@@ -579,7 +579,7 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
                             : initials(user.name)
                           }
                         </div>
-                        <div className="text-sm font-black text-slate-800 leading-tight">{user.name}</div>
+                        <div className="text-sm font-black text-slate-800 dark:text-white leading-tight">{user.name}</div>
                       </div>
                     </td>
                     <td className="px-6 py-6">
@@ -644,7 +644,7 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
           ) : (
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-100">
+                <tr className="bg-slate-50/50 dark:bg-white/5 border-b border-slate-100 dark:border-white/5">
                   <th className="px-6 py-5"><div className="text-sm font-bold text-slate-400 uppercase tracking-widest">Cód</div></th>
                   <th onClick={() => handleSort('name')} className="px-6 py-5 cursor-pointer group hover:bg-slate-100/50 transition-colors">
                     <div className="flex items-center gap-2 text-sm font-bold text-slate-400 uppercase tracking-widest">Colaborador <SortIcon field="name" /></div>
@@ -659,9 +659,9 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
                   <th className="px-6 py-5 text-right"><div className="text-sm font-bold text-slate-400 uppercase tracking-widest">Ações</div></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-slate-50 dark:divide-white/5">
                 {filteredStaff.map((s, index) => (
-                  <tr key={s.id} className="hover:bg-slate-50/50 transition-colors group">
+                  <tr key={s.id} className="management-row-hover group">
                     <td className="px-6 py-6">
                       <span className="text-sm font-black text-primary bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20 shadow-sm">
                         #{s.code || '—'}
@@ -672,7 +672,7 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
                         <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center text-white font-bold text-sm shrink-0">
                           {initials(s.name)}
                         </div>
-                        <div className="text-sm font-black text-slate-800 leading-tight">{s.name}</div>
+                        <div className="text-sm font-black text-slate-800 dark:text-white leading-tight">{s.name}</div>
                       </div>
                     </td>
                     <td className="px-6 py-6">
@@ -680,7 +680,7 @@ export const TeamView: React.FC<TeamViewProps> = ({ appUsers, onSaveUser, onDele
                         {POSITION_LABELS[s.position]}
                       </span>
                     </td>
-                    <td className="px-6 py-6 text-sm font-bold text-slate-700">
+                    <td className="px-6 py-6 text-sm font-bold text-slate-700 dark:text-slate-300">
                       {s.hourlyRate > 0 ? `R$ ${s.hourlyRate.toFixed(2)}/h` : <span className="text-slate-300">—</span>}
                     </td>
                     <td className="px-6 py-6">

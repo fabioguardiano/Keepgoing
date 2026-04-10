@@ -84,12 +84,12 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-primary p-1.5 bg-orange-50 rounded-xl">
+            <span className="text-primary p-1.5 bg-orange-50 dark:bg-orange-950/30 rounded-xl">
                <Package size={20} />
             </span>
-            <h1 className="text-2xl font-black text-slate-800 tracking-tight">Matéria Prima</h1>
+            <h1 className="management-title">Matéria Prima</h1>
           </div>
-          <p className="text-slate-500 font-medium">Controle de chapas e insumos de produção</p>
+          <p className="management-subtitle">Controle de chapas e insumos de produção</p>
         </div>
         <button 
           onClick={handleAddNew}
@@ -100,42 +100,42 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+        <div className="management-stat-card">
           <div className="flex items-center gap-4 mb-2">
-            <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
+            <div className="p-3 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 rounded-2xl">
               <Package size={24} />
             </div>
             <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">Total em Estoque</span>
           </div>
-          <p className="text-3xl font-black text-slate-800">{materials.reduce((acc, m) => acc + m.stockQuantity, 0)} <span className="text-sm font-bold text-slate-400">unidades</span></p>
+          <p className="text-3xl font-black text-slate-800 dark:text-white">{materials.reduce((acc, m) => acc + m.stockQuantity, 0)} <span className="text-sm font-bold text-slate-400">unidades</span></p>
         </div>
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+        <div className="management-stat-card">
           <div className="flex items-center gap-4 mb-2">
-            <div className="p-3 bg-orange-50 text-primary rounded-2xl">
+            <div className="p-3 bg-orange-50 dark:bg-orange-950/30 text-primary rounded-2xl">
               <TrendingUp size={24} />
             </div>
             <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">Valor em Estoque</span>
           </div>
-          <p className="text-3xl font-black text-slate-800">R$ {materials.reduce((acc, m) => acc + (m.stockQuantity * m.unitCost), 0).toLocaleString('pt-BR')}</p>
+          <p className="text-3xl font-black text-slate-800 dark:text-white">R$ {materials.reduce((acc, m) => acc + (m.stockQuantity * m.unitCost), 0).toLocaleString('pt-BR')}</p>
         </div>
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+        <div className="management-stat-card">
           <div className="flex items-center gap-4 mb-2">
-            <div className="p-3 bg-red-50 text-red-600 rounded-2xl">
+            <div className="p-3 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 rounded-2xl">
               <AlertTriangle size={24} />
             </div>
             <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">Abaixo do Mínimo</span>
           </div>
-          <p className="text-3xl font-black text-slate-800">{materials.filter(m => m.stockQuantity < m.minStock).length} <span className="text-sm font-bold text-slate-400">itens</span></p>
+          <p className="text-3xl font-black text-slate-800 dark:text-white">{materials.filter(m => m.stockQuantity < m.minStock).length} <span className="text-sm font-bold text-slate-400">itens</span></p>
         </div>
       </div>
 
-      <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4">
+      <div className="management-header-card flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input 
             type="text"
             placeholder="Buscar por código ou descrição..."
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium text-sm"
+            className="management-input w-full pl-12 pr-4 py-3"
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -143,7 +143,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
             }}
           />
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
+        <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-700 text-slate-400 text-xs font-bold uppercase tracking-widest whitespace-nowrap">
           <Package size={16} />
           {materials.filter(m => m.status === 'ativo').length} Ativos
         </div>
@@ -156,19 +156,19 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
             setShowInactive(v => !v);
             setCurrentPage(1);
           }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-xs font-bold uppercase tracking-widest transition-all ${showInactive ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-200'}`}
+          className={`flex items-center gap-2 px-4 py-2 rounded-2xl border text-xs font-bold uppercase tracking-widest transition-all ${showInactive ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-900/30 text-amber-600' : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700 text-slate-400 hover:border-slate-200'}`}
         >
           <PowerOff size={14} />
           {showInactive ? 'Ocultar Inativos' : 'Mostrar Inativos'}
         </button>
       </div>
 
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="management-container">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th onClick={() => handleSort('code')} className="px-6 py-4 cursor-pointer group hover:bg-slate-100/50 transition-colors w-24">
+              <tr className="bg-slate-50/50 dark:bg-white/5 border-b border-slate-100 dark:border-white/5">
+                <th onClick={() => handleSort('code')} className="px-6 py-4 cursor-pointer group hover:bg-slate-100/50 dark:hover:bg-white/5 transition-colors w-24">
                   <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
                     Código <SortIcon field="code" />
                   </div>
@@ -193,9 +193,9 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                 <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest text-right">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
               {paginatedMaterials.map(material => (
-                <tr key={material.id} className="hover:bg-slate-50/50 transition-colors group">
+                <tr key={material.id} className="management-row-hover group">
                   <td className="px-6 py-4">
                     <span className="text-xs font-black text-slate-400 bg-slate-100 px-2 py-1 rounded-lg">{material.code}</span>
                   </td>
@@ -209,7 +209,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                         </div>
                       )}
                       <div>
-                        <div className="text-sm font-black text-slate-800 leading-tight">{material.name}</div>
+                        <div className="text-sm font-black text-slate-800 dark:text-white leading-tight">{material.name}</div>
                         <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{material.brand || material.supplier || 'Geral'}</div>
                       </div>
                     </div>
@@ -264,13 +264,13 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mt-6">
         <div className="text-sm font-bold text-slate-400">
-          Mostrando <span className="text-slate-800">{paginatedMaterials.length}</span> de <span className="text-slate-800">{filteredMaterials.length}</span> registros
+          Mostrando <span className="text-slate-800 dark:text-slate-200">{paginatedMaterials.length}</span> de <span className="text-slate-800 dark:text-slate-200">{filteredMaterials.length}</span> registros
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
             disabled={currentPage === 1}
-            className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-black text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-black text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             Anterior
           </button>
@@ -279,7 +279,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
             // Mostrar apenas algumas páginas se houver muitas
             if (totalPages > 7) {
               if (page !== 1 && page !== totalPages && Math.abs(page - currentPage) > 1) {
-                if (page === 2 || page === totalPages - 1) return <span key={page} className="px-2 text-slate-300">...</span>;
+                if (page === 2 || page === totalPages - 1) return <span key={page} className="px-2 text-slate-300 dark:text-slate-600">...</span>;
                 return null;
               }
             }
@@ -287,7 +287,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
-                className={`w-8 h-8 flex items-center justify-center rounded-xl text-[10px] font-black transition-all ${currentPage === page ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white border border-slate-200 text-slate-400 hover:bg-slate-50'}`}
+                className={`w-8 h-8 flex items-center justify-center rounded-xl text-[10px] font-black transition-all ${currentPage === page ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
               >
                 {page}
               </button>
@@ -296,7 +296,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           <button
             onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
             disabled={currentPage === totalPages || totalPages === 0}
-            className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-black text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-black text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             Próximo
           </button>

@@ -122,7 +122,7 @@ const NewAccountModal: React.FC<NewAccountModalProps> = ({ mode, paymentMethods,
 
   return (
     <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-xl flex flex-col max-h-[90vh]">
+      <div className="management-modal rounded-3xl w-full max-w-xl flex flex-col max-h-[90vh] overflow-hidden">
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800 shrink-0">
           <h3 className="font-black text-slate-800 dark:text-white">
             {isEdit ? 'Editar' : 'Nova'} Conta a {mode === 'receber' ? 'Receber' : 'Pagar'}
@@ -144,7 +144,7 @@ const NewAccountModal: React.FC<NewAccountModalProps> = ({ mode, paymentMethods,
             <>
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-1">Descrição *</label>
-                <input value={desc} onChange={e => setDesc(e.target.value)} placeholder="Descreva a conta..." className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-sm text-slate-800 dark:text-white" />
+                <input value={desc} onChange={e => setDesc(e.target.value)} placeholder="Descreva a conta..." className="management-input w-full p-2.5" />
               </div>
 
               {/* Cliente ou Fornecedor */}
@@ -158,7 +158,7 @@ const NewAccountModal: React.FC<NewAccountModalProps> = ({ mode, paymentMethods,
                     setPartyId(e.target.value);
                     setPartyName(item ? ((item as any).tradingName || (item as any).name || '') : '');
                   }}
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-sm text-slate-800 dark:text-white appearance-none"
+                  className="management-input w-full p-2.5 appearance-none"
                 >
                   <option value="">-- Selecione --</option>
                   {(mode === 'receber' ? clients : suppliers)?.map((x: any) => (
@@ -170,24 +170,24 @@ const NewAccountModal: React.FC<NewAccountModalProps> = ({ mode, paymentMethods,
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-1">Valor Total (R$) *</label>
-                  <input type="number" min={0} step={0.01} value={totalValue} onChange={e => setTotalValue(e.target.value)} placeholder="0,00" className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-sm text-slate-800 dark:text-white" />
+                  <input type="number" min={0} step={0.01} value={totalValue} onChange={e => setTotalValue(e.target.value)} placeholder="0,00" className="management-input w-full p-2.5" />
                 </div>
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-1">Vencimento *</label>
-                  <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-sm text-slate-800 dark:text-white" />
+                  <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="management-input w-full p-2.5" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-1">Categoria</label>
-                  <select value={category} onChange={e => setCategory(e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-sm text-slate-800 dark:text-white appearance-none">
+                  <select value={category} onChange={e => setCategory(e.target.value)} className="management-input w-full p-2.5 appearance-none">
                     {categories.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-1">Forma de Pagamento</label>
-                  <select value={pmId} onChange={e => { setPmId(e.target.value); setInstallmentsN(1); }} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-sm text-slate-800 dark:text-white appearance-none">
+                  <select value={pmId} onChange={e => { setPmId(e.target.value); setInstallmentsN(1); }} className="management-input w-full p-2.5 appearance-none">
                     <option value="">-- Selecione --</option>
                     {paymentMethods.filter(p => p.active).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
@@ -216,7 +216,7 @@ const NewAccountModal: React.FC<NewAccountModalProps> = ({ mode, paymentMethods,
 
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-1">Observações</label>
-                <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Observações adicionais..." className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-sm text-slate-800 dark:text-white resize-none" />
+                <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Observações adicionais..." className="management-input w-full p-2.5 resize-none" />
               </div>
             </>
           ) : (
@@ -311,7 +311,7 @@ const PayInstallmentModal: React.FC<PayInstallmentModalProps> = ({ installment, 
 
   return (
     <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+      <div className="management-modal rounded-3xl max-w-sm w-full p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-black text-slate-800 dark:text-white">{isComplement ? 'Complementar Pagamento' : 'Registrar Pagamento'}</h3>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400"><X size={16} /></button>
@@ -332,7 +332,7 @@ const PayInstallmentModal: React.FC<PayInstallmentModalProps> = ({ installment, 
               inputMode="numeric"
               value={centsToBRL(cents)}
               onChange={handleCurrencyChange}
-              className="w-full pl-9 pr-3 p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-sm"
+              className="management-input w-full pl-9 pr-3 p-2.5"
             />
           </div>
         </div>
@@ -356,7 +356,7 @@ const PayInstallmentModal: React.FC<PayInstallmentModalProps> = ({ installment, 
 
         <div>
           <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-1">Data do Pagamento</label>
-          <input type="date" value={paidDate} onChange={e => setPaidDate(e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-sm" />
+          <input type="date" value={paidDate} onChange={e => setPaidDate(e.target.value)} className="management-input w-full p-2.5" />
         </div>
 
         {activeBanks.length > 0 && (
@@ -364,7 +364,7 @@ const PayInstallmentModal: React.FC<PayInstallmentModalProps> = ({ installment, 
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-1">
               <Landmark size={10} className="inline mr-1" />Conta de Destino
             </label>
-            <select value={bankAccountId} onChange={e => setBankAccountId(e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border-2 border-transparent focus:border-[var(--primary-color)] outline-none font-bold text-sm appearance-none">
+            <select value={bankAccountId} onChange={e => setBankAccountId(e.target.value)} className="management-input w-full p-2.5 appearance-none">
               <option value="">Não especificada</option>
               {activeBanks.map(b => (
                 <option key={b.id} value={b.id}>{b.name}{b.bankName ? ` — ${b.bankName}` : ''}</option>
@@ -412,7 +412,7 @@ const AccountRow = ({ account, onEdit, onDelete, onPayInstallment, onUnpayInstal
 
   return (
     <>
-      <tr className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors ${overdue ? 'bg-red-50/30 dark:bg-red-900/5' : ''}`}>
+      <tr className={`management-row-hover ${overdue ? 'bg-red-50/30 dark:bg-red-900/10' : ''}`}>
         <td className="px-4 py-3">
           <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${STATUS_STYLE[statusKey]}`}>
             {STATUS_LABEL[statusKey]}
@@ -615,8 +615,8 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-black text-slate-800 dark:text-white">{title}</h2>
-          <p className="text-slate-500 text-sm font-medium">Gerencie seus {mode === 'receber' ? 'recebimentos' : 'pagamentos'}</p>
+          <h2 className="management-title">{title}</h2>
+          <p className="management-subtitle">Gerencie seus {mode === 'receber' ? 'recebimentos' : 'pagamentos'}</p>
         </div>
         {canEdit && (
           <button onClick={() => { setEditData(null); setShowModal(true); }} className="bg-[var(--primary-color)] text-white px-5 py-2.5 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-[var(--primary-color)]/20 hover:opacity-90 transition-all">
@@ -646,9 +646,9 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
       </div>
 
       {/* Tabela */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+      <div className="management-container">
         {/* Barra de filtros — status */}
-        <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+        <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-transparent">
           <div className="flex gap-1">
             {[
               { key: 'todos',    label: 'Todos' },
@@ -670,7 +670,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
           </div>
         </div>
         {/* Barra de filtros — período */}
-        <div className="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+        <div className="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-transparent">
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">Período:</span>
           {([
             { key: 'mes_atual',     label: 'Mês Atual' },
@@ -695,12 +695,12 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
             <div className="flex items-center gap-2 ml-1">
               <input
                 type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-                className="px-2 py-1.5 rounded-xl text-[11px] font-bold border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-white outline-none focus:border-[var(--primary-color)]"
+                className="management-input px-2 py-1.5"
               />
               <span className="text-slate-400 text-xs font-bold">até</span>
               <input
                 type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-                className="px-2 py-1.5 rounded-xl text-[11px] font-bold border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-white outline-none focus:border-[var(--primary-color)]"
+                className="management-input px-2 py-1.5"
               />
             </div>
           )}
@@ -715,7 +715,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-slate-50 dark:bg-slate-800/50 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                <tr className="bg-slate-50 dark:bg-white/5 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Descrição</th>
                   <th className="px-4 py-3">Categoria</th>
@@ -725,7 +725,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                   <th className="px-4 py-3">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                 {filtered.map(account => (
                   <AccountRow
                     key={account.id}
@@ -768,7 +768,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
 
       {confirmDelete && (
         <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center">
+          <div className="management-modal rounded-3xl p-8 max-w-sm w-full mx-4 text-center">
             <Trash2 size={40} className="text-red-400 mx-auto mb-3" />
             <h3 className="font-black text-slate-800 dark:text-white mb-2">Excluir conta?</h3>
             <p className="text-slate-500 text-sm mb-6">Esta ação não pode ser desfeita.</p>

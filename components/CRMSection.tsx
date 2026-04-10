@@ -185,9 +185,9 @@ export const CRMSection: React.FC<CRMSectionProps> = ({
     : newCrmNote;
 
   return (
-    <div className={`bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 ${compact ? 'rounded-2xl' : 'rounded-3xl'} overflow-hidden shadow-sm`}>
+    <div className={`bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border border-slate-100 dark:border-white/5 ${compact ? 'rounded-2xl' : 'rounded-3xl'} overflow-hidden shadow-sm`}>
       <div
-        className={`${compact ? 'px-3 py-2' : 'px-6 py-4'} bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-all ${!isExpanded && compact ? '' : 'border-b border-slate-100 dark:border-slate-800'}`}
+        className={`${compact ? 'px-3 py-2' : 'px-6 py-4'} bg-slate-50/50 dark:bg-white/5 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 transition-all ${!isExpanded && compact ? '' : 'border-b border-slate-100 dark:border-white/5'}`}
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className={`flex items-center ${compact ? 'gap-2' : 'gap-3'}`}>
@@ -226,7 +226,7 @@ export const CRMSection: React.FC<CRMSectionProps> = ({
               displayedNotes.map((note) => (
                 <div
                   key={note.id}
-                  className="bg-slate-50 dark:bg-slate-800/30 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50 transition-all hover:border-[var(--primary-color)]/30 group"
+                  className="bg-white/40 dark:bg-white/5 p-4 rounded-2xl border border-slate-100 dark:border-white/5 transition-all hover:border-[var(--primary-color)]/30 group"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
@@ -303,8 +303,8 @@ export const CRMSection: React.FC<CRMSectionProps> = ({
                   }
                 }}
                 placeholder="Descreva a conversa, visita ou retorno do cliente..."
-                className={`w-full text-sm bg-slate-50 dark:bg-slate-800 border-2 rounded-2xl py-3 px-4 outline-none resize-none min-h-[100px] font-medium text-slate-700 dark:text-slate-200 transition-all pr-14 custom-scrollbar shadow-inner
-                  ${isListening ? 'border-red-400 bg-red-50/10' : 'border-transparent focus:border-[var(--primary-color)]'}`}
+                className={`w-full text-sm bg-white/40 dark:bg-white/5 border-2 rounded-2xl py-3 px-4 outline-none resize-none min-h-[100px] font-medium text-slate-700 dark:text-slate-200 transition-all pr-14 custom-scrollbar shadow-inner
+                  ${isListening ? 'border-red-400 bg-red-500/10' : 'border-transparent focus:border-[var(--primary-color)]'}`}
                 readOnly={isListening}
               />
 

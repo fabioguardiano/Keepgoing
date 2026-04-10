@@ -350,7 +350,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                                 {...draggableProvided.draggableProps}
                                                                 className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-2xl hover:border-orange-200 hover:bg-white transition-all gap-4"
                                                             >
-                                                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                                <div className="flex items-center gap-3 min-w-0">
                                                                     <div {...draggableProvided.dragHandleProps} className="cursor-grab active:cursor-grabbing text-slate-300">
                                                                         <GripVertical size={18} />
                                                                     </div>
@@ -371,7 +371,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                                     )}
                                                                 </div>
 
-                                                                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 sm:flex-nowrap shrink-0">
+                                                                <div className="grid grid-cols-2 lg:grid-cols-[70px_90px_90px_160px_80px] items-center gap-4 shrink-0">
                                                                     {/* Seq Code */}
                                                                     <div className="flex items-center gap-2">
                                                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-tighter whitespace-nowrap">Seq.</label>
@@ -577,7 +577,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                                 {...draggableProvided.draggableProps}
                                                                 className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-2xl hover:border-primary/20 hover:bg-white transition-all gap-4"
                                                             >
-                                                                <div className="flex items-center gap-4 flex-1 min-w-0">
+                                                                <div className="flex items-center gap-4 min-w-0">
                                                                     <div {...draggableProvided.dragHandleProps} className="cursor-grab active:cursor-grabbing text-slate-300 shrink-0">
                                                                         <GripVertical size={18} />
                                                                     </div>
@@ -608,7 +608,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                                     )}
                                                                 </div>
 
-                                                                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 sm:flex-nowrap shrink-0">
+                                                                <div className="grid grid-cols-2 lg:grid-cols-[70px_90px_90px_160px_80px] items-center gap-4 shrink-0">
                                                                     <div className="flex items-center gap-2">
                                                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-tighter whitespace-nowrap">Seq.</label>
                                                                         <div className="flex items-center bg-white border border-slate-200 rounded-lg px-2 py-1">
@@ -670,7 +670,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                                                             </div>
                                                         )}
                                                     </Draggable>
-
                                                 ))}
                                                 {provided.placeholder}
                                             </div>

@@ -269,21 +269,20 @@ export const SalesView: React.FC<SalesViewProps> = ({
       .filter(s => (s.clientName || '').toLowerCase().includes(searchTerm.toLowerCase()) || (s.orderNumber || '').includes(searchTerm))
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [scopedSales, kanbanApplyFilters, filteredSales, searchTerm]);
-
   const totalFiltrado = useMemo(
     () => filteredSales.reduce((acc, s) => acc + (s.totals?.geral || 0), 0),
     [filteredSales]
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Vendas e Orçamentos</h1>
-          <p className="text-slate-500 font-medium">Gestão comercial e conversão de pedidos</p>
+          <h1 className="management-title">Vendas e Orçamentos</h1>
+          <p className="management-subtitle">Gestão comercial e conversão de pedidos</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 backdrop-blur-md rounded-xl p-1 border border-slate-200 dark:border-white/10">
             <button
               onClick={() => setViewMode('kanban')}
               title="Visualização Kanban"
@@ -320,49 +319,49 @@ export const SalesView: React.FC<SalesViewProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-white dark:bg-slate-900 dark:border-slate-800 py-2.5 px-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
-          <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-xl">
-             <Clock className="text-[var(--primary-color)]" size={18} />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="management-header-card py-2.5 px-4 flex items-center gap-3">
+          <div className="p-2 bg-orange-500/10 rounded-xl">
+             <Clock className="text-orange-500" size={18} />
           </div>
           <div>
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block leading-tight">Orçamentos</span>
+            <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block leading-tight">Orçamentos</span>
             <p className="text-lg font-black text-slate-800 dark:text-white leading-tight">{scopedSales.filter(s => s.status === 'Orçamento').length}</p>
           </div>
         </div>
-        <div className="bg-white dark:bg-slate-900 dark:border-slate-800 py-2.5 px-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
-          <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-xl">
+        <div className="management-header-card py-2.5 px-4 flex items-center gap-3">
+          <div className="p-2 bg-green-500/10 rounded-xl">
             <CheckCircle2 className="text-green-500" size={18} />
           </div>
           <div>
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block leading-tight">Confirmados</span>
+            <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block leading-tight">Confirmados</span>
             <p className="text-lg font-black text-slate-800 dark:text-white leading-tight">{scopedSales.filter(s => s.status === 'Confirmado' || s.status === 'Pedido').length}</p>
           </div>
         </div>
-        <div className="bg-white dark:bg-slate-900 dark:border-slate-800 py-2.5 px-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
-          <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+        <div className="management-header-card py-2.5 px-4 flex items-center gap-3">
+          <div className="p-2 bg-blue-500/10 rounded-xl">
             <ShoppingBag className="text-blue-500" size={18} />
           </div>
           <div>
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block leading-tight">Em Produção</span>
+            <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block leading-tight">Em Produção</span>
             <p className="text-lg font-black text-slate-800 dark:text-white leading-tight">{scopedSales.filter(s => s.status === 'Pedido' && s.phase !== 'Entregue').length}</p>
           </div>
         </div>
-        <div className="bg-white dark:bg-slate-900 dark:border-slate-800 py-2.5 px-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
-          <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+        <div className="management-header-card py-2.5 px-4 flex items-center gap-3">
+          <div className="p-2 bg-purple-500/10 rounded-xl">
             <CheckCircle2 className="text-purple-500" size={18} />
           </div>
           <div>
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block leading-tight">Finalizados</span>
+            <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block leading-tight">Finalizados</span>
             <p className="text-lg font-black text-slate-800 dark:text-white leading-tight">{scopedSales.filter(s => s.status === 'Finalizado' || s.phase === 'Entregue').length}</p>
           </div>
         </div>
       </div>
 
       {viewMode === 'list' ? (
-        <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div className="management-container">
           {/* Abas de status */}
-          <div className="flex items-center gap-1 px-4 pt-4 pb-0 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-1 px-4 pt-4 pb-0 border-b border-white/5 dark:border-slate-800">
             {([
               { key: 'todos',      label: 'Todos',       count: scopedSales.length },
               { key: 'Orçamento', label: 'Orçamentos',  count: scopedSales.filter(s => s.status === 'Orçamento').length },
@@ -374,15 +373,15 @@ export const SalesView: React.FC<SalesViewProps> = ({
                 onClick={() => setStatusFilter(tab.key)}
                 className={`px-4 py-2.5 text-xs font-black uppercase tracking-widest rounded-t-xl border-b-2 transition-all flex items-center gap-2 ${
                   statusFilter === tab.key
-                    ? tab.key === 'Cancelado' ? 'border-red-500 text-red-600 bg-red-50 dark:bg-red-900/10'
-                    : tab.key === 'Pedido'    ? 'border-green-500 text-green-600 bg-green-50 dark:bg-green-900/10'
-                    : 'border-[var(--primary-color)] text-[var(--primary-color)] bg-orange-50 dark:bg-orange-900/10'
-                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                    ? tab.key === 'Cancelado' ? 'border-red-500 text-red-600 bg-red-500/10'
+                    : tab.key === 'Pedido'    ? 'border-green-500 text-green-600 bg-green-500/10'
+                    : 'border-[var(--primary-color)] text-[var(--primary-color)] bg-orange-500/10'
+                    : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
                 }`}
               >
                 {tab.label}
                 <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
-                  statusFilter === tab.key ? 'bg-current/10' : 'bg-slate-100 dark:bg-slate-700'
+                  statusFilter === tab.key ? 'bg-current/10' : 'bg-slate-100 dark:bg-white/5'
                 }`}>
                   {tab.count}
                 </span>
@@ -391,7 +390,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
           </div>
 
           {/* Filtro de data */}
-          <div className="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+          <div className="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-white/5 bg-slate-50/50 dark:bg-white/5">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">Período:</span>
             {([
               { key: 'mes_atual',    label: 'Mês Atual' },
@@ -405,7 +404,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
                 className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
                   dateFilter === opt.key
                     ? 'bg-[var(--primary-color)] text-white shadow-sm'
-                    : 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:border-[var(--primary-color)] hover:text-[var(--primary-color)]'
+                    : 'bg-white dark:bg-white/10 text-slate-500 dark:text-slate-300 border border-slate-200 dark:border-white/10 hover:border-[var(--primary-color)] hover:text-[var(--primary-color)]'
                 }`}
               >
                 {opt.label}
@@ -417,14 +416,14 @@ export const SalesView: React.FC<SalesViewProps> = ({
                   type="date"
                   value={dateFrom}
                   onChange={e => setDateFrom(e.target.value)}
-                  className="px-2 py-1.5 rounded-xl text-[11px] font-bold border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-white outline-none focus:border-[var(--primary-color)]"
+                  className="px-2 py-1.5 rounded-xl text-[11px] font-bold border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-white outline-none focus:border-[var(--primary-color)]"
                 />
                 <span className="text-slate-400 text-xs font-bold">até</span>
                 <input
                   type="date"
                   value={dateTo}
                   onChange={e => setDateTo(e.target.value)}
-                  className="px-2 py-1.5 rounded-xl text-[11px] font-bold border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-white outline-none focus:border-[var(--primary-color)]"
+                  className="px-2 py-1.5 rounded-xl text-[11px] font-bold border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-white outline-none focus:border-[var(--primary-color)]"
                 />
               </div>
             )}
@@ -484,17 +483,17 @@ export const SalesView: React.FC<SalesViewProps> = ({
                     <th className="px-6 py-4 text-center">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                   {filteredSales.map(sale => (
                     <React.Fragment key={sale.id}>
-                      <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
+                      <tr className="management-row-hover !bg-transparent group">
                         <td className="px-6 py-4 text-sm font-bold text-slate-500">#{sale.orderNumber || '-'}</td>
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                            sale.status === 'Orçamento'  ? 'bg-blue-100 text-blue-600' :
-                            sale.status === 'Pedido'     ? 'bg-green-100 text-green-700' :
-                            sale.status === 'Cancelado'  ? 'bg-red-100 text-red-600' :
-                            'bg-slate-100 text-slate-600'
+                            sale.status === 'Orçamento'  ? 'bg-blue-500/10 text-blue-500' :
+                            sale.status === 'Pedido'     ? 'bg-green-500/10 text-green-500' :
+                            sale.status === 'Cancelado'  ? 'bg-red-500/10 text-red-500' :
+                            'bg-slate-500/10 text-slate-500'
                           }`}>
                             {sale.status === 'Pedido' ? 'Ganho' : sale.status === 'Cancelado' ? 'Perdido' : sale.status}
                           </span>
@@ -589,7 +588,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className={`w-72 h-32 rounded-[2.5rem] border-4 border-dashed flex flex-col items-center justify-center gap-2 transition-all ${snapshot.isDraggingOver ? 'bg-red-500 border-red-200 text-white scale-110 shadow-2xl' : 'bg-white/80 backdrop-blur-md border-slate-200 text-slate-400'}`}
+                  className={`w-72 h-32 rounded-[2.5rem] border-4 border-dashed flex flex-col items-center justify-center gap-2 transition-all ${snapshot.isDraggingOver ? 'bg-red-500 border-red-200 text-white scale-110 shadow-2xl' : 'bg-white/40 dark:bg-white/5 backdrop-blur-md border-slate-200 dark:border-white/10 text-slate-400'}`}
                 >
                   <XCircle size={32} className={snapshot.isDraggingOver ? 'animate-pulse' : ''} />
                   <span className="text-[10px] font-black uppercase tracking-widest">Arquivar como Perdido</span>
@@ -603,7 +602,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className={`w-72 h-32 rounded-[2.5rem] border-4 border-dashed flex flex-col items-center justify-center gap-2 transition-all ${snapshot.isDraggingOver ? 'bg-green-500 border-green-200 text-white scale-110 shadow-2xl' : 'bg-white/80 backdrop-blur-md border-slate-200 text-slate-400'}`}
+                  className={`w-72 h-32 rounded-[2.5rem] border-4 border-dashed flex flex-col items-center justify-center gap-2 transition-all ${snapshot.isDraggingOver ? 'bg-green-500 border-green-200 text-white scale-110 shadow-2xl' : 'bg-white/40 dark:bg-white/5 backdrop-blur-md border-slate-200 dark:border-white/10 text-slate-400'}`}
                 >
                   <span className="text-[12px] font-black text-slate-500 mb-1">MOVIMENTAR PARA:</span>
                   <div className="flex items-center gap-2">
@@ -624,7 +623,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
                 placeholder="Pesquisar no Kanban (cliente ou nº)..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/20 transition-all shadow-sm"
+                className="management-input w-full pl-12 pr-4 py-3"
               />
             </div>
             <label className="flex items-center gap-2 cursor-pointer group">
@@ -708,7 +707,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
                           {/* Column Header */}
                           <div 
                             {...provided.dragHandleProps}
-                            className={`flex items-center justify-between px-3 py-2 rounded-xl transition-all h-12 ${snapshot.isDragging ? 'bg-white shadow-xl ring-2 ring-[var(--primary-color)]' : 'bg-transparent group/header'}`}
+                            className={`flex items-center justify-between px-3 py-2 rounded-xl transition-all h-12 ${snapshot.isDragging ? 'bg-white/90 dark:bg-white/10 backdrop-blur-md shadow-xl ring-2 ring-[var(--primary-color)]' : 'bg-transparent group/header'}`}
                           >
                             <div className="flex items-center gap-2 flex-1 min-w-0">
                               <GripVertical size={14} className="text-slate-300 shrink-0" />
@@ -856,7 +855,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
       {/* Lost Sale Justification Modal */}
       {lostSaleDetails && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="management-modal w-full max-w-md rounded-[2.5rem] p-0 overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-8 pb-4 flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center text-red-600">
@@ -933,7 +932,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
       {/* Revert Pedido Modal */}
       {revertPending && (
         <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+          <div className="management-modal rounded-3xl w-full max-w-md p-0 overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 bg-amber-50 dark:bg-amber-900/20">
               <div className="p-2 bg-amber-100 dark:bg-amber-900/40 rounded-xl">
                 <AlertTriangle size={20} className="text-amber-600" />
@@ -1020,7 +1019,7 @@ export const SalesView: React.FC<SalesViewProps> = ({
       {/* Modal — dados incompletos para ganho */}
       {incompleteWinSale && (
         <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+          <div className="management-modal rounded-3xl w-full max-w-md p-0 overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="bg-amber-50 dark:bg-amber-900/20 px-6 py-5 flex items-center gap-3 border-b border-amber-100 dark:border-amber-900/30">
               <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
                 <AlertTriangle size={20} className="text-amber-500" />
