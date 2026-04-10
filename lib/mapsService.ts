@@ -87,3 +87,38 @@ export function decodePolyline6(polyline: string): [number, number][] {
 
   return coordinates as [number, number][];
 }
+
+/**
+ * Busca a rota real por ruas entre múltiplos pontos utilizando a API de Direções do Mapbox.
+ * @param waypoints Array de coordenadas [[lat, lng], ...]
+ * @returns Array de coordenadas [[lng, lat], ...] formato esperado pelo Mapbox GeoJSON Source
+ */
+export async function fetchDirections(waypoints: [number, number][]): Promise<[number, number][]> {
+  if (waypoints.length < 2) return [];
+
+  // Mapbox espera longitude,latitude
+  const coordsString = waypoints.map(([lat, lng]) => `${lng},${lat}`).join(';');
+  
+  // Usamos geometrias em polyline6 para alta precisão e compatibilidade com o decoder existente
+  // 'driving' garante que a rota siga o caminho de veículos
+  const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordsString}?geometries=polyline6&overview=full&access_token=${MAPBOX_TOKEN}`;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Falha na busca de direções do Mapbox');
+    
+    const data = await response.json();
+    
+    if (data.routes && data.routes.length > 0) {
+      const route = data.routes[0];
+      const decodedCoords = decodePolyline6(route.geometry);
+      // O Mapbox GeoJSON Source espera [longitude, latitude]
+      return decodedCoords.map(([lat, lng]) => [lng, lat]);
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('[MapboxDirectionsError]', error);
+    return [];
+  }
+}

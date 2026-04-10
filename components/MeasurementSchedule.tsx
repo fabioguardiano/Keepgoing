@@ -5,7 +5,7 @@ import {
   ChevronLeft, ChevronRight, Filter, AlertCircle, Phone, Truck, Building2, Map as MapIcon, List as ListIcon, FileDown
 } from 'lucide-react';
 import { MapComponent, MapMarker, MapRoute } from './MapComponent';
-import { geocodeAddress, decodePolyline6 } from '../lib/mapsService';
+import { geocodeAddress, fetchDirections } from '../lib/mapsService';
 import { Measurement, WorkOrder, DriverStatus, AppUser, ProductionStaff, PermissionProfile } from '../types';
 
 interface MeasurementScheduleProps {
@@ -214,7 +214,7 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
     }
   }, [selectedDate, measurements, coords, companyAddress]);
 
-  // Buscar rota por ruas via Valhalla (GeoJSON no Mapbox)
+  // Buscar rota por ruas via Mapbox Directions
   useEffect(() => {
     const dayMeas = measurements
       .filter(m => m.status !== 'Excluída' && m.date === selectedDate)
@@ -228,34 +228,15 @@ export const MeasurementSchedule: React.FC<MeasurementScheduleProps> = ({
 
     if (waypoints.length < 2) { setRouteCoords([]); return; }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 12000);
-
-    fetch('https://valhalla1.openstreetmap.de/route', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        locations: waypoints.map(([lat, lon]) => ({ lat, lon })),
-        costing: 'auto',
-        directions_options: { units: 'km' }
-      }),
-      signal: controller.signal
-    })
-      .then(r => r.json())
-      .then(data => {
-        clearTimeout(timeout);
-        const legs = data.trip?.legs;
-        if (legs?.length) {
-          const allCoords = legs.flatMap((leg: any) => decodePolyline6(leg.shape));
-          // Importante: Mapbox usa [lng, lat], mas Valhalla retorna [lat, lng]
-          // converteremos para [lng, lat] para o Source GeoJSON
-          setRouteCoords(allCoords.map(c => [c[1], c[0]]));
+    fetchDirections(waypoints)
+      .then(path => {
+        if (path && path.length > 0) {
+          setRouteCoords(path);
         } else {
           setRouteCoords([]);
         }
       })
       .catch(() => {
-        clearTimeout(timeout);
         setRouteCoords([]);
       });
   }, [selectedDate, measurements, coords, companyAddress]);

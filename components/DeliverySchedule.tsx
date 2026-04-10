@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { MapPin, Clock, Calendar, Plus, Search, Truck, ChevronRight, X, Navigation, Phone, Map as MapIcon, Building2, Info, History, Edit2, Trash2 } from 'lucide-react';
 import { MapComponent, MapMarker, MapRoute } from './MapComponent';
-import { geocodeAddress, decodePolyline6 } from '../lib/mapsService';
+import { geocodeAddress, fetchDirections } from '../lib/mapsService';
 import { Delivery, WorkOrder, DriverStatus, AppUser, Client } from '../types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -156,7 +156,7 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
     deliveries.forEach(d => geocode(d.address, d.id));
   }, [companyAddress, deliveries, orders, clients]);
 
-  // Routing effect (Valhalla - Road paths for Mapbox GeoJSON)
+  // Routing effect (Mapbox Directions - Road paths for Mapbox GeoJSON)
   useEffect(() => {
     const fetchRoutes = async () => {
       const groups = Array.from(new Set(deliveries.map(d => d.routeGroup || 'Manhã')));
@@ -177,27 +177,17 @@ export const DeliverySchedule: React.FC<DeliveryScheduleProps> = ({
         }
 
         if (waypoints.length < 2) {
-          newPaths[group] = waypoints;
+          newPaths[group] = waypoints.map(w => [w[1], w[0]]); 
           continue;
         }
 
         try {
-          const response = await fetch('https://valhalla1.openstreetmap.de/route', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              locations: waypoints.map(([lat, lon]) => ({ lat, lon })),
-              costing: 'auto',
-              directions_options: { units: 'km' }
-            })
-          });
-          const data = await response.json();
+          const path = await fetchDirections(waypoints);
           
-          if (data.trip?.legs) {
-            const allCoords = data.trip.legs.flatMap((leg: any) => decodePolyline6(leg.shape));
-            // Convert to [lng, lat] for Mapbox
-            newPaths[group] = allCoords.map((c: [number, number]) => [c[1], c[0]]);
+          if (path && path.length > 0) {
+            newPaths[group] = path;
           } else {
+            // Fallback para linha reta formatada para Mapbox [lng, lat]
             newPaths[group] = waypoints.map(w => [w[1], w[0]]);
           }
         } catch (e) {
