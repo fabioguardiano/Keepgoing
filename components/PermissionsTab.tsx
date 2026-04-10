@@ -348,22 +348,28 @@ export const PermissionsTab: React.FC<Props> = ({
                   </p>
                 </div>
 
-                {/* Resumo de acessos em grid de colunas */}
-                <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-2">
-                  {ALL_MODULES.filter(m => profile.permissions[m] !== 'none').map(m => (
-                    <div key={m} className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border ${
-                      profile.permissions[m] === 'full' 
-                        ? 'bg-green-50/50 border-green-100 text-green-700' 
-                        : 'bg-blue-50/50 border-blue-100 text-blue-700'
-                    }`}>
-                      <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                        profile.permissions[m] === 'full' ? 'bg-green-500' : 'bg-blue-500'
-                      }`} />
-                      <span className="text-[10px] font-black uppercase tracking-tight truncate">
-                        {MODULE_LABELS[m]}
-                      </span>
-                    </div>
-                  ))}
+                {/* Resumo de acessos em grid de colunas fixas para alinhamento vertical */}
+                <div className="flex-[3] grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-x-2 gap-y-1.5">
+                  {ALL_MODULES.map(m => {
+                    const access = profile.permissions[m];
+                    if (access === 'none') {
+                      return <div key={m} className="hidden xl:block h-6" />;
+                    }
+                    return (
+                      <div key={m} className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border transition-all ${
+                        access === 'full' 
+                          ? 'bg-green-50/50 border-green-100 text-green-700' 
+                          : 'bg-blue-50/50 border-blue-100 text-blue-700'
+                      }`}>
+                        <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                          access === 'full' ? 'bg-green-500' : 'bg-blue-500'
+                        }`} />
+                        <span className="text-[10px] font-black uppercase tracking-tight truncate" title={MODULE_LABELS[m]}>
+                          {MODULE_LABELS[m]}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
