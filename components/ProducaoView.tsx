@@ -35,7 +35,7 @@ interface ProducaoViewProps {
 type StatusFilter = WorkOrder['status'] | 'Todos';
 
 const STATUS_TABS: Array<{ label: string; value: StatusFilter }> = [
-  { label: 'Em andamento', value: 'Todos' },
+  { label: 'Todos', value: 'Todos' },
   { label: 'Aguardando', value: 'Aguardando' },
   { label: 'Entregues', value: 'Entregue' },
   { label: 'Canceladas', value: 'Cancelada' },
@@ -178,7 +178,7 @@ export const ProducaoView: React.FC<ProducaoViewProps> = ({
               <h1 className="text-xl font-black text-slate-800 dark:text-white">Produção</h1>
               <div className="flex items-center gap-2 mt-0.5">
                 <p className="text-xs text-slate-400">
-                  <AnimatedNumber value={workOrders.filter(wo => wo.status !== 'Entregue' && wo.status !== 'Cancelada').length} /> em andamento
+                  <AnimatedNumber value={workOrders.filter(wo => wo.status !== 'Entregue' && wo.status !== 'Cancelada').length} /> ao todo
                 </p>
                 {archivedCount > 0 && viewMode === 'kanban' && (
                   <motion.button
