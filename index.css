@@ -20,6 +20,13 @@
   --sidebar-text: #94a3b8;
   --card-bg: rgba(30, 41, 59, 0.7);
   --body-bg: #020617;
+  color-scheme: dark;
+}
+
+/* Melhoria global para dropdowns nativos no modo escuro */
+.dark select option {
+  background-color: #1e293b;
+  color: #ffffff;
 }
 
 @layer base {
