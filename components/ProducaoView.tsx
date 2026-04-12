@@ -37,8 +37,6 @@ type StatusFilter = WorkOrder['status'] | 'Todos';
 const STATUS_TABS: Array<{ label: string; value: StatusFilter }> = [
   { label: 'Em andamento', value: 'Todos' },
   { label: 'Aguardando', value: 'Aguardando' },
-  { label: 'Em Produção', value: 'Em Produção' },
-  { label: 'Concluído', value: 'Concluído' },
   { label: 'Entregues', value: 'Entregue' },
   { label: 'Canceladas', value: 'Cancelada' },
 ];
