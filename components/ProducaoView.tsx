@@ -32,14 +32,15 @@ interface ProducaoViewProps {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-type StatusFilter = WorkOrder['status'] | 'Todos' | 'Entregues';
+type StatusFilter = WorkOrder['status'] | 'Todos';
 
 const STATUS_TABS: Array<{ label: string; value: StatusFilter }> = [
   { label: 'Em andamento', value: 'Todos' },
   { label: 'Aguardando', value: 'Aguardando' },
   { label: 'Em Produção', value: 'Em Produção' },
   { label: 'Concluído', value: 'Concluído' },
-  { label: 'Entregues', value: 'Entregues' },
+  { label: 'Entregues', value: 'Entregue' },
+  { label: 'Canceladas', value: 'Cancelada' },
 ];
 
 const PHASE_COLORS: Record<string, string> = {
@@ -114,10 +115,8 @@ export const ProducaoView: React.FC<ProducaoViewProps> = ({
     const q = searchTerm.toLowerCase();
     return workOrders.filter(wo => {
       let matchStatus: boolean;
-      if (statusFilter === 'Entregues') {
-        matchStatus = wo.status === 'Entregue' || wo.status === 'Cancelada';
-      } else if (statusFilter === 'Todos') {
-        // "Em andamento" — exclui arquivadas (mesmo que o Kanban)
+      if (statusFilter === 'Todos') {
+        // "Em andamento" — exclui finalizadas (Entregue e Cancelada)
         matchStatus = wo.status !== 'Entregue' && wo.status !== 'Cancelada';
       } else {
         matchStatus = wo.status === statusFilter;
@@ -152,8 +151,8 @@ export const ProducaoView: React.FC<ProducaoViewProps> = ({
     workOrders.filter(wo => wo.status === 'Entregue' || wo.status === 'Cancelada').length,
   [workOrders]);
 
-  const goToArchived = () => {
-    setStatusFilter('Entregues');
+  const goToFinalized = (status: 'Entregue' | 'Cancelada') => {
+    setStatusFilter(status);
     handleViewChange('list');
   };
 
@@ -187,10 +186,20 @@ export const ProducaoView: React.FC<ProducaoViewProps> = ({
                   <motion.button
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    onClick={goToArchived}
+                    onClick={() => goToFinalized('Entregue')}
                     className="text-[10px] font-black text-slate-400 hover:text-[var(--primary-color)] bg-slate-100 dark:bg-slate-800 hover:bg-[var(--primary-color)]/10 px-2 py-0.5 rounded-full transition-all uppercase tracking-wider"
                   >
-                    <AnimatedNumber value={archivedCount} /> entregues
+                    <AnimatedNumber value={workOrders.filter(wo => wo.status === 'Entregue').length} /> entregues
+                  </motion.button>
+                )}
+                {workOrders.some(wo => wo.status === 'Cancelada') && viewMode === 'kanban' && (
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    onClick={() => goToFinalized('Cancelada')}
+                    className="text-[10px] font-black text-red-400 hover:text-red-500 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 px-2 py-0.5 rounded-full transition-all uppercase tracking-wider"
+                  >
+                    <AnimatedNumber value={workOrders.filter(wo => wo.status === 'Cancelada').length} /> canceladas
                   </motion.button>
                 )}
               </div>
