@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Image as ImageIcon, Calendar, ChevronLeft, ChevronRight, Clock, Maximize2, Minimize2 } from 'lucide-react';
+import { Image as ImageIcon, Calendar, ChevronLeft, ChevronRight, Clock, Maximize2, Minimize2, CheckCircle2 } from 'lucide-react';
 import { WorkOrder, PhaseConfig, AppUser, SalesOrder } from '../types';
 import { WorkOrderModal } from './WorkOrderModal';
 import { formatOsLabel } from '../hooks/useWorkOrders';
@@ -19,6 +19,7 @@ interface WorkOrderKanbanProps {
   deadlineWarningDays: number;
   deadlineUrgentDays: number;
   onUpdatePhase: (id: string, toPhase: string, fromPhase: string, userName: string) => void;
+  onUpdateStatus: (id: string, status: 'Aguardando' | 'Em Produção' | 'Concluído' | 'Entregue' | 'Cancelada') => Promise<void>;
   onUpdate: (id: string, updates: any) => void;
   onUpdateDeliveryDate: (id: string, newDate: string, justification: string, authorizedBy: string) => Promise<void>;
   onCancelWorkOrder: (id: string, reason: string, authorizedBy: string) => Promise<void>;
@@ -439,6 +440,7 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
   deadlineWarningDays,
   deadlineUrgentDays,
   onUpdatePhase,
+  onUpdateStatus,
   onUpdate,
   onUpdateDeliveryDate,
   onCancelWorkOrder,
@@ -447,6 +449,7 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
 }) => {
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrder | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const { zoomLevel, resetZoom, containerRef, zoomStyle, scrollProps } = useKanbanInteraction(1.0);
 
   // Handle ESC key to exit fullscreen
@@ -481,13 +484,26 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
     }
   });
 
+  const handleDragStart = () => {
+    setIsDragging(true);
+  };
+
   const handleDragEnd = (result: DropResult) => {
+    setIsDragging(false);
     if (!canMoveCards) return;
     if (!result.destination) return;
-    const toPhase = result.destination.droppableId;
-    const fromPhase = result.source.droppableId;
-    if (toPhase === fromPhase) return;
-    onUpdatePhase(result.draggableId, toPhase, fromPhase, currentUserName);
+    
+    const draggableId = result.draggableId;
+    const toId = result.destination.droppableId;
+    const fromId = result.source.droppableId;
+
+    if (toId === 'delivered-zone') {
+      onUpdateStatus(draggableId, 'Entregue');
+      return;
+    }
+
+    if (toId === fromId) return;
+    onUpdatePhase(draggableId, toId, fromId, currentUserName);
   };
 
   // When modal updates the selected work order, keep in sync
@@ -514,7 +530,7 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
   }
 
   const kanbanBoard = (
-    <DragDropContext onDragEnd={handleDragEnd}>
+    <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div 
         ref={containerRef}
         {...scrollProps}
@@ -562,6 +578,32 @@ export const WorkOrderKanban: React.FC<WorkOrderKanbanProps> = ({
               sales={sales}
             />
           ))}
+          
+            {/* Delivered Zone - After all columns */}
+            <Droppable droppableId="delivered-zone">
+              {(provided, snapshot) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className={`flex-shrink-0 flex flex-col items-center justify-center rounded-[2.5rem] border-4 border-dashed transition-all duration-300 mx-4
+                    ${snapshot.isDraggingOver 
+                      ? 'bg-emerald-500 border-emerald-200 text-white scale-105 shadow-2xl' 
+                      : isDragging 
+                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 opacity-100 scale-100' 
+                        : 'bg-slate-100 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-400 opacity-40 scale-95'}`}
+                  style={{ width: `calc(18rem * var(--kanban-zoom, 1))` }}
+                >
+                  <div className="flex flex-col items-center gap-4 py-12">
+                     <CheckCircle2 size={48} className={snapshot.isDraggingOver ? 'animate-bounce' : isDragging ? 'animate-pulse' : ''} />
+                     <div className="text-center px-4">
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] block mb-1">Movimentar para:</span>
+                        <span className="text-2xl font-black uppercase tracking-tighter">Entregue</span>
+                     </div>
+                  </div>
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
           </div>
         </div>
       </div>

@@ -594,6 +594,7 @@ const App: React.FC = () => {
                 updateWorkOrderStatus(id, 'Entregue');
               }
             }}
+            onUpdateStatus={updateWorkOrderStatus}
             onUpdate={updateWorkOrder}
             onUpdateDeliveryDate={updateDeliveryDate}
             onCancelWorkOrder={cancelWorkOrder}

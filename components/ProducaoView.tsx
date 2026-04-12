@@ -21,6 +21,7 @@ interface ProducaoViewProps {
   deadlineWarningDays: number;
   deadlineUrgentDays: number;
   onUpdatePhase: (id: string, toPhase: string, fromPhase: string, userName: string) => void;
+  onUpdateStatus: (id: string, status: 'Aguardando' | 'Em Produção' | 'Concluído' | 'Entregue' | 'Cancelada') => Promise<void>;
   onUpdate: (id: string, updates: any) => void;
   onUpdateDeliveryDate: (id: string, newDate: string, justification: string, authorizedBy: string) => Promise<void>;
   onCancelWorkOrder: (id: string, reason: string, authorizedBy: string) => Promise<void>;
@@ -31,14 +32,14 @@ interface ProducaoViewProps {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-type StatusFilter = WorkOrder['status'] | 'Todos' | 'Arquivadas';
+type StatusFilter = WorkOrder['status'] | 'Todos' | 'Entregues';
 
 const STATUS_TABS: Array<{ label: string; value: StatusFilter }> = [
   { label: 'Em andamento', value: 'Todos' },
   { label: 'Aguardando', value: 'Aguardando' },
   { label: 'Em Produção', value: 'Em Produção' },
   { label: 'Concluído', value: 'Concluído' },
-  { label: 'Arquivadas', value: 'Arquivadas' },
+  { label: 'Entregues', value: 'Entregues' },
 ];
 
 const PHASE_COLORS: Record<string, string> = {
@@ -88,6 +89,7 @@ export const ProducaoView: React.FC<ProducaoViewProps> = ({
   deadlineWarningDays,
   deadlineUrgentDays,
   onUpdatePhase,
+  onUpdateStatus,
   onUpdate,
   onUpdateDeliveryDate,
   onCancelWorkOrder,
@@ -112,7 +114,7 @@ export const ProducaoView: React.FC<ProducaoViewProps> = ({
     const q = searchTerm.toLowerCase();
     return workOrders.filter(wo => {
       let matchStatus: boolean;
-      if (statusFilter === 'Arquivadas') {
+      if (statusFilter === 'Entregues') {
         matchStatus = wo.status === 'Entregue' || wo.status === 'Cancelada';
       } else if (statusFilter === 'Todos') {
         // "Em andamento" — exclui arquivadas (mesmo que o Kanban)
@@ -151,7 +153,7 @@ export const ProducaoView: React.FC<ProducaoViewProps> = ({
   [workOrders]);
 
   const goToArchived = () => {
-    setStatusFilter('Arquivadas');
+    setStatusFilter('Entregues');
     handleViewChange('list');
   };
 
@@ -188,7 +190,7 @@ export const ProducaoView: React.FC<ProducaoViewProps> = ({
                     onClick={goToArchived}
                     className="text-[10px] font-black text-slate-400 hover:text-[var(--primary-color)] bg-slate-100 dark:bg-slate-800 hover:bg-[var(--primary-color)]/10 px-2 py-0.5 rounded-full transition-all uppercase tracking-wider"
                   >
-                    <AnimatedNumber value={archivedCount} /> arquivadas
+                    <AnimatedNumber value={archivedCount} /> entregues
                   </motion.button>
                 )}
               </div>
@@ -277,6 +279,7 @@ export const ProducaoView: React.FC<ProducaoViewProps> = ({
             deadlineWarningDays={deadlineWarningDays}
             deadlineUrgentDays={deadlineUrgentDays}
             onUpdatePhase={onUpdatePhase}
+            onUpdateStatus={onUpdateStatus}
             onUpdate={onUpdate}
             onUpdateDeliveryDate={onUpdateDeliveryDate}
             onCancelWorkOrder={onCancelWorkOrder}
