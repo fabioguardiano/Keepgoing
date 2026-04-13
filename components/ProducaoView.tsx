@@ -101,6 +101,9 @@ export const ProducaoView: React.FC<ProducaoViewProps> = ({
   );
   const [searchTerm, setSearchTerm]     = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('Todos');
+  const [dateFilter, setDateFilter] = useState<'mes_atual' | 'mes_passado' | 'ano_atual' | 'personalizado'>('mes_atual');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [selectedWO, setSelectedWO]     = useState<WorkOrder | null>(null);
 
   const handleViewChange = (mode: 'kanban' | 'list') => {
@@ -111,6 +114,7 @@ export const ProducaoView: React.FC<ProducaoViewProps> = ({
   // Workorders filtered by search (used in both modes) + status (list only)
   const filteredList = useMemo(() => {
     const q = searchTerm.toLowerCase();
+    const now = new Date();
     return workOrders.filter(wo => {
       let matchStatus: boolean;
       if (statusFilter === 'Todos') {
@@ -119,13 +123,31 @@ export const ProducaoView: React.FC<ProducaoViewProps> = ({
       } else {
         matchStatus = wo.status === statusFilter;
       }
+
+      // Filtro de data
+      const d = new Date(wo.createdAt);
+      let matchDate = true;
+      if (dateFilter === 'mes_atual') {
+        matchDate = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+      } else if (dateFilter === 'mes_passado') {
+        const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        matchDate = d.getFullYear() === prev.getFullYear() && d.getMonth() === prev.getMonth();
+      } else if (dateFilter === 'ano_atual') {
+        matchDate = d.getFullYear() === now.getFullYear();
+      } else if (dateFilter === 'personalizado') {
+        const from = dateFrom ? new Date(dateFrom + 'T00:00:00') : null;
+        const to   = dateTo   ? new Date(dateTo   + 'T23:59:59') : null;
+        if (from && d < from) matchDate = false;
+        if (to && d > to) matchDate = false;
+      }
+
       const matchSearch = !q ||
         String(wo.osNumber).includes(q) ||
         (wo.clientName || '').toLowerCase().includes(q) ||
         wo.environments.some(e => e.toLowerCase().includes(q));
-      return matchStatus && matchSearch;
+      return matchStatus && matchSearch && matchDate;
     });
-  }, [workOrders, statusFilter, searchTerm]);
+  }, [workOrders, statusFilter, searchTerm, dateFilter, dateFrom, dateTo]);
 
   // Kanban only needs search filter (status/phase handled internally by columns)
   const filteredKanban = useMemo(() => {
@@ -250,21 +272,64 @@ export const ProducaoView: React.FC<ProducaoViewProps> = ({
 
           {/* Status tabs — only in list mode */}
           {viewMode === 'list' && (
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <Filter size={14} className="text-slate-400 shrink-0" />
-              {STATUS_TABS.map(tab => (
-                <button
-                  key={tab.value}
-                  onClick={() => setStatusFilter(tab.value)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
-                    statusFilter === tab.value
-                      ? 'bg-[var(--primary-color)] text-white shadow-sm'
-                      : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-[var(--primary-color)]/50'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Filter size={14} className="text-slate-400 shrink-0" />
+                {STATUS_TABS.map(tab => (
+                  <button
+                    key={tab.value}
+                    onClick={() => setStatusFilter(tab.value)}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                      statusFilter === tab.value
+                        ? 'bg-[var(--primary-color)] text-white shadow-sm'
+                        : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-[var(--primary-color)]/50'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Filtro de data */}
+              <div className="flex flex-wrap items-center gap-2 px-4 py-3 bg-slate-50/50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">Período:</span>
+                {([
+                  { key: 'mes_atual',    label: 'Mês Atual' },
+                  { key: 'mes_passado',  label: 'Mês Passado' },
+                  { key: 'ano_atual',    label: 'Ano Atual' },
+                  { key: 'personalizado', label: 'Personalizado' },
+                ] as const).map(opt => (
+                  <button
+                    key={opt.key}
+                    onClick={() => setDateFilter(opt.key)}
+                    className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
+                      dateFilter === opt.key
+                        ? 'bg-[var(--primary-color)] text-white shadow-sm'
+                        : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-[var(--primary-color)] hover:text-[var(--primary-color)]'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+                
+                {dateFilter === 'personalizado' && (
+                  <div className="flex items-center gap-2 ml-1">
+                    <input
+                      type="date"
+                      value={dateFrom}
+                      onChange={e => setDateFrom(e.target.value)}
+                      className="px-2 py-1.5 rounded-xl text-[11px] font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-white outline-none focus:border-[var(--primary-color)]"
+                    />
+                    <span className="text-slate-400 text-xs font-bold">até</span>
+                    <input
+                      type="date"
+                      value={dateTo}
+                      onChange={e => setDateTo(e.target.value)}
+                      className="px-2 py-1.5 rounded-xl text-[11px] font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-white outline-none focus:border-[var(--primary-color)]"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
