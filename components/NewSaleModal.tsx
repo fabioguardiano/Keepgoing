@@ -8,6 +8,8 @@ import { GenerateOSModal } from './GenerateOSModal';
 import { DiscountRequestModal, CommissionRequestModal } from './AuthModal';
 import { CRMSection } from './CRMSection';
 import { SaleAnalysisPanel } from './SaleAnalysisPanel';
+import { generateSalePDF } from '../utils/pdfGenerator';
+import { FileDown, Loader2 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { supabase } from '../lib/supabase';
 
@@ -70,6 +72,8 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const [showArchCommPopover, setShowArchCommPopover] = useState(false);
   const archCommRef = useRef<HTMLDivElement>(null);
 
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+
   useEffect(() => {
     // If the sale is a Pedido but has payments, we unlock it but show a warning
     if (initialData?.status === 'Pedido' && paidAmount > 0) {
@@ -122,6 +126,50 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
     };
 
     setPrintingSale(tempSale);
+  };
+
+  const handleGeneratePDF = async () => {
+    if (!selectedClient) {
+      alert('Selecione um cliente para gerar o PDF');
+      return;
+    }
+
+    setIsGeneratingPDF(true);
+    try {
+      await generateSalePDF({
+        sale: {
+          ...initialData,
+          id: initialData?.id || 'temp',
+          orderNumber: orderNumber || 'PREVIEW',
+          clientName: selectedClient.name,
+          clientId: selectedClient.id,
+          seller,
+          status: saleType as any,
+          paymentConditions,
+          deliveryDeadline,
+          paymentMethodId,
+          paymentMethodName: paymentMethods.find(p => p.id === paymentMethodId)?.name,
+          paymentInstallments,
+          firstDueDate,
+          items,
+          totals: {
+            vendas: subtotal,
+            desconto: calculatedDiscount,
+            frete: safeDeliveryFee,
+            geral: totalGeral,
+          }
+        } as SalesOrder,
+        companyInfo,
+        client: selectedClient,
+        materials,
+        hidePrices
+      });
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      alert('Erro ao gerar PDF. Tente novamente.');
+    } finally {
+      setIsGeneratingPDF(false);
+    }
   };
   
   // Initialize states with initialData if present
@@ -573,6 +621,7 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
     }));
   };
 
+
   const syncPricesWithMaterials = (onlyEnv?: string) => {
     setItems(prevItems => prevItems.map(item => {
       if (onlyEnv !== undefined && (item.environment || 'Sem Ambiente') !== onlyEnv) return item;
@@ -896,6 +945,15 @@ export const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     </button>
                   </>
                 )}
+                <div className="w-px h-6 bg-slate-200 dark:bg-white/10"></div>
+                <button
+                  onClick={handleGeneratePDF}
+                  disabled={isGeneratingPDF}
+                  className="p-2 text-blue-600 hover:bg-white dark:hover:bg-white/5 rounded-xl transition-all flex items-center gap-1.5 font-bold text-[10px] disabled:opacity-50"
+                  title="Salvar como PDF"
+                >
+                  {isGeneratingPDF ? <Loader2 size={15} className="animate-spin" /> : <FileDown size={15} />} Gerar PDF
+                </button>
                 <div className="w-px h-6 bg-slate-200 dark:bg-white/10"></div>
                 <button
                   onClick={handlePrint}
